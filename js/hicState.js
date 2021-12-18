@@ -26,51 +26,108 @@
  * @author Jim Robinson
  */
 
+import { defaultSize } from './createBrowser.js'
 
-const State = function (chr1, chr2, zoom, x, y, pixelSize, normalization) {
+class State {
 
-    if (Number.isNaN(pixelSize)) {
-        pixelSize = 1
+    constructor(chr1, chr2, zoom, x, y, width, height, pixelSize, normalization) {
+
+        if (Number.isNaN(pixelSize)) {
+            pixelSize = 1
+        }
+
+        if (chr1 !== undefined) {
+            if (chr1 <= chr2) {
+                this.chr1 = chr1;
+                this.chr2 = chr2;
+                this.x = x;
+                this.y = y;
+            } else {
+                // Transpose
+                this.chr1 = chr2;
+                this.chr2 = chr1;
+                this.x = y;
+                this.y = x;
+            }
+            this.zoom = zoom;
+            this.pixelSize = pixelSize;
+            this.width = width
+            this.height = height
+
+            if ("undefined" === normalization) {
+                console.log("No normalization defined !!!");
+                normalization = undefined;
+            }
+
+            this.normalization = normalization;
+        }
     }
 
-    if (chr1 !== undefined) {
-        if (chr1 <= chr2) {
-            this.chr1 = chr1;
-            this.chr2 = chr2;
-            this.x = x;
-            this.y = y;
-        }
-        else {
-            // Transpose
-            this.chr1 = chr2;
-            this.chr2 = chr1;
-            this.x = y;
-            this.y = x;
-        }
-        this.zoom = zoom;
-        this.pixelSize = pixelSize;
-
-        if ("undefined" === normalization) {
-            console.log("No normalization defined !!!");
-            normalization = undefined;
+    stringify() {
+        if (this.normalization) {
+            return `${this.chr1},${this.chr2},${this.zoom},${this.x},${this.y},${this.width},${this.height},${this.pixelSize},${this.normalization}`
+        } else {
+            return `${this.chr1},${this.chr2},${this.zoom},${this.x},${this.y},${this.width},${this.height},${this.pixelSize}`
         }
 
-        this.normalization = normalization;
     }
-};
 
-State.prototype.stringify = function () {
-    return "" + this.chr1 + "," + this.chr2 + "," + this.zoom + "," + this.x + "," + this.y + "," + this.pixelSize + "," + this.normalization;
-}
+    clone() {
+        return Object.assign(new State(), this);
+    }
 
-State.prototype.clone = function () {
-    return Object.assign(new State(), this);
-}
+    equals(state) {
+        var s1 = JSON.stringify(this);
+        var s2 = JSON.stringify(state);
+        return s1 === s2;
+    }
 
-State.prototype.equals = function (state) {
-    var s1 = JSON.stringify(this);
-    var s2 = JSON.stringify(state);
-    return s1 === s2;
+    static parse(string) {
+
+        const tokens = string.split(",")
+
+        if (tokens.length <= 7) {
+
+            // Backwards compatibility
+            return new State(
+                parseInt(tokens[0]),    // chr1
+                parseInt(tokens[1]),    // chr2
+                parseFloat(tokens[2]), // zoom
+                parseFloat(tokens[3]), // x
+                parseFloat(tokens[4]), // y
+                defaultSize.width,      // width
+                defaultSize.height,     // height
+                parseFloat(tokens[5]), // pixelSize
+                tokens.length > 6 ? tokens[6] : "NONE"   // normalization
+            )
+        } else {
+
+            return new State(
+                parseInt(tokens[0]),    // chr1
+                parseInt(tokens[1]),    // chr2
+                parseFloat(tokens[2]), // zoom
+                parseFloat(tokens[3]), // x
+                parseFloat(tokens[4]), // y
+                parseInt(tokens[5]), // width
+                parseInt(tokens[6]), // height
+                parseFloat(tokens[7]), // pixelSize
+                tokens.length > 8 ? tokens[8] : "NONE"   // normalization
+            )
+        }
+
+    }
+
+    static default(configOrUndefined) {
+
+        if (configOrUndefined) {
+            return new State(0, 0, 0, 0, 0, configOrUndefined.width, configOrUndefined.height, 1, "NONE")
+        } else {
+            return new State(0, 0, 0, 0, 0, defaultSize.width, defaultSize.height, 1, "NONE")
+        }
+
+    }
+
+
 }
 
 export default State

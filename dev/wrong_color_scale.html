@@ -1,0 +1,217 @@
+<!--
+  ~  The MIT License (MIT)
+  ~
+  ~ Copyright (c) 2016-2017 The Regents of the University of California
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  ~ associated documentation files (the "Software"), to deal in the Software without restriction, including
+  ~ without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the
+  ~ following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all copies or substantial
+  ~ portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+  ~ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A PARTICULAR PURPOSE AND
+  ~ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  ~ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+  ~ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  ~ THE SOFTWARE.
+  ~
+  -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Juicebox</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+
+    <!-- Juicebox CSS-->
+    <link rel="stylesheet" type="text/css" href="../css/juicebox.css">
+
+
+</head>
+
+<body>
+
+
+<div id="app-container"></div>
+
+
+<script type="module">
+
+    import hic from "../js/index.js";
+
+    const config =
+        {
+            "backgroundColor": "255,255,255",
+            "url": "https://www.dropbox.com/s/314aclzylxbv03l/LMAR_genome_v2.1.1.hic?dl=0",
+            "name": "LMAR_genome_v2.1.1.hic",
+            "state": "0,0,0,0,0,640,640,1.1508597374976541,NONE",
+            "colorScale": "3808,255,0,0",
+            "nvi": "198229017,28390"
+        };
+
+    const figuresConfig =
+        {
+            "browsers": [
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/gdvffiyzt2kphm1/LZEP_genome_v2.1.1.hic?dl=0",
+                    "name": "LZEP_genome_v2.1.1.hic",
+                    "state": "0,0,0,0,0,640,640,1.1502905746064733,NONE",
+                    "colorScale": "2078,255,0,0",
+                    "nvi": "124281133,10462"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/qhljefsx4g34wxt/HRUB_genome_v2.1.1.hic?dl=0",
+                    "name": "HRUB_genome_v2.1.1.hic",
+                    "state": "0,0,0,0,0,640,640,1.151553848247276,NONE",
+                    "colorScale": "1720,255,0,0",
+                    "nvi": "130786524,13450"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/ugqwplgywdxhvt4/APUR_genome_v2.1.0.hic?dl=0",
+                    "name": "APUR_genome_v2.1.0.hic",
+                    "state": "0,0,0,0,0,640,640,1.1506118291755727,NONE",
+                    "colorScale": "2728,255,0,0",
+                    "nvi": "154820479,8221"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/ubgp5oy952js9t8/LLEU_genome_v2.1.1.hic?dl=0",
+                    "name": "LLEU_genome_v2.1.1.hic",
+                    "state": "0,0,0,0,0,640,640,1.1502595323929334,NONE",
+                    "colorScale": "1468,255,0,0",
+                    "nvi": "104686301,13450"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/314aclzylxbv03l/LMAR_genome_v2.1.1.hic?dl=0",
+                    "name": "LMAR_genome_v2.1.1.hic",
+                    "state": "0,0,0,0,0,640,640,1.1508597374976541,NONE",
+                    "colorScale": "3808,255,0,0",
+                    "nvi": "198229017,28390"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/d1on9wfwak4iaxu/LMAL_genome_v2.1.1.hic?dl=0",
+                    "name": "LMAL_genome_v2.1.1.hic",
+                    "state": "0,0,0,0,0,640,640,1.1508266081642247,NONE",
+                    "colorScale": "4000,255,0,0",
+                    "nvi": "173135175,6727"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/ecbgp6mc2zcoxu9/LALB_genome_v2.1.1.hic?dl=0",
+                    "name": "LALB_genome_v2.1.1.hic",
+                    "state": "0,0,0,0,0,640,640,1.1511890409185432,NONE",
+                    "colorScale": "1708,255,0,0",
+                    "nvi": "121675790,18679"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/1jd3s58ipxmcbil/HLIG_genome_v2.1.1.hic?dl=0",
+                    "name": "HLIG_genome_v2.1.1.hic",
+                    "state": "0,0,0,0,0,640,640,1.1504173931324966,NONE",
+                    "colorScale": "6886,255,0,0",
+                    "nvi": "282174502,13450"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/j1ac0gym7txj2ma/HQUA_genome_v2.1.0.hic?dl=0",
+                    "name": "HQUA_genome_v2.1.0.hic",
+                    "state": "0,0,0,0,0,640,640,1.1509512972234865,NONE",
+                    "colorScale": "2724,255,0,0",
+                    "nvi": "154188137,13450"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/kl7q2y2s7qta5k8/LCAL_genome_v2.1.1.hic?dl=0",
+                    "name": "LCAL_genome_v2.1.1.hic",
+                    "state": "0,0,0,0,0,640,640,1.151594638687182,NONE",
+                    "colorScale": "2000,255,0,0",
+                    "nvi": "105365193,13450"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/fiykjxm5oi0yqnw/LFIG_genome_v2.1.1.hic?dl=0",
+                    "name": "LFIG_genome_v2.1.1.hic",
+                    "state": "0,0,0,0,0,640,640,1.150863704190799,NONE",
+                    "colorScale": "3602,255,0,0",
+                    "nvi": "155681363,13450"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/t8taz1wzjab4pzc/NMEL_genome_v2.1.0.hic?dl=0",
+                    "name": "NMEL_genome_v2.1.0.hic",
+                    "state": "0,0,0,0,0,640,640,1.1509100783189936,NONE",
+                    "colorScale": "3586,255,0,0",
+                    "nvi": "198876298,10462"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/hndq9s0z0r91pir/LOEN_genome_v2.1.1.hic?dl=0",
+                    "name": "LOEN_genome_v2.1.1.hic",
+                    "state": "0,0,0,0,0,640,640,1.1504087803785419,NONE",
+                    "colorScale": "1686,255,0,0",
+                    "nvi": "128566694,17185"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/5y5yzakdpagql7f/LVIE_genome_v2.1.1.hic?dl=0",
+                    "name": "LVIE_genome_v2.1.1.hic",
+                    "state": "0,0,0,0,0,640,640,1.1507820696807805,NONE",
+                    "colorScale": "694,255,0,0",
+                    "nvi": "49405693,8221"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/ndtuouz40zlk2hp/LPAU_genome_v2.1.1.hic?dl=0",
+                    "name": "LPAU_genome_v2.1.1.hic",
+                    "state": "0,0,0,0,0,640,640,1.15169417196778,NONE",
+                    "colorScale": "2500,255,0,0",
+                    "nvi": "151971679,6727"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/qrysmedvvgw2o29/AAUR_genome_v2.1.1.hic?dl=0",
+                    "name": "AAUR_genome_v2.1.1.hic",
+                    "state": "0,0,0,0,0,640,640,1.151118821940137,NONE",
+                    "colorScale": "978,255,0,0",
+                    "nvi": "68728071,16438"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://www.dropbox.com/s/pb7t3tbyjku49p4/AVIR_genome_v2.1.0.hic?dl=0",
+                    "name": "AVIR_genome_v2.1.0.hic",
+                    "state": "0,0,0,0,0,640,640,1.1511565695548893,NONE",
+                    "colorScale": "2000,255,0,0",
+                    "nvi": "117237825,13450"
+                }
+            ]
+        }
+
+    const container = document.getElementById("app-container");
+
+    hic.init(container, figuresConfig)
+        .then(function (hicBrowser) {
+            // hicBrowser.loadTracks ([{
+            //     url: "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/combined_peaks.txt"
+            // }])
+        })
+
+
+</script>
+
+</body>
+
+</html>

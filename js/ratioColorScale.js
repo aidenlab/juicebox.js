@@ -23,68 +23,72 @@
 
 import ColorScale from './colorScale.js'
 
-const RatioColorScale = function (threshold) {
+const defaultRatioColorScaleConfig = {threshold: 5, positive: {r: 255, g: 0, b: 0}, negative: {r: 0, g: 0, b: 255}}
 
-    this.threshold = threshold;
+class RatioColorScale {
 
-    this.positiveScale = new ColorScale({
-        threshold: Math.log(threshold),
-        r: 255,
-        g: 0,
-        b: 0
-    });
-    this.negativeScale = new ColorScale(
-        {
+    constructor(threshold) {
+
+        this.threshold = threshold;
+
+        this.positiveScale = new ColorScale({
             threshold: Math.log(threshold),
-            r: 0,
+            r: 255,
             g: 0,
-            b: 255
-        })
-}
-
-RatioColorScale.prototype.setThreshold = function (threshold) {
-    this.threshold = threshold;
-    this.positiveScale.setThreshold(Math.log(threshold));
-    this.negativeScale.setThreshold(Math.log(threshold));
-}
-
-RatioColorScale.prototype.getThreshold = function () {
-    return this.threshold;
-}
-
-RatioColorScale.prototype.setColorComponents = function (components, plusOrMinus) {
-    if ('-' === plusOrMinus) {
-        return this.negativeScale.setColorComponents(components);
+            b: 0
+        });
+        this.negativeScale = new ColorScale(
+            {
+                threshold: Math.log(threshold),
+                r: 0,
+                g: 0,
+                b: 255
+            })
     }
-    else {
-        return this.positiveScale.setColorComponents(components);
+
+    setThreshold(threshold) {
+        this.threshold = threshold;
+        this.positiveScale.setThreshold(Math.log(threshold));
+        this.negativeScale.setThreshold(Math.log(threshold));
+    }
+
+    getThreshold() {
+        return this.threshold;
+    }
+
+    setColorComponents(components, plusOrMinus) {
+        if ('-' === plusOrMinus) {
+            return this.negativeScale.setColorComponents(components);
+        } else {
+            return this.positiveScale.setColorComponents(components);
+        }
+    }
+
+    getColorComponents(plusOrMinus) {
+
+        if ('-' === plusOrMinus) {
+            return this.negativeScale.getColorComponents();
+        } else {
+            return this.positiveScale.getColorComponents();
+        }
+    }
+
+    getColor(score) {
+
+        var logScore = Math.log(score);
+
+        if (logScore < 0) {
+            return this.negativeScale.getColor(-logScore);
+        } else {
+            return this.positiveScale.getColor(logScore);
+        }
+    }
+
+    stringify() {
+        return "R:" + this.threshold + ":" + this.positiveScale.stringify() + ":" + this.negativeScale.stringify();
     }
 }
 
-RatioColorScale.prototype.getColorComponents = function (plusOrMinus) {
-
-    if ('-' === plusOrMinus) {
-        return this.negativeScale.getColorComponents();
-    }
-    else {
-        return this.positiveScale.getColorComponents();
-    }
-}
-
-RatioColorScale.prototype.getColor = function (score) {
-
-    var logScore = Math.log(score);
-
-    if (logScore < 0) {
-        return this.negativeScale.getColor(-logScore);
-    }
-    else {
-        return this.positiveScale.getColor(logScore);
-    }
-}
-
-RatioColorScale.prototype.stringify = function () {
-    return "R:" + this.threshold + ":" + this.positiveScale.stringify() + ":" + this.negativeScale.stringify();
-}
+export {defaultRatioColorScaleConfig}
 
 export default RatioColorScale

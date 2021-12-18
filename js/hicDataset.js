@@ -1,7 +1,7 @@
 /*
  *  The MIT License (MIT)
  *
- * Copyright (c) 2016-2017 The Regents of the University of California
+ * Copyright (c) 2016-2020 The Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
  * associated documentation files (the "Software"), to deal in the Software without restriction, including
@@ -26,10 +26,10 @@
  * @author Jim Robinson
  */
 
-import  * as hic from './hic.js'
-import NormalizationVector from './normalizationVector.js'
-import HICEvent from './hicEvent.js'
-import igv from '../node_modules/igv/dist/igv.esm.min.js';
+import * as hic from './hicUtils.js'
+import Straw from '../node_modules/hic-straw/src/straw.js'
+import {GoogleUtils} from '../node_modules/igv-utils/src/index.js'
+import IGVRemoteFile from "./igvRemoteFile.js"
 
 const knownGenomes = {
 
@@ -41,231 +41,191 @@ const knownGenomes = {
 
 }
 
-const Dataset = function (hicFile) {
+class Dataset {
 
-    this.hicFile = hicFile;
-    this.matrixCache = {};
-    this.blockCache = {};
-    this.blockCacheKeys = [];
-    this.normVectorCache = {};
-    this.normalizationTypes = ['NONE'];
+    constructor(config) {
+        this.straw = new Straw(config)
+    }
 
-    // Cache at most 10 blocks
-    this.blockCacheLimit = hic.isMobile() ? 4 : 10;
+    async init() {
 
-    this.genomeId = hicFile.genomeId
-    this.chromosomes = hicFile.chromosomes
-    this.bpResolutions = hicFile.bpResolutions
-    this.wholeGenomeChromosome = hicFile.wholeGenomeChromosome
-    this.wholeGenomeResolution = hicFile.wholeGenomeResolution
+        this.hicFile = this.straw.hicFile;
+        await this.hicFile.init();
+        this.normalizationTypes = ['NONE'];
 
-    // Attempt to determine genomeId if not recognized
-    if (!Object.keys(knownGenomes).includes(this.genomeId)) {
+        this.genomeId = this.hicFile.genomeId
+        this.chromosomes = this.hicFile.chromosomes
+        this.bpResolutions = this.hicFile.bpResolutions
+        this.wholeGenomeChromosome = this.hicFile.wholeGenomeChromosome
+        this.wholeGenomeResolution = this.hicFile.wholeGenomeResolution
+
+        // Attempt to determine genomeId if not recognized
+        // if (!Object.keys(knownGenomes).includes(this.genomeId)) {
         const tmp = matchGenome(this.chromosomes);
         if (tmp) this.genomeId = tmp;
+        //  }
     }
 
-}
-
-Dataset.prototype.clearCaches = function () {
-    this.matrixCache = {};
-    this.blockCache = {};
-    this.normVectorCache = {};
-    this.colorScaleCache = {};
-};
-
-Dataset.prototype.getMatrix = async function (chr1, chr2) {
-    if (chr1 > chr2) {
-        const tmp = chr1
-        chr1 = chr2
-        chr2 = tmp
+    async getContactRecords(normalization, region1, region2, units, binsize) {
+        return this.straw.getContactRecords(normalization, region1, region2, units, binsize)
     }
-    const key = `${chr1}_${chr2}`
 
-    if (this.matrixCache.hasOwnProperty(key)) {
-        return this.matrixCache[key];
-
-    } else {
-        const matrix = await this.hicFile.readMatrix(chr1, chr2)
-        this.matrixCache[key] = matrix;
-        return matrix;
-
+    async hasNormalizationVector(type, chr, unit, binSize) {
+        return this.straw.hicFile.hasNormalizationVector(type, chr, unit, binSize);
     }
-}
 
-Dataset.prototype.getNormalizedBlock = async function (zd, blockNumber, normalization, eventBus) {
-
-    const block = await this.getBlock(zd, blockNumber)
-
-    if (normalization === undefined || "NONE" === normalization || block === null || block === undefined) {
-        return block;
+    clearCaches() {
+        this.colorScaleCache = {};
     }
-    else {
-        // Get the norm vectors serially, its very likely they are the same and the second will be cached
-        const nv1 = await this.getNormalizationVector(normalization, zd.chr1.index, zd.zoom.unit, zd.zoom.binSize)
-        const nv2 = zd.chr1 === zd.chr2 ?
-            nv1 :
-            await this.getNormalizationVector(normalization, zd.chr2.index, zd.zoom.unit, zd.zoom.binSize)
 
-        var normRecords = [],
-            normBlock;
+    async getMatrix(chr1, chr2) {
+        return this.hicFile.getMatrix(chr1, chr2)
+    }
 
-        if (nv1 === undefined || nv2 === undefined) {
-            igv.presentAlert("Normalization option " + normalization + " unavailable at this resolution.");
-            if (eventBus) {
-                eventBus.post(new HICEvent("NormalizationExternalChange", "NONE"));
-            }
-            return block;
+    getZoomIndexForBinSize(binSize, unit) {
+        var i,
+            resolutionArray;
+
+        unit = unit || "BP";
+
+        if (unit === "BP") {
+            resolutionArray = this.bpResolutions;
+        } else if (unit === "FRAG") {
+            resolutionArray = this.fragResolutions;
+        } else {
+            throw new Error("Invalid unit: " + unit);
         }
 
-        else {
-            for (let record of block.records) {
-
-                const x = record.bin1
-                const y = record.bin2
-                const nvnv = nv1.data[x] * nv2.data[y];
-
-                if (nvnv[x] !== 0 && !isNaN(nvnv)) {
-                    const counts = record.counts / nvnv;
-                    normRecords.push(new ContactRecord(x, y, counts));
-                }
-            }
-
-            normBlock = new Block(blockNumber, zd, normRecords);   // TODO - cache this?
-
-            //normBlock.percentile95 = block.percentile95;
-
-            return normBlock;
+        for (i = 0; i < resolutionArray.length; i++) {
+            if (resolutionArray[i] === binSize) return i;
         }
 
+        return -1;
     }
 
-}
+    getBinSizeForZoomIndex(zoomIndex, unit) {
+        var i,
+            resolutionArray;
 
-Dataset.prototype.getBlock = async function (zd, blockNumber) {
+        unit = unit || "BP";
 
-    const key = "" + zd.chr1.name + "_" + zd.chr2.name + "_" + zd.zoom.binSize + "_" + zd.zoom.unit + "_" + blockNumber;
-
-    if (this.blockCache.hasOwnProperty(key)) {
-        return this.blockCache[key];
-
-    } else {
-
-        const block = await this.hicFile.readBlock(blockNumber, zd)
-        if (this.blockCacheKeys.length > this.blockCacheLimit) {
-            delete this.blockCache[this.blockCacheKeys[0]];
-            this.blockCacheKeys.shift();
+        if (unit === "BP") {
+            resolutionArray = this.bpResolutions;
+        } else if (unit === "FRAG") {
+            resolutionArray = this.fragResolutions;
+        } else {
+            throw new Error("Invalid unit: " + unit);
         }
-        this.blockCacheKeys.push(key);
-        this.blockCache[key] = block;
 
-        return block;
-
-    }
-};
-
-Dataset.prototype.getNormalizationVector = async function (type, chrIdx, unit, binSize) {
-
-    const key = NormalizationVector.getNormalizationVectorKey(type, chrIdx, unit, binSize);
-
-    if (this.normVectorCache.hasOwnProperty(key)) {
-        return this.normVectorCache[key];
-    } else {
-
-        const nv = await this.hicFile.getNormalizationVector(type, chrIdx, unit, binSize)
-        this.normVectorCache[key] = nv;
-        return nv;
-
-
-    }
-};
-
-Dataset.prototype.getZoomIndexForBinSize = function (binSize, unit) {
-    var i,
-        resolutionArray;
-
-    unit = unit || "BP";
-
-    if (unit === "BP") {
-        resolutionArray = this.bpResolutions;
-    }
-    else if (unit === "FRAG") {
-        resolutionArray = this.fragResolutions;
-    } else {
-        throw new Error("Invalid unit: " + unit);
+        return resolutionArray[zoomIndex];
     }
 
-    for (i = 0; i < resolutionArray.length; i++) {
-        if (resolutionArray[i] === binSize) return i;
+    getChrIndexFromName(chrName) {
+        var i;
+        for (i = 0; i < this.chromosomes.length; i++) {
+            if (chrName === this.chromosomes[i].name) return i;
+        }
+        return undefined;
     }
 
-    return -1;
-}
-
-Dataset.prototype.getChrIndexFromName = function (chrName) {
-    var i;
-    for (i = 0; i < this.chromosomes.length; i++) {
-        if (chrName === this.chromosomes[i].name) return i;
-    }
-    return undefined;
-}
-
-Dataset.prototype.compareChromosomes = function (otherDataset) {
-    const chrs = this.chromosomes;
-    const otherChrs = otherDataset.chromosomes;
-    if (chrs.length !== otherChrs.length) {
-        return false;
-    }
-    for (let i = 0; i < chrs.length; i++) {
-        if (chrs[i].size !== otherChrs[i].size) {
+    compareChromosomes(otherDataset) {
+        const chrs = this.chromosomes;
+        const otherChrs = otherDataset.chromosomes;
+        if (chrs.length !== otherChrs.length) {
             return false;
         }
+        for (let i = 0; i < chrs.length; i++) {
+            if (chrs[i].size !== otherChrs[i].size) {
+                return false;
+            }
+        }
+        return true;
     }
-    return true;
+
+    isWholeGenome(chrIndex) {
+        return (this.wholeGenomeChromosome != null && this.wholeGenomeChromosome.index === chrIndex);
+    }
+
+    async getNormVectorIndex() {
+        return this.hicFile.getNormVectorIndex()
+    }
+
+    async getNormalizationOptions() {
+        return this.hicFile.getNormalizationOptions()
+    }
+
+    /**
+     * Compare 2 datasets for compatibility.  Compatibility is defined as from the same assembly, even if
+     * different IDs are used (e.g. GRCh38 vs hg38).
+     *
+     * Trust the ID for well-known assemblies (hg19, etc).  However, for others compare chromosome lengths
+     * as its been observed that uniqueness of ID is not guaranteed.
+     *
+     * @param d1
+     * @param d2
+     */
+    isCompatible(d2) {
+        const id1 = this.genomeId;
+        const id2 = d2.genomeId;
+        return ((id1 === "hg38" || id1 === "GRCh38") && (id2 === "hg38" || id2 === "GRCh38")) ||
+            ((id1 === "hg19" || id1 === "GRCh37") && (id2 === "hg19" || id2 === "GRCh37")) ||
+            ((id1 === "mm10" || id1 === "GRCm38") && (id2 === "mm10" || id2 === "GRCm38")) ||
+            this.compareChromosomes(d2)
+    }
+
+    static async loadDataset(config) {
+
+        // If this is a local file, use the "blob" field for straw
+        if (config.url instanceof File) {
+            config.blob = config.url
+            delete config.url
+        } else {
+            // If this is a google url, add api KEY
+            if (GoogleUtils.isGoogleURL(config.url)) {
+                if (GoogleUtils.isGoogleDriveURL(config.url)) {
+                    config.url = GoogleUtils.driveDownloadURL(config.url)
+                }
+                const copy = Object.assign({}, config);
+                config.file = new IGVRemoteFile(copy);
+            }
+        }
+
+        const dataset = new Dataset(config)
+        await dataset.init();
+        dataset.url = config.url
+        return dataset
+    }
 }
-
-Dataset.prototype.getNormVectorIndex = async function () {
-    return this.hicFile.getNormVectorIndex()
-
-}
-
-Dataset.prototype.getNormalizationOptions = async function () {
-    return this.hicFile.getNormalizationOptions()
-}
-
-const Block = function (blockNumber, zoomData, records) {
-    this.blockNumber = blockNumber;
-    this.zoomData = zoomData;
-    this.records = records;
-};
-
-const ContactRecord = function (bin1, bin2, counts) {
-    this.bin1 = bin1;
-    this.bin2 = bin2;
-    this.counts = counts;
-};
-
-ContactRecord.prototype.getKey = function () {
-    return "" + this.bin1 + "_" + this.bin2;
-}
-
 
 function matchGenome(chromosomes) {
 
-
-    var keys = Object.keys(knownGenomes),
-        i, l;
-
     if (chromosomes.length < 4) return undefined;
 
-    for (i = 0; i < keys.length; i++) {
-        l = knownGenomes[keys[i]];
-        if (chromosomes[1].size === l[0] && chromosomes[2].size === l[1] && chromosomes[3].size === l[2]) {
-            return keys[i];
+    const keys = Object.keys(knownGenomes);
+
+    // Find a candidate
+    let candidate;
+    for (let chr of chromosomes) {
+        for (let key of keys) {
+            if (knownGenomes[key].includes(chr.size)) {
+                candidate = key;
+                break;
+            }
         }
     }
 
-    return undefined;
+    // Confirm candidate
+    if (candidate) {
+        const chrSizes = new Set(chromosomes.map((chr) => chr.size));
+        for (let sz of knownGenomes[candidate]) {
+            if (!chrSizes.has(sz)) {
+                return undefined;
+            }
+        }
+        return candidate;
+    } else {
+        return undefined;
+    }
 
 
 }

@@ -31,60 +31,64 @@
  * Barebones event bus.
  */
 
-const EventBus = function () {
+class EventBus {
 
+    constructor() {
 
-    // Map eventType -> list of subscribers
-    this.subscribers = {};
+        // Map eventType -> list of subscribers
+        this.subscribers = {};
 
-    this.stack = []
-};
-
-EventBus.prototype.subscribe = function (eventType, object) {
-
-    var subscriberList = this.subscribers[eventType];
-    if (subscriberList == undefined) {
-        subscriberList = [];
-        this.subscribers[eventType] = subscriberList;
+        this.stack = []
     }
-    subscriberList.push(object);
 
-};
+    subscribe(eventType, object) {
 
-EventBus.prototype.post = function (event) {
+        var subscriberList = this.subscribers[eventType];
+        if (subscriberList == undefined) {
+            subscriberList = [];
+            this.subscribers[eventType] = subscriberList;
+        }
+        subscriberList.push(object);
 
-    const eventType = event.type
-
-    if (this.hold) {
-        this.stack.push(event)
     }
-    else {
-        const subscriberList = this.subscribers[eventType];
 
-        if (subscriberList) {
-            for (let subscriber of subscriberList) {
+    post(event) {
 
-                if ("function" === typeof subscriber.receiveEvent) {
-                    subscriber.receiveEvent(event);
-                } else if ("function" === typeof subscriber) {
-                    subscriber(event);
+        const eventType = event.type
+
+        if (this._hold) {
+            this.stack.push(event)
+        } else {
+            const subscriberList = this.subscribers[eventType];
+
+            if (subscriberList) {
+                for (let subscriber of subscriberList) {
+
+                    if ("function" === typeof subscriber.receiveEvent) {
+                        subscriber.receiveEvent(event);
+                    } else if ("function" === typeof subscriber) {
+                        subscriber(event);
+                    }
                 }
             }
         }
     }
-}
 
-EventBus.prototype.hold = function () {
-    this.hold = true;
-
-}
-
-EventBus.prototype.release = function () {
-    this.hold = false;
-    for (let event of this.stack) {
-        this.post(event)
+    hold() {
+        this._hold = true;
     }
-    this.stack = []
+
+    release() {
+        this._hold = false;
+        for (let event of this.stack) {
+            this.post(event)
+        }
+        this.stack = []
+    }
 }
+
+// The global event bus
+
+EventBus.globalBus = new EventBus()
 
 export default EventBus

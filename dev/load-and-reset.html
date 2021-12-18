@@ -1,0 +1,114 @@
+<!--
+  ~  The MIT License (MIT)
+  ~
+  ~ Copyright (c) 2016-2017 The Regents of the University of California
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  ~ associated documentation files (the "Software"), to deal in the Software without restriction, including
+  ~ without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the
+  ~ following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all copies or substantial
+  ~ portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+  ~ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A PARTICULAR PURPOSE AND
+  ~ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  ~ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+  ~ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  ~ THE SOFTWARE.
+  ~
+  -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Juicebox</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+
+    <!-- Juicebox CSS-->
+    <link rel="stylesheet" type="text/css" href="../css/juicebox.css">
+
+
+</head>
+
+<body>
+
+<button id="reset-button">Reset</button>
+
+<div id="app-container"></div>
+
+
+<script type="module">
+
+    import hic from "../js/index.js";
+    import {Alert} from "../node_modules/igv-ui/dist/igv-ui.js"
+    //import {GoogleAuth} from '../node_modules/igv-utils/src/index.js'
+
+
+
+    const config = {
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/primary.hic",
+        "name": "Primary",
+        "locus": "2:58,035,001-60,725,000 2:65,290,001-67,980,000",
+       // "state": "9,9,6,4701.370488680555,4702.338047361111,1,NONE",
+       // "colorScale": "34,255,0,0",
+        "nvi": "33860030033,37504",
+        tracks: [
+            {
+                "url": "https://www.dropbox.com/s/s3yuap5lvyv6qfc/ENCFF001EQU.bigWig?dl=0",
+                "name": "ENCFF001EQU.bigWig",
+                "min": 0,
+                "max": 23.162939297124602,
+                "color": "#ff8802"
+            }
+        ]
+    }
+
+    const container = document.getElementById("app-container");
+    Alert.init(container);
+
+    (async function () {
+
+
+        const browser = await hic.init(container, {});
+
+        document.getElementById("reset-button").addEventListener('click', async (e) => {
+            await browser.reset();
+            browser.loadHicFile({
+                "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/maternal.hic",
+                "name": "Maternal",
+                "nvi": "1380542661,17185"
+            })
+        })
+
+        await browser.loadHicFile({
+            "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/paternal.hic",
+            "name": "Paternal",
+            "state": "3,3,6,5537.98746,5537.749239047619,1,KR",
+            "nvi": "1389001777,17185",
+        })
+
+        await browser.loadTracks([
+            {
+                "url": "https://www.dropbox.com/s/s3yuap5lvyv6qfc/ENCFF001EQU.bigWig?dl=0",
+                "name": "ENCFF001EQU.bigWig",
+                "min": 0,
+                "max": 23.162939297124602,
+                "color": "#ff8802"
+            }
+        ])
+
+    })()
+
+</script>
+
+</body>
+
+</html>

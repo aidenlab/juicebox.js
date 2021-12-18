@@ -21,12 +21,13 @@
  *
  */
 
+const Globals = {};
 
 const Track2DDisplaceModes = {
     displayAllMatrix: 'displayAllMatrix',
     displayLowerMatrix: 'displayLowerMatrix',
     displayUpperMatrix: 'displayUpperMatrix'
-}
+};
 
 
-export {Track2DDisplaceModes}
+export {Track2DDisplaceModes, Globals}

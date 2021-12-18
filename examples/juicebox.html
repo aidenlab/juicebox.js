@@ -1,0 +1,58 @@
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Juicebox</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+
+    <!-- Juicebox CSS-->
+<!--    <link rel="stylesheet" type="text/css" href="../dist/css/juicebox.css">-->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/juicebox.js@2.2.0/dist/css/juicebox.css">
+
+    <!-- Juicebox -- defines global "juicebox" -->
+<!--    <script type="text/javascript" src="../dist/juicebox.min.js"></script>-->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/juicebox.js@2.2.0/dist/juicebox.min.js"></script>
+
+
+</head>
+
+<body>
+
+
+<div id="app-container"></div>
+
+
+<script type="module">
+
+    const config = {
+        url: "https://www.encodeproject.org/files/ENCFF718AWL/@@download/ENCFF718AWL.hic",
+        name: "GM12878",
+        //locus: "22:33,319,567-36,009,566",   // <= optional initial locus
+        tracks: [
+            {
+                url: "https://www.encodeproject.org/files/ENCFF000ARJ/@@download/ENCFF000ARJ.bigWig",
+                name: "CTCF",
+                min: 0,
+                max: 25,
+                color: "#ff8802"
+            }
+        ]
+    }
+
+
+    const container = document.getElementById("app-container");
+
+    juicebox.init(container, config)
+        .then(function (hicBrowser) {
+            console.log("Juicebox loaded");
+        })
+
+
+</script>
+
+</body>
+
+</html>

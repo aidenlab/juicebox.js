@@ -24,222 +24,225 @@
 /**
  * Created by dat on 3/21/17.
  */
+import $ from '../vendor/jquery-3.3.1.slim.js'
 
-import $ from "../vendor/jquery-1.12.4.js"
+class ControlMapWidget {
 
-const ControlMapWidget = function (browser, $parent) {
+    constructor(browser, $hic_navbar_container) {
 
-    const self = this
+        this.browser = browser;
 
-    this.browser = browser;
+        const $parent = $hic_navbar_container.find("div[id$='lower-hic-nav-bar-widget-container']");
 
-    // container
-    this.$container = $('<div class="hic-control-map-selector-container">');
-    this.$container.hide();
-    $parent.append(this.$container);
+        this.$container = $('<div class="hic-control-map-selector-container">');
+        this.$container.hide();
+        $parent.append(this.$container);
 
-    // select
-    this.$select = $('<select>');
-    this.$select.attr('name', 'control_map_selector');
-    this.$container.append(this.$select);
+        // select
+        this.$select = $('<select>');
+        this.$select.attr('name', 'control_map_selector');
+        this.$container.append(this.$select);
 
-    // a-b toggle icon
-    const $toggle_container = $('<div>');
-    this.$container.append($toggle_container);
+        // a-b toggle icon
+        const $toggle_container = $('<div>');
+        this.$container.append($toggle_container);
 
-    // cycle button
-    const $cycle_container = $('<div>');
-    this.$container.append($cycle_container);
+        // cycle button
+        const $cycle_container = $('<div>');
+        this.$container.append($cycle_container);
 
-    this.controlMapHash = new ControlMapHash(browser, this.$select, $toggle_container, $cycle_container, toggle_arrows_up(), toggle_arrows_down());
+        this.controlMapHash = new ControlMapHash(browser, this.$select, $toggle_container, $cycle_container, toggle_arrows_up(), toggle_arrows_down());
 
-    browser.eventBus.subscribe("ControlMapLoad", function (event) {
-        self.controlMapHash.updateOptions(browser.getDisplayMode());
-        self.$container.show();
-    });
+        const self = this;
 
-    browser.eventBus.subscribe("MapLoad", function (event) {
-        if (!browser.controlDataset) {
-            self.$container.hide();
-        }
-    });
+        browser.eventBus.subscribe("ControlMapLoad", function (event) {
+            self.controlMapHash.updateOptions(browser.getDisplayMode());
+            self.$container.show();
+        });
 
-    browser.eventBus.subscribe("DisplayMode", function (event) {
-        self.controlMapHash.updateOptions(event.data);
-    });
+        browser.eventBus.subscribe("MapLoad", function (event) {
+            if (!browser.controlDataset) {
+                self.$container.hide();
+            }
+        });
 
-};
+        browser.eventBus.subscribe("DisplayMode", function (event) {
+            self.controlMapHash.updateOptions(event.data);
+        });
 
-ControlMapWidget.prototype.toggleDisplayMode = function () {
-    this.controlMapHash.toggleDisplayMode();
+    }
+
+    toggleDisplayMode() {
+        this.controlMapHash.toggleDisplayMode();
+    }
+
+    toggleDisplayModeCycle() {
+        this.controlMapHash.toggleDisplayModeCycle();
+    }
+
+    getDisplayModeCycle() {
+        return this.controlMapHash.cycleID;
+    }
 }
 
-ControlMapWidget.prototype.toggleDisplayModeCycle = function () {
-    this.controlMapHash.toggleDisplayModeCycle();
-}
 
-ControlMapWidget.prototype.getDisplayModeCycle = function () {
-    return this.controlMapHash.cycleID;
-}
+class ControlMapHash {
 
+    constructor(browser, $select, $toggle, $cycle, $img_a, $img_b) {
 
+        const self = this
 
-const ControlMapHash = function (browser, $select, $toggle, $cycle, $img_a, $img_b) {
+        this.browser = browser;
+        this.$select = $select;
+        this.$toggle = $toggle;
+        this.$cycle = $cycle;
 
-    const self = this
+        // a arrow
+        this.$img_a = $img_a;
+        this.$toggle.append(this.$img_a);
 
-    this.browser = browser;
-    this.$select = $select;
-    this.$toggle = $toggle;
-    this.$cycle = $cycle;
+        // b arrow
+        this.$img_b = $img_b;
+        this.$toggle.append(this.$img_b);
 
-    // a arrow
-    this.$img_a = $img_a;
-    this.$toggle.append(this.$img_a);
+        const A = {title: 'A', value: 'A', other: 'B', $hidden: $img_b, $shown: $img_a};
+        const B = {title: 'B', value: 'B', other: 'A', $hidden: $img_a, $shown: $img_b};
+        const AOB = {title: 'A/B', value: 'AOB', other: 'BOA', $hidden: $img_b, $shown: $img_a};
+        const BOA = {title: 'B/A', value: 'BOA', other: 'AOB', $hidden: $img_a, $shown: $img_b};
 
-    // b arrow
-    this.$img_b = $img_b;
-    this.$toggle.append(this.$img_b);
+        this.hash =
+            {
+                'A': A,
+                'B': B,
+                'AOB': AOB,
+                'BOA': BOA
+            };
 
-    const A = {title: 'A', value: 'A', other: 'B', $hidden: $img_b, $shown: $img_a};
-    const B = {title: 'B', value: 'B', other: 'A', $hidden: $img_a, $shown: $img_b};
-    const AOB = {title: 'A/B', value: 'AOB', other: 'BOA', $hidden: $img_b, $shown: $img_a};
-    const BOA = {title: 'B/A', value: 'BOA', other: 'AOB', $hidden: $img_a, $shown: $img_b};
+        this.$select.on('change', function (e) {
+            let value;
 
-    this.hash =
-        {
-            'A': A,
-            'B': B,
-            'AOB': AOB,
-            'BOA': BOA
-        };
+            self.disableDisplayModeCycle();
 
-    this.$select.on('change', function (e) {
-        let value;
+            value = $(this).val();
+            self.setDisplayMode(value);
+        });
 
-        self.disableDisplayModeCycle();
+        this.$toggle.on('click', function (e) {
+            self.disableDisplayModeCycle();
+            self.toggleDisplayMode();
+        });
 
-        value = $(this).val();
-        self.setDisplayMode(value);
-    });
+        // cycle outline
+        this.$cycle_outline = cycle_outline();
+        $cycle.append(this.$cycle_outline);
 
-    this.$toggle.on('click', function (e) {
-        self.disableDisplayModeCycle();
-        self.toggleDisplayMode();
-    });
-
-    // cycle outline
-    this.$cycle_outline = cycle_outline();
-    $cycle.append(this.$cycle_outline);
-
-    // cycle solid
-    this.$cycle_solid = cycle_solid();
-    $cycle.append(this.$cycle_solid);
-    this.$cycle_solid.hide();
-
-    $cycle.on('click', function () {
-        self.toggleDisplayModeCycle();
-    });
-
-    $cycle.hide();
-
-};
-
-ControlMapHash.prototype.disableDisplayModeCycle = function () {
-
-    if (this.cycleID) {
-
-        clearTimeout(this.cycleID);
-        this.cycleID = undefined;
-
+        // cycle solid
+        this.$cycle_solid = cycle_solid();
+        $cycle.append(this.$cycle_solid);
         this.$cycle_solid.hide();
-        this.$cycle_outline.show();
+
+        $cycle.on('click', function () {
+            self.toggleDisplayModeCycle();
+        });
+
+        $cycle.hide();
+
     }
 
-};
+    disableDisplayModeCycle  () {
 
-ControlMapHash.prototype.toggleDisplayModeCycle = function () {
-    let self = this;
+        if (this.cycleID) {
 
-    if (this.cycleID) {
+            clearTimeout(this.cycleID);
+            this.cycleID = undefined;
 
-        this.disableDisplayModeCycle();
-    } else {
-
-        doToggle()
-
-        this.$cycle_solid.show();
-        this.$cycle_outline.hide();
-    }
-
-    function doToggle() {
-        self.cycleID = setTimeout(async function () {
-            await self.toggleDisplayMode()
-            doToggle()
-        }, 2500)
-    }
-
-};
-
-ControlMapHash.prototype.toggleDisplayMode = async function () {
-
-    let displayModeOld,
-        displayModeNew,
-        str;
-
-    displayModeOld = this.browser.getDisplayMode();
-
-    // render new display mode
-    displayModeNew = this.hash[displayModeOld].other;
-    await this.browser.setDisplayMode(displayModeNew);
-
-    // update exchange icon
-    this.hash[displayModeNew].$hidden.hide();
-    this.hash[displayModeNew].$shown.show();
-
-    // update select element
-    str = 'option[value=' + displayModeNew + ']';
-
-    this.$select.find(str).prop('selected', true);
-
-};
-
-ControlMapHash.prototype.setDisplayMode = function (displayMode) {
-
-    setDisplayModeHelper.call(this, displayMode);
-
-    this.browser.setDisplayMode(displayMode);
-};
-
-ControlMapHash.prototype.updateOptions = function (displayMode) {
-    let self = this;
-
-    this.$img_a.hide();
-    this.$img_b.hide();
-
-    this.$select.empty();
-
-    Object.keys(this.hash).forEach(function (key) {
-        let item,
-            option;
-
-        item = self.hash[key];
-
-        option = $('<option>').attr('title', item.title).attr('value', item.value).text(item.title);
-
-        if (displayMode === item.value) {
-
-            option.attr('selected', true);
-            item.$shown.show();
-
-            setDisplayModeHelper.call(self, displayMode);
+            this.$cycle_solid.hide();
+            this.$cycle_outline.show();
         }
 
-        self.$select.append(option);
+    }
 
-    });
+    toggleDisplayModeCycle  () {
+        let self = this;
 
-};
+        if (this.cycleID) {
+
+            this.disableDisplayModeCycle();
+        } else {
+
+            doToggle()
+
+            this.$cycle_solid.show();
+            this.$cycle_outline.hide();
+        }
+
+        function doToggle() {
+            self.cycleID = setTimeout(async function () {
+                await self.toggleDisplayMode()
+                doToggle()
+            }, 2500)
+        }
+
+    }
+
+    async toggleDisplayMode  () {
+
+        let displayModeOld,
+            displayModeNew,
+            str;
+
+        displayModeOld = this.browser.getDisplayMode();
+
+        // render new display mode
+        displayModeNew = this.hash[displayModeOld].other;
+        await this.browser.setDisplayMode(displayModeNew);
+
+        // update exchange icon
+        this.hash[displayModeNew].$hidden.hide();
+        this.hash[displayModeNew].$shown.show();
+
+        // update select element
+        str = 'option[value=' + displayModeNew + ']';
+
+        this.$select.find(str).prop('selected', true);
+
+    }
+
+    setDisplayMode (displayMode) {
+
+        setDisplayModeHelper.call(this, displayMode);
+
+        this.browser.setDisplayMode(displayMode);
+    }
+
+    updateOptions  (displayMode) {
+        let self = this;
+
+        this.$img_a.hide();
+        this.$img_b.hide();
+
+        this.$select.empty();
+
+        Object.keys(this.hash).forEach(function (key) {
+            let item,
+                option;
+
+            item = self.hash[key];
+
+            option = $('<option>').attr('title', item.title).attr('value', item.value).text(item.title);
+
+            if (displayMode === item.value) {
+
+                option.attr('selected', true);
+                item.$shown.show();
+
+                setDisplayModeHelper.call(self, displayMode);
+            }
+
+            self.$select.append(option);
+        });
+    }
+}
 
 function setDisplayModeHelper(displayMode) {
 

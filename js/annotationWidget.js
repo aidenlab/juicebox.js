@@ -20,74 +20,69 @@
  * THE SOFTWARE.
  *
  */
+
+import {Alert, createColorSwatchSelector} from '../node_modules/igv-ui/dist/igv-ui.js';
+import {makeDraggable} from '../node_modules/igv-utils/src/index.js';
 import Track2D from './track2D.js'
 import HICEvent from './hicEvent.js'
-import $ from "../vendor/jquery-1.12.4.js"
-import _ from "../vendor/underscore.js"
 import {Track2DDisplaceModes} from './globals.js'
-import igv from '../node_modules/igv/dist/igv.esm.min.js';
+import $ from '../vendor/jquery-3.3.1.slim.js'
 
-const AnnotationWidget = function (browser, $parent, config, trackListRetrievalCallback) {
+class AnnotationWidget {
 
-    var $container;
+    constructor(browser, $container, {title, alertMessage}, trackListRetrievalCallback) {
 
-    this.browser = browser;
-    this.trackListRetrievalCallback = trackListRetrievalCallback;
+        this.browser = browser;
+        this.trackListRetrievalCallback = trackListRetrievalCallback;
 
-    $container = $("<div>", {class: 'hic-annotation-presentation-button-container'});
-    $parent.append($container);
+        annotationPresentationButton.call(this, $container, alertMessage);
 
-    annotationPresentationButton.call(this, $container, config.title, config.alertMessage);
+        annotationPanel.call(this, this.browser.$root, title);
 
-    annotationPanel.call(this, this.browser.$root, config.title);
-
-};
-
-AnnotationWidget.prototype.updateBody = function (tracks) {
-
-    var self = this,
-        trackRenderers,
-        isTrack2D,
-        zi;
-
-    self.$annotationPanel.find('.hic-annotation-row-container').remove();
-
-    isTrack2D = (_.first(tracks) instanceof Track2D);
-
-    if (isTrack2D) {
-        // Reverse list to present layers in "z" order.
-        for (zi = tracks.length - 1; zi >= 0; zi--) {
-            annotationPanelRow.call(self, self.$annotationPanel, tracks[zi]);
-        }
-    } else {
-        trackRenderers = tracks;
-        _.each(trackRenderers, function (trackRenderer) {
-            annotationPanelRow.call(self, self.$annotationPanel, trackRenderer);
-        });
     }
 
-};
+    updateBody(tracks) {
 
-function annotationPresentationButton($parent, title, alertMessage) {
-    var self = this,
-        $button;
+        var self = this,
+            trackPairs,
 
-    $button = $('<button>', {type: 'button'});
-    $button.text(title);
-    $parent.append($button);
+            isTrack2D,
+            zi;
 
-    $button.on('click', function () {
-        var list;
+        self.$annotationPanel.find('.hic-annotation-row-container').remove();
 
-        list = self.trackListRetrievalCallback();
-        if (list.length > 0) {
-            self.updateBody(self.trackListRetrievalCallback());
-            self.$annotationPanel.toggle();
+        isTrack2D = (tracks[0] instanceof Track2D);
+
+        if (isTrack2D) {
+            // Reverse list to present layers in "z" order.
+            for (zi = tracks.length - 1; zi >= 0; zi--) {
+                annotationPanelRow.call(self, self.$annotationPanel, tracks[zi]);
+            }
         } else {
-            igv.presentAlert(alertMessage);
+            trackPairs = tracks;
+            for (let trackRenderer of trackPairs) {
+                annotationPanelRow.call(self, self.$annotationPanel, trackRenderer);
+            }
+        }
+    }
+}
+
+function annotationPresentationButton($parent, alertMessage) {
+
+    const $button = $parent.find("button");
+
+    $button.on('click', () => {
+
+        const list = this.trackListRetrievalCallback();
+
+        if (list.length > 0) {
+            this.updateBody(this.trackListRetrievalCallback());
+            this.$annotationPanel.toggle();
+        } else {
+            Alert.presentAlert(alertMessage);
         }
 
-        self.browser.hideMenu();
+        this.browser.hideMenu();
     });
 }
 
@@ -138,7 +133,7 @@ function annotationPanel($parent, title) {
     // $div.text('Blah');
 
     //this.$annotationPanel.draggable();
-    igv.makeDraggable(this.$annotationPanel.get(0), $panel_header.get(0));
+    makeDraggable(this.$annotationPanel.get(0), $panel_header.get(0));
     this.$annotationPanel.hide();
 }
 
@@ -238,7 +233,8 @@ function annotationPanelRow($container, track) {
 
     $colorpickerContainer.hide();
 
-    igv.createColorSwatchSelector($colorpickerContainer, function (color) {
+    const colorHandler = color => {
+
         var $swatch;
 
         $swatch = $row.find('.fa-square');
@@ -251,7 +247,9 @@ function annotationPanelRow($container, track) {
             trackRenderer.setColor(color);
         }
 
-    });
+    }
+
+    createColorSwatchSelector($colorpickerContainer.get(0), colorHandler);
 
 
     // track up/down
@@ -264,18 +262,18 @@ function annotationPanelRow($container, track) {
     $downTrack = $("<i>", {class: 'fa fa-arrow-down', 'aria-hidden': 'true'});
     $e.append($downTrack);
 
-    if (1 === _.size(trackList)) {
+    if (1 === trackList.length) {
         $upTrack.css('color', hidden_color);
         $downTrack.css('color', hidden_color);
-    } else if (track === _.first(trackList)) {
+    } else if (track === trackList[0]) {
         $o = isTrack2D ? $downTrack : $upTrack;
         $o.css('color', hidden_color);
-    } else if (track === _.last(trackList)) {
+    } else if (track === trackList[trackList.length - 1]) {
         $o = isTrack2D ? $upTrack : $downTrack;
         $o.css('color', hidden_color);
     }
 
-    index = _.indexOf(trackList, track);
+    index = trackList.indexOf(track);
 
     upp = function (e) {
 
@@ -318,7 +316,7 @@ function annotationPanelRow($container, track) {
 
         if (isTrack2D) {
 
-            index = _.indexOf(trackList, track);
+            index = trackList.indexOf(track);
 
             trackList.splice(index, 1);
 
@@ -327,7 +325,7 @@ function annotationPanelRow($container, track) {
 
             self.browser.eventBus.post(HICEvent('TrackLoad2D', trackList));
         } else {
-            self.browser.layoutController.removeTrackRendererPair(trackRenderer.trackRenderPair);
+            self.browser.layoutController.removeTrackXYPair(trackRenderer.trackRenderPair);
         }
 
         self.updateBody(trackList);

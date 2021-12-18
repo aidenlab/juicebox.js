@@ -1,10 +1,113 @@
-#igv-encode-spinner-container {
+.igv-menu-popup {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 132px;
+  z-index: 4096;
+  cursor: pointer;
+  font-family: "Open Sans", sans-serif;
+  font-size: small;
+  font-weight: 400;
+  color: #4b4b4b;
+  background: white;
+  border-radius: 4px;
+  border-color: #7F7F7F;
+  border-style: solid;
+  border-width: thin;
+  display: flex;
+  flex-flow: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: flex-end;
+  text-align: left; }
+  .igv-menu-popup > div:not(:first-child) {
+    width: 100%; }
+    .igv-menu-popup > div:not(:first-child) > div {
+      background: white; }
+    .igv-menu-popup > div:not(:first-child) > div.context-menu {
+      padding-left: 4px;
+      padding-right: 4px; }
+    .igv-menu-popup > div:not(:first-child) > div:last-child {
+      border-bottom-left-radius: 4px;
+      border-bottom-right-radius: 4px;
+      border-bottom-color: transparent;
+      border-bottom-style: solid;
+      border-bottom-width: thin; }
+    .igv-menu-popup > div:not(:first-child) > div:hover {
+      background: #efefef; }
+
+.igv-menu-popup-shim {
+  padding-left: 8px;
+  padding-right: 8px; }
+
+.igv-menu-popup-header {
+  position: relative;
   width: 100%;
+  height: 24px;
+  cursor: move;
+  border-top-color: transparent;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  border-bottom-color: #7F7F7F;
+  border-bottom-style: solid;
+  border-bottom-width: thin;
+  background-color: #eee;
+  display: flex;
+  flex-flow: row;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  align-items: center; }
+  .igv-menu-popup-header div {
+    margin-right: 4px;
+    height: 12px;
+    width: 12px;
+    color: #7F7F7F; }
+  .igv-menu-popup-header div:hover {
+    cursor: pointer;
+    color: #444; }
+
+.igv-menu-popup-check-container {
+  display: flex;
+  flex-flow: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  height: 20px;
+  background-color: transparent; }
+  .igv-menu-popup-check-container div {
+    padding-top: 2px;
+    padding-left: 8px; }
+  .igv-menu-popup-check-container div:first-child {
+    position: relative;
+    width: 12px;
+    height: 12px; }
+    .igv-menu-popup-check-container div:first-child svg {
+      position: absolute;
+      width: 12px;
+      height: 12px; }
+
+.hic-igv-right-hand-gutter {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin-top: 4px;
+  background-color: transparent;
+  width: unset; }
+
+.igv-app-dropdown-item-cloud-storage {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  justify-content: center;
-  align-items: center; }
+  justify-content: flex-start;
+  align-items: center;
+  height: 18px;
+  margin-top: 4px;
+  margin-bottom: 4px; }
+  .igv-app-dropdown-item-cloud-storage div:first-child {
+    margin-right: 4px; }
+  .igv-app-dropdown-item-cloud-storage div:last-child {
+    margin-left: 4px; }
 
 #hic-modal-button-container {
   display: flex;
@@ -19,18 +122,6 @@
     margin-left: 12px;
     margin-right: 12px; }
 
-.igv-right-hand-gutter {
-  top: 0;
-  margin-top: 4px;
-  background-color: transparent;
-  width: unset; }
-
-.igv-trackgear-container {
-  margin-left: unset;
-  color: #5f5f5f;
-  width: 14px;
-  height: 14px; }
-
 #hic-encode-modal > .modal-dialog {
   max-width: 90% !important;
   width: 90% !important; }
@@ -39,8 +130,8 @@
   position: relative;
   left: 0;
   right: 0;
-  width: 852px;
-  height: 1000px;
+  width: 860px;
+  height: 1020px;
   margin: 4px;
   background-color: white;
   border-style: solid;
@@ -415,15 +506,11 @@
   justify-content: flex-start;
   align-items: center;
   width: 100%;
-  height: 148px;
   color: #5f5f5f;
   font-family: "Open Sans", sans-serif;
   font-size: 14px;
   font-weight: 400;
-  background-color: #f7f7f7;
-  border-bottom-style: solid;
-  border-bottom-width: thin;
-  border-bottom-color: transparent; }
+  background-color: #f7f7f7; }
   .hic-navbar-container div[id$="hic-nav-bar-map-container"] {
     display: flex;
     flex-flow: row;
@@ -439,9 +526,6 @@
       overflow: hidden;
       vertical-align: middle;
       line-height: 36px;
-      border-bottom-style: solid;
-      border-bottom-width: thin;
-      border-bottom-color: transparent;
       background-color: transparent; }
     .hic-navbar-container div[id$="hic-nav-bar-map-container"] .hic-nav-bar-button-container {
       height: 100%;
@@ -471,10 +555,6 @@
     height: 36px;
     margin-top: 4px;
     margin-bottom: 4px; }
-  .hic-navbar-container .hic-nav-bar-shim {
-    width: 100%;
-    height: 4px;
-    background-color: transparent; }
 
 .hic-chromosome-goto-container {
   width: 75%; }
@@ -526,7 +606,8 @@
     border-color: #a6a6a6;
     background-color: white; }
   .hic-colorscale-widget-container input {
-    width: 30%; }
+    width: 30%;
+    height: 32px; }
   .hic-colorscale-widget-container i.fa-minus {
     display: block;
     margin-left: 2%;
@@ -633,14 +714,14 @@ div[id$="x-track-container"] {
   div[id$="x-track-container"] div[id$="track-shim"] {
     width: 0px;
     height: 100%;
-    margin-right: 32px; }
+    margin-right: 40px; }
   div[id$="x-track-container"] div[id$="x-tracks"] {
     position: relative;
     display: flex;
     flex-flow: column;
     flex-wrap: nowrap;
     justify-content: flex-start;
-    width: calc(100% - (0px + 32px + 20px));
+    width: calc(100% - (0px + 40px + 20px));
     height: 100%;
     margin-right: 20px; }
     div[id$="x-track-container"] div[id$="x-tracks"] div[id$="y-track-guide"] {
@@ -696,7 +777,7 @@ div[id$="content-container"] {
   flex-wrap: nowrap;
   justify-content: space-between;
   width: 100%;
-  height: calc(100% - (148px + 0px));
+  height: calc(100% - (160px + 0px));
   background-color: white; }
   div[id$="content-container"] div[id$="x-axis-container"] {
     display: flex;
@@ -704,9 +785,9 @@ div[id$="content-container"] {
     flex-wrap: nowrap;
     justify-content: flex-end;
     width: 100%;
-    height: 32px; }
+    height: 40px; }
     div[id$="content-container"] div[id$="x-axis-container"] div[id$="x-axis"] {
-      width: calc(100% - (0px + 32px + 20px));
+      width: calc(100% - (0px + 40px + 20px));
       height: 100%;
       margin-right: 20px;
       background-color: white; }
@@ -716,36 +797,34 @@ div[id$="content-container"] {
         display: flex;
         flex-flow: row;
         flex-wrap: nowrap;
-        justify-content: space-between; }
+        justify-content: flex-start; }
         div[id$="content-container"] div[id$="x-axis-container"] div[id$="x-axis"] div[id$="x-axis-whole-genome-container"] .x-axis-whole-genome-chromosome-container {
-          display: flex;
-          flex-direction: column;
-          flex-wrap: nowrap;
-          justify-content: center;
-          align-items: center;
           font-family: "Open Sans", sans-serif;
           font-size: 8px;
           font-weight: 400;
           color: #444;
           height: 100%;
-          border-left-color: transparent;
-          border-left-style: solid;
-          border-left-width: thin;
-          border-right-color: #bfbfbf;
-          border-right-style: solid;
-          border-right-width: thin;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis; }
-        div[id$="content-container"] div[id$="x-axis-container"] div[id$="x-axis"] div[id$="x-axis-whole-genome-container"] .x-axis-whole-genome-chromosome-container:last-child {
-          border-right-color: transparent; }
+          div[id$="content-container"] div[id$="x-axis-container"] div[id$="x-axis"] div[id$="x-axis-whole-genome-container"] .x-axis-whole-genome-chromosome-container > div {
+            display: flex;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            border-left-color: #868686;
+            border-left-style: solid;
+            border-left-width: thin; }
   div[id$="content-container"] div[id$="y-tracks-y-axis-viewport-y-scrollbar"] {
     display: flex;
     flex-flow: row;
     flex-wrap: nowrap;
     justify-content: flex-end;
     width: 100%;
-    height: calc(100% - (32px + 20px));
+    height: calc(100% - (40px + 20px));
     background-color: white; }
     div[id$="content-container"] div[id$="y-tracks-y-axis-viewport-y-scrollbar"] div[id$="y-tracks"] {
       position: relative;
@@ -785,7 +864,7 @@ div[id$="content-container"] {
           margin-top: -16px;
           background-color: rgba(255, 255, 255, 0); }
     div[id$="content-container"] div[id$="y-tracks-y-axis-viewport-y-scrollbar"] div[id$="y-axis"] {
-      width: 32px;
+      width: 40px;
       height: 100%;
       margin-bottom: 20px;
       background-color: white; }
@@ -795,37 +874,33 @@ div[id$="content-container"] {
         display: flex;
         flex-flow: column;
         flex-wrap: nowrap;
-        justify-content: space-between; }
+        justify-content: flex-start; }
         div[id$="content-container"] div[id$="y-tracks-y-axis-viewport-y-scrollbar"] div[id$="y-axis"] div[id$="y-axis-whole-genome-container"] .y-axis-whole-genome-chromosome-container {
-          display: flex;
-          flex-direction: column;
-          flex-wrap: nowrap;
-          justify-content: center;
-          align-items: center;
           font-family: "Open Sans", sans-serif;
           font-size: 8px;
           font-weight: 400;
           color: #444;
           width: 100%;
-          border-top-color: transparent;
-          border-top-style: solid;
-          border-top-width: thin;
-          border-bottom-color: #bfbfbf;
-          border-bottom-style: solid;
-          border-bottom-width: thin;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis; }
-          div[id$="content-container"] div[id$="y-tracks-y-axis-viewport-y-scrollbar"] div[id$="y-axis"] div[id$="y-axis-whole-genome-container"] .y-axis-whole-genome-chromosome-container .y-axis-whole-genome-chromosome {
-            transform: rotate(-90deg); }
-        div[id$="content-container"] div[id$="y-tracks-y-axis-viewport-y-scrollbar"] div[id$="y-axis"] div[id$="y-axis-whole-genome-container"] .y-axis-whole-genome-chromosome-container:last-child {
-          border-bottom-color: transparent; }
+          div[id$="content-container"] div[id$="y-tracks-y-axis-viewport-y-scrollbar"] div[id$="y-axis"] div[id$="y-axis-whole-genome-container"] .y-axis-whole-genome-chromosome-container > div {
+            display: flex;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            border-top-color: #868686;
+            border-top-style: solid;
+            border-top-width: thin; }
     div[id$="content-container"] div[id$="y-tracks-y-axis-viewport-y-scrollbar"] div[id$="viewport"] {
       display: block;
       position: relative;
       left: 0;
       top: 0;
-      width: calc(100% - (0px + 32px + 20px));
+      width: calc(100% - (0px + 40px + 20px));
       height: 100%;
       overflow-x: hidden;
       overflow-y: hidden; }
@@ -915,7 +990,7 @@ div[id$="content-container"] {
     div[id$="content-container"] div[id$="x-scrollbar-container"] div[id$="x-axis-scrollbar-container"] {
       display: block;
       position: relative;
-      width: calc(100% - (0px + 32px + 20px));
+      width: calc(100% - (0px + 40px + 20px));
       height: 100%;
       margin-right: 20px;
       background-color: #efefef; }
@@ -948,8 +1023,7 @@ div[id$="content-container"] {
           white-space: nowrap; }
 
 .hic-whole-genome-chromosome-highlight {
-  cursor: pointer;
-  background-color: rgba(0, 0, 0, 0.1); }
+  cursor: pointer; }
 
 .hic-track-menu {
   position: absolute;
@@ -957,37 +1031,6 @@ div[id$="content-container"] {
   width: 120px;
   height: 120px;
   background-color: #3a8ab4; }
-
-.juicebox-app-caption-container {
-  display: flex;
-  flex-flow: column;
-  flex-wrap: wrap;
-  justify-content: flex-start; }
-  .juicebox-app-caption-container .juicebox-app-clone-container {
-    display: flex;
-    flex-flow: row;
-    flex-wrap: wrap;
-    justify-content: flex-start; }
-  .juicebox-app-caption-container .hic-caption-container {
-    height: 64px;
-    width: 100%;
-    margin-top: 16px;
-    padding-top: 4px;
-    padding-left: 8px;
-    font-size: medium;
-    background-color: #efefef; }
-
-.juicebox-app-clone-button {
-  cursor: pointer;
-  color: #5f5f5f;
-  margin-top: 10px; }
-  .juicebox-app-clone-button i.fa-plus-circle {
-    float: left; }
-
-.juicebox-app-clone-button:hover,
-.juicebox-app-clone-button:focus,
-.juicebox-app-clone-button:active {
-  color: #0f0f0f; }
 
 .hic-root-selected {
   border-color: #5f5f5f; }
@@ -999,17 +1042,15 @@ div[id$="content-container"] {
   -ms-user-select: none;
   user-select: none; }
 
-.modal-backdrop {
-  background-color: transparent; }
-
-.hidden-text {
-  color: transparent; }
-
-.site-widget {
-  float: left;
+.igv-trackgear-container {
+  position: relative;
+  width: 20px;
+  height: 20px;
   margin-left: 4px;
-  margin-right: 32px; }
-  .site-widget ul {
-    z-index: 2048; }
+  color: #7F7F7F; }
+
+.igv-trackgear-container:hover {
+  cursor: pointer;
+  color: #444; }
 
 /*# sourceMappingURL=juicebox.css.map */

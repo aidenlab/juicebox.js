@@ -33,124 +33,115 @@
  * @param chromosomes -- an array of hic.Chromosome objects.
  * @constructor
  */
-const Genome = function (id, chromosomes) {
+class Genome {
+    constructor(id, chromosomes) {
 
-    this.id = id;
-    this.chromosomes = chromosomes;
-    this.wgChromosomeNames = [];
-    this.chromosomeLookupTable = {};
+        this.id = id;
+        this.chromosomes = chromosomes;
+        this.wgChromosomeNames = [];
+        this.chromosomeLookupTable = {};
 
-    // Alias for size for igv compatibility
-    this.genomeLength = 0;
-    for (let c of this.chromosomes) {
-        c.bpLength = c.size;
-        if ('all' !== c.name.toLowerCase()) {
-            this.genomeLength += c.size;
-            this.wgChromosomeNames.push(c.name);
+        // Alias for size for igv compatibility
+        this.genomeLength = 0;
+        for (let c of this.chromosomes) {
+            c.bpLength = c.size;
+            if ('all' !== c.name.toLowerCase()) {
+                this.genomeLength += c.size;
+                this.wgChromosomeNames.push(c.name);
+            }
         }
+
+        /**
+         * Maps chr aliases to the offical name.  Deals with
+         * 1 <-> chr1,  chrM <-> MT,  IV <-> chr4, etc.
+         * @param str
+         */
+        var chrAliasTable = {};
+
+        // The standard mappings
+        for (let chromosome of chromosomes) {
+
+            const name = chromosome.name
+            if (name.startsWith("arm_")) {
+                //Special rule for aidenlab ad-hoc names for dMel
+                const officialName = name.substring(4)
+                chrAliasTable[officialName] = name
+                chrAliasTable["chr" + officialName] = name
+            } else {
+                const alias = name.startsWith("chr") ? name.substring(3) : "chr" + name;
+                chrAliasTable[alias] = name;
+                if (name === "chrM") chrAliasTable["MT"] = "chrM";
+                if (name === "MT") chrAliasTable["chrmM"] = "MT";
+            }
+            this.chromosomeLookupTable[name.toLowerCase()] = chromosome;
+        }
+
+        this.chrAliasTable = chrAliasTable;
+
     }
+
+    getChromosomeName(str) {
+        var chr = this.chrAliasTable[str];
+        return chr ? chr : str;
+    };
+
+    getChromosome(str) {
+        var chrname = this.getChromosomeName(str).toLowerCase();
+        return this.chromosomeLookupTable[chrname];
+    };
 
     /**
-     * Maps chr aliases to the offical name.  Deals with
-     * 1 <-> chr1,  chrM <-> MT,  IV <-> chr4, etc.
-     * @param str
+     * Return the genome coordinate for the give chromosome and position.
      */
-    var chrAliasTable = {};
+    getGenomeCoordinate(chr, bp) {
+        return this.getCumulativeOffset(chr.name) + bp;
+    };
 
-    // The standard mappings
-    for (let chromosome of chromosomes) {
+    getChromsosomeForCoordinate(bp) {
+        var i = 0,
+            offset = 0,
+            l;
 
-        const name = chromosome.name
-        if (name.startsWith("arm_")) {
-            //Special rule for aidenlab ad-hoc names for dMel
-            const officialName = name.substring(4)
-            chrAliasTable[officialName] = name
-            chrAliasTable["chr" + officialName] = name
-        } else {
-            const alias = name.startsWith("chr") ? name.substring(3) : "chr" + name;
-            chrAliasTable[alias] = name;
-            if (name === "chrM") chrAliasTable["MT"] = "chrM";
-            if (name === "MT") chrAliasTable["chrmM"] = "MT";
+        for (i = 1; i < this.chromosomes.length; i++) {
+            l = this.chromosomes[i].size;
+            if (offset + l > bp) return this.chromosomes[i];
+            offset += l;
         }
-        this.chromosomeLookupTable[name.toLowerCase()] = chromosome;
+        return this.chromosomes[this.chromosomes.length - 1];
     }
 
-    this.chrAliasTable = chrAliasTable;
 
+    /**
+     * Return the offset in genome coordinates (kb) of the start of the given chromosome
+     */
+    getCumulativeOffset(chr) {
+
+        const queryChr = this.getChromosomeName(chr);
+
+        if (this.cumulativeOffsets === undefined) {
+            computeCumulativeOffsets.call(this);
+        }
+        return this.cumulativeOffsets[queryChr];
+    }
+
+    // Required for igv.js
+    getGenomeLength() {
+        return this.genomeLength;
+    }
 }
-
-Genome.prototype.getChromosomeName = function (str) {
-    var chr = this.chrAliasTable[str];
-    return chr ? chr : str;
-};
-
-Genome.prototype.getChromosome = function (str) {
-    var chrname = this.getChromosomeName(str).toLowerCase();
-    return this.chromosomeLookupTable[chrname];
-};
-
-/**
- * Return the genome coordinate for the give chromosome and position.
- */
-Genome.prototype.getGenomeCoordinate = function (chr, bp) {
-    return this.getCumulativeOffset(chr.name) + bp;
-};
-
-Genome.prototype.getChromsosomeForCoordinate = function (bp) {
-    var i = 0,
-        offset = 0,
-        l;
-
-    for (i = 1; i < this.chromosomes.length; i++) {
-        l = this.chromosomes[i].size;
-        if (offset + l > bp) return this.chromosomes[i];
-        offset += l;
-    }
-    return this.chromosomes[this.chromosomes.length - 1];
-
-}
-
-
-/**
- * Return the offset in genome coordinates (kb) of the start of the given chromosome
- */
-Genome.prototype.getCumulativeOffset = function (chr) {
-
-    var queryChr;
-
-    queryChr = this.getChromosomeName(chr);
-
-    if (this.cumulativeOffsets === undefined) {
-        computeCumulativeOffsets.call(this);
-    }
-    return this.cumulativeOffsets[queryChr];
-};
 
 function computeCumulativeOffsets() {
-    var self = this,
-        list,
-        cumulativeOffsets,
-        offset,
-        i,
-        chromosome;
 
-    cumulativeOffsets = {};
-    offset = 0;
+    const cumulativeOffsets = {};
+    let offset = 0;
     // Skip first chromosome (its chr all).
-    for (i = 1; i < self.chromosomes.length; i++) {
-
-        chromosome = self.chromosomes[i];
+    for (let chromosome of this.chromosomes) {
+        if(chromosome.name === 'all') continue;
         cumulativeOffsets[chromosome.name] = Math.floor(offset);
-
         offset += (chromosome.size);
     }
-    self.cumulativeOffsets = cumulativeOffsets;
-
+    this.cumulativeOffsets = cumulativeOffsets;
 }
 
-// Required for igv.js
-Genome.prototype.getGenomeLength = function () {
-    return this.genomeLength;
-}
 
 export default Genome

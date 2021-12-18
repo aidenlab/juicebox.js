@@ -1,0 +1,115 @@
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Juicebox</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+
+    <!-- Juicebox CSS-->
+    <!--    <link rel="stylesheet" type="text/css" href="../dist/css/juicebox.css">-->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/juicebox.js@2.2.0/dist/css/juicebox.css">
+
+    <!-- Juicebox -- defines global "juicebox" -->
+    <!--    <script type="text/javascript" src="../dist/juicebox.min.js"></script>-->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/juicebox.js@2.2.0/dist/juicebox.min.js"></script>
+
+
+</head>
+
+<body>
+<h1>Dynamic load example</h1>
+
+This example illustrates the use of the juicebox API to dynamically load a map and tracks from menu actions.
+
+<div style="margin-top: 50px;">
+    <h2>Step 1: Select a hic file to load</h2>
+    <label for="hic-select"><span style="font-size: large;font-weight: bold">Contact Matrix (.hic file)</span></label>
+    <select id="hic-select">
+        <option value="">None</option>
+        <option value="https://www.encodeproject.org/files/ENCFF718AWL/@@download/ENCFF718AWL.hic">GM12878</option>
+        <option value="https://www.encodeproject.org/files/ENCFF406HHC/@@download/ENCFF406HHC.hic">K562</option>
+    </select>
+</div>
+
+<div style="margin-top: 50px;margin-bottom: 50px">
+    <h2>Step 2: Select a track</h2>
+    <label for="tracks-select"><span style="font-size: large;font-weight: bold">Tracks</span></label>
+    <select id="tracks-select" disabled>
+        <option value="">None</option>
+        <option value="GM12878">GM12878 CTCF</option>
+        <option value="K562">K562 CTCF</option>
+    </select>
+</div>
+
+
+<div id="app-container"></div>
+
+
+<script type="module">
+
+    const config = {}
+
+    const container = document.getElementById("app-container");
+
+    juicebox.init(container, config)
+        .then(function (hicBrowser) {
+            console.log("Juicebox loaded");
+            initMenus(hicBrowser);
+        })
+
+
+    function initMenus(hicBrowser) {
+        const hicSelect = document.getElementById("hic-select");
+        const tracksSelect = document.getElementById("tracks-select");
+
+        hicSelect.onchange = async (e) => {
+            const idx = hicSelect.selectedIndex;
+            const option = hicSelect.options[idx];
+            await hicBrowser.loadHicFile({url: option.value});
+            tracksSelect.removeAttribute("disabled")
+        }
+
+        tracksSelect.onchange = (e) => {
+            const idx = tracksSelect.selectedIndex;
+            const option = tracksSelect.options[idx];
+            const trackConfig = trackDictionary[option.value];
+            hicBrowser.loadTracks([trackConfig]);
+        }
+
+    }
+
+
+    // Define a couple of track configurations
+    const trackDictionary = {
+
+        "GM12878": {
+            "name": "GM12878 CTCF ",
+            "url": "https://www.encodeproject.org/files/ENCFF000ARJ/@@download/ENCFF000ARJ.bigWig",
+            "autoscale": true,
+            "displayMode": "COLLAPSED",
+            "format": "bigwig",
+            "color": "rgb(0,150,0)",
+            "height": 40
+        },
+        "K562": {
+            "name": "K562 CTCF ",
+            "url": "https://www.encodeproject.org/files/ENCFF000YMA/@@download/ENCFF000YMA.bigWig",
+            "autoscale": true,
+            "displayMode": "COLLAPSED",
+            "format": "bigwig",
+            "color": "rgb(0, 150, 0)",
+            "height": 40
+        }
+    }
+
+    const t = []
+
+
+</script>
+
+</body>
+
+</html>

@@ -1,463 +1,360 @@
 /**
  * Created by dat on 4/4/17.
  */
-import $ from "../vendor/jquery-1.12.4.js"
-import _ from "../vendor/underscore.js"
-import HICBrowser from './hicBrowser.js'
-import ContactMatrixView from './contactMatrixView.js'
-import ChromosomeSelectorWidget from './chromosomeSelectorWidget.js'
-import ControlMapWidget from './controlMapWidget.js'
-import LocusGoto from './hicLocusGoto.js'
-import ResolutionSelector from './hicResolutionSelector.js'
-import ColorScaleWidget from './hicColorScaleWidget.js'
-import NormalizationWidget from './normalizationWidget.js'
-import Ruler from './hicRuler.js'
-import TrackRenderer from './trackRenderer.js'
-import AnnotationWidget from './annotationWidget.js'
-import  * as hic from './hic.js'
+import $ from '../vendor/jquery-3.3.1.slim.js'
+import Ruler from './ruler.js'
+import {TrackPair} from './trackPair.js'
+import {deleteBrowser, setCurrentBrowser} from "./createBrowser.js"
 
-const LayoutController = function (browser, $root) {
+// Keep in sync with juicebox.scss variables
 
-    this.browser = browser;
+// $nav-bar-label-height: 36px;
+const nav_bar_label_height = 36;
 
-    createNavBar.call(this, browser, $root);
+// $nav-bar-widget-container-height: 36px;
+const nav_bar_widget_container_height = 36;
 
-    createAllContainers.call(this, browser, $root);
+// $nav-bar-widget-container-margin: 4px;
+const nav_bar_widget_container_margin = 4;
 
-    this.scrollbar_height = 20;
+// $hic-scrollbar-height: 20px;
+const scrollbar_height = 20;
 
-    this.axis_height = 32;
+// $hic-axis-height: 40px;
+const axis_height = 40;
 
-    // track dimension
-    this.track_height = 32;
+// $track-margin: 2px;
+const track_margin = 2;
 
-    // Keep in sync with .x-track-canvas-container (margin-bottom) and .y-track-canvas-container (margin-right)
-    this.track_margin = 2;
+export const trackHeight = 40;
 
-};
+class LayoutController {
 
-// Dupes of corresponding juicebox.scss variables
-// Invariant during app running. If edited in juicebox.scss they MUST be kept in sync
-LayoutController.nav_bar_label_height = 36;
-LayoutController.nav_bar_widget_container_height = 36;
-LayoutController.nav_bar_shim_height = 4;
+    constructor(browser, $root) {
 
-LayoutController.navbarHeight = function () {
-    var height;
-    height = (2 * LayoutController.nav_bar_label_height) + (2 * LayoutController.nav_bar_widget_container_height) + LayoutController.nav_bar_shim_height;
-    return height;
-};
+        this.browser = browser;
+
+        createNavBar(browser, $root);
+
+        this.createAllContainers(browser, $root);
+    }
+
+
+    createAllContainers(browser, $root) {
+
+        const html_x_track_container =
+            `<div id="${browser.id}-x-track-container"><div id="${browser.id}-track-shim"></div><div id="${browser.id}-x-tracks"><div id="${browser.id}-y-track-guide" style="display: none;"></div></div></div>`;
+        $root.append($(html_x_track_container));
+
+        this.$x_track_container = $root.find("div[id$='x-track-container']");
+        this.$track_shim = this.$x_track_container.find("div[id$='track-shim']");
+        this.$x_tracks = this.$x_track_container.find("div[id$='x-tracks']");
+        this.$y_track_guide = this.$x_track_container.find("div[id$='y-track-guide']");
+
+        const html_content_container = `<div id="${browser.id}-content-container"></div>`;
+
+        this.$content_container = $(html_content_container);
+
+        $root.append(this.$content_container);
+
+        const html_x_axis_container =
+            `<div id="${browser.id}-x-axis-container">
+            <div id="${browser.id}-x-axis">
+                <canvas></canvas>
+                <div id="${browser.id}-x-axis-whole-genome-container"></div>
+            </div>
+	    </div>`;
+
+        this.$content_container.append($(html_x_axis_container));
+
+        const $x_axis_container = this.$content_container.find("div[id$='x-axis-container']");
+
+        this.xAxisRuler = new Ruler(browser, $x_axis_container, 'x');
+
+        const html_y_tracks_y_axis_viewport_y_scrollbar =
+            `<div id="${browser.id}-y-tracks-y-axis-viewport-y-scrollbar">
+
+            <div id="${browser.id}-y-tracks">
+                <div id="${browser.id}-x-track-guide" style="display: none;"></div>
+            </div>
+            
+            <div id="${browser.id}-y-axis">
+    			<canvas></canvas>
+			    <div id="${browser.id}-y-axis-whole-genome-container"></div>
+		    </div>
+		    
+        </div>`;
+
+        this.$content_container.append($(html_y_tracks_y_axis_viewport_y_scrollbar));
+        const $y_tracks_y_axis_viewport_y_scrollbar = this.$content_container.find("div[id$='-y-tracks-y-axis-viewport-y-scrollbar']");
+
+        this.$y_tracks = $y_tracks_y_axis_viewport_y_scrollbar.find("div[id$='-y-tracks']");
+        this.$x_track_guide = this.$y_tracks.find("div[id$='-x-track-guide']");
+
+        this.yAxisRuler = new Ruler(browser, $y_tracks_y_axis_viewport_y_scrollbar, 'y');
+
+        this.xAxisRuler.$otherRulerCanvas = this.yAxisRuler.$canvas;
+        this.xAxisRuler.otherRuler = this.yAxisRuler;
+
+        this.yAxisRuler.$otherRulerCanvas = this.xAxisRuler.$canvas;
+        this.yAxisRuler.otherRuler = this.xAxisRuler;
+
+        const html_viewport =
+            `<div id="${browser.id}-viewport">
+			<canvas></canvas>
+			<i class="fa fa-spinner fa-spin" style="font-size: 48px; position: absolute; left: 40%; top: 40%; display: none;"></i>
+			<div id="${browser.id}-sweep-zoom-container" style="display: none;"></div>
+			<div id="${browser.id}-x-guide" style="display: none;"></div>
+			<div id="${browser.id}-y-guide" style="display: none;"></div>
+		</div>`;
+
+        $y_tracks_y_axis_viewport_y_scrollbar.append($(html_viewport));
+
+        const html_y_axis_scrollbar_container =
+            `<div id="${browser.id}-y-axis-scrollbar-container">
+			<div id="${browser.id}-y-axis-scrollbar">
+				<div class="scrollbar-label-rotation-in-place"></div>
+			</div>
+		</div>`;
+
+        $y_tracks_y_axis_viewport_y_scrollbar.append($(html_y_axis_scrollbar_container));
+
+        const html_x_axis_scrollbar_container =
+            `<div id="${browser.id}-x-scrollbar-container">
+            <div id="${browser.id}-x-axis-scrollbar-container">
+                <div id="${browser.id}-x-axis-scrollbar">
+                    <div></div>
+                </div>
+            </div>
+	    </div>`;
+
+        this.$content_container.append($(html_x_axis_scrollbar_container));
+
+    }
+
+    getContactMatrixViewport() {
+        const $parent = this.$content_container.find("div[id$='-y-tracks-y-axis-viewport-y-scrollbar']");
+        return $parent.find("div[id$='-viewport']");
+    }
+
+    getYAxisScrollbarContainer() {
+        const $parent = this.$content_container.find("div[id$='-y-tracks-y-axis-viewport-y-scrollbar']");
+        return $parent.find("div[id$='-y-axis-scrollbar-container']");
+    }
+
+    getXAxisScrollbarContainer() {
+        return this.$content_container.find("div[id$='-x-axis-scrollbar-container']");
+    }
+
+    tracksLoaded(tracks) {
+
+        this.doLayoutTrackXYPairCount(tracks.length + this.browser.trackPairs.length);
+
+        tracks.forEach((track, index) => {
+            const trackPair = new TrackPair(
+                this.browser,
+                trackHeight,
+                this.$x_tracks,
+                this.$y_tracks,
+                track,
+                index
+            )
+            this.browser.trackPairs.push(trackPair);
+        });
+    }
+
+    removeAllTrackXYPairs() {
+
+        if (this.browser.trackPairs.length === 0 ) {
+            return;
+        }
+
+        for(let trackPair of this.browser.trackPairs) {
+            // discard DOM element's
+            trackPair.dispose();
+        }
+        this.browser.trackPairs = []
+        this.browser.updateLayout();
+        this.doLayoutTrackXYPairCount(0)
+
+        // What ???
+        // [...Array(this.browser.trackPairs.length).keys()].forEach(() => {
+        //
+        //     // select last track to discard
+        //     let discard = this.browser.trackPairs[this.browser.trackPairs.length - 1];
+        //
+        //     // discard DOM element's
+        //     discard['x'].$viewport.remove();
+        //     discard['y'].$viewport.remove();
+        //
+        //     // remove discard from list
+        //     const index = this.browser.trackPairs.indexOf(discard);
+        //     this.browser.trackPairs.splice(index, 1);
+        //
+        //     discard = undefined;
+        //     this.doLayoutTrackXYPairCount(this.browser.trackPairs.length);
+        //
+        // });
+    };
+
+    removeLastTrackXYPair() {
+
+        if (this.browser.trackPairs.length > 0) {
+
+            // select last track to dicard
+            let discard = this.browser.trackPairs[this.browser.trackPairs.length - 1];
+
+            // discard DOM element's
+            discard['x'].$viewport.remove();
+            discard['y'].$viewport.remove();
+
+            // remove discard from list
+            const index = this.browser.trackPairs.indexOf(discard);
+            this.browser.trackPairs.splice(index, 1);
+
+            discard = undefined;
+            this.doLayoutTrackXYPairCount(this.browser.trackPairs.length);
+
+            this.browser.updateLayout();
+
+        } else {
+            //console.log('No more tracks.');
+        }
+    }
+
+    removeTrackXYPair(trackXYPair) {
+
+        if (this.browser.trackPairs.length > 0) {
+
+            const discard = trackXYPair;
+
+            // discard DOM element's
+            discard['x'].$viewport.remove();
+            discard['y'].$viewport.remove();
+
+            // remove discard from list
+            const index = this.browser.trackPairs.indexOf(discard);
+            this.browser.trackPairs.splice(index, 1);
+
+            this.doLayoutTrackXYPairCount(this.browser.trackPairs.length);
+
+            this.browser.updateLayout();
+
+
+        } else {
+            //console.log('No more tracks.');
+        }
+
+    };
+
+    doLayoutTrackXYPairCount(trackXYPairCount) {
+
+
+        const track_aggregate_height = (0 === trackXYPairCount) ? 0 : trackXYPairCount * (trackHeight + track_margin);
+
+        let tokens = [getNavbarHeight(), track_aggregate_height].map(number => `${number}px`);
+        const height_calc = 'calc(100% - (' + tokens.join(' + ') + '))';
+
+        tokens = [track_aggregate_height, axis_height, scrollbar_height].map(number => `${number}px`);
+        const width_calc = 'calc(100% - (' + tokens.join(' + ') + '))';
+
+        // x-track container
+        this.$x_track_container.height(track_aggregate_height);
+
+        // track labels
+        this.$track_shim.width(track_aggregate_height);
+
+        // x-tracks
+        this.$x_tracks.css('width', width_calc);
+
+
+        // content container
+        this.$content_container.css('height', height_calc);
+
+        // x-axis - repaint canvas
+        this.xAxisRuler.updateWidthWithCalculation(width_calc);
+
+        // y-tracks
+        this.$y_tracks.width(track_aggregate_height);
+
+        // y-axis - repaint canvas
+        this.yAxisRuler.updateHeight(this.yAxisRuler.$axis.height());
+
+        // viewport
+        this.browser.contactMatrixView.$viewport.css('width', width_calc);
+
+        // x-scrollbar
+        this.browser.contactMatrixView.scrollbarWidget.$x_axis_scrollbar_container.css('width', width_calc);
+
+    }
+
+    doLayoutWithRootContainerSize(size) {
+
+        this.browser.$root.width(size.width);
+        this.browser.$root.height(size.height + getNavbarHeight());
+
+        const count = this.browser.trackPairs.length > 0 ? this.browser.trackPairs.length : 0;
+        this.doLayoutTrackXYPairCount(count);
+
+        this.browser.updateLayout();
+    }
+}
+
+const getNavbarHeight = () => 2 * (nav_bar_label_height + nav_bar_widget_container_height + (2 * nav_bar_widget_container_margin));
+
+const getNavbarContainer = browser => browser.$root.find('.hic-navbar-container');
 
 function createNavBar(browser, $root) {
 
-    var id,
-        $navbar_container,
-        $map_container,
-        $upper_widget_container,
-        $lower_widget_container,
-        $e,
-        $browser_panel_delete_button,
-        $fa;
+    const $hic_navbar_container = $('<div>', {class: 'hic-navbar-container'});
+    $root.append($hic_navbar_container);
 
-    $navbar_container = $('<div class="hic-navbar-container">');
-    $root.append($navbar_container);
-
-
-    $navbar_container.on('click', function (e) {
+    $hic_navbar_container.on('click', e => {
         e.stopPropagation();
         e.preventDefault();
-        HICBrowser.setCurrentBrowser(browser);
+        setCurrentBrowser(browser);
     });
 
-    // container: contact map label | menu button | browser delete button
-    id = browser.id + '_contact-map-' + 'hic-nav-bar-map-container';
-    $map_container = $("<div>", {id: id});
-    $navbar_container.append($map_container);
+    const html_contact_map_hic_nav_bar_map_container =
+        `<div id="${browser.id}-contact-map-hic-nav-bar-map-container">
+            <div id="${browser.id}-contact-map-hic-nav-bar-map-label">
+            </div>
+             <div class="hic-nav-bar-button-container">
+                <i class="fa fa-bars fa-lg" title="Present menu"></i>
+                <i class="fa fa-minus-circle fa-lg" title="Delete browser panel" style="display: none;"></i>
+             </div>
+        </div>`;
 
-    // contact map label
-    id = browser.id + '_contact-map-' + 'hic-nav-bar-map-label';
-    browser.$contactMaplabel = $("<div>", {id: id});
-    $map_container.append(browser.$contactMaplabel);
+    $hic_navbar_container.append($(html_contact_map_hic_nav_bar_map_container));
 
-    // navbar button container
-    $e = $("<div>", {class: 'hic-nav-bar-button-container'});
-    $map_container.append($e);
+    browser.$contactMaplabel = $hic_navbar_container.find("div[id$='contact-map-hic-nav-bar-map-label']");
 
-    // menu present/dismiss button
-    browser.$menuPresentDismiss = $("<i>", {class: 'fa fa-bars fa-lg', 'title': 'Present menu'});
-    $e.append(browser.$menuPresentDismiss);
-    browser.$menuPresentDismiss.on('click', function (e) {
-        browser.toggleMenu();
-    });
+    browser.$menuPresentDismiss = $hic_navbar_container.find('.fa-bars');
+    browser.$menuPresentDismiss.on('click', e => browser.toggleMenu());
 
-    // browser delete button
-    browser.$browser_panel_delete_button = $("<i>", {
-        class: 'fa fa-minus-circle fa-lg',
-        'title': 'Delete browser panel'
-    });
-    $e.append(browser.$browser_panel_delete_button);
+    browser.$browser_panel_delete_button = $hic_navbar_container.find('.fa-minus-circle');
+    browser.$browser_panel_delete_button.on('click', e => deleteBrowser(browser));
 
-    browser.$browser_panel_delete_button.on('click', function (e) {
-        hic.deleteBrowserPanel(browser);
-    });
-
-    // hide delete buttons for now. Delete button is only
-    // if there is more then one browser instance.
+    // Delete button is only vidible if there is more then one browser
     browser.$browser_panel_delete_button.hide();
 
+    const html_control_map_hic_nav_bar_map_container =
+        `<div id="${browser.id}-control-map-hic-nav-bar-map-container">
+            <div id="${browser.id}-control-map-hic-nav-bar-map-label"></div>
+        </div>`;
 
-    // container: control map label
-    id = browser.id + '_control-map-' + 'hic-nav-bar-map-container';
-    $map_container = $("<div>", {id: id});
-    $navbar_container.append($map_container);
+    $hic_navbar_container.append($(html_control_map_hic_nav_bar_map_container));
 
-    // control map label
-    id = browser.id + '_control-map-' + 'hic-nav-bar-map-label';
-    browser.$controlMaplabel = $("<div>", {id: id});
-    $map_container.append(browser.$controlMaplabel);
+    browser.$controlMaplabel = $hic_navbar_container.find("div[id$='control-map-hic-nav-bar-map-label']");
 
-    // upper widget container
-    id = browser.id + '_upper_' + 'hic-nav-bar-widget-container';
-    $upper_widget_container = $("<div>", {id: id});
-    $navbar_container.append($upper_widget_container);
+    const html_upper_hic_nav_bar_widget_container = `<div id="${browser.id}-upper-hic-nav-bar-widget-container"></div>`;
+    $hic_navbar_container.append($(html_upper_hic_nav_bar_widget_container));
 
-    // location box / goto
-    browser.locusGoto = new LocusGoto(browser, $upper_widget_container);
-
-    // resolution widget
-    browser.resolutionSelector = new ResolutionSelector(browser, $upper_widget_container);
-    browser.resolutionSelector.setResolutionLock(browser.resolutionLocked);
-
-
-    // lower widget container
-    id = browser.id + '_lower_' + 'hic-nav-bar-widget-container';
-    $lower_widget_container = $("<div>", {id: id});
-    $navbar_container.append($lower_widget_container);
-
-    // colorscale
-    browser.colorscaleWidget = new ColorScaleWidget(browser, $lower_widget_container);
-
-    // control map
-    browser.controlMapWidget = new ControlMapWidget(browser, $lower_widget_container);
-
-    // normalization
-    browser.normalizationSelector = new NormalizationWidget(browser, $lower_widget_container);
-
+    const html_lower_hic_nav_bar_widget_container = `<div id="${browser.id}-lower-hic-nav-bar-widget-container"></div>`;
+    $hic_navbar_container.append($(html_lower_hic_nav_bar_widget_container));
 
 }
 
-function createAllContainers(browser, $root) {
+export {getNavbarHeight, getNavbarContainer};
 
-    var id,
-        tokens,
-        height_calc,
-        $container,
-        $e;
-
-    // .hic-x-track-container
-    id = browser.id + '_' + 'x-track-container';
-    this.$x_track_container = $("<div>", {id: id});
-    $root.append(this.$x_track_container);
-
-    // track labels
-    id = browser.id + '_' + 'track-shim';
-    this.$track_shim = $("<div>", {id: id});
-    this.$x_track_container.append(this.$track_shim);
-
-    // x-tracks
-    id = browser.id + '_' + 'x-tracks';
-    this.$x_tracks = $("<div>", {id: id});
-    this.$x_track_container.append(this.$x_tracks);
-
-    // crosshairs guide
-    id = browser.id + '_' + 'y-track-guide';
-    this.$y_track_guide = $("<div>", {id: id});
-    this.$x_tracks.append(this.$y_track_guide);
-
-    // content container
-    id = browser.id + '_' + 'content-container';
-    this.$content_container = $("<div>", {id: id});
-    $root.append(this.$content_container);
-
-    // menu
-    createMenu(browser, $root);
-
-    // container: x-axis
-    id = browser.id + '_' + 'x-axis-container';
-    $container = $("<div>", {id: id});
-    this.$content_container.append($container);
-    this.xAxisRuler = new Ruler(browser, 'x', $container);
-
-
-    // container: y-tracks | y-axis | viewport | y-scrollbar
-    id = browser.id + '_' + 'y-tracks-y-axis-viewport-y-scrollbar';
-    $container = $("<div>", {id: id});
-    this.$content_container.append($container);
-
-    // y-tracks
-    id = browser.id + '_' + 'y-tracks';
-    this.$y_tracks = $("<div>", {id: id});
-    $container.append(this.$y_tracks);
-
-    // crosshairs guide
-    id = browser.id + '_' + 'x-track-guide';
-    this.$x_track_guide = $("<div>", {id: id});
-    this.$y_tracks.append(this.$x_track_guide);
-
-    // y-axis
-    this.yAxisRuler = new Ruler(browser, 'y', $container);
-
-    this.xAxisRuler.$otherRulerCanvas = this.yAxisRuler.$canvas;
-    this.xAxisRuler.otherRuler = this.yAxisRuler;
-
-    this.yAxisRuler.$otherRulerCanvas = this.xAxisRuler.$canvas;
-    this.yAxisRuler.otherRuler = this.xAxisRuler;
-
-    // viewport | y-scrollbar
-    browser.contactMatrixView = new ContactMatrixView(browser, $container);
-
-    // container: x-scrollbar
-    id = browser.id + '_' + 'x-scrollbar-container';
-    $container = $("<div>", {id: id});
-    this.$content_container.append($container);
-
-    // x-scrollbar
-    $container.append(browser.contactMatrixView.scrollbarWidget.$x_axis_scrollbar_container);
-
-}
-
-function createMenu(browser, $root) {
-
-    var $menu,
-        $div,
-        $fa,
-        config;
-
-    // menu
-    $menu = $('<div>', {class: 'hic-menu'});
-    $root.append($menu);
-
-    // menu close button
-    $div = $('<div>', {class: 'hic-menu-close-button'});
-    $menu.append($div);
-
-    // $fa = $("<i>", { class:'fa fa-minus-circle fa-lg' });
-    $fa = $("<i>", {class: 'fa fa-times'});
-    $div.append($fa);
-
-    $fa.on('click', function (e) {
-        browser.toggleMenu();
-    });
-
-
-    // chromosome select widget
-    browser.chromosomeSelector = new ChromosomeSelectorWidget(browser, $menu);
-
-    config =
-        {
-            title: '2D Annotations',
-            loadTitle: 'Load:',
-            alertMessage: 'No 2D annotations currently loaded for this map'
-        };
-    browser.annotation2DWidget = new AnnotationWidget(browser, $menu, config, function () {
-        return browser.tracks2D;
-    });
-
-    // config =
-    //     {
-    //         title: 'Tracks',
-    //         loadTitle: 'Load Tracks:',
-    //         alertMessage: 'No tracks currently loaded for this map'
-    //     };
-    //
-    // browser.annotation1DDWidget = new hic.AnnotationWidget(browser, $menu, config, function () {
-    //     return browser.trackRenderers;
-    // });
-
-    browser.$menu = $menu;
-
-    browser.$menu.hide();
-
-}
-
-LayoutController.prototype.tracksLoaded = function (trackXYPairs) {
-    var self = this,
-        trackRendererPair;
-
-    self.doLayoutTrackXYPairCount(trackXYPairs.length + self.browser.trackRenderers.length);
-
-    trackXYPairs.forEach(function (trackPair, index) {
-
-        var w, h;
-
-        trackRendererPair = {};
-        w = h = self.track_height;
-        trackRendererPair.x = new TrackRenderer(self.browser, {
-            width: undefined,
-            height: h
-        }, self.$x_tracks, trackRendererPair, trackPair, 'x', index);
-        trackRendererPair.y = new TrackRenderer(self.browser, {
-            width: w,
-            height: undefined
-        }, self.$y_tracks, trackRendererPair, trackPair, 'y', index);
-
-        self.browser.trackRenderers.push(trackRendererPair);
-
-    });
-
-
-}
-
-
-LayoutController.prototype.removeAllTrackXYPairs = function () {
-    var self = this,
-        indices;
-
-    indices = _.range(_.size(this.browser.trackRenderers));
-
-    if (0 === _.size(indices)) {
-        return;
-    }
-
-    _.each(indices, function (unused) {
-        var discard,
-            index;
-
-        // select last track to dicard
-        discard = _.last(self.browser.trackRenderers);
-
-        // discard DOM element's
-        discard['x'].$viewport.remove();
-        discard['y'].$viewport.remove();
-
-        // remove discard from list
-        index = self.browser.trackRenderers.indexOf(discard);
-        self.browser.trackRenderers.splice(index, 1);
-
-        discard = undefined;
-        self.doLayoutTrackXYPairCount(_.size(self.browser.trackRenderers));
-    });
-
-    // this.browser.updateLayout();
-};
-
-LayoutController.prototype.removeLastTrackXYPair = function () {
-    var index,
-        discard;
-
-    if (_.size(this.browser.trackRenderers) > 0) {
-
-        // select last track to dicard
-        discard = _.last(this.browser.trackRenderers);
-
-        // discard DOM element's
-        discard['x'].$viewport.remove();
-        discard['y'].$viewport.remove();
-
-        // remove discard from list
-        index = this.browser.trackRenderers.indexOf(discard);
-        this.browser.trackRenderers.splice(index, 1);
-
-        discard = undefined;
-        this.doLayoutTrackXYPairCount(_.size(this.browser.trackRenderers));
-
-        this.browser.updateLayout();
-
-    } else {
-        //console.log('No more tracks.');
-    }
-
-};
-
-LayoutController.prototype.removeTrackRendererPair = function (trackRendererPair) {
-
-    var index,
-        discard;
-
-    if (_.size(this.browser.trackRenderers) > 0) {
-
-        discard = trackRendererPair;
-
-        // discard DOM element's
-        discard['x'].$viewport.remove();
-        discard['y'].$viewport.remove();
-
-        // remove discard from list
-        index = this.browser.trackRenderers.indexOf(discard);
-        this.browser.trackRenderers.splice(index, 1);
-
-        this.doLayoutTrackXYPairCount(_.size(this.browser.trackRenderers));
-
-        this.browser.updateLayout();
-
-
-    } else {
-        //console.log('No more tracks.');
-    }
-
-};
-
-LayoutController.prototype.doLayoutTrackXYPairCount = function (trackXYPairCount) {
-
-    var track_aggregate_height,
-        tokens,
-        width_calc,
-        height_calc;
-
-
-    track_aggregate_height = (0 === trackXYPairCount) ? 0 : trackXYPairCount * (this.track_height + this.track_margin);
-
-    tokens = _.map([LayoutController.navbarHeight(), track_aggregate_height], function (number) {
-        return number.toString() + 'px';
-    });
-    height_calc = 'calc(100% - (' + tokens.join(' + ') + '))';
-
-    tokens = _.map([track_aggregate_height, this.axis_height, this.scrollbar_height], function (number) {
-        return number.toString() + 'px';
-    });
-    width_calc = 'calc(100% - (' + tokens.join(' + ') + '))';
-
-    // x-track container
-    this.$x_track_container.height(track_aggregate_height);
-
-    // track labels
-    this.$track_shim.width(track_aggregate_height);
-
-    // x-tracks
-    this.$x_tracks.css('width', width_calc);
-
-
-    // content container
-    this.$content_container.css('height', height_calc);
-
-    // x-axis - repaint canvas
-    this.xAxisRuler.updateWidthWithCalculation(width_calc);
-
-    // y-tracks
-    this.$y_tracks.width(track_aggregate_height);
-
-    // y-axis - repaint canvas
-    this.yAxisRuler.updateHeight(this.yAxisRuler.$axis.height());
-
-    // viewport
-    this.browser.contactMatrixView.$viewport.css('width', width_calc);
-
-    // x-scrollbar
-    this.browser.contactMatrixView.scrollbarWidget.$x_axis_scrollbar_container.css('width', width_calc);
-
-};
-
-LayoutController.prototype.doLayoutWithRootContainerSize = function (size) {
-
-    var count;
-
-    this.browser.$root.width(size.width);
-    this.browser.$root.height(size.height + LayoutController.navbarHeight());
-
-    count = _.size(this.browser.trackRenderers) > 0 ? _.size(this.browser.trackRenderers) : 0;
-    this.doLayoutTrackXYPairCount(count);
-
-    this.browser.updateLayout();
-};
-
-export default LayoutController
+export default LayoutController;

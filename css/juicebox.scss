@@ -1,26 +1,42 @@
-@import "encode";
-
 //
 $hic-color-swatch-size: 24px;
 
-//
+// ::::::::::::::: Keep in sync with layoutController.js :::::::::::::::
+
+// nav_bar_label_height
 $nav-bar-label-height: 36px;
+
+// nav_bar_widget_container_height
 $nav-bar-widget-container-height: 36px;
-$nav-bar-shim-height: 4px;
-$nav-bar-height: (2 * $nav-bar-label-height) + (2 * $nav-bar-widget-container-height) + $nav-bar-shim-height;
+
+// nav_bar_widget_container_margin
+$nav-bar-widget-container-margin: 4px;
+
+// scrollbar_height
+$hic-scrollbar-height: 20px;
+
+// axis_height
+$hic-axis-height: 40px;
+
+// track_margin
+$track-margin: 2px;
+
+$igv-trackgear-grey-color: #7F7F7F;
+$igv-trackgear-popover-border-radius: 4px;
+$igv-trackgear-font-color: #4b4b4b;
+$igv-trackgear-default-font-face: 'Open Sans', sans-serif;
+@import "igv-menu-popup";
+
+
+$nav-bar-height: 2 * ($nav-bar-label-height + $nav-bar-widget-container-height + (2 * $nav-bar-widget-container-margin));
 
 $nav-bar-widget-height: 24px;
-$chromosome-selector-widget-container-width: 160px;
 
 //
 $hic-colorscale-widget-plus-minus-margin: 8px;
 
 //
 $hic-whole-genome-chromosome-highlight-color: rgba(0, 0, 0, 0.1);
-
-//
-$hic-scrollbar-height: 20px;
-$hic-axis-height: 32px;
 
 //
 $track-count: 0;
@@ -207,6 +223,38 @@ $default-font-family: 'Open Sans', sans-serif;
 
 }
 
+// juiceboxjs  hack of igv.css class
+.hic-igv-right-hand-gutter {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin-top: 4px;
+  background-color: transparent;
+  width: unset;
+}
+
+.igv-app-dropdown-item-cloud-storage {
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+
+  height: 18px;
+
+  margin-top: 4px;
+  margin-bottom: 4px;
+
+  div:first-child {
+    margin-right: 4px;
+  }
+  div:last-child {
+    margin-left: 4px;
+  }
+
+}
+
 #hic-modal-button-container {
 
   display: flex;
@@ -225,21 +273,6 @@ $default-font-family: 'Open Sans', sans-serif;
     margin-right: 12px;
   }
 
-}
-
-// IGV hacks
-.igv-right-hand-gutter {
-  top: 0;
-  margin-top: 4px;
-  background-color: transparent;
-  width: unset;
-}
-
-.igv-trackgear-container {
-  margin-left: unset;
-  color: $default-dark-color;
-  width: 14px;
-  height: 14px;
 }
 
 #hic-encode-modal > .modal-dialog {
@@ -272,7 +305,7 @@ $default-font-family: 'Open Sans', sans-serif;
   width: 100%;
   height: 100%;
   background-color: rgba(99, 99, 99, 0.25);
-  //background-color: rgba(255, 0, 0, 0.25);
+
   z-index: 1024;
 }
 
@@ -596,8 +629,6 @@ $default-font-family: 'Open Sans', sans-serif;
     border-bottom-width: thin;
     border-bottom-color: #dddddd;
 
-    //background-color: rgba(173, 255, 47, 0.51);
-
     font-size: 14px;
     font-weight: 400;
 
@@ -605,19 +636,6 @@ $default-font-family: 'Open Sans', sans-serif;
       margin-left: 8px;
       background-color: rgba(94, 219, 255, 0.51);
     }
-
-    //div:first-child {
-    //  margin-left: 2px;
-    //  margin-right: 2px;
-    //  background-color: rgba(173, 255, 47, 0.51);
-    //}
-    //
-    //div:last-child {
-    //  margin-left: 2px;
-    //  margin-right: 2px;
-    //  background-color: rgba(255, 0, 0, 0.51);
-    //}
-
 
   }
 
@@ -776,7 +794,6 @@ $default-font-family: 'Open Sans', sans-serif;
   align-items: center;
 
   width: 100%;
-  height: $nav-bar-height;
 
   color: $default-dark-color;
   font-family: $default-font-family;
@@ -785,10 +802,6 @@ $default-font-family: 'Open Sans', sans-serif;
   font-weight: 400;
 
   background-color: $default-light-color;
-
-  border-bottom-style: solid;
-  border-bottom-width: thin;
-  border-bottom-color: transparent;
 
   // container: contact map label | menu button | browser delete button
   div[id$="hic-nav-bar-map-container"] {
@@ -812,10 +825,6 @@ $default-font-family: 'Open Sans', sans-serif;
 
       vertical-align: middle;
       line-height: $nav-bar-label-height;
-
-      border-bottom-style: solid;
-      border-bottom-width: thin;
-      border-bottom-color: transparent;
 
       background-color: transparent;
 
@@ -869,14 +878,8 @@ $default-font-family: 'Open Sans', sans-serif;
     width: 95%;
     height: $nav-bar-widget-container-height;
 
-    margin-top: 4px;
-    margin-bottom: 4px;
-  }
-
-  .hic-nav-bar-shim {
-    width: 100%;
-    height: $nav-bar-shim-height;
-    background-color: transparent;
+    margin-top: $nav-bar-widget-container-margin;
+    margin-bottom: $nav-bar-widget-container-margin;
   }
 
 }
@@ -916,6 +919,7 @@ $default-font-family: 'Open Sans', sans-serif;
 
   input {
     width: 30%;
+    height: 32px;
   }
 
   i.fa-minus {
@@ -1106,8 +1110,7 @@ div[id$="x-track-container"] {
       width: 100%;
       margin-right: 0;
 
-      // Keep in sync with LayoutController.track_margin
-      margin-bottom: 2px;
+      margin-bottom: $track-margin;
 
       // canvas inserted here
 
@@ -1200,15 +1203,9 @@ div[id$="content-container"] {
         display: flex;
         flex-flow: row;
         flex-wrap: nowrap;
-        justify-content: space-between;
+        justify-content: flex-start;
 
-        // whole genome divs
         .x-axis-whole-genome-chromosome-container {
-          display: flex;
-          flex-direction: column;
-          flex-wrap: nowrap;
-          justify-content: center;
-          align-items: center;
 
           font-family: $default-font-family;
           font-size: 8px;
@@ -1217,25 +1214,25 @@ div[id$="content-container"] {
 
           height: 100%;
 
-          border-left-color: transparent;
-          border-left-style: solid;
-          border-left-width: thin;
-
-          border-right-color: #bfbfbf;
-          border-right-style: solid;
-          border-right-width: thin;
-
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
 
-          .x-axis-whole-genome-chromosome {
+          >div {
+            display: flex;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            justify-content: center;
+            align-items: center;
+
+            width: 100%;
+            height: 100%;
+            border-left-color: #868686;
+            border-left-style: solid;
+            border-left-width: thin;
+
           }
 
-        }
-
-        .x-axis-whole-genome-chromosome-container:last-child {
-          border-right-color: transparent;
         }
 
       }
@@ -1299,8 +1296,7 @@ div[id$="content-container"] {
         position: relative;
         height: 100%;
 
-        // Keep in sync with LayoutController.track_margin
-        margin-right: 2px;
+        margin-right: $track-margin;
 
         background-color: white;
 
@@ -1343,15 +1339,9 @@ div[id$="content-container"] {
         display: flex;
         flex-flow: column;
         flex-wrap: nowrap;
-        justify-content: space-between;
+        justify-content: flex-start;
 
-        // whole genome divs
         .y-axis-whole-genome-chromosome-container {
-          display: flex;
-          flex-direction: column;
-          flex-wrap: nowrap;
-          justify-content: center;
-          align-items: center;
 
           font-family: $default-font-family;
           font-size: 8px;
@@ -1360,26 +1350,25 @@ div[id$="content-container"] {
 
           width: 100%;
 
-          border-top-color: transparent;
-          border-top-style: solid;
-          border-top-width: thin;
-
-          border-bottom-color: #bfbfbf;
-          border-bottom-style: solid;
-          border-bottom-width: thin;
-
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
 
-          .y-axis-whole-genome-chromosome {
-            transform: rotate(-90deg);
+          >div {
+            display: flex;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            justify-content: center;
+            align-items: center;
+
+            width: 100%;
+            height: 100%;
+            border-top-color: #868686;
+            border-top-style: solid;
+            border-top-width: thin;
+
           }
 
-        }
-
-        .y-axis-whole-genome-chromosome-container:last-child {
-          border-bottom-color: transparent;
         }
 
       }
@@ -1550,7 +1539,7 @@ div[id$="content-container"] {
 
 .hic-whole-genome-chromosome-highlight {
   cursor: pointer;
-  background-color: $hic-whole-genome-chromosome-highlight-color;
+  //background-color: $hic-whole-genome-chromosome-highlight-color;
 }
 
 .hic-track-menu {
@@ -1561,54 +1550,7 @@ div[id$="content-container"] {
   background-color: #3a8ab4;
 }
 
-.juicebox-app-caption-container {
-  display: flex;
-  flex-flow: column;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-
-  .juicebox-app-clone-container {
-    display: flex;
-    flex-flow: row;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-  }
-
-  .hic-caption-container {
-    height: 64px;
-    width: 100%;
-
-    margin-top: 16px;
-    padding-top: 4px;
-    padding-left: 8px;
-
-    font-size: medium;
-    background-color: #efefef;
-  }
-
-}
-
-.juicebox-app-clone-button {
-
-  cursor: pointer;
-
-  color: $default-dark-color;
-
-  i.fa-plus-circle {
-    float: left;
-  }
-
-  margin-top: 10px;
-}
-
-.juicebox-app-clone-button:hover,
-.juicebox-app-clone-button:focus,
-.juicebox-app-clone-button:active {
-  color: $default-hover-color;
-}
-
 .hic-root-selected {
-  //border-color: #df0000;
   border-color: #5f5f5f;
 }
 
@@ -1620,22 +1562,17 @@ div[id$="content-container"] {
   user-select: none;
 }
 
-// remove modal backdrop scrim
-.modal-backdrop {
-  background-color: transparent;
-}
 
-.hidden-text {
-  color: transparent;
-}
-
-.site-widget {
-  float: left;
+.igv-trackgear-container {
+  position: relative;
+  width: 20px;
+  height: 20px;
   margin-left: 4px;
-  margin-right: 32px;
-
-  ul {
-    z-index: 2048;
-  }
-
+  color: $igv-trackgear-grey-color;
 }
+
+.igv-trackgear-container:hover {
+  cursor: pointer;
+  color: #444;
+}
+

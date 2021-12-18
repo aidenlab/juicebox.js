@@ -21,9 +21,23 @@
  *
  */
 
-// File provided for webpack entry point.   Result after translation to ES5 will be a global with a single
-// "hic" property.
+import {igvxhr} from '../node_modules/igv-utils/src/index.js'
+import {createBrowser, setCurrentBrowser, getAllBrowsers, getCurrentBrowser} from './createBrowser.js';
+import {version} from "./version.js";
+import {compressedSession, restoreSession, toJSON} from "./session.js";
+import {init} from "./init.js"
+import EventBus from "./eventBus.js"
 
-import  * as hic from './hic.js'
-
-export {hic}
+export default {
+    version,
+    init,
+    toJSON,
+    restoreSession,
+    compressedSession,
+    createBrowser,
+    getCurrentBrowser,
+    setCurrentBrowser,
+    getAllBrowsers,
+    igvxhr,
+    EventBus
+}

@@ -1,0 +1,88 @@
+<!--
+  ~  The MIT License (MIT)
+  ~
+  ~ Copyright (c) 2016-2017 The Regents of the University of California
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  ~ associated documentation files (the "Software"), to deal in the Software without restriction, including
+  ~ without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the
+  ~ following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all copies or substantial
+  ~ portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+  ~ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A PARTICULAR PURPOSE AND
+  ~ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  ~ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+  ~ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  ~ THE SOFTWARE.
+  ~
+  -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Juicebox</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+
+    <!-- Juicebox CSS-->
+    <link rel="stylesheet" type="text/css" href="../css/juicebox.css">
+
+
+</head>
+
+<body>
+
+
+<div id="app-container"></div>
+
+
+<script type="module">
+
+    import hic from "../js/index.js";
+
+    const config =
+        {
+        //    href: "blob:7ZNZj5swFIX_C31FXoCwRKqqdlRVldqneawiZGwzOCymtoGZjPLf55I0UZdUZSbzWMEV2.X4fgfOo1cYPVlprLf.BheM13dGD5240Y023toLViv_R3m.N5gG7lXO9XaNMROsRaG4Q0pjO1TM5ttBcVnoe9yowmKujZHcSZFz3Raqg5OW9TYfM_zpKw3SJD0dc9U5xl1OU5R8yFNEVyggqFIc1uxYK2HRBZ3WMTe30syHPfYJbHF0LOrf3rz_8hG6.Ex2y1lzaE0yFJMwiEgQEqgwOdDCm_PKo5odoBGlWUBoNNsQJ0kGj5wBp46e_erJNE1IGN2DCQioscW9FDWzcWhbnn2nZ_QTyNmaIxElaCbKrTOqlzZfEUJQIUUv34nm7WGqi34sljk5ABJvgFiWpbf3_00xmo5s.bALJr2ra7WQotEavveVDL.LLJq3gd.6b.k4kTh8qKKF8wrdMtVdPfGfMj.7XpYlI6G338wc_xP3.onTVdbssrRw0cD70bwgcXmWvlLozkovzF1cp71Mh.l.HHlHH56du.tILugsmjpx21oMNFJWRLTZ4c_Pz83fBr9G6nIKN_sn"å
+        };
+
+    const container = document.getElementById("app-container");
+
+    hic.init(container, config)
+        .then(function (hicBrowser) {
+            // hicBrowser.loadTracks ([{
+            //     url: "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/combined_peaks.txt"
+            // }])
+            const listener = createGenomeChangeListener(config)
+
+            hic.EventBus.globalBus.subscribe("GenomeChange", listener)
+
+        })
+
+
+    function createGenomeChangeListener(config) {
+
+        return {
+
+            receiveEvent: async event => {
+
+                const {data: genomeId} = event;
+
+                console.log(genomeId)
+            }
+        }
+
+    }
+
+</script>
+
+</body>
+
+</html>

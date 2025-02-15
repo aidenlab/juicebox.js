@@ -37,7 +37,8 @@ class Genome {
     constructor(id, chromosomes) {
 
         this.id = id;
-        this.chromosomes = chromosomes;
+        this.chromosomes = chromosomes
+
         this.wgChromosomeNames = [];
         this.chromosomeLookupTable = {};
 
@@ -78,6 +79,8 @@ class Genome {
 
         this.chrAliasTable = chrAliasTable;
 
+        this.featureDB = new Map()   // Hash of name -> feature, used for search function.
+
     }
 
     getChromosomeName(str) {
@@ -97,7 +100,7 @@ class Genome {
         return this.getCumulativeOffset(chr.name) + bp;
     };
 
-    getChromsosomeForCoordinate(bp) {
+    getChromosomeForCoordinate(bp) {
         var i = 0,
             offset = 0,
             l;
@@ -128,8 +131,28 @@ class Genome {
     getGenomeLength() {
         return this.genomeLength;
     }
-}
 
+    // Required for igv.js
+    addFeaturesToDB(featureList, config) {
+
+        const insertFeature = (name, feature) => {
+            const current = this.featureDB.get(name)
+            if (current) {
+                feature = (feature.end - feature.start) > (current.end - current.start) ? feature : current
+            }
+            this.featureDB.set(name, feature)
+        }
+
+        for (let feature of featureList) {
+            if (feature.name) {
+                insertFeature(feature.name.toUpperCase(), feature)
+            }
+            if (feature.gene && feature.gene.name) {
+                insertFeature(feature.gene.name.toUpperCase(), feature)
+            }
+        }
+    }
+}
 function computeCumulativeOffsets() {
 
     const cumulativeOffsets = {};

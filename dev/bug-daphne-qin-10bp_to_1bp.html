@@ -1,0 +1,129 @@
+<html>
+<head>
+    <meta charset="UTF-`8`"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Juicebox - ES6 </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.css">
+
+    <!-- Juicebox CSS-->
+    <link rel="stylesheet" type="text/css" href="../css/juicebox.css">
+
+</head>
+
+<body>
+
+
+<div id="app-container" style="display: flex; flex-flow: row; flex-wrap: wrap; justify-content: flex-start;">
+</div>
+
+
+<script type="module">
+
+    import juicebox from '../js/index.js';
+
+    const config_daphne_quinn =
+        {
+            "browsers": [
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/r.hic",
+                    "name": "r.hic",
+                    "state": "1,1,3,315.5550762134787,213.55507621347869,640,640,1,NONE",
+                    "colorScale": "443,255,0,0",
+                    "nvi": "43762184328,25419"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/a.hic",
+                    "name": "a.hic",
+                    "state": "1,1,3,315.5550762134787,213.55507621347869,640,640,1,NONE",
+                    "colorScale": "440,255,0,0",
+                    "nvi": "43835341324,25419"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/LCL_combined/9_12_23/inter_30.hic",
+                    "name": "inter_30.hic",
+                    "state": "1,1,3,315.5550762134787,213.55507621347869,640,640,1,SCALE",
+                    "colorScale": "14195.827937795497,255,0,0",
+                    "nvi": "2113712247631,126136"
+                }
+            ]
+        };
+
+    const config =
+        {
+            "browsers": [
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/r.hic",
+                    "name": "Low Res Map A",
+                    "state": "1,1,3,315.5550762134787,213.55507621347869,512,512,1,NONE",
+                    "colorScale": "443,255,0,0",
+                    "nvi": "43762184328,25419"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/a.hic",
+                    "name": "Low Res Map B",
+                    "state": "1,1,3,315.5550762134787,213.55507621347869,512,512,1,NONE",
+                    "colorScale": "440,255,0,0",
+                    "nvi": "43835341324,25419"
+                },
+                {
+                    "backgroundColor": "255,255,255",
+                    "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/LCL_combined/9_12_23/inter_30.hic",
+                    "name": "High Res Map",
+                    "state": "1,1,3,315.5550762134787,213.55507621347869,512,512,1,NONE",
+                    "colorScale": "14195.827937795497,255,0,0",
+                    "nvi": "2113712247631,126136"
+                }
+            ]
+        };
+
+    const config_2d_annotation_vanish =
+        {
+            "browsers":
+                [
+                    {
+                        "backgroundColor": "206,250,110",
+                        "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/r.hic",
+                        "name": "Low Res Map",
+                        "state": "13,13,10,42716.19,42716.19,512,512,1.067481115221243,NONE",
+                        "colorScale": "11,0,0,0",
+                        "nvi": "43762184328,25419"
+                    },
+                    {
+                        "backgroundColor": "206,250,110",
+                        "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/LCL_combined/9_12_23/inter_30.hic",
+                        "name": "High Res Map",
+                        "state": "13,13,10,42716.19,42716.19,512,512,1.067481115221243,NONE",
+                        "colorScale": "73,0,0,0",
+                        "nvi": "2113712247631,126136"
+                    }
+                ],
+        };
+
+    juicebox.init(document.getElementById("app-container"), config_daphne_quinn)
+        .then(result => {
+
+            // if (Array.isArray(result)) {
+            //     for (const browser of result) {
+            //         console.log(`${ browser.id } is good to go`);
+            //     }
+            // } else {
+            //     console.log(`${ result.id } is good to go`);
+            // }
+
+
+        })
+
+
+</script>
+
+</body>
+
+</html>

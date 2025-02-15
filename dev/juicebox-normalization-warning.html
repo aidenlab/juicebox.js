@@ -1,0 +1,45 @@
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Juicebox</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+
+    <!-- Juicebox CSS-->
+    <link rel="stylesheet" type="text/css" href="../dist/css/juicebox.css">
+
+</head>
+
+<body>
+
+
+<div id="app-container"></div>
+
+
+<script type="module">
+
+    import juicebox from '../js/index.js';
+
+    const config =
+        {
+            "backgroundColor": "255,255,255",
+            "url": "https://s3.us-central-1.wasabisys.com/aiden-encode-hic-mirror/bifocals_iter2/solid_tissues.hic",
+            "name": "solid_tissues.hic",
+            "state": "11,11,7,6887.85247848789,6887.318078195596,640,640,1,SCALE",
+            "colorScale": "696,255,0,0",
+            "nvi": "265914034843,68023"
+        };
+
+    (async () => {
+        const browser = await juicebox.init(document.getElementById("app-container"), config)
+        console.log(`${ browser.id } is good to go`)
+    })()
+
+</script>
+
+</body>
+
+</html>

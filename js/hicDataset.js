@@ -26,9 +26,11 @@
  * @author Jim Robinson
  */
 
-import * as hic from './hicUtils.js'
+import {isFile} from "./fileUtils.js"
 import Straw from '../node_modules/hic-straw/src/straw.js'
-import {GoogleUtils} from '../node_modules/igv-utils/src/index.js'
+import * as GoogleUtils from "../node_modules/google-utils/src/googleUtils.js"
+import * as GoogleDrive from "../node_modules/google-utils/src/googleDrive.js"
+
 import IGVRemoteFile from "./igvRemoteFile.js"
 
 const knownGenomes = {
@@ -176,14 +178,14 @@ class Dataset {
     static async loadDataset(config) {
 
         // If this is a local file, use the "blob" field for straw
-        if (config.url instanceof File) {
+        if (isFile(config.url)) {
             config.blob = config.url
             delete config.url
         } else {
             // If this is a google url, add api KEY
             if (GoogleUtils.isGoogleURL(config.url)) {
                 if (GoogleUtils.isGoogleDriveURL(config.url)) {
-                    config.url = GoogleUtils.driveDownloadURL(config.url)
+                    config.url = GoogleDrive.getDriveDownloadURL(config.url)
                 }
                 const copy = Object.assign({}, config);
                 config.file = new IGVRemoteFile(copy);

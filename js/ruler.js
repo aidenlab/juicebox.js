@@ -27,278 +27,208 @@
  */
 
 import {IGVColor, IGVMath} from '../node_modules/igv-utils/src/index.js'
-import IGVGraphics from "./igv/igv-canvas.js"
-import $ from '../vendor/jquery-3.3.1.slim.js'
-
-function randomRGB(min, max) {
-
-    min = IGVMath.clamp(min, 0, 255)
-    max = IGVMath.clamp(max, 0, 255)
-
-    const r = Math.round(Math.random() * (max - min) + min).toString(10)
-    const g = Math.round(Math.random() * (max - min) + min).toString(10)
-    const b = Math.round(Math.random() * (max - min) + min).toString(10)
-    return `rgb(${r},${g},${b})`
-
-}
+import igv from '../node_modules/igv/dist/igv.esm.js'
 
 class Ruler {
 
-    constructor(browser, $parent, axis) {
-
+    constructor(browser, parentElement, axis) {
         this.browser = browser;
         this.axis = axis;
 
-        this.$axis = $parent.find(`div[id$='-axis']`);
+        this.axisElement = parentElement.querySelector(`div[id$='-axis']`);
 
-        this.$canvas = $parent.find("canvas");
+        this.canvasElement = parentElement.querySelector("canvas");
 
-        this.ctx = this.$canvas.get(0).getContext("2d");
-        this.ctx.canvas.width = this.$axis.width();
-        this.ctx.canvas.height = this.$axis.height();
+        this.ctx = this.canvasElement.getContext("2d");
+        this.ctx.canvas.width = this.axisElement.offsetWidth;
+        this.ctx.canvas.height = this.axisElement.offsetHeight;
 
-        this.$wholeGenomeContainer = $parent.find("div[id$='-axis-whole-genome-container']");
-
-        this.yAxisTransformWithContext = ctx => {
-            ctx.scale(-1, 1);
-            ctx.rotate(Math.PI / 2.0);
-        };
+        this.wholeGenomeContainerElement = parentElement.querySelector("div[id$='-axis-whole-genome-container']");
 
         this.setAxisTransform(axis);
 
         browser.eventBus.subscribe('MapLoad', this);
         browser.eventBus.subscribe("UpdateContactMapMousePosition", this);
-
     }
 
-    wholeGenomeLayout($axis, $wholeGenomeContainer, axisName, dataset) {
+    wholeGenomeLayout(axisElement, wholeGenomeContainerElement, axisName, dataset) {
 
-        var self = this,
-            list,
-            dimen,
-            extent,
-            scraps,
-            $div,
-            $firstDiv;
+        const decorate = (div) => {
+            div.addEventListener('click', () => {
+                this.browser.parseGotoInput(div.textContent);
+                this.unhighlightWholeChromosome();
+                this.otherRuler.unhighlightWholeChromosome();
+            });
+
+            div.addEventListener('mouseenter', () => {
+                hoverHandler.call(this, div, true);
+            });
+
+            div.addEventListener('mouseleave', () => {
+                hoverHandler.call(this, div, false);
+            });
+        };
+
+        const hoverHandler = (element, doHover) => {
+            const targetLabel = element.dataset.label;
+
+            Array.from(this.otherRuler.wholeGenomeContainerElement.children).forEach(child => {
+                if (child.dataset.label === targetLabel) {
+                    if (doHover) {
+                        element.classList.add('hic-whole-genome-chromosome-highlight');
+                        child.classList.add('hic-whole-genome-chromosome-highlight');
+                    } else {
+                        element.classList.remove('hic-whole-genome-chromosome-highlight');
+                        child.classList.remove('hic-whole-genome-chromosome-highlight');
+                    }
+                }
+            });
+        };
+
+
+        const self = this;
+        let list, dimen, extent, scraps, divElement, firstDivElement;
 
         // discard current tiles
-        $wholeGenomeContainer.empty();
+        wholeGenomeContainerElement.innerHTML = '';
 
-        list = dataset.chromosomes.filter(function (chromosome) {
-            return 'all' !== chromosome.name.toLowerCase();
-        });
+        list = dataset.chromosomes.filter(chromosome => chromosome.name.toLowerCase() !== 'all');
 
-        extent = 0;    // could use reduce for this
-        list.forEach(function (chromosome) {
-            extent += chromosome.size;
-        });
+        extent = list.reduce((sum, chromosome) => sum + chromosome.size, 0);
 
-        dimen = 'x' === axisName ? $axis.width() : $axis.height();
+        dimen = axisName === 'x' ? axisElement.offsetWidth : axisElement.offsetHeight;
 
         scraps = 0;
         this.bboxes = [];
-        $firstDiv = undefined;
+        firstDivElement = undefined;
 
-        list.forEach(function (chr) {
-            var size,
-                percentage;
-
-            percentage = (chr.bpLength) / extent;
+        for (const chr of list) {
+            const percentage = chr.bpLength / extent;
 
             if (percentage * dimen < 1.0) {
                 scraps += percentage;
             } else {
+                const divElement = document.createElement('div');
+                divElement.className = `${this.axis}-axis-whole-genome-chromosome-container`;
+                divElement.dataset.label = chr.name;
+                wholeGenomeContainerElement.appendChild(divElement);
 
-                $div = $("<div>", { class: `${ self.axis }-axis-whole-genome-chromosome-container` });
-                $wholeGenomeContainer.append($div);
-                $div.data('label', chr.name);
-
-                // debug
-                // $div.get(0).style.backgroundColor = randomRGB(150, 250);
-
-                if (!$firstDiv) {
-                    $firstDiv = $div;
+                if (!firstDivElement) {
+                    firstDivElement = divElement;
                 }
 
-                if ('x' === axisName) {
-                    size = Math.round(percentage * dimen);
-                    $div.width(size);
+                const size = Math.round(percentage * dimen);
+                if (axisName === 'x') {
+                    divElement.style.width = `${size}px`;
                 } else {
-                    size = Math.round(percentage * dimen);
-                    $div.height(size);
+                    divElement.style.height = `${size}px`;
                 }
 
-                // border
-                const $border = $('<div>');
-                $div.append($border);
+                // Border
+                const borderElement = document.createElement('div');
+                divElement.appendChild(borderElement);
 
-                // label
-                const $label = $('<div>');
-                $border.append($label);
+                // Label
+                const labelElement = document.createElement('div');
+                borderElement.appendChild(labelElement);
 
-                $label.text($div.data('label'));
-                $label.get(0).title = $div.data('label');
+                labelElement.textContent = divElement.dataset.label;
+                labelElement.title = divElement.dataset.label;
 
-                decorate.call(self, $div);
+                decorate(divElement);
             }
+        }
 
-        });
-
-        scraps *= dimen;
-        scraps = Math.floor(scraps);
+        scraps = Math.floor(scraps * dimen);
         if (scraps >= 1) {
 
-            const className = self.axis + '-axis-whole-genome-chromosome-container';
-            $div = $("<div>", {class: className});
-            $wholeGenomeContainer.append($div);
-            $div.data('label', '-');
+            const divElement = document.createElement('div')
+            wholeGenomeContainerElement.appendChild(divElement)
 
-            $div.width(scraps);
+            divElement.className = `${this.axis}-axis-whole-genome-chromosome-container`
+            divElement.dataset.label = '-';
+            divElement.style.width = `${scraps}px`;
 
-            // className = self.axis + '-axis-whole-genome-chromosome';
-            // $e = $("<div>", {class: className});
-            // $div.append($e);
-            // $e.text($div.data('label'));
-
-            decorate.call(self, $div);
+            decorate(divElement);
         }
 
-        $wholeGenomeContainer.children().each(function (index) {
-            self.bboxes.push(bbox(axisName, $(this), $firstDiv));
-        });
+        for (const child of wholeGenomeContainerElement.children) {
+            this.bboxes.push(bbox(axisName, child, firstDivElement));
+        }
 
-
-        // initially hide
         this.hideWholeGenome();
 
-        function decorate($d) {
-            var self = this;
-
-            $d.on('click', function (e) {
-                var $o;
-                $o = $(this).first();
-                self.browser.parseGotoInput($o.text());
-
-                self.unhighlightWholeChromosome();
-                self.otherRuler.unhighlightWholeChromosome();
-            });
-
-            $d.hover(
-                function () {
-                    hoverHandler.call(self, $(this), true);
-                },
-
-                function () {
-                    hoverHandler.call(self, $(this), false);
-                }
-            );
-
-        }
-
-        function hoverHandler($e, doHover) {
-
-            var target,
-                $target;
-
-            target = $e.data('label');
-
-            this.otherRuler.$wholeGenomeContainer.children().each(function (index) {
-                if (target === $(this).data('label')) {
-                    $target = $(this);
-                }
-            });
-
-            if (true === doHover) {
-                $e.addClass('hic-whole-genome-chromosome-highlight');
-                $target.addClass('hic-whole-genome-chromosome-highlight');
-            } else {
-                $e.removeClass('hic-whole-genome-chromosome-highlight');
-                $target.removeClass('hic-whole-genome-chromosome-highlight');
-            }
-        }
-
-    };
+    }
 
     hideWholeGenome() {
-        this.$wholeGenomeContainer.hide();
-        this.$canvas.show();
-    };
+        this.wholeGenomeContainerElement.style.display = 'none';
+        this.canvasElement.style.display = 'block';
+    }
 
     showWholeGenome() {
-        this.$canvas.hide();
-        this.$wholeGenomeContainer.show();
-    };
+        this.canvasElement.style.display = 'none';
+        this.wholeGenomeContainerElement.style.display = 'flex';
+    }
 
     setAxisTransform(axis) {
 
-        this.canvasTransform = ('y' === axis) ? this.yAxisTransformWithContext : identityTransformWithContext;
+        this.canvasTransform    = ('y' === axis) ? canvasTransformWithContext      : identityTransformWithContext
+        this.labelTransform     = ('y' === axis) ? labelTransformWithContext : noopTransformWithContext
 
-        this.labelReflectionTransform = ('y' === axis) ? reflectionTransformWithContext : function (context, exe) {
-        };
-
-    };
+    }
 
     unhighlightWholeChromosome() {
-        this.$wholeGenomeContainer.children().removeClass('hic-whole-genome-chromosome-highlight');
-    };
+        for (const child of this.wholeGenomeContainerElement.children) {
+            child.classList.remove('hic-whole-genome-chromosome-highlight');
+        }
+    }
 
     receiveEvent(event) {
-        var offset,
-            $e;
+        let offset, element;
 
-        if ('MapLoad' === event.type) {
-            this.wholeGenomeLayout(this.$axis, this.$wholeGenomeContainer, this.axis, event.data);
+        if (event.type === 'MapLoad') {
+            this.wholeGenomeLayout(this.axisElement, this.wholeGenomeContainerElement, this.axis, event.data);
             this.update();
-        } else if ('UpdateContactMapMousePosition' === event.type) {
-
+        } else if (event.type === 'UpdateContactMapMousePosition') {
             if (this.bboxes) {
                 this.unhighlightWholeChromosome();
-                offset = 'x' === this.axis ? event.data.x : event.data.y;
-                $e = hitTest(this.bboxes, offset);
-                if ($e) {
-                    // console.log(this.axis + ' highlight chr ' + $e.text());
-                    $e.addClass('hic-whole-genome-chromosome-highlight');
+                offset = this.axis === 'x' ? event.data.x : event.data.y;
+                element = hitTest(this.bboxes, offset);
+                if (element) {
+                    element.classList.add('hic-whole-genome-chromosome-highlight');
                 }
             }
         }
-
-    };
+    }
 
     locusChange(event) {
 
         this.update();
 
-    };
+    }
 
     updateWidthWithCalculation(calc) {
+        this.axisElement.style.width = calc;
 
-        this.$axis.css('width', calc);
+        const axisWidth = this.axisElement.offsetWidth;
+        this.canvasElement.width = axisWidth;
+        this.canvasElement.setAttribute('width', axisWidth);
 
-        this.$canvas.width(this.$axis.width());
-        this.$canvas.attr('width', this.$axis.width());
-
-        this.wholeGenomeLayout(this.$axis, this.$wholeGenomeContainer, this.axis, this.browser.dataset);
-
+        this.wholeGenomeLayout(this.axisElement, this.wholeGenomeContainerElement, this.axis, this.browser.dataset);
         this.update();
-    };
+    }
 
     updateHeight(height) {
+        this.canvasElement.height = height;
+        this.canvasElement.setAttribute('height', height);
 
-        this.$canvas.height(height);
-        this.$canvas.attr('height', height);
-
-        this.wholeGenomeLayout(this.$axis, this.$wholeGenomeContainer, this.axis, this.browser.dataset);
-
+        this.wholeGenomeLayout(this.axisElement, this.wholeGenomeContainerElement, this.axis, this.browser.dataset);
         this.update();
-    };
+    }
 
     update() {
-
-        var w,
-            h,
-            bin,
-            config = {},
-            browser = this.browser;
+        const browser = this.browser;
+        const config = {};
 
         if (browser.dataset.isWholeGenome(browser.state.chr1)) {
             this.showWholeGenome();
@@ -308,239 +238,191 @@ class Ruler {
         this.hideWholeGenome();
 
         identityTransformWithContext(this.ctx);
-        IGVGraphics.fillRect(this.ctx, 0, 0, this.$canvas.width(), this.$canvas.height(), {fillStyle: IGVColor.rgbColor(255, 255, 255)});
+        igv.IGVGraphics.fillRect(
+            this.ctx,
+            0,
+            0,
+            this.canvasElement.width,
+            this.canvasElement.height,
+            { fillStyle: IGVColor.rgbColor(255, 255, 255) }
+        );
 
         this.canvasTransform(this.ctx);
 
-        w = ('x' === this.axis) ? this.$canvas.width() : this.$canvas.height();
-        h = ('x' === this.axis) ? this.$canvas.height() : this.$canvas.width();
+        const width = this.axis === 'x' ? this.canvasElement.width : this.canvasElement.height;
+        const height = this.axis === 'x' ? this.canvasElement.height : this.canvasElement.width;
 
-        IGVGraphics.fillRect(this.ctx, 0, 0, w, h, {fillStyle: IGVColor.rgbColor(255, 255, 255)});
+        igv.IGVGraphics.fillRect(
+            this.ctx,
+            0,
+            0,
+            width,
+            height,
+            { fillStyle: IGVColor.rgbColor(255, 255, 255) }
+        );
 
         config.bpPerPixel = browser.dataset.bpResolutions[browser.state.zoom] / browser.state.pixelSize;
-
-        bin = ('x' === this.axis) ? browser.state.x : browser.state.y;
+        const bin = this.axis === 'x' ? browser.state.x : browser.state.y;
         config.bpStart = bin * browser.dataset.bpResolutions[browser.state.zoom];
 
-        config.rulerTickMarkReferencePixels = Math.max(Math.max(this.$canvas.width(), this.$canvas.height()), Math.max(this.$otherRulerCanvas.width(), this.$otherRulerCanvas.height()));
+        config.rulerTickMarkReferencePixels = Math.max(
+            this.canvasElement.width,
+            this.canvasElement.height,
+            this.otherRulerCanvas.width,
+            this.otherRulerCanvas.height
+        );
 
-        config.rulerLengthPixels = w;
-        config.rulerHeightPixels = h;
+        config.rulerLengthPixels = width;
+        config.rulerHeightPixels = height;
 
-        config.height = Math.min(this.$canvas.width(), this.$canvas.height());
+        config.height = Math.min(this.canvasElement.width, this.canvasElement.height);
 
         this.draw(config);
-    };
+    }
 
     draw(options) {
+        const {
+            rulerLengthPixels,
+            rulerHeightPixels,
+            rulerTickMarkReferencePixels,
+            bpPerPixel,
+            bpStart,
+            chrName
+        } = options;
 
-        var self = this,
-            fontStyle,
-            tickSpec,
-            majorTickSpacing,
-            nTick,
-            pixelLast,
-            pixel,
-            tickSpacingPixels,
-            labelWidthPixels,
-            modulo,
-            l,
-            yShim,
-            tickHeight,
-            rulerLabel,
-            chrSize,
-            chrName,
-            chromosomes = this.browser.dataset.chromosomes;
+        const { chromosomes } = this.browser.dataset;
+        const { state } = this.browser;
+        const axisIsX = this.axis === 'x';
+        const chr = axisIsX ? chromosomes[state.chr1] : chromosomes[state.chr2];
+        const { name: chrNameSelected, size: chrSize } = chr;
 
-        chrName = ('x' === this.axis) ? chromosomes[this.browser.state.chr1].name : chromosomes[this.browser.state.chr2].name;
-        chrSize = ('x' === this.axis) ? chromosomes[this.browser.state.chr1].size : chromosomes[this.browser.state.chr2].size;
+        if (chrName !== "all") {
+            // Clear the ruler area
+            igv.IGVGraphics.fillRect(this.ctx, 0, 0, rulerLengthPixels, rulerHeightPixels, {
+                fillStyle: IGVColor.rgbColor(255, 255, 255)
+            });
 
-        if (options.chrName === "all") {
-
-        } else {
-
-            IGVGraphics.fillRect(this.ctx, 0, 0, options.rulerLengthPixels, options.rulerHeightPixels, {fillStyle: IGVColor.rgbColor(255, 255, 255)});
-
-            fontStyle = {
+            const fontStyle = {
                 textAlign: 'center',
                 font: '9px PT Sans',
                 fillStyle: "rgba(64, 64, 64, 1)",
                 strokeStyle: "rgba(64, 64, 64, 1)"
             };
 
-            tickSpec = findSpacing(Math.floor(options.rulerTickMarkReferencePixels * options.bpPerPixel));
-            majorTickSpacing = tickSpec.majorTick;
+            const tickSpec = findSpacing(Math.floor(rulerTickMarkReferencePixels * bpPerPixel));
+            const majorTickSpacing = tickSpec.majorTick;
 
-            // Find starting point closest to the current origin
-            nTick = Math.floor(options.bpStart / majorTickSpacing) - 1;
+            let nTick = Math.floor(bpStart / majorTickSpacing) - 1;
+            let pixel = 0;
+            let pixelLast = 0;
 
-            pixel = pixelLast = 0;
-
-            IGVGraphics.setProperties(this.ctx, fontStyle);
+            igv.IGVGraphics.setProperties(this.ctx, fontStyle);
             this.ctx.lineWidth = 1.0;
 
-            yShim = 1;
-            tickHeight = 8;
-            while (pixel < options.rulerLengthPixels) {
+            const yShim = 1;
+            const tickHeight = 8;
 
-                l = Math.floor(nTick * majorTickSpacing);
+            while (pixel < rulerLengthPixels) {
+                const l = Math.floor(nTick * majorTickSpacing);
+                pixel = Math.round(((l - 1) - bpStart + 0.5) / bpPerPixel);
 
-                pixel = Math.round(((l - 1) - options.bpStart + 0.5) / options.bpPerPixel);
+                const rulerLabel = `${formatNumber(l / tickSpec.unitMultiplier, 0)} ${tickSpec.majorUnit}`;
+                const tickSpacingPixels = Math.abs(pixel - pixelLast);
+                const labelWidthPixels = this.ctx.measureText(rulerLabel).width;
 
-                rulerLabel = formatNumber(l / tickSpec.unitMultiplier, 0) + " " + tickSpec.majorUnit;
+                const modulo = labelWidthPixels > tickSpacingPixels
+                    ? (tickSpacingPixels < 32 ? 4 : 2)
+                    : 1;
 
-                tickSpacingPixels = Math.abs(pixel - pixelLast);
-                labelWidthPixels = this.ctx.measureText(rulerLabel).width;
-
-                if (labelWidthPixels > tickSpacingPixels) {
-
-                    if (tickSpacingPixels < 32) {
-                        modulo = 4;
-                    } else {
-                        modulo = 2;
-                    }
-                } else {
-                    modulo = 1;
-                }
-
-                // modulo = 1;
-                if (0 === nTick % modulo) {
-
-                    if (Math.floor((pixel * options.bpPerPixel) + options.bpStart) < chrSize) {
-
-                        // console.log('   label delta(' + Math.abs(pixel - pixelLast) + ') modulo(' + modulo + ') bpp(' + options.bpPerPixel + ')');
-
+                if (nTick % modulo === 0) {
+                    if (Math.floor((pixel * bpPerPixel) + bpStart) < chrSize) {
                         this.ctx.save();
-                        this.labelReflectionTransform(this.ctx, pixel);
-                        IGVGraphics.fillText(this.ctx, rulerLabel, pixel, options.height - (tickHeight / 0.75));
+                        this.labelTransform(this.ctx, pixel);
+                        igv.IGVGraphics.fillText(this.ctx, rulerLabel, pixel, options.height - (tickHeight / 0.75));
                         this.ctx.restore();
-
                     }
-
-                } else {
-                    // console.log('no label');
                 }
 
-                if (Math.floor((pixel * options.bpPerPixel) + options.bpStart) < chrSize) {
-                    IGVGraphics.strokeLine(this.ctx,
+                if (Math.floor((pixel * bpPerPixel) + bpStart) < chrSize) {
+                    igv.IGVGraphics.strokeLine(
+                        this.ctx,
                         pixel, options.height - tickHeight,
-                        pixel, options.height - yShim);
+                        pixel, options.height - yShim
+                    );
                 }
 
                 pixelLast = pixel;
                 nTick++;
+            }
 
-            } // while (pixel < options.rulerLengthPixels)
-
-            IGVGraphics.strokeLine(this.ctx, 0, options.height - yShim, options.rulerLengthPixels, options.height - yShim);
-
+            // Draw the baseline
+            igv.IGVGraphics.strokeLine(this.ctx, 0, options.height - yShim, rulerLengthPixels, options.height - yShim);
         }
-
-        function formatNumber(anynum, decimal) {
-            //decimal  - the number of decimals after the digit from 0 to 3
-            //-- Returns the passed number as a string in the xxx,xxx.xx format.
-            //anynum = eval(obj.value);
-            var divider = 10;
-            switch (decimal) {
-                case 0:
-                    divider = 1;
-                    break;
-                case 1:
-                    divider = 10;
-                    break;
-                case 2:
-                    divider = 100;
-                    break;
-                default:       //for 3 decimal places
-                    divider = 1000;
-            }
-
-            var workNum = Math.abs((Math.round(anynum * divider) / divider));
-
-            var workStr = "" + workNum;
-
-            if (-1 === workStr.indexOf(".")) {
-                workStr += "."
-            }
-
-            var dStr = workStr.substr(0, workStr.indexOf("."));
-            var dNum = dStr - 0;
-            var pStr = workStr.substr(workStr.indexOf("."));
-
-            while (pStr.length - 1 < decimal) {
-                pStr += "0"
-            }
-
-            if ('.' === pStr) {
-                pStr = '';
-            }
-
-            //--- Adds a comma in the thousands place.
-            if (dNum >= 1000) {
-                var dLen = dStr.length;
-                dStr = parseInt("" + (dNum / 1000)) + "," + dStr.substring(dLen - 3, dLen)
-            }
-
-            //-- Adds a comma in the millions place.
-            if (dNum >= 1000000) {
-                dLen = dStr.length;
-                dStr = parseInt("" + (dNum / 1000000)) + "," + dStr.substring(dLen - 7, dLen)
-            }
-            var retval = dStr + pStr;
-            //-- Put numbers in parentheses if negative.
-            if (anynum < 0) {
-                retval = "(" + retval + ")";
-            }
-
-            //You could include a dollar sign in the return value.
-            //retval =  "$"+retval
-            return retval;
-        }
-    };
+    }
 }
 
-function bbox(axis, $child, $firstChild) {
-    var delta,
-        size,
-        o,
-        fo;
+const formatNumber = (num, decimal = 0) => {
+    // Ensure decimal is between 0 and 3
+    const precision = Math.min(Math.max(decimal, 0), 3);
 
-    o = 'x' === axis ? $child.offset().left : $child.offset().top;
-    fo = 'x' === axis ? $firstChild.offset().left : $firstChild.offset().top;
+    // Round the number to the desired decimal places
+    const roundedNum = Math.abs(num).toFixed(precision);
 
-    delta = o - fo;
-    size = 'x' === axis ? $child.width() : $child.height();
+    // Split the integer and decimal parts
+    let [integerPart, decimalPart] = roundedNum.split(".");
 
-    return {$e: $child, a: delta, b: delta + size};
+    // Add commas to the integer part
+    integerPart = parseInt(integerPart, 10).toLocaleString();
 
+    // Pad the decimal part with zeros if necessary
+    if (precision > 0) {
+        decimalPart = decimalPart.padEnd(precision, "0");
+    }
+
+    // Combine integer and decimal parts
+    let formattedNum = precision > 0 ? `${integerPart}.${decimalPart}` : integerPart;
+
+    // Wrap in parentheses if the original number was negative
+    if (num < 0) {
+        formattedNum = `(${formattedNum})`;
+    }
+
+    // Optionally, prepend a dollar sign
+    // formattedNum = `$${formattedNum}`;
+
+    return formattedNum;
+}
+
+function bbox(axis, childElement, firstChildElement) {
+    const offset = axis === 'x'
+        ? childElement.getBoundingClientRect().left
+        : childElement.getBoundingClientRect().top;
+
+    const firstOffset = axis === 'x'
+        ? firstChildElement.getBoundingClientRect().left
+        : firstChildElement.getBoundingClientRect().top;
+
+    const delta = offset - firstOffset;
+    const size = axis === 'x'
+        ? childElement.offsetWidth
+        : childElement.offsetHeight;
+
+    return { element: childElement, a: delta, b: delta + size };
 }
 
 function hitTest(bboxes, value) {
-    var $result,
-        success;
 
-    success = false;
-    $result = undefined;
-    bboxes.forEach(function (bbox) {
+    let hitElement = undefined;
 
-        if (false === success) {
-
-            if (value < bbox.a) {
-                // nuthin
-            } else if (value > bbox.b) {
-                // nuthin
-            } else {
-                $result = bbox.$e;
-                success = true;
-            }
-
+    for (const bbox of bboxes) {
+        if (value >= bbox.a && value <= bbox.b) {
+            hitElement = bbox.element;
+            break;
         }
+    }
 
-    });
-
-    return $result;
+    return hitElement;
 }
-
 
 function TickSpacing(majorTick, majorUnit, unitMultiplier) {
     this.majorTick = majorTick;
@@ -584,7 +466,11 @@ function findSpacing(rulerLengthBP) {
     }
 }
 
-function reflectionTransformWithContext(context, exe) {
+function canvasTransformWithContext(ctx) {
+    ctx.setTransform(0, 1, 1, 0, 0, 0)
+}
+
+function labelTransformWithContext(context, exe) {
     context.translate(exe, 0);
     context.scale(-1, 1);
     context.translate(-exe, 0);
@@ -593,6 +479,10 @@ function reflectionTransformWithContext(context, exe) {
 function identityTransformWithContext(context) {
     // 3x2 matrix. column major. (sx 0 0 sy tx ty).
     context.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+function noopTransformWithContext(ctx) {
+
 }
 
 export default Ruler;

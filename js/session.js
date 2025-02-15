@@ -1,6 +1,6 @@
 import {createBrowserList, deleteAllBrowsers, getAllBrowsers, syncBrowsers} from "./createBrowser.js"
 import {Globals} from "./globals.js"
-import {StringUtils} from "../node_modules/igv-utils/src/index.js";
+import {StringUtils, BGZip} from "../node_modules/igv-utils/src/index.js";
 
 function toJSON() {
     const jsonOBJ = {};
@@ -31,7 +31,7 @@ function toJSON() {
 
 function compressedSession() {
     const jsonString = JSON.stringify(toJSON());
-    return `session=blob:${StringUtils.compressString(jsonString)}`
+    return `session=blob:${BGZip.compressString(jsonString)}`
 }
 
 

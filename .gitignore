@@ -6,7 +6,6 @@ node_modules
 /.idea
 *.js.iml
 /website/juiceboxConfig-private.js
-/dist/
 /dev/breakfinder.html
 /dev/six-panel.html
 /dev/mb275.html

@@ -9,6 +9,7 @@ import {extractConfig} from "../js/urlUtils.js";
 
 suite("testURLs", function () {
 
+
     test("Session blob", async function () {
 
         const url = "http://aidenlab.org/juicebox/?session=blob:1ZPPbtswDMbfxacNECRR_51b0Qwb1tPS24bAUGylMWpbmaS1w4q8e.UYS5d06C7JYRfC_kRTP9Ifn4pV8I_RhVjMvj0VP0JXzIpNSts4IyRybHv7yw_2MeLa92TT1uu2czE_RPedDLc_N5._fmrmiy_0_uN8QYBhDhg0uZpfXe9DxSnOXxWoGGzvcu1jMSabRpUhhhQCUyoMUjHJNQetmURQgsJKajAgGdfaIMBSMM4MPUR0s8ilat_5cFvbbqwHQmAGhmsBwuQkLRCTElFER5KHNqfo0pRQCiryJUbpMh.kYOv7CwyiHZILuemq9kOydaoa39t2iERSSqtV58dbDxM6FvdtZTXcrd6NLezbeF_s0HkZq877bSS9C3eumV7wyjVb98L117M_8SjiauS7AN1DrD4Mjb8mTbteu.CG1NpuQoFTzrdSjnHHWXKVcZfnBJ5A9_GV.0_Uy9mfYa0FL0VeAloa_tr.yoCRzAAVl7T_1O8ZvAUm05_dW9Ov.h_W840FYP9egJeUk5n.xl3ulrtn"

@@ -24,35 +24,35 @@
 /**
  * Created by dat on 3/3/17.
  */
-import $ from '../vendor/jquery-3.3.1.slim.js'
-import {StringUtils} from '../node_modules/igv-utils/src/index.js'
+import { StringUtils } from '../node_modules/igv-utils/src/index.js';
 
 class LocusGoto {
 
-    constructor(browser, $hic_navbar_container) {
-
+    constructor(browser, hicNavbarContainer) {
         this.browser = browser;
 
-        const $parent = $hic_navbar_container.find("div[id$='upper-hic-nav-bar-widget-container']");
+        const parentElement = hicNavbarContainer.querySelector("div[id$='upper-hic-nav-bar-widget-container']");
 
-        this.$container = $("<div>", {class: 'hic-chromosome-goto-container', title: 'Chromosome Goto'});
-        $parent.append(this.$container);
+        this.containerElement = document.createElement('div');
+        this.containerElement.className = 'hic-chromosome-goto-container';
+        this.containerElement.title = 'Chromosome Goto';
+        parentElement.appendChild(this.containerElement);
 
-        this.$resolution_selector = $('<input type="text" placeholder="chr-x-axis chr-y-axis">');
-        this.$container.append(this.$resolution_selector);
+        this.resolutionSelectorElement = document.createElement('input');
+        this.resolutionSelectorElement.type = 'text';
+        this.resolutionSelectorElement.placeholder = 'chr-x-axis chr-y-axis';
+        this.containerElement.appendChild(this.resolutionSelectorElement);
 
-        this.$resolution_selector.on('change', function (e) {
-            browser.parseGotoInput($(this).val());
-            $(this).blur();
+        this.resolutionSelectorElement.addEventListener('change', (e) => {
+            this.browser.parseGotoInput(this.resolutionSelectorElement.value);
+            this.resolutionSelectorElement.blur();
         });
 
         this.browser.eventBus.subscribe("LocusChange", this);
     }
 
     receiveEvent(event) {
-
         if (event.type === "LocusChange") {
-
             let xy;
             const state = event.data.state || this.browser.state;
             const isWholeGenome = this.browser.dataset.isWholeGenome(state.chr1);
@@ -69,14 +69,12 @@ class LocusGoto {
                 const endBP1 = Math.min(chr1.size, Math.round(((dimensionsPixels.width / pixelsPerBin) * bpPerBin)) + startBP1 - 1);
                 const endBP2 = Math.min(chr2.size, Math.round(((dimensionsPixels.height / pixelsPerBin) * bpPerBin)) + startBP2 - 1);
 
-                xy = chr1.name + ":" + StringUtils.numberFormatter(startBP1) + "-" + StringUtils.numberFormatter(endBP1) + " " +
-                    chr2.name + ":" + StringUtils.numberFormatter(startBP2) + "-" + StringUtils.numberFormatter(endBP2);
-
+                xy = `${chr1.name}:${StringUtils.numberFormatter(startBP1)}-${StringUtils.numberFormatter(endBP1)} ` +
+                    `${chr2.name}:${StringUtils.numberFormatter(startBP2)}-${StringUtils.numberFormatter(endBP2)}`;
             }
-            this.$resolution_selector.val(xy);
+            this.resolutionSelectorElement.value = xy;
         }
     }
 }
 
-
-export default LocusGoto
+export default LocusGoto;

@@ -1,166 +1,179 @@
 /**
  * Created by dat on 4/4/17.
  */
-import $ from '../vendor/jquery-3.3.1.slim.js'
 import Ruler from './ruler.js'
-import {TrackPair} from './trackPair.js'
-import {deleteBrowser, setCurrentBrowser} from "./createBrowser.js"
+import TrackPair, {setTrackReorderArrowColors} from './trackPair.js'
+import TrackRenderer from './trackRenderer.js';
+import {deleteBrowser, setCurrentBrowser} from './createBrowser.js'
+import HICEvent from "./hicEvent.js";
+import EventBus from "./eventBus.js";
+import { createDOMFromHTMLString } from "./utils.js"
 
-// Keep in sync with juicebox.scss variables
+// Keep these magic numbers in sync with corresponding juicebox.scss variables
 
 // $nav-bar-label-height: 36px;
-const nav_bar_label_height = 36;
+const navBarLabelHeight = 36;
 
 // $nav-bar-widget-container-height: 36px;
-const nav_bar_widget_container_height = 36;
+const navBarWidgetContainerHeight = 36;
 
 // $nav-bar-widget-container-margin: 4px;
-const nav_bar_widget_container_margin = 4;
+const navBarWidgetContainerMargin = 4;
 
 // $hic-scrollbar-height: 20px;
-const scrollbar_height = 20;
+const scrollbarHeight = 20;
 
 // $hic-axis-height: 40px;
-const axis_height = 40;
+const axisHeight = 40;
 
 // $track-margin: 2px;
-const track_margin = 2;
+const trackMargin = 2;
 
-export const trackHeight = 40;
+// $track-height: 36px;
+const trackHeight = 36;
 
 class LayoutController {
 
-    constructor(browser, $root) {
+    constructor(browser, rootElement) {
 
         this.browser = browser;
 
-        createNavBar(browser, $root);
+        createNavBar(browser, rootElement);
 
-        this.createAllContainers(browser, $root);
+        this.createAllContainers(browser, rootElement);
     }
 
+    createAllContainers(browser, root) {
+        const htmlXTrackContainer = createDOMFromHTMLString(`
+        <div id="${browser.id}-x-track-container">
+            <div id="${browser.id}-track-shim"></div>
+            <div id="${browser.id}-x-tracks">
+                <div id="${browser.id}-y-track-guide" style="display: none;"></div>
+            </div>
+        </div>`);
 
-    createAllContainers(browser, $root) {
+        root.appendChild(htmlXTrackContainer);
 
-        const html_x_track_container =
-            `<div id="${browser.id}-x-track-container"><div id="${browser.id}-track-shim"></div><div id="${browser.id}-x-tracks"><div id="${browser.id}-y-track-guide" style="display: none;"></div></div></div>`;
-        $root.append($(html_x_track_container));
+        this.xTrackContainer = root.querySelector(`div[id$='x-track-container']`);
+        this.trackShim = this.xTrackContainer.querySelector(`div[id$='track-shim']`);
+        this.xTracks = this.xTrackContainer.querySelector(`div[id$='x-tracks']`);
+        this.yTrackGuideElement = this.xTrackContainer.querySelector(`div[id$='y-track-guide']`);
 
-        this.$x_track_container = $root.find("div[id$='x-track-container']");
-        this.$track_shim = this.$x_track_container.find("div[id$='track-shim']");
-        this.$x_tracks = this.$x_track_container.find("div[id$='x-tracks']");
-        this.$y_track_guide = this.$x_track_container.find("div[id$='y-track-guide']");
+        this.contentContainer = createDOMFromHTMLString(`<div id="${browser.id}-content-container"></div>`);
+        root.appendChild(this.contentContainer);
 
-        const html_content_container = `<div id="${browser.id}-content-container"></div>`;
-
-        this.$content_container = $(html_content_container);
-
-        $root.append(this.$content_container);
-
-        const html_x_axis_container =
-            `<div id="${browser.id}-x-axis-container">
+        const htmlXAxisContainer = createDOMFromHTMLString(`
+        <div id="${browser.id}-x-axis-container">
             <div id="${browser.id}-x-axis">
                 <canvas></canvas>
                 <div id="${browser.id}-x-axis-whole-genome-container"></div>
             </div>
-	    </div>`;
+        </div>`);
 
-        this.$content_container.append($(html_x_axis_container));
+        this.contentContainer.appendChild(htmlXAxisContainer);
+        const xAxisContainer = this.contentContainer.querySelector(`div[id$='x-axis-container']`);
 
-        const $x_axis_container = this.$content_container.find("div[id$='x-axis-container']");
+        this.xAxisRuler = new Ruler(browser, xAxisContainer, 'x');
 
-        this.xAxisRuler = new Ruler(browser, $x_axis_container, 'x');
-
-        const html_y_tracks_y_axis_viewport_y_scrollbar =
-            `<div id="${browser.id}-y-tracks-y-axis-viewport-y-scrollbar">
-
+        const htmlYTracksYAxisViewportYScrollbar = createDOMFromHTMLString(`
+        <div id="${browser.id}-y-tracks-y-axis-viewport-y-scrollbar">
             <div id="${browser.id}-y-tracks">
                 <div id="${browser.id}-x-track-guide" style="display: none;"></div>
             </div>
-            
             <div id="${browser.id}-y-axis">
-    			<canvas></canvas>
-			    <div id="${browser.id}-y-axis-whole-genome-container"></div>
-		    </div>
-		    
-        </div>`;
+                <canvas></canvas>
+                <div id="${browser.id}-y-axis-whole-genome-container"></div>
+            </div>
+        </div>`);
 
-        this.$content_container.append($(html_y_tracks_y_axis_viewport_y_scrollbar));
-        const $y_tracks_y_axis_viewport_y_scrollbar = this.$content_container.find("div[id$='-y-tracks-y-axis-viewport-y-scrollbar']");
+        this.contentContainer.appendChild(htmlYTracksYAxisViewportYScrollbar);
+        const yTracksYAxisViewportYScrollbar = this.contentContainer.querySelector(`div[id$='-y-tracks-y-axis-viewport-y-scrollbar']`);
 
-        this.$y_tracks = $y_tracks_y_axis_viewport_y_scrollbar.find("div[id$='-y-tracks']");
-        this.$x_track_guide = this.$y_tracks.find("div[id$='-x-track-guide']");
+        this.yTracks = yTracksYAxisViewportYScrollbar.querySelector(`div[id$='-y-tracks']`);
+        this.xTrackGuideElement = this.yTracks.querySelector(`div[id$='-x-track-guide']`);
 
-        this.yAxisRuler = new Ruler(browser, $y_tracks_y_axis_viewport_y_scrollbar, 'y');
+        this.yAxisRuler = new Ruler(browser, yTracksYAxisViewportYScrollbar, 'y');
 
-        this.xAxisRuler.$otherRulerCanvas = this.yAxisRuler.$canvas;
+        this.xAxisRuler.otherRulerCanvas = this.yAxisRuler.canvasElement;
         this.xAxisRuler.otherRuler = this.yAxisRuler;
 
-        this.yAxisRuler.$otherRulerCanvas = this.xAxisRuler.$canvas;
+        this.yAxisRuler.otherRulerCanvas = this.xAxisRuler.canvasElement;
         this.yAxisRuler.otherRuler = this.xAxisRuler;
 
-        const html_viewport =
-            `<div id="${browser.id}-viewport">
-			<canvas></canvas>
-			<i class="fa fa-spinner fa-spin" style="font-size: 48px; position: absolute; left: 40%; top: 40%; display: none;"></i>
-			<div id="${browser.id}-sweep-zoom-container" style="display: none;"></div>
-			<div id="${browser.id}-x-guide" style="display: none;"></div>
-			<div id="${browser.id}-y-guide" style="display: none;"></div>
-		</div>`;
+        const htmlViewport = createDOMFromHTMLString(`
+        <div id="${browser.id}-viewport">
+            <canvas></canvas>
+            <i class="fa fa-spinner fa-spin" style="font-size: 48px; position: absolute; left: 40%; top: 40%; display: none;"></i>
+            <div id="${browser.id}-sweep-zoom-container" style="display: none;"></div>
+            <div id="${browser.id}-x-guide" style="display: none;"></div>
+            <div id="${browser.id}-y-guide" style="display: none;"></div>
+        </div>`);
 
-        $y_tracks_y_axis_viewport_y_scrollbar.append($(html_viewport));
+        yTracksYAxisViewportYScrollbar.appendChild(htmlViewport);
 
-        const html_y_axis_scrollbar_container =
-            `<div id="${browser.id}-y-axis-scrollbar-container">
-			<div id="${browser.id}-y-axis-scrollbar">
-				<div class="scrollbar-label-rotation-in-place"></div>
-			</div>
-		</div>`;
+        const htmlYAxisScrollbarContainer = createDOMFromHTMLString(`
+        <div id="${browser.id}-y-axis-scrollbar-container">
+            <div id="${browser.id}-y-axis-scrollbar">
+                <div class="scrollbar-label-rotation-in-place"></div>
+            </div>
+        </div>`);
 
-        $y_tracks_y_axis_viewport_y_scrollbar.append($(html_y_axis_scrollbar_container));
+        yTracksYAxisViewportYScrollbar.appendChild(htmlYAxisScrollbarContainer);
 
-        const html_x_axis_scrollbar_container =
-            `<div id="${browser.id}-x-scrollbar-container">
+        const htmlXAxisScrollbarContainer = createDOMFromHTMLString(`
+        <div id="${browser.id}-x-scrollbar-container">
             <div id="${browser.id}-x-axis-scrollbar-container">
                 <div id="${browser.id}-x-axis-scrollbar">
                     <div></div>
                 </div>
             </div>
-	    </div>`;
+        </div>`);
 
-        this.$content_container.append($(html_x_axis_scrollbar_container));
-
+        this.contentContainer.appendChild(htmlXAxisScrollbarContainer);
     }
 
     getContactMatrixViewport() {
-        const $parent = this.$content_container.find("div[id$='-y-tracks-y-axis-viewport-y-scrollbar']");
-        return $parent.find("div[id$='-viewport']");
+        const parent = this.contentContainer.querySelector("div[id$='-y-tracks-y-axis-viewport-y-scrollbar']");
+        return parent ? parent.querySelector("div[id$='-viewport']") : null;
     }
 
     getYAxisScrollbarContainer() {
-        const $parent = this.$content_container.find("div[id$='-y-tracks-y-axis-viewport-y-scrollbar']");
-        return $parent.find("div[id$='-y-axis-scrollbar-container']");
+        const parent = this.contentContainer.querySelector("div[id$='-y-tracks-y-axis-viewport-y-scrollbar']");
+        return parent ? parent.querySelector("div[id$='-y-axis-scrollbar-container']") : null;
     }
 
     getXAxisScrollbarContainer() {
-        return this.$content_container.find("div[id$='-x-axis-scrollbar-container']");
+        return this.contentContainer.querySelector("div[id$='-x-axis-scrollbar-container']");
     }
 
-    tracksLoaded(tracks) {
+    updateLayoutWithTracks(tracks) {
 
-        this.doLayoutTrackXYPairCount(tracks.length + this.browser.trackPairs.length);
+        this.resizeLayoutWithTrackXYPairCount(tracks.length + this.browser.trackPairs.length)
 
-        tracks.forEach((track, index) => {
-            const trackPair = new TrackPair(
-                this.browser,
-                trackHeight,
-                this.$x_tracks,
-                this.$y_tracks,
-                track,
-                index
-            )
-            this.browser.trackPairs.push(trackPair);
-        });
+        for (const track of tracks) {
+
+            const trackPair = new TrackPair(this.browser, track)
+            this.browser.trackPairs.unshift(trackPair)
+
+            trackPair.x = new TrackRenderer(this.browser, track, 'x')
+            trackPair.x.init(this.xTracks, trackHeight, this.browser.trackPairs.indexOf(trackPair))
+
+            trackPair.y = new TrackRenderer(this.browser, track, 'y')
+            trackPair.y.init(this.yTracks, trackHeight, this.browser.trackPairs.indexOf(trackPair))
+
+            trackPair.init()
+
+            EventBus.globalBus.post(HICEvent("TrackXYPairLoad", trackPair))
+        }
+
+        for (const trackPair of this.browser.trackPairs) {
+            const order = `${ this.browser.trackPairs.indexOf(trackPair) }`
+            trackPair.x.viewportElement.style.order = order
+            trackPair.y.viewportElement.style.order = order
+        }
+
+        setTrackReorderArrowColors(this.browser.trackPairs)
+
     }
 
     removeAllTrackXYPairs() {
@@ -175,186 +188,126 @@ class LayoutController {
         }
         this.browser.trackPairs = []
         this.browser.updateLayout();
-        this.doLayoutTrackXYPairCount(0)
+        this.resizeLayoutWithTrackXYPairCount(0)
 
-        // What ???
-        // [...Array(this.browser.trackPairs.length).keys()].forEach(() => {
-        //
-        //     // select last track to discard
-        //     let discard = this.browser.trackPairs[this.browser.trackPairs.length - 1];
-        //
-        //     // discard DOM element's
-        //     discard['x'].$viewport.remove();
-        //     discard['y'].$viewport.remove();
-        //
-        //     // remove discard from list
-        //     const index = this.browser.trackPairs.indexOf(discard);
-        //     this.browser.trackPairs.splice(index, 1);
-        //
-        //     discard = undefined;
-        //     this.doLayoutTrackXYPairCount(this.browser.trackPairs.length);
-        //
-        // });
-    };
-
-    removeLastTrackXYPair() {
-
-        if (this.browser.trackPairs.length > 0) {
-
-            // select last track to dicard
-            let discard = this.browser.trackPairs[this.browser.trackPairs.length - 1];
-
-            // discard DOM element's
-            discard['x'].$viewport.remove();
-            discard['y'].$viewport.remove();
-
-            // remove discard from list
-            const index = this.browser.trackPairs.indexOf(discard);
-            this.browser.trackPairs.splice(index, 1);
-
-            discard = undefined;
-            this.doLayoutTrackXYPairCount(this.browser.trackPairs.length);
-
-            this.browser.updateLayout();
-
-        } else {
-            //console.log('No more tracks.');
-        }
     }
 
     removeTrackXYPair(trackXYPair) {
 
         if (this.browser.trackPairs.length > 0) {
 
-            const discard = trackXYPair;
+            // remove DOM element
+            trackXYPair.x.viewportElement.remove();
+            trackXYPair.y.viewportElement.remove();
 
-            // discard DOM element's
-            discard['x'].$viewport.remove();
-            discard['y'].$viewport.remove();
-
-            // remove discard from list
-            const index = this.browser.trackPairs.indexOf(discard);
+            // remove from trackPairs list
+            const index = this.browser.trackPairs.indexOf(trackXYPair);
             this.browser.trackPairs.splice(index, 1);
 
-            this.doLayoutTrackXYPairCount(this.browser.trackPairs.length);
+            this.resizeLayoutWithTrackXYPairCount(this.browser.trackPairs.length);
 
             this.browser.updateLayout();
 
-
-        } else {
-            //console.log('No more tracks.');
+            EventBus.globalBus.post(HICEvent("TrackXYPairRemoval", trackXYPair));
         }
+    }
 
-    };
+    resizeLayoutWithTrackXYPairCount(trackXYPairCount) {
+        const trackAggregateHeight = (trackXYPairCount === 0) ? 0 : trackXYPairCount * (trackHeight + trackMargin);
 
-    doLayoutTrackXYPairCount(trackXYPairCount) {
+        let tokens = [getNavbarHeight(), trackAggregateHeight].map(number => `${number}px`);
+        const heightCalc = `calc(100% - (${tokens.join(' + ')}))`;
 
-
-        const track_aggregate_height = (0 === trackXYPairCount) ? 0 : trackXYPairCount * (trackHeight + track_margin);
-
-        let tokens = [getNavbarHeight(), track_aggregate_height].map(number => `${number}px`);
-        const height_calc = 'calc(100% - (' + tokens.join(' + ') + '))';
-
-        tokens = [track_aggregate_height, axis_height, scrollbar_height].map(number => `${number}px`);
-        const width_calc = 'calc(100% - (' + tokens.join(' + ') + '))';
+        tokens = [trackAggregateHeight, axisHeight, scrollbarHeight].map(number => `${number}px`);
+        const widthCalc = `calc(100% - (${tokens.join(' + ')}))`;
 
         // x-track container
-        this.$x_track_container.height(track_aggregate_height);
+        this.xTrackContainer.style.height = `${trackAggregateHeight}px`;
 
         // track labels
-        this.$track_shim.width(track_aggregate_height);
+        this.trackShim.style.width = `${trackAggregateHeight}px`;
 
         // x-tracks
-        this.$x_tracks.css('width', width_calc);
-
+        this.xTracks.style.width = widthCalc;
 
         // content container
-        this.$content_container.css('height', height_calc);
+        this.contentContainer.style.height = heightCalc;
 
         // x-axis - repaint canvas
-        this.xAxisRuler.updateWidthWithCalculation(width_calc);
+        this.xAxisRuler.updateWidthWithCalculation(widthCalc);
 
         // y-tracks
-        this.$y_tracks.width(track_aggregate_height);
+        this.yTracks.style.width = `${trackAggregateHeight}px`;
 
         // y-axis - repaint canvas
-        this.yAxisRuler.updateHeight(this.yAxisRuler.$axis.height());
+        this.yAxisRuler.updateHeight(this.yAxisRuler.axisElement.offsetHeight);
 
         // viewport
-        this.browser.contactMatrixView.$viewport.css('width', width_calc);
+        this.browser.contactMatrixView.viewportElement.style.width = widthCalc;
 
         // x-scrollbar
-        this.browser.contactMatrixView.scrollbarWidget.$x_axis_scrollbar_container.css('width', width_calc);
-
+        this.browser.contactMatrixView.scrollbarWidget.xAxisScrollbarContainerElement.style.width = widthCalc;
     }
 
-    doLayoutWithRootContainerSize(size) {
-
-        this.browser.$root.width(size.width);
-        this.browser.$root.height(size.height + getNavbarHeight());
-
-        const count = this.browser.trackPairs.length > 0 ? this.browser.trackPairs.length : 0;
-        this.doLayoutTrackXYPairCount(count);
-
-        this.browser.updateLayout();
-    }
 }
 
-const getNavbarHeight = () => 2 * (nav_bar_label_height + nav_bar_widget_container_height + (2 * nav_bar_widget_container_margin));
+function getNavbarHeight() {
+    return 2 * (navBarLabelHeight + navBarWidgetContainerHeight + (2 * navBarWidgetContainerMargin));
+}
 
-const getNavbarContainer = browser => browser.$root.find('.hic-navbar-container');
+function getNavbarContainer(browser) {
+    return browser.rootElement.querySelector('.hic-navbar-container');
+}
 
-function createNavBar(browser, $root) {
+function createNavBar(browser, root) {
 
-    const $hic_navbar_container = $('<div>', {class: 'hic-navbar-container'});
-    $root.append($hic_navbar_container);
+    const hicNavbarContainer = document.createElement('div');
+    hicNavbarContainer.className = 'hic-navbar-container';
+    root.appendChild(hicNavbarContainer);
 
-    $hic_navbar_container.on('click', e => {
+    hicNavbarContainer.addEventListener('click', e => {
         e.stopPropagation();
         e.preventDefault();
         setCurrentBrowser(browser);
     });
 
-    const html_contact_map_hic_nav_bar_map_container =
+    const htmlContactMapHicNavBarMapContainer =
         `<div id="${browser.id}-contact-map-hic-nav-bar-map-container">
-            <div id="${browser.id}-contact-map-hic-nav-bar-map-label">
-            </div>
+            <div id="${browser.id}-contact-map-hic-nav-bar-map-label"></div>
              <div class="hic-nav-bar-button-container">
                 <i class="fa fa-bars fa-lg" title="Present menu"></i>
                 <i class="fa fa-minus-circle fa-lg" title="Delete browser panel" style="display: none;"></i>
              </div>
         </div>`;
 
-    $hic_navbar_container.append($(html_contact_map_hic_nav_bar_map_container));
+    hicNavbarContainer.appendChild(createDOMFromHTMLString(htmlContactMapHicNavBarMapContainer));
 
-    browser.$contactMaplabel = $hic_navbar_container.find("div[id$='contact-map-hic-nav-bar-map-label']");
+    browser.contactMapLabel = hicNavbarContainer.querySelector(`div[id$='contact-map-hic-nav-bar-map-label']`);
+    browser.menuPresentDismiss = hicNavbarContainer.querySelector('.fa-bars');
+    browser.menuPresentDismiss.addEventListener('click', e => browser.toggleMenu());
 
-    browser.$menuPresentDismiss = $hic_navbar_container.find('.fa-bars');
-    browser.$menuPresentDismiss.on('click', e => browser.toggleMenu());
+    browser.browserPanelDeleteButton = hicNavbarContainer.querySelector('.fa-minus-circle');
+    browser.browserPanelDeleteButton.addEventListener('click', e => deleteBrowser(browser));
 
-    browser.$browser_panel_delete_button = $hic_navbar_container.find('.fa-minus-circle');
-    browser.$browser_panel_delete_button.on('click', e => deleteBrowser(browser));
+    // Delete button is only visible if there is more than one browser
+    browser.browserPanelDeleteButton.style.display = 'none';
 
-    // Delete button is only vidible if there is more then one browser
-    browser.$browser_panel_delete_button.hide();
-
-    const html_control_map_hic_nav_bar_map_container =
+    const htmlControlMapHicNavBarMapContainer =
         `<div id="${browser.id}-control-map-hic-nav-bar-map-container">
             <div id="${browser.id}-control-map-hic-nav-bar-map-label"></div>
         </div>`;
 
-    $hic_navbar_container.append($(html_control_map_hic_nav_bar_map_container));
+    hicNavbarContainer.appendChild(createDOMFromHTMLString(htmlControlMapHicNavBarMapContainer));
 
-    browser.$controlMaplabel = $hic_navbar_container.find("div[id$='control-map-hic-nav-bar-map-label']");
+    browser.controlMapLabel = hicNavbarContainer.querySelector(`div[id$='control-map-hic-nav-bar-map-label']`);
 
-    const html_upper_hic_nav_bar_widget_container = `<div id="${browser.id}-upper-hic-nav-bar-widget-container"></div>`;
-    $hic_navbar_container.append($(html_upper_hic_nav_bar_widget_container));
+    const htmlUpperHicNavBarWidgetContainer = `<div id="${browser.id}-upper-hic-nav-bar-widget-container"></div>`;
+    hicNavbarContainer.appendChild(createDOMFromHTMLString(htmlUpperHicNavBarWidgetContainer));
 
-    const html_lower_hic_nav_bar_widget_container = `<div id="${browser.id}-lower-hic-nav-bar-widget-container"></div>`;
-    $hic_navbar_container.append($(html_lower_hic_nav_bar_widget_container));
-
+    const htmlLowerHicNavBarWidgetContainer = `<div id="${browser.id}-lower-hic-nav-bar-widget-container"></div>`;
+    hicNavbarContainer.appendChild(createDOMFromHTMLString(htmlLowerHicNavBarWidgetContainer));
 }
 
-export {getNavbarHeight, getNavbarContainer};
+export {getNavbarHeight, getNavbarContainer, trackHeight};
 
 export default LayoutController;

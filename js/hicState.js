@@ -55,7 +55,7 @@ class State {
             this.height = height
 
             if ("undefined" === normalization) {
-                console.log("No normalization defined !!!");
+                console.warn("Normalization is undefined");
                 normalization = undefined;
             }
 
@@ -80,6 +80,14 @@ class State {
         var s1 = JSON.stringify(this);
         var s2 = JSON.stringify(state);
         return s1 === s2;
+    }
+
+    async sizeBP(dataset, zoomIndex, pixels){
+        const matrix = await dataset.getMatrix(this.chr1, this.chr2)
+        const { zoom } = matrix.getZoomDataByIndex(zoomIndex, 'BP')
+
+        // bp = pixel * (bp/bin) * (bin/pixel) = pixel * bp/pixel = bp
+        return pixels * (zoom.binSize/this.pixelSize)
     }
 
     static parse(string) {
@@ -115,6 +123,36 @@ class State {
             )
         }
 
+    }
+
+    // Method 1: Convert the State object to a JSON object
+    toJSON() {
+        return {
+            chr1: this.chr1,
+            chr2: this.chr2,
+            zoom: this.zoom,
+            x: this.x,
+            y: this.y,
+            width: this.width,
+            height: this.height,
+            pixelSize: this.pixelSize,
+            normalization: this.normalization || 'NONE'
+        };
+    }
+
+    // Method 2: Parse a JSON object and create an instance of the State class
+    static fromJSON(json) {
+        return new State(
+            json.chr1,
+            json.chr2,
+            json.zoom,
+            json.x,
+            json.y,
+            json.width,
+            json.height,
+            json.pixelSize,
+            json.normalization
+        );
     }
 
     static default(configOrUndefined) {

@@ -3,7 +3,7 @@
  */
 
 /**
- * Implementatino of "RemoteFile" for hic-straw that uses the igv.xhr object.  This object is google aware, and handle
+ * Implementation of "RemoteFile" for hic-straw that uses the igv.xhr object.  This object is google aware, and handle
  * oAuth and apiKey automatically.
  */
 

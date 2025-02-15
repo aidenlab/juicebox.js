@@ -1,5 +1,5 @@
 
-.igv-menu-popup {
+.jb-igv-menu-popup {
   position: absolute;
   top: 0;
   left: 0;
@@ -58,12 +58,13 @@
 
 }
 
-.igv-menu-popup-shim {
+.jb-igv-menu-popup-shim {
   padding-left: 8px;
   padding-right: 8px;
+  width: unset !important;
 }
 
-.igv-menu-popup-header {
+.jb-igv-menu-popup-header {
 
   position: relative;
   width: 100%;
@@ -100,7 +101,7 @@
 
 }
 
-.igv-menu-popup-check-container {
+.jb-igv-menu-popup-check-container {
 
   display: flex;
   flex-flow: row;
@@ -129,6 +130,49 @@
       height: 12px;
     }
 
+  }
+
+}
+
+.jb-igv-menu-popup-chart {
+
+  display: flex;
+  flex-flow: row;
+  flex-wrap: nowrap;
+  justify-content: space-evenly;
+  align-items: center;
+
+  height: 16px;
+
+  >div {
+    font-size: .75rem;
+    font-weight: 800;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    color: white;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  // A
+  >div:nth-child(1) {
+    background-color: rgb(0, 200, 0);
+  }
+
+  // C
+  >div:nth-child(2) {
+    background-color: rgb(0, 0, 200);
+  }
+
+  // T
+  >div:nth-child(3) {
+    background-color: rgb(255,0,0);
+  }
+
+  // G
+  >div:nth-child(4) {
+    background-color: rgb(209,113, 5);
   }
 
 }

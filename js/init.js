@@ -23,6 +23,7 @@
 
 import {extractConfig} from "./urlUtils.js"
 import {getCurrentBrowser} from "./createBrowser.js"
+import {getAllBrowsers} from "./createBrowser.js"
 import {restoreSession} from "./session.js"
 import {Alert} from "../node_modules/igv-ui/dist/igv-ui.js"
 
@@ -39,8 +40,9 @@ async function init(container, config) {
 
     await restoreSession(container, config);
 
-    // Return the currently selected browser for backward compatibility with "createBrowser"
-    return getCurrentBrowser();
+    const allBrowsers = getAllBrowsers();
+
+    return allBrowsers.length === 1 ? allBrowsers[0] : allBrowsers
 }
 
 

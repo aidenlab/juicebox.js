@@ -29,53 +29,62 @@
  * License - https://fontawesome.com/license (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
  */
 
-import $ from '../vendor/jquery-3.3.1.slim.js'
+const createCheckbox = (name, initialState) => {
+    // Create the container div
+    const container = document.createElement('div');
+    container.className = 'jb-igv-menu-popup-check-container';
 
-function createWrappedIcon(name, color) {
+    // Create the inner div
+    const div = document.createElement('div');
+    container.appendChild(div);
 
-    let $svg = createIcon(name, color);
+    // Create the check icon using the existing iconMarkup function
+    const svg = iconMarkup('check', initialState === true ? '#444' : 'transparent');
+    div.appendChild(svg);
 
-    let $wrapper = $('<i>');
-    $wrapper.append($svg);
-    return $wrapper;
-}
+    // Create the label div
+    const label = document.createElement('div');
+    label.textContent = name;
+    // Optional: Add a class to the label if needed
+    // label.className = 'igv-some-label-class';
 
-function createCheckbox(name, initialState) {
+    container.appendChild(label);
 
-    let $container = $('<div>', {class: 'igv-menu-popup-check-container'});
-
-    let $div = $('<div>');
-    $container.append($div);
-
-    let $svg = iconMarkup('check', (true === initialState ? '#444' : 'transparent'));
-    $div.append($svg);
-
-    let $label = $('<div>'/*, { class: 'igv-some-label-class' }*/);
-    $label.text(name);
-    $container.append($label);
-
-    return $container;
-}
+    return container;
+};
 
 function createIcon(name, color) {
-    return $(iconMarkup(name, color));
+    return iconMarkup(name, color);
 }
 
-function iconMarkup(name, color) {
+const iconMarkup = (name, color = "currentColor") => {
+    const icon = icons[name] ?? icons["question"];
 
-    color = color || "currentColor";
-
-    let icon = icons[name];
-
-    if (!icon) {
-        console.error(`No icon named: ${name}`)
-        icon = icons["question"]
+    if (!icons[name]) {
+        console.error(`No icon named: ${name}`);
     }
-    let svg = '<svg ' + 'viewBox="0 0 ' + icon[0] + ' ' + icon[1] + '">';
-    svg += '<path fill="' + color + '" ' + 'd="' + icon[4] + '">' + '</path>';
-    svg += '</svg>';
-    return svg;
 
+    const [width, height, , , pathData] = icon;
+
+    // Create the SVG element with the correct namespace
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+
+    // Set SVG attributes
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    svg.setAttribute("xmlns", svgNS);
+    svg.setAttribute("aria-label", `${name} icon`);
+    svg.setAttribute("role", "img");
+
+    // Create the path element
+    const path = document.createElementNS(svgNS, "path");
+    path.setAttribute("fill", color);
+    path.setAttribute("d", pathData);
+
+    // Append the path to the SVG
+    svg.appendChild(path);
+
+    return svg;
 }
 
 const icons = {

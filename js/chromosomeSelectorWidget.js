@@ -27,133 +27,66 @@
 
 class ChromosomeSelectorWidget {
 
-    constructor(browser, $container) {
-
+    constructor(browser, container) {
         this.browser = browser;
 
-        this.$x_axis_selector = $container.find("select[name='x-axis-selector']");
-        this.$y_axis_selector = $container.find("select[name='y-axis-selector']");
+        this.xAxisSelector = container.querySelector("select[name='x-axis-selector']");
+        this.yAxisSelector = container.querySelector("select[name='y-axis-selector']");
 
-        this.$x_axis_selector.on('change', () => {
+        this.xAxisSelector.addEventListener('change', () => this.syncSelectors(this.xAxisSelector, this.yAxisSelector));
+        this.yAxisSelector.addEventListener('change', () => this.syncSelectors(this.yAxisSelector, this.xAxisSelector));
 
-            const str = this.$x_axis_selector.val();
+        const nextDiv = this.yAxisSelector.nextElementSibling;
+        if (nextDiv) {
+            nextDiv.addEventListener('click', async () => {
+                const chr1Index = parseInt(this.xAxisSelector.value, 10);
+                const chr2Index = parseInt(this.yAxisSelector.value, 10);
+                await browser.setChromosomes(chr1Index, chr2Index);
+            });
+        }
 
-            if (0 === parseInt(str, 10)) {
-                this.$y_axis_selector.val(str);
-            } else if (0 === parseInt(this.$y_axis_selector.val(), 10)) {
-                this.$y_axis_selector.val(str);
-            }
-
-        });
-
-        this.$y_axis_selector.on('change', () => {
-
-            const str = this.$y_axis_selector.val();
-
-            if (0 === parseInt(str, 10)) {
-                this.$x_axis_selector.val(str);
-            } else if (0 === parseInt(this.$x_axis_selector.val(), 10)) {
-                this.$x_axis_selector.val(str);
-            }
-
-        });
-
-        this.$y_axis_selector.next('div').on('click', async () => {
-            const chr1Index = parseInt(this.$x_axis_selector.find('option:selected').val(), 10);
-            const chr2Index = parseInt(this.$y_axis_selector.find('option:selected').val(), 10);
-            await browser.setChromosomes(chr1Index, chr2Index);
-        });
-
-        this.dataLoadConfig =
-            {
-                receiveEvent: event => {
-                    if (event.type === "MapLoad") {
-                        this.respondToDataLoadWithDataset(event.data);
-                    }
+        this.dataLoadConfig = {
+            receiveEvent: (event) => {
+                if (event.type === "MapLoad") {
+                    this.respondToDataLoadWithDataset(event.data);
                 }
-            };
-
+            }
+        };
         browser.eventBus.subscribe("MapLoad", this.dataLoadConfig);
 
-        this.locusChangeConfig =
-            {
-                receiveEvent: event => {
-                    if (event.type === "LocusChange") {
-                        this.respondToLocusChangeWithState(event.data.state);
-                    }
+        this.locusChangeConfig = {
+            receiveEvent: (event) => {
+                if (event.type === "LocusChange") {
+                    this.respondToLocusChangeWithState(event.data.state);
                 }
-            };
-
+            }
+        };
         browser.eventBus.subscribe("LocusChange", this.locusChangeConfig);
+    }
 
+    syncSelectors(sourceSelector, targetSelector) {
+        const value = sourceSelector.value;
+        if (parseInt(value, 10) === 0 || parseInt(targetSelector.value, 10) === 0) {
+            targetSelector.value = value;
+        }
     }
 
     respondToDataLoadWithDataset(dataset) {
+        const options = dataset.chromosomes.map(({ name }, index) => `<option value="${index}">${name}</option>`).join('');
+        this.xAxisSelector.innerHTML = options;
+        this.yAxisSelector.innerHTML = options;
 
-        var elements,
-            str,
-            $xFound,
-            $yFound;
-
-        this.$x_axis_selector.empty();
-        this.$y_axis_selector.empty();
-
-        elements = dataset.chromosomes.map(({name}, index) => `<option value=${index.toString()}>${name}</option>`);
-
-        this.$x_axis_selector.append(elements.join(''));
-        this.$y_axis_selector.append(elements.join(''));
-
-        str = 'option[value=' + this.browser.state.chr1.toString() + ']';
-        $xFound = this.$x_axis_selector.find(str);
-        $xFound.prop('selected', true);
-
-        str = 'option[value=' + this.browser.state.chr2.toString() + ']';
-        $yFound = this.$y_axis_selector.find(str);
-        $yFound.prop('selected', true);
+        this.xAxisSelector.value = this.browser.state.chr1;
+        this.yAxisSelector.value = this.browser.state.chr2;
     }
 
     respondToLocusChangeWithState(state) {
-        var self = this,
-            ssx,
-            ssy,
-            $xFound,
-            $yFound,
-            chr1,
-            chr2;
+        if (!this.xAxisSelector.options.length || !this.yAxisSelector.options.length) return;
 
-        $xFound = this.$x_axis_selector.find('option');
-        $yFound = this.$y_axis_selector.find('option');
-
-        // this happens when the first dataset is loaded.
-        if (0 === $xFound.length || 0 === $yFound.length) {
-            return;
-        }
-
-        $xFound = this.$x_axis_selector.find('option:selected');
-        $yFound = this.$y_axis_selector.find('option:selected');
-
-        $xFound.prop('selected', false);
-        $yFound.prop('selected', false);
-
-        // chr1 = parseInt($xFound.val(), 10);
-        // chr2 = parseInt($yFound.val(), 10);
-        // // It is the pair of chromosomes that is important,  1-2 == 2-1,  so update only if the pair does not match
-        // if (false === ((chr1 === state.chr1 && chr2 === state.chr2) || (chr1 === state.chr2 && chr2 === state.chr1))) {
-        //     ssx = 'option[value=' + state.chr1.toString() + ']';
-        //     this.$x_axis_selector.find(ssx).attr('selected', 'selected');
-        //
-        //     ssx = 'option[value=' + state.chr2.toString() + ']';
-        //     this.$y_axis_selector.find(ssx).attr('selected', 'selected');
-        // }
-
-        ssx = 'option[value=' + state.chr1.toString() + ']';
-        ssy = 'option[value=' + state.chr2.toString() + ']';
-
-        this.$x_axis_selector.find(ssx).prop('selected', true);
-        this.$y_axis_selector.find(ssy).prop('selected', true);
-
+        this.xAxisSelector.value = state.chr1;
+        this.yAxisSelector.value = state.chr2;
     }
 }
 
-export default ChromosomeSelectorWidget
+export default ChromosomeSelectorWidget;
 

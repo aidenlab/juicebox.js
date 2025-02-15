@@ -21,391 +21,313 @@
  *
  */
 
-import {Alert, createColorSwatchSelector} from '../node_modules/igv-ui/dist/igv-ui.js';
-import {makeDraggable} from '../node_modules/igv-utils/src/index.js';
-import Track2D from './track2D.js'
-import HICEvent from './hicEvent.js'
-import {Track2DDisplaceModes} from './globals.js'
-import $ from '../vendor/jquery-3.3.1.slim.js'
+import { Alert, createColorSwatchSelector } from '../node_modules/igv-ui/dist/igv-ui.js';
+import { makeDraggable } from '../node_modules/igv-ui/dist/igv-ui.js';
+import HICEvent from './hicEvent.js';
+import Track2D from './track2D.js';
 
 class AnnotationWidget {
-
-    constructor(browser, $container, {title, alertMessage}, trackListRetrievalCallback) {
-
+    constructor(browser, container, { title, alertMessage }, trackListRetrievalCallback) {
         this.browser = browser;
         this.trackListRetrievalCallback = trackListRetrievalCallback;
 
-        annotationPresentationButton.call(this, $container, alertMessage);
-
-        annotationPanel.call(this, this.browser.$root, title);
-
+        this.annotationPresentationButton(container, alertMessage);
+        this.annotationPanel(browser.rootElement, title);
     }
 
     updateBody(tracks) {
 
-        var self = this,
-            trackPairs,
+        this.annotationPanelElement.querySelectorAll('.hic-annotation-row-container').forEach(el => el.remove());
 
-            isTrack2D,
-            zi;
-
-        self.$annotationPanel.find('.hic-annotation-row-container').remove();
-
-        isTrack2D = (tracks[0] instanceof Track2D);
-
-        if (isTrack2D) {
-            // Reverse list to present layers in "z" order.
-            for (zi = tracks.length - 1; zi >= 0; zi--) {
-                annotationPanelRow.call(self, self.$annotationPanel, tracks[zi]);
+        if (tracks[0] instanceof Track2D) {
+            for (let i = tracks.length - 1; i >= 0; i--) {
+                this.annotationPanelRow(this.annotationPanelElement, tracks[i]);
             }
         } else {
-            trackPairs = tracks;
-            for (let trackRenderer of trackPairs) {
-                annotationPanelRow.call(self, self.$annotationPanel, trackRenderer);
+            for (const trackRenderer of tracks) {
+                this.annotationPanelRow(this.annotationPanelElement, trackRenderer);
             }
         }
     }
-}
 
-function annotationPresentationButton($parent, alertMessage) {
+    annotationPresentationButton(parent, alertMessage) {
+        const button = parent.querySelector('button');
 
-    const $button = $parent.find("button");
+        button.addEventListener('click', () => {
+            const list = this.trackListRetrievalCallback();
 
-    $button.on('click', () => {
-
-        const list = this.trackListRetrievalCallback();
-
-        if (list.length > 0) {
-            this.updateBody(this.trackListRetrievalCallback());
-            this.$annotationPanel.toggle();
-        } else {
-            Alert.presentAlert(alertMessage);
-        }
-
-        this.browser.hideMenu();
-    });
-}
-
-function annotationPanel($parent, title) {
-
-    var self = this,
-        $panel_header,
-        $load_container,
-        $div,
-        $fa;
-
-    this.$annotationPanel = $('<div>', {class: 'hic-annotation-panel-container'});
-    $parent.append(this.$annotationPanel);
-
-    // close button container
-    $panel_header = $('<div>', {class: 'hic-annotation-panel-header'});
-    this.$annotationPanel.append($panel_header);
-
-    // panel title
-    $div = $('<div>');
-    $div.text(title);
-    $panel_header.append($div);
-
-    // close button
-    $div = $('<div>', {class: 'hic-menu-close-button'});
-    $panel_header.append($div);
-
-    $fa = $("<i>", {class: 'fa fa-times'});
-    $div.append($fa);
-
-    $fa.on('click', function (e) {
-        self.$annotationPanel.toggle();
-    });
-
-    // TODO: Continue changes for load functions added to side panel
-    // load container
-    // $load_container = $('<div>', { class:'hic-annotation-panel-load-container' });
-    // this.$annotationPanel.append($load_container);
-    //
-    // // Load
-    // $div = $('<div>');
-    // $load_container.append($div);
-    // $div.text('Load:');
-    //
-    // // Blah
-    // $div = $('<div>');
-    // $load_container.append($div);
-    // $div.text('Blah');
-
-    //this.$annotationPanel.draggable();
-    makeDraggable(this.$annotationPanel.get(0), $panel_header.get(0));
-    this.$annotationPanel.hide();
-}
-
-function annotationPanelRow($container, track) {
-    var self = this,
-        $colorpickerContainer,
-        $colorpickerButton,
-        $colorpicker,
-        $row_container,
-        $row,
-        $hideShowTrack,
-        $deleteTrack,
-        $upTrack,
-        $downTrack,
-        $e,
-        $o,
-        hidden_color = '#f7f7f7',
-        str,
-        isTrack2D,
-        trackList,
-        xyTrackRendererPair,
-        trackRenderer,
-        track1D,
-        index,
-        upp,
-        dwn;
-
-    isTrack2D = (track instanceof Track2D);
-    trackList = this.trackListRetrievalCallback();
-
-    if (false === isTrack2D) {
-        xyTrackRendererPair = track;
-        track1D = xyTrackRendererPair.x.track;
-        trackRenderer = xyTrackRendererPair.x.track.trackView;
-    }
-
-    // row container
-    $row_container = $('<div>', {class: 'hic-annotation-row-container'});
-    $container.append($row_container);
-
-    // one row
-    $row = $('<div>', {class: 'hic-annotation-modal-row'});
-    $row_container.append($row);
-
-    // track name
-    $e = $("<div>");
-    $e.text(isTrack2D ? track.config.name : track1D.config.name);
-    $row.append($e);
-
-    // track hide/show
-    if (isTrack2D) {
-        str = (true === track.isVisible) ? 'fa fa-eye fa-lg' : 'fa fa-eye-slash fa-lg';
-        $hideShowTrack = $("<i>", {class: str, 'aria-hidden': 'true'});
-        $row.append($hideShowTrack);
-        $hideShowTrack.on('click', function (e) {
-
-            if ($hideShowTrack.hasClass('fa-eye')) {
-                $hideShowTrack.addClass('fa-eye-slash');
-                $hideShowTrack.removeClass('fa-eye');
-                track.isVisible = false;
+            if (list.length > 0) {
+                this.updateBody(this.trackListRetrievalCallback());
+                this.annotationPanelElement.style.display =
+                    this.annotationPanelElement.style.display === 'none' ? 'flex' : 'none';
             } else {
-                $hideShowTrack.addClass('fa-eye');
-                $hideShowTrack.removeClass('fa-eye-slash');
-                track.isVisible = true;
+                Alert.presentAlert(alertMessage);
             }
 
-            self.browser.contactMatrixView.clearImageCaches();
-            self.browser.contactMatrixView.update();
-
+            this.browser.hideMenu();
         });
     }
 
-    if (isTrack2D) {
+    annotationPanel(parent, title) {
+        this.annotationPanelElement = document.createElement('div');
+        this.annotationPanelElement.className = 'hic-annotation-panel-container';
+        parent.appendChild(this.annotationPanelElement);
 
-        // matrix diagonal widget
-        const $matrix_diagonal_div = $('<div>', {class: 'matrix-diagonal-widget-container matrix-diagonal-widget-all'});
-        $row.append($matrix_diagonal_div);
-        $matrix_diagonal_div.on('click.matrix_diagonal_div', (e) => {
-            e.preventDefault();
-            matrixDiagionalWidgetHandler($matrix_diagonal_div, track);
+        const panelHeader = document.createElement('div');
+        panelHeader.className = 'hic-annotation-panel-header';
+        this.annotationPanelElement.appendChild(panelHeader);
+
+        const titleDiv = document.createElement('div');
+        titleDiv.textContent = title;
+        panelHeader.appendChild(titleDiv);
+
+        const closeButtonDiv = document.createElement('div');
+        closeButtonDiv.className = 'hic-menu-close-button';
+        panelHeader.appendChild(closeButtonDiv);
+
+        const closeIcon = document.createElement('i');
+        closeIcon.className = 'fa fa-times';
+        closeButtonDiv.appendChild(closeIcon);
+
+        closeIcon.addEventListener('click', () => {
+            this.annotationPanelElement.style.display =
+                this.annotationPanelElement.style.display === 'none' ? 'flex' : 'none';
         });
 
+        makeDraggable(this.annotationPanelElement, panelHeader);
+        this.annotationPanelElement.style.display = 'none';
     }
 
-    // color swatch selector button
-    $colorpickerButton = annotationColorSwatch(isTrack2D ? track.getColor() : track1D.color);
-    $row.append($colorpickerButton);
+    annotationPanelRow(container, track) {
+        const isTrack2D = track instanceof Track2D;
+        const trackList = this.trackListRetrievalCallback();
 
-    // color swatch selector
-    $colorpickerContainer = createAnnotationPanelColorpickerContainer($row_container, {width: ((29 * 24) + 1 + 1)}, function () {
-        $row.next('.hic-color-swatch-container').toggle();
-    });
-
-    $colorpickerButton.on('click', function (e) {
-        $row.next('.hic-color-swatch-container').toggle();
-    });
-
-    $colorpickerContainer.hide();
-
-    const colorHandler = color => {
-
-        var $swatch;
-
-        $swatch = $row.find('.fa-square');
-        $swatch.css({'color': color});
-
-        if (isTrack2D) {
-            track.color = color;
-            self.browser.eventBus.post(HICEvent('TrackState2D', track));
-        } else {
-            trackRenderer.setColor(color);
+        let trackRenderer
+        if (false === isTrack2D) {
+            trackRenderer = track.x.track.trackView
         }
 
+        const rowContainer = document.createElement('div');
+        rowContainer.className = 'hic-annotation-row-container';
+        container.appendChild(rowContainer);
+
+        const row = document.createElement('div');
+        row.className = 'hic-annotation-modal-row';
+        rowContainer.appendChild(row);
+
+        const trackName = document.createElement('div');
+        trackName.textContent = isTrack2D ? track.config.name : track.x.track.config.name;
+        row.appendChild(trackName);
+
+        if (isTrack2D) {
+            const visibilityIcon = document.createElement('i');
+            visibilityIcon.className = track.isVisible ? 'fa fa-eye fa-lg' : 'fa fa-eye-slash fa-lg';
+            row.appendChild(visibilityIcon);
+
+            visibilityIcon.addEventListener('click', () => {
+                track.isVisible = !track.isVisible;
+                visibilityIcon.className = track.isVisible ? 'fa fa-eye fa-lg' : 'fa fa-eye-slash fa-lg';
+
+                this.browser.contactMatrixView.clearImageCaches();
+                this.browser.contactMatrixView.update();
+            });
+        }
+
+        if (isTrack2D) {
+            const displayModeIcon = document.createElement('div');
+            displayModeIcon.className = 'matrix-diagonal-widget-container';
+
+            switch (track.displayMode) {
+                case 'lower':
+                    displayModeIcon.classList.add('matrix-diagonal-widget-lower');
+                    break;
+                case 'upper':
+                    displayModeIcon.classList.add('matrix-diagonal-widget-upper');
+                    break;
+                default:
+                    displayModeIcon.classList.add('matrix-diagonal-widget-all');
+            }
+
+            displayModeIcon.addEventListener('click', () => {
+                this.displayModeHandler(displayModeIcon, track);
+                this.browser.contactMatrixView.clearImageCaches();
+                this.browser.contactMatrixView.update();
+            });
+
+            row.appendChild(displayModeIcon);
+        }
+
+        const colorpickerContainer = createAnnotationPanelColorpickerContainer(rowContainer, { width: (29 * 24 + 2) }, () => {
+            const nextElement = row.nextElementSibling;
+            if (nextElement && nextElement.classList.contains('hic-color-swatch-container')) {
+                nextElement.style.display = nextElement.style.display === 'none' ? 'flex' : 'none';
+            }
+        });
+
+        const colorpickerButton = this.annotationColorSwatch(isTrack2D ? track.getColor() : track.x.track.color);
+        row.appendChild(colorpickerButton);
+
+        colorpickerButton.addEventListener('click', () => {
+            const nextElement = row.nextElementSibling;
+            if (nextElement && nextElement.classList.contains('hic-color-swatch-container')) {
+                nextElement.style.display = nextElement.style.display === 'none' ? 'flex' : 'none';
+            }
+        });
+
+        colorpickerContainer.style.display = 'none';
+
+        const colorHandler = color => {
+            const swatch = row.querySelector('.fa-square');
+            if (swatch) {
+                swatch.style.color = color;
+            }
+
+            if (isTrack2D) {
+                track.color = color;
+                this.browser.eventBus.post(HICEvent('TrackState2D', track));
+            } else {
+                trackRenderer.setColor(color);
+            }
+        };
+
+        createColorSwatchSelector(colorpickerContainer, colorHandler);
+
+        // track up/down
+        const upDownContainer = document.createElement('div');
+        upDownContainer.className = 'up-down-arrow-container';
+        row.appendChild(upDownContainer);
+
+        const upTrack = document.createElement('i');
+        upTrack.className = 'fa fa-arrow-up';
+        upTrack.setAttribute('aria-hidden', 'true');
+        upDownContainer.appendChild(upTrack);
+
+        const downTrack = document.createElement('i');
+        downTrack.className = 'fa fa-arrow-down';
+        downTrack.setAttribute('aria-hidden', 'true');
+        upDownContainer.appendChild(downTrack);
+
+        const hiddenColor = '#f7f7f7'
+        if (trackList.length === 1) {
+            upTrack.style.color = hiddenColor;
+            downTrack.style.color = hiddenColor;
+        } else if (track === trackList[0]) {
+            const arrow = isTrack2D ? downTrack : upTrack;
+            arrow.style.color = hiddenColor;
+        } else if (track === trackList[trackList.length - 1]) {
+            const arrow = isTrack2D ? upTrack : downTrack;
+            arrow.style.color = hiddenColor;
+        }
+
+        const index = trackList.indexOf(track);
+
+        const moveUp = () => {
+            const temp = trackList[index + 1];
+            trackList[index + 1] = trackList[index];
+            trackList[index] = temp;
+
+            if (isTrack2D) {
+                this.browser.eventBus.post(HICEvent('TrackState2D', trackList));
+                this.updateBody(trackList);
+            } else {
+                this.browser.updateLayout();
+                this.updateBody(trackList);
+            }
+        };
+
+        const moveDown = () => {
+            const temp = trackList[index - 1];
+            trackList[index - 1] = trackList[index];
+            trackList[index] = temp;
+
+            if (isTrack2D) {
+                this.browser.eventBus.post(HICEvent('TrackState2D', trackList));
+                this.updateBody(trackList);
+            } else {
+                this.browser.updateLayout();
+                this.updateBody(trackList);
+            }
+        };
+
+        upTrack.addEventListener('click', isTrack2D ? moveUp : moveDown);
+        downTrack.addEventListener('click', isTrack2D ? moveDown : moveUp);
+
+
+        const deleteIcon = document.createElement('i');
+        deleteIcon.className = 'fa fa-trash-o fa-lg';
+        row.appendChild(deleteIcon);
+
+        deleteIcon.addEventListener('click', () => {
+            const index = trackList.indexOf(track);
+            if (isTrack2D) {
+                trackList.splice(index, 1);
+                this.browser.contactMatrixView.clearImageCaches();
+                this.browser.contactMatrixView.update();
+                this.browser.eventBus.post(HICEvent('TrackLoad2D', trackList));
+            } else {
+                this.browser.layoutController.removeTrackXYPair(track.x.track.trackRenderPair);
+            }
+
+            this.updateBody(trackList);
+        });
     }
 
-    createColorSwatchSelector($colorpickerContainer.get(0), colorHandler);
-
-
-    // track up/down
-    $e = $('<div>', {class: 'up-down-arrow-container'});
-    $row.append($e);
-
-    $upTrack = $("<i>", {class: 'fa fa-arrow-up', 'aria-hidden': 'true'});
-    $e.append($upTrack);
-
-    $downTrack = $("<i>", {class: 'fa fa-arrow-down', 'aria-hidden': 'true'});
-    $e.append($downTrack);
-
-    if (1 === trackList.length) {
-        $upTrack.css('color', hidden_color);
-        $downTrack.css('color', hidden_color);
-    } else if (track === trackList[0]) {
-        $o = isTrack2D ? $downTrack : $upTrack;
-        $o.css('color', hidden_color);
-    } else if (track === trackList[trackList.length - 1]) {
-        $o = isTrack2D ? $upTrack : $downTrack;
-        $o.css('color', hidden_color);
+    displayModeHandler(icon, track2D) {
+        if (icon.classList.contains('matrix-diagonal-widget-all')) {
+            icon.classList.replace('matrix-diagonal-widget-all', 'matrix-diagonal-widget-lower');
+            track2D.displayMode = 'lower';
+        } else if (icon.classList.contains('matrix-diagonal-widget-lower')) {
+            icon.classList.replace('matrix-diagonal-widget-lower', 'matrix-diagonal-widget-upper');
+            track2D.displayMode = 'upper';
+        } else {
+            icon.classList.replace('matrix-diagonal-widget-upper', 'matrix-diagonal-widget-all');
+            track2D.displayMode = undefined;
+        }
     }
 
-    index = trackList.indexOf(track);
+    annotationColorSwatch(color) {
+        const swatch = document.createElement('div');
+        swatch.className = 'igv-color-swatch';
 
-    upp = function (e) {
+        const icon = document.createElement('i');
+        icon.className = 'fa fa-square fa-lg';
+        icon.style.color = color;
+        swatch.appendChild(icon);
 
-        track = trackList[(index + 1)];
-        trackList[(index + 1)] = trackList[index];
-        trackList[index] = track;
-        if (isTrack2D) {
-            self.browser.eventBus.post(HICEvent('TrackState2D', trackList));
-            self.updateBody(trackList);
-        } else {
-            self.browser.updateLayout();
-            self.updateBody(trackList);
-        }
-    };
-
-    dwn = function (e) {
-
-        track = trackList[(index - 1)];
-        trackList[(index - 1)] = trackList[index];
-        trackList[index] = track;
-        if (isTrack2D) {
-            self.browser.eventBus.post(HICEvent('TrackState2D', trackList));
-            self.updateBody(trackList);
-        } else {
-            self.browser.updateLayout();
-            self.updateBody(trackList);
-        }
-    };
-
-    $upTrack.on('click', isTrack2D ? upp : dwn);
-
-    $downTrack.on('click', isTrack2D ? dwn : upp);
-
-
-    // track delete
-    $deleteTrack = $("<i>", {class: 'fa fa-trash-o fa-lg', 'aria-hidden': 'true'});
-    $row.append($deleteTrack);
-    $deleteTrack.on('click', function (e) {
-        var index;
-
-        if (isTrack2D) {
-
-            index = trackList.indexOf(track);
-
-            trackList.splice(index, 1);
-
-            self.browser.contactMatrixView.clearImageCaches();
-            self.browser.contactMatrixView.update();
-
-            self.browser.eventBus.post(HICEvent('TrackLoad2D', trackList));
-        } else {
-            self.browser.layoutController.removeTrackXYPair(trackRenderer.trackRenderPair);
-        }
-
-        self.updateBody(trackList);
-    });
+        return swatch;
+    }
 }
 
-function matrixDiagionalWidgetHandler($icon, track2D) {
+function createAnnotationPanelColorpickerContainer(parent, config, closeHandler) {
 
-    if ($icon.hasClass('matrix-diagonal-widget-all')) {
-
-        $icon.removeClass('matrix-diagonal-widget-all');
-
-        $icon.addClass('matrix-diagonal-widget-lower');
-        track2D.displayMode = Track2DDisplaceModes.displayLowerMatrix;
-    } else if ($icon.hasClass('matrix-diagonal-widget-lower')) {
-
-        $icon.removeClass('matrix-diagonal-widget-lower');
-
-        $icon.addClass('matrix-diagonal-widget-upper');
-        track2D.displayMode = Track2DDisplaceModes.displayUpperMatrix;
-    } else if ($icon.hasClass('matrix-diagonal-widget-upper')) {
-
-        $icon.removeClass('matrix-diagonal-widget-upper');
-
-        $icon.addClass('matrix-diagonal-widget-all');
-        track2D.displayMode = Track2DDisplaceModes.displayAllMatrix;
-    } else {
-
-        $icon.addClass('matrix-diagonal-widget-all');
-        track2D.displayMode = Track2DDisplaceModes.displayAllMatrix;
-    }
-}
-
-function annotationColorSwatch(rgbString) {
-    var $swatch,
-        $fa;
-
-    $swatch = $('<div>', {class: 'igv-color-swatch'});
-
-    $fa = $('<i>', {class: 'fa fa-square fa-lg', 'aria-hidden': 'true'});
-    $swatch.append($fa);
-
-    $fa.css({color: rgbString});
-
-    return $swatch;
-}
-
-function createAnnotationPanelColorpickerContainer($parent, config, closeHandler) {
-
-    var $container,
-        $header,
-        $fa;
-
-    $container = $('<div>', {class: 'hic-color-swatch-container'});
-    $parent.append($container);
+    const container = document.createElement('div');
+    container.className = 'hic-color-swatch-container';
+    parent.appendChild(container);
 
     // width
     if (config && config.width) {
-        $container.width(config.width);
+        container.style.width = `${config.width}px`;
     }
 
     // height
     if (config && config.height) {
-        $container.height(config.height);
+        container.style.height = `${config.height}px`;
     }
 
     // header
-    $header = $('<div>');
-    $container.append($header);
+    const header = document.createElement('div');
+    container.appendChild(header);
 
     // close button
-    $fa = $("<i>", {class: 'fa fa-times'});
-    $header.append($fa);
+    const closeButton = document.createElement('i');
+    closeButton.className = 'fa fa-times';
+    header.appendChild(closeButton);
 
-    $fa.on('click', function (e) {
+    closeButton.addEventListener('click', () => {
         closeHandler();
     });
 
-    return $container;
+    return container;
 }
 
-
-export default AnnotationWidget
+export default AnnotationWidget;

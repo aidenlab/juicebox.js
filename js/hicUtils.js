@@ -21,6 +21,8 @@
  *
  */
 
+import {FileUtils} from '../node_modules/igv-utils/src/index.js'
+
 function isMobile() {
     return (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 }
@@ -54,7 +56,32 @@ function throttle(fn, threshhold, scope) {
     }
 }
 
-export {
-    isMobile,
-    throttle
+function getExtension(url) {
+
+    if (undefined === url) {
+        return undefined
+    }
+
+    let path = (FileUtils.isFile(url) || url.google_url) ? url.name : url
+    let filename = path.toLowerCase()
+
+    //Strip parameters -- handle local files later
+    let index = filename.indexOf("?")
+    if (index > 0) {
+        filename = filename.substr(0, index)
+    }
+
+    //Strip aux extensions .gz, .tab, and .txt
+    if (filename.endsWith(".gz")) {
+        filename = filename.substr(0, filename.length - 3)
+    } else if (filename.endsWith(".txt") || filename.endsWith(".tab") || filename.endsWith(".bgz")) {
+        filename = filename.substr(0, filename.length - 4)
+    }
+
+    index = filename.lastIndexOf(".")
+
+    return index < 0 ? filename : filename.substr(1 + index)
 }
+
+
+export { isMobile, throttle, getExtension }

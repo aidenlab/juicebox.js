@@ -1,0 +1,76 @@
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Juicebox - ES6 </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.css">
+
+    <!-- Juicebox CSS-->
+    <link rel="stylesheet" type="text/css" href="../css/juicebox.css">
+
+</head>
+
+<body>
+
+<div id="app-container"></div>
+
+<script type="module">
+
+    import juicebox from '../js/index.js'
+
+
+    const config =
+        {
+
+            // hg19
+            url: "https://www.encodeproject.org/files/ENCFF718AWL/@@download/ENCFF718AWL.hic",
+            name: "GM12878",
+            locus: '8',
+        };
+
+    const config_deep_map =
+        {
+
+            // hg38
+            url: "https://s3.us-central-1.wasabisys.com/aiden-encode-hic-mirror/moshe/all.hic",
+            name: "Deep Map Test",
+
+            // locus: '8',
+            locus: 'chr8:63,069,506-63,074,545',
+            tracks:
+                [
+                    {
+                        name: "Refseq Genes - As Track",
+                        format: "refgene",
+                        url: "https://s3.amazonaws.com/igv.org.genomes/hg38/ncbiRefSeq.txt.gz",
+                        indexURL: "https://s3.amazonaws.com/igv.org.genomes/hg38/ncbiRefSeq.txt.gz.tbi"
+                    },
+                    {
+                        name: "Sequence - As Track",
+                        url: "https://s3.amazonaws.com/igv.broadinstitute.org/genomes/seq/hg38/hg38.fa",
+                        indexURL: "https://s3.amazonaws.com/igv.broadinstitute.org/genomes/seq/hg38/hg38.fa.fai",
+                    },
+                    {
+                        "url": "https://www.encodeproject.org/files/ENCFF754TJH/@@download/ENCFF754TJH.bigWig",
+                        "name": "Encode bigwig",
+                        color: "#65d313"
+                    },
+                ],
+        }
+
+    juicebox.init(document.getElementById("app-container"), config_deep_map)
+        .then(browser => {
+
+            console.log(`${ browser.id } is good to go`)
+
+        })
+
+
+</script>
+
+</body>
+
+</html>

@@ -13,7 +13,7 @@ Requirements:
 
 * Juicebox CSS
 
-    ``` <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/juicebox.js@2.2.0/dist/css/juicebox.css">```
+    ``` <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/css/juicebox.css">```
     
 * Juicebox javascript -- see below
 
@@ -21,13 +21,13 @@ Requirements:
 To import juicebox as an ES6 module
 
 ```javascript
-import juicebox from "https://cdn.jsdelivr.net/npm/juicebox.js@2.2.0/dist/juicebox.esm.js";
+import juicebox from "https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/juicebox.esm.js";
 ``` 
 
 Or as a script include (defines the "juicebox" global)
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/juicebox.js@2.2.0/dist/juicebox.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/juicebox.min.js"></script>
 ```   
  
 Alternatively you can install with npm  
@@ -39,49 +39,93 @@ and source the appropriate file for your module system (juicebox.min.js or juice
 # Usage
 
 To create an juicebox instance call ```juicebox.init``` with a container div  and an initial configuration object as 
-illustrated below.  See also [examples/juicebox.html](https://github.com/igvteam/juicebox.js/blob/master/examples/juicebox.html) and [examples/juicebox-es6.html](https://github.com/igvteam/juicebox.js/blob/master/examples/juicebox-es6.html).  
+illustrated below.   
 
-```
-   const config = {
-        url: "https://www.encodeproject.org/files/ENCFF718AWL/@@download/ENCFF718AWL.hic",
-        name: "GM12878",
-        //locus: "22:33,319,567-36,009,566",   // <= optional initial locus
-        tracks: [
-            {
-                url: "https://www.encodeproject.org/files/ENCFF000ARJ/@@download/ENCFF000ARJ.bigWig",
-                name: "CTCF",
-                min: 0,
-                max: 25,
-                color: "#ff8802"
-            }
-        ]
-    }
-    const container = document.getElementById("app-container");
-    juicebox.init(container, config)
-        .then(function (hicBrowser) {
+```javascript
+   juicebox.init(container, config)
+       .then(function (hicBrowser) {
             console.log("Juicebox loaded");
         })
 
 ```
 
+Configuration ```config``` object examples follow
 
-The juicebox.init function returns a promise for a HICBrowser object.  This object exposes functions for interacting
-with the viewer including
+* A minimal juicebox config containing only a hic map with all default settings (see [examples/juicebox-minimal](https://github.com/igvteam/juicebox.js/blob/master/examples/juicebox-minimal.html)): 
+
+```
+   const config = {
+       "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/dilution/combined.hic",    
+   }
+
+```
+
+
+
+
+* Juicebox config with contact map, gene annotations, CTCF wig track, and 2D annotations (see [examples/juicebox.html](https://github.com/igvteam/juicebox.js/blob/master/examples/juicebox.html)):
+
+
+
+
+```
+   const config = {
+            "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/dilution/combined.hic",
+            "name": "Combined",
+            "locus": "18:28,504,357-29,748,974 18:28,504,357-29,748,974",
+            "normalization": "VC_SQRT",
+            "backgroundColor": "255,255,255",
+            "colorScale": "60,255,0,0",
+            "tracks": [
+                {
+                    "url": "https://www.encodeproject.org/files/ENCFF144KUK/@@download/ENCFF144KUK.bigWig",
+                    "type": "wig",
+                    "format": "bigwig",
+                    "name": "Homo sapiens GM12878 CTCF "
+                    "color": "green"
+                },
+                {
+                    "url": "https://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/ncbiRefSeq.txt.gz",
+                    "type": "annotation",
+                    "format": "refgene",
+                    "name": "Refseq Genes",
+                },
+                {
+                    "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/combined_peaks.txt",
+                    "name": "Rao & Huntley et al. | Cell 2014 | GM12878 combined loops"
+                },
+                {
+                    "url": "https://hicfiles.s3.amazonaws.com/hiseq/hap1/in-situ/combined_peaks.txt",
+                    "name": "Sanborn & Rao et al. | PNAS 2015 | Hap1 loops",
+                    "color": "#fffa03",
+                    "displayMode": "upper"
+                },
+                {
+                    "url": "https://hicfiles.s3.amazonaws.com/external/mumbach/GSE80820_HiChIP_GM_cohesin_peaks.txt",
+                    "name": "Mumbach Rubin Flynn et al. | Nature Methods 2016 | GM12878 cohesin combined loops",
+                    "color": "#000000",
+                    "displayMode": "lower"
+                }
+            ]
+        }
+```
+
+
+
+# API
+
+The juicebox.init function returns a promise for a HICBrowser object.  This object exposes
+functions for interacting with the viewer including
 
 * loadHicFile({url: urlString, name: string})
 * loadTracks([array of track configs...])
 
-See [examples/juicebox-api.html](https://github.com/igvteam/juicebox.js/blob/master/examples/juicebox-api.html) for a working example.
+For a description of track configurations see the documentation for [igv.js](https://github.com/igvteam/igv.js/wiki).
+Example of a basic track configuration object:
 
-For a description of track configurations see the documentation for [igv.js](https://github.com/igvteam/igv.js/wiki). 
-Example of a basic track configuration object: 
+See [examples/juicebox-api.html](https://github.com/igvteam/juicebox.js/blob/master/examples/juicebox-api.html) 
+for an example of using the API to load hicfiles and tracks.
 
-```
-{
-   url: "https://www.encodeproject.org/files/ENCFF000ARJ/@@download/ENCFF000ARJ.bigWig",
-   name: "CTCF
-}
-```
 
 # Development
 

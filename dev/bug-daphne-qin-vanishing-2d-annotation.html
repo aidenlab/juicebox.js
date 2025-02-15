@@ -1,0 +1,100 @@
+<html>
+<head>
+    <meta charset="UTF-`8`"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Juicebox - ES6 </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.css">
+
+    <!-- Juicebox CSS-->
+    <link rel="stylesheet" type="text/css" href="../css/juicebox.css">
+
+</head>
+
+<body>
+
+
+<div id="app-container" style="display: flex; flex-flow: row; flex-wrap: wrap; justify-content: flex-start;">
+</div>
+
+
+<script type="module">
+
+    import juicebox from '../js/index.js';
+
+    const config_2d_annotation_vanish =
+        {
+            "browsers": [
+                // {
+                //     "backgroundColor": "58,58,58",
+                //     "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/r.hic",
+                //     "name": "r.hic",
+                //     "state": "13,13,10,42716.19,42716.19,640,640,1.067481115221243,NONE",
+                //     "colorScale": "11,84,84,83",
+                //     "nvi": "43762184328,25419",
+                //     "tracks": [
+                //         {
+                //             "url": "https://www.dropbox.com/scl/fi/mweycro8eyhubrjrhv6oo/fosl1_loops_with_snps_nothresh.bedpe?rlkey=1dv8wbc7c57m9muob7tlxvm89&e=1&st=2c4adj56&dl=0",
+                //             "name": "fosl1_loops_with_snps_nothresh.bedpe",
+                //             "color": "#83f902",
+                //             "displayMode": "COLLAPSED"
+                //         }
+                //     ]
+                // },
+                // {
+                //     "backgroundColor": "58,58,58",
+                //     "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/a.hic",
+                //     "name": "a.hic",
+                //     "state": "13,13,10,42716.19,42716.19,640,640,1.067481115221243,NONE",
+                //     "colorScale": "11,84,84,83",
+                //     "nvi": "43835341324,25419",
+                //     "tracks": [
+                //         {
+                //             "url": "https://www.dropbox.com/scl/fi/mweycro8eyhubrjrhv6oo/fosl1_loops_with_snps_nothresh.bedpe?rlkey=1dv8wbc7c57m9muob7tlxvm89&e=1&st=2c4adj56&dl=0",
+                //             "name": "fosl1_loops_with_snps_nothresh.bedpe",
+                //             "color": "#ff39ff",
+                //             "displayMode": "COLLAPSED"
+                //         }
+                //     ]
+                // },
+                {
+                    "backgroundColor": "58,58,58",
+                    "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/LCL_combined/9_12_23/inter_30.hic",
+                    "name": "inter_30.hic",
+                    "state": "13,13,10,42716.19,42716.19,640,640,1.067481115221243,NONE",
+                    "colorScale": "73,84,84,83",
+                    "nvi": "2113712247631,126136",
+                    "tracks": [
+                        {
+                            "url": "https://www.dropbox.com/scl/fi/mweycro8eyhubrjrhv6oo/fosl1_loops_with_snps_nothresh.bedpe?rlkey=1dv8wbc7c57m9muob7tlxvm89&e=1&st=2c4adj56&dl=0",
+                            "name": "fosl1_loops_with_snps_nothresh.bedpe",
+                            "color": "#00fdff",
+                            "displayMode": "COLLAPSED"
+                        }
+                    ]
+                }
+            ]
+        };
+
+    juicebox.init(document.getElementById("app-container"), config_2d_annotation_vanish)
+        .then(result => {
+
+            // if (Array.isArray(result)) {
+            //     for (const browser of result) {
+            //         console.log(`${ browser.id } is good to go`);
+            //     }
+            // } else {
+            //     console.log(`${ result.id } is good to go`);
+            // }
+
+
+        })
+
+
+</script>
+
+</body>
+
+</html>

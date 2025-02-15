@@ -1,7 +1,4 @@
-import nodeResolve from "@rollup/plugin-node-resolve";
-import babel from "@rollup/plugin-babel";
-import strip from 'rollup-plugin-strip';
-import commonjs from '@rollup/plugin-commonjs';
+import strip from '@rollup/plugin-strip';
 import {terser} from "rollup-plugin-terser"
 import copy from 'rollup-plugin-copy';
 
@@ -36,10 +33,7 @@ export default [
             strip({
                 debugger: true,
                 functions: [/*'console.log', */'assert.*', 'debug']
-            }),
-            commonjs(),
-            nodeResolve(),
-            babel()
+            })
         ]
     }
 ]

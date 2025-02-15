@@ -23,7 +23,7 @@
 import State from './hicState.js';
 import ColorScale from "./colorScale.js"
 import {Globals} from "./globals.js";
-import {StringUtils} from '../node_modules/igv-utils/src/index.js'
+import {StringUtils, BGZip} from '../node_modules/igv-utils/src/index.js'
 
 const DEFAULT_ANNOTATION_COLOR = "rgb(22, 129, 198)";
 
@@ -42,7 +42,7 @@ async function extractConfig(queryString) {
 
     if (query.hasOwnProperty("session")) {
         if (query.session.startsWith("blob:") || query.session.startsWith("data:")) {
-            sessionConfig = JSON.parse(StringUtils.uncompressString(query.session.substr(5)));
+            sessionConfig = JSON.parse(BGZip.uncompressString(query.session.substr(5)));
         } else {
             // TODO - handle session url
 
@@ -57,7 +57,7 @@ async function extractConfig(queryString) {
     if (query.hasOwnProperty("juicebox") || query.hasOwnProperty("juiceboxData")) {
         let q;
         if (query.hasOwnProperty("juiceboxData")) {
-            q = StringUtils.uncompressString(query["juiceboxData"])
+            q = BGZip.uncompressString(query["juiceboxData"])
         } else {
             q = query["juicebox"];
             if (q.startsWith("%7B")) {

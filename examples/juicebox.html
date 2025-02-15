@@ -1,53 +1,70 @@
 <html>
 <head>
-    <meta charset="UTF-8"/>
+    <meta charSet="UTF-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <title>Juicebox</title>
+    <title>Juicebox - ES6 </title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
     <!-- Font Awesome CSS-->
-    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.css">
 
     <!-- Juicebox CSS-->
-<!--    <link rel="stylesheet" type="text/css" href="../dist/css/juicebox.css">-->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/juicebox.js@2.2.0/dist/css/juicebox.css">
-
-    <!-- Juicebox -- defines global "juicebox" -->
-<!--    <script type="text/javascript" src="../dist/juicebox.min.js"></script>-->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/juicebox.js@2.2.0/dist/juicebox.min.js"></script>
-
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/css/juicebox.css">
 
 </head>
 
 <body>
 
-
 <div id="app-container"></div>
-
 
 <script type="module">
 
-    const config = {
-        url: "https://www.encodeproject.org/files/ENCFF718AWL/@@download/ENCFF718AWL.hic",
-        name: "GM12878",
-        //locus: "22:33,319,567-36,009,566",   // <= optional initial locus
-        tracks: [
-            {
-                url: "https://www.encodeproject.org/files/ENCFF000ARJ/@@download/ENCFF000ARJ.bigWig",
-                name: "CTCF",
-                min: 0,
-                max: 25,
-                color: "#ff8802"
-            }
-        ]
-    }
+    import juicebox from "https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/juicebox.esm.js"
+
+    const config =
+        {
+            "backgroundColor": "255,255,255",
+            "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/dilution/combined.hic",
+            "name": "Combined",
+            "locus": "18:28,504,357-29,748,974 18:28,504,357-29,748,974",
+            "normalization": "VC_SQRT",
+            "colorScale": "66.20668236071833,255,0,0",
+            "tracks": [
+                {
+                    "url": "https://www.encodeproject.org/files/ENCFF144KUK/@@download/ENCFF144KUK.bigWig",
+                    "type": "wig",
+                    "format": "bigwig",
+                    "name": "Homo sapiens GM12878 CTCF "
+                },
+                {
+                    "url": "https://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/ncbiRefSeq.txt.gz",
+                    "type": "annotation",
+                    "format": "refgene",
+                    "name": "Refseq Genes",
+                },
+                {
+                    "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/combined_peaks.txt",
+                    "name": "Rao & Huntley et al. | Cell 2014 | GM12878 combined loops"
+                },
+                {
+                    "url": "https://hicfiles.s3.amazonaws.com/hiseq/hap1/in-situ/combined_peaks.txt",
+                    "name": "Sanborn & Rao et al. | PNAS 2015 | Hap1 loops",
+                    "color": "#fffa03",
+                    "displayMode": "upper"
+                },
+                {
+                    "url": "https://hicfiles.s3.amazonaws.com/external/mumbach/GSE80820_HiChIP_GM_cohesin_peaks.txt",
+                    "name": "Mumbach Rubin Flynn et al. | Nature Methods 2016 | GM12878 cohesin combined loops",
+                    "color": "#000000",
+                    "displayMode": "lower"
+                }
+            ]
+        }
 
 
-    const container = document.getElementById("app-container");
-
-    juicebox.init(container, config)
-        .then(function (hicBrowser) {
-            console.log("Juicebox loaded");
+    juicebox.init(document.getElementById("app-container"), config)
+        .then(browser => {
+            console.log(`${browser.id} is good to go`)
         })
 
 

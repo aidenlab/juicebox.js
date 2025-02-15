@@ -24,182 +24,141 @@
 /**
  * Created by dat on 3/3/17.
  */
-import $ from '../vendor/jquery-3.3.1.slim.js'
-import {IGVColor, DOMUtils, StringUtils} from '../node_modules/igv-utils/src/index.js'
-import { ColorPicker, createColorSwatchSelector, GenericContainer} from '../node_modules/igv-ui/dist/igv-ui.js'
-import RatioColorScale, {defaultRatioColorScaleConfig} from './ratioColorScale.js'
+import { IGVColor, StringUtils } from '../node_modules/igv-utils/src/index.js';
+import { DOMUtils, ColorPicker, createColorSwatchSelector, GenericContainer } from '../node_modules/igv-ui/dist/igv-ui.js';
+import RatioColorScale, { defaultRatioColorScaleConfig } from './ratioColorScale.js';
 import ContactMatrixView from "./contactMatrixView.js";
 import ColorScale from "./colorScale.js";
+import {parseRgbString} from "./utils.js"
 
 class ColorScaleWidget {
 
-    constructor(browser, $hic_navbar_container) {
-
+    constructor(browser, hicNavbarContainer) {
         this.browser = browser;
 
-        const $container = $hic_navbar_container.find("div[id$='lower-hic-nav-bar-widget-container']");
+        const container = hicNavbarContainer.querySelector("div[id$='lower-hic-nav-bar-widget-container']");
 
-        this.$container = $('<div class="hic-colorscale-widget-container">');
-        $container.append(this.$container);
+        this.container = document.createElement('div');
+        this.container.className = 'hic-colorscale-widget-container';
+        container.appendChild(this.container);
 
-        // contact map background color picker
-        const {r: _r, g: _g, b: _b} = ContactMatrixView.defaultBackgroundColor
-        this.$mapBackgroundColorpickerButton = colorSwatch(IGVColor.rgbColor(_r, _g, _b))
-        this.$container.append(this.$mapBackgroundColorpickerButton);
-        this.backgroundColorpicker = createColorPicker(browser, this.$mapBackgroundColorpickerButton, undefined)
+        const { r: _r, g: _g, b: _b } = ContactMatrixView.defaultBackgroundColor;
+        this.mapBackgroundColorpickerButton = colorSwatch(IGVColor.rgbColor(_r, _g, _b));
+        this.container.appendChild(this.mapBackgroundColorpickerButton);
+        this.backgroundColorpicker = createColorPicker(browser, this.mapBackgroundColorpickerButton);
 
-        // '-' color swatch
-        const {r: nr, g: ng, b: nb} = defaultRatioColorScaleConfig.negative
-        this.$minusButton = colorSwatch(IGVColor.rgbColor(nr, ng, nb));
-        this.$container.append(this.$minusButton)
-        this.minusColorPicker = createColorPicker(browser, this.$minusButton, '-')
-        this.$minusButton.hide()
+        const { r: nr, g: ng, b: nb } = defaultRatioColorScaleConfig.negative;
+        this.minusButton = colorSwatch(IGVColor.rgbColor(nr, ng, nb));
+        this.container.appendChild(this.minusButton);
+        this.minusColorPicker = createColorPicker(browser, this.minusButton, '-');
+        this.minusButton.style.display = 'none';
 
-        // '+' color swatch
-        const {r, g, b} = defaultRatioColorScaleConfig.positive
-        this.$plusButton = colorSwatch(IGVColor.rgbColor(r, g, b));
-        this.$container.append(this.$plusButton)
-        this.plusColorPicker = createColorPicker(browser, this.$plusButton, '+')
+        const { r, g, b } = defaultRatioColorScaleConfig.positive;
+        this.plusButton = colorSwatch(IGVColor.rgbColor(r, g, b));
+        this.container.appendChild(this.plusButton);
+        this.plusColorPicker = createColorPicker(browser, this.plusButton, '+');
 
-        this.$minusButton.on('click', () => presentColorPicker(this.minusColorPicker, this.plusColorPicker, this.backgroundColorpicker))
-        this.$plusButton.on('click', () => presentColorPicker(this.plusColorPicker, this.minusColorPicker, this.backgroundColorpicker))
-        this.$mapBackgroundColorpickerButton.on('click', () => presentColorPicker(this.backgroundColorpicker, this.minusColorPicker, this.plusColorPicker))
+        this.minusButton.addEventListener('click', () => presentColorPicker(this.minusColorPicker, this.plusColorPicker, this.backgroundColorpicker));
+        this.plusButton.addEventListener('click', () => presentColorPicker(this.plusColorPicker, this.minusColorPicker, this.backgroundColorpicker));
+        this.mapBackgroundColorpickerButton.addEventListener('click', () => presentColorPicker(this.backgroundColorpicker, this.minusColorPicker, this.plusColorPicker));
 
-        // threshold
-        this.$high_colorscale_input = $('<input>', {'type': 'text', 'placeholder': '', 'title': 'color scale input'});
-        this.$container.append(this.$high_colorscale_input);
-        this.$high_colorscale_input.on('change', function (e) {
-            var numeric;
-            numeric = StringUtils.numberUnFormatter($(this).val());
-            if (isNaN(numeric)) {
-                // do nothing
-            } else {
+        this.highColorscaleInput = document.createElement('input');
+        this.highColorscaleInput.type = 'text';
+        this.highColorscaleInput.title = 'color scale input';
+        this.container.appendChild(this.highColorscaleInput);
+        this.highColorscaleInput.addEventListener('change', (e) => {
+            const numeric = StringUtils.numberUnFormatter(e.target.value);
+            if (!isNaN(numeric)) {
                 browser.setColorScaleThreshold(numeric);
             }
         });
 
-        // threshold -
-        let $fa = $("<i>", {class: 'fa fa-minus', 'aria-hidden': 'true', 'title': 'negative threshold'});
-        $fa.on('click', () => this.$high_colorscale_input.val(updateThreshold(browser, 0.5)));
-        this.$container.append($fa);
+        const minusIcon = createIconButton('fa-minus', 'negative threshold', () => this.highColorscaleInput.value = updateThreshold(browser, 0.5));
+        this.container.appendChild(minusIcon);
 
-        // threshold +
-        $fa = $("<i>", {class: 'fa fa-plus', 'aria-hidden': 'true', 'title': 'positive threshold'});
-        $fa.on('click', () => this.$high_colorscale_input.val(updateThreshold(browser, 2.0)));
-        this.$container.append($fa);
+        const plusIcon = createIconButton('fa-plus', 'positive threshold', () => this.highColorscaleInput.value = updateThreshold(browser, 2.0));
+        this.container.appendChild(plusIcon);
 
-        const handleColorScaleEvent = event => {
-
+        browser.eventBus.subscribe("ColorScale", (event) => {
             if (event.data instanceof ColorScale) {
-
-                const {threshold} = event.data
-                this.$high_colorscale_input.val(threshold)
-
-                paintSwatch(this.$plusButton, event.data)
-
+                this.highColorscaleInput.value = event.data.threshold;
+                paintSwatch(this.plusButton, event.data);
             } else if (event.data instanceof RatioColorScale) {
-
-                const {threshold, negativeScale, positiveScale} = event.data
-
-                this.$high_colorscale_input.val(threshold)
-
-                paintSwatch(this.$minusButton, negativeScale)
-                paintSwatch(this.$plusButton, positiveScale)
+                this.highColorscaleInput.value = event.data.threshold;
+                paintSwatch(this.minusButton, event.data.negativeScale);
+                paintSwatch(this.plusButton, event.data.positiveScale);
             }
-
-        }
-
-        this.browser.eventBus.subscribe("ColorScale", handleColorScaleEvent);
-
-        const handleDisplayModeEvent = event => {
-
-            if ("AOB" === event.data || "BOA" === event.data) {
-
-                this.$minusButton.show();
-
-                const {negativeScale, positiveScale} = this.browser.contactMatrixView.ratioColorScale
-                paintSwatch(this.$minusButton, negativeScale)
-                paintSwatch(this.$plusButton, positiveScale)
-
-            } else {
-                this.$minusButton.hide();
-                paintSwatch(this.$plusButton, this.browser.contactMatrixView.colorScale)
-            }
-        }
-
-        this.browser.eventBus.subscribe("DisplayMode", handleDisplayModeEvent)
-
-        this.browser.eventBus.subscribe("MapLoad", (ignore) => {
-            paintSwatch(this.$mapBackgroundColorpickerButton, this.browser.contactMatrixView.backgroundColor)
         });
 
+        browser.eventBus.subscribe("DisplayMode", (event) => {
+            if (event.data === "AOB" || event.data === "BOA") {
+                this.minusButton.style.display = 'block';
+                paintSwatch(this.minusButton, browser.contactMatrixView.ratioColorScale.negativeScale);
+                paintSwatch(this.plusButton, browser.contactMatrixView.ratioColorScale.positiveScale);
+            } else {
+                this.minusButton.style.display = 'none';
+                paintSwatch(this.plusButton, browser.contactMatrixView.colorScale);
+            }
+        });
+
+        browser.eventBus.subscribe("MapLoad", () => {
+            paintSwatch(this.mapBackgroundColorpickerButton, browser.contactMatrixView.backgroundColor);
+        });
     }
 }
 
-function paintSwatch($swatch, {r, g, b}) {
-    $swatch.get(0).style.backgroundColor = IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b))
+function paintSwatch(swatch, { r, g, b }) {
+    swatch.style.backgroundColor = IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b));
 }
 
-const updateThreshold = (browser, scaleFactor) => {
+function updateThreshold(browser, scaleFactor) {
     const colorScale = browser.getColorScale();
     browser.setColorScaleThreshold(colorScale.getThreshold() * scaleFactor);
     return StringUtils.numberFormatter(colorScale.getThreshold());
 }
 
-function createColorPicker(browser, $parent, type) {
-
-    let defaultColors
-    let colorHandler
-    if (undefined === type) {
-
-        const { r, g, b } = ContactMatrixView.defaultBackgroundColor
-        defaultColors = [ IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b)) ]
-
-        colorHandler = hexString => {
-            $parent.get(0).style.backgroundColor = hexString
-            const [r, g, b] = IGVColor.hexToRgb(hexString).split('(').pop().split(')').shift().split(',').map(str => parseInt(str, 10))
-            browser.contactMatrixView.setBackgroundColor({r, g, b})
-
-        }
-
+function createColorPicker(browser, parent, type) {
+    let defaultColors, colorHandler;
+    if (!type) {
+        const { r, g, b } = ContactMatrixView.defaultBackgroundColor;
+        defaultColors = [IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b))];
+        colorHandler = (hex) => {
+            parent.style.backgroundColor = hex;
+            const rgbString = IGVColor.hexToRgb(hex)
+            const [r, g, b] = parseRgbString(rgbString)
+            browser.contactMatrixView.setBackgroundColor({ r, g, b });
+        };
     } else {
-
-        defaultColors = [defaultRatioColorScaleConfig.negative, defaultRatioColorScaleConfig.positive].map(({ r, g, b }) => IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b)))
-
-        colorHandler = hexString => {
-            $parent.get(0).style.backgroundColor = hexString
-            const [r, g, b] = IGVColor.hexToRgb(hexString).split('(').pop().split(')').shift().split(',').map(str => parseInt(str, 10))
-            browser.getColorScale().setColorComponents({r, g, b}, type)
-            browser.repaintMatrix()
-        }
-
+        defaultColors = [defaultRatioColorScaleConfig.negative, defaultRatioColorScaleConfig.positive].map(({ r, g, b }) => IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b)));
+        colorHandler = (hex) => {
+            parent.style.backgroundColor = hex;
+            const rgbString = IGVColor.hexToRgb(hex)
+            const [r, g, b] = parseRgbString(rgbString)
+            browser.getColorScale().setColorComponents({ r, g, b }, type);
+            browser.repaintMatrix();
+        };
     }
-
-    const config =
-        {
-            parent: $parent.get(0),
-            top: 64,
-            left: 64,
-            width: 432,
-            defaultColors,
-            colorHandler
-        }
-
-    return new ColorPicker(config)
-
+    return new ColorPicker({ parent, top: 64, left: 64, width: 432, defaultColors, colorHandler });
 }
 
-function presentColorPicker(presentable, hideableA, hideableB){
+function presentColorPicker(presentable, hideableA, hideableB) {
     hideableA.hide()
     hideableB.hide()
     presentable.show()
 }
 
 function colorSwatch(rgbString) {
-    const swatch = DOMUtils.div({ class: 'igv-ui-color-swatch' })
-    swatch.style.backgroundColor = IGVColor.rgbToHex(rgbString)
-    return $(swatch)
+    const swatch = DOMUtils.div({ class: 'igv-ui-color-swatch' });
+    swatch.style.backgroundColor = IGVColor.rgbToHex(rgbString);
+    return swatch;
 }
 
+function createIconButton(iconClass, title, onClick) {
+    const icon = document.createElement('i');
+    icon.className = `fa ${iconClass}`;
+    icon.title = title;
+    icon.addEventListener('click', onClick);
+    return icon;
+}
 
-export default ColorScaleWidget
+export default ColorScaleWidget;

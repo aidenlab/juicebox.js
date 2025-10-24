@@ -1,15 +1,15 @@
 import "./utils/mockObjects.js"
-import {assert} from 'chai'
+import { describe, it, expect } from 'vitest'
 
 import Track2D from '../js/track2D.js'
 
-suite("testTrack2D", function () {
+describe("testTrack2D", () => {
 
-    test("2D track", async function () {
+    it("2D track", async () => {
 
         const url = "test/data/breakFinder/breaks.txt"
         const track2D = await Track2D.loadTrack2D({url: url})
-        assert.equal(track2D.featureCount, 56)
+        expect(track2D.featureCount).toBe(56)
 
     })
 })

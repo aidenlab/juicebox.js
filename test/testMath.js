@@ -1,11 +1,11 @@
 import "./utils/mockObjects.js"
-import {assert} from 'chai';
+import { describe, it, expect } from 'vitest'
 
 import HICMath from "../js/hicMath.js"
 
-suite("math", function () {
+describe("math", () => {
 
-    test("Percentile", function () {
+    it("Percentile", () => {
 
         // Find 95th percentile of a list
         const p = 95
@@ -23,11 +23,11 @@ suite("math", function () {
         });
         const p1 = elements[idx];
 
-        assert.equal(p0, p1);
+        expect(p0).toBe(p1);
 
     })
 
-    test("Percentile small array", function () {
+    it("Percentile small array", () => {
 
         // Find 95th percentile of a list
         const p = 95
@@ -45,7 +45,7 @@ suite("math", function () {
         });
         const p1 = elements[idx];
 
-        assert.equal(p0, p1);
+        expect(p0).toBe(p1);
 
     })
 })

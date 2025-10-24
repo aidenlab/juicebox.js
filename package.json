@@ -21,8 +21,12 @@
   "scripts": {
     "prepack": "npm run build",
     "prepare": "npm run build",
-    "build": "node scripts/updateVersion.cjs && npx rollup --config",
-    "test": "mocha -ui tdd"
+    "dev": "vite",
+    "build": "node scripts/updateVersion.cjs && vite build && node scripts/build-minified.js && node scripts/copy-assets.js",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   },
   "keywords": [
     "conformation capture",
@@ -35,25 +39,18 @@
     "url": "git+https://github.com/igvteam/juicebox.js.git"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.16.0",
-    "@rollup/plugin-strip": "^3.0.1",
     "@xmldom/xmldom": "^0.7.5",
-    "atob": "^2.1.2",
-    "btoa": "^1.2.1",
-    "chai": "^4.2.0",
-    "core-js": "^3.6.5",
-    "finalhandler": "^1.1.2",
-    "fs-extra": "^8.1.0",
     "google-utils": "github:igvteam/google-utils#v1.0.2",
     "hic-straw": "^2.1.2",
     "igv": "^2.15.5",
     "igv-ui": "github:igvteam/igv-ui#v1.5.0",
     "igv-utils": "github:igvteam/igv-utils#v1.4.5",
-    "mocha": "^8.2.1",
+    "jsdom": "^27.0.1",
     "node-fetch": "^2.6.1",
-    "rollup": "^2.59.0",
-    "rollup-plugin-copy": "^3.4.0",
-    "rollup-plugin-terser": "^7.0.2",
+    "sass": "^1.93.2",
+    "terser": "^5.44.0",
+    "vite": "^7.1.12",
+    "vitest": "^4.0.3",
     "w3c-xmlhttprequest": "^3.0.0"
   }
 }

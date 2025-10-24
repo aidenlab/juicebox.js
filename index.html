@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juicebox.js Development Launcher</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section {
+            background: white;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007acc;
+            padding-bottom: 10px;
+        }
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .link-item {
+            display: block;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+        .link-item:hover {
+            background: #e9ecef;
+            border-color: #007acc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .link-item h3 {
+            margin: 0 0 8px 0;
+            color: #007acc;
+        }
+        .link-item p {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .status.dev { background: #d4edda; color: #155724; }
+        .status.example { background: #cce5ff; color: #004085; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧬 Juicebox.js Development Environment</h1>
+        <p>Interactive Hi-C data visualization library - Development test harnesses and examples</p>
+    </div>
+
+    <div class="section">
+        <h2>🧪 Development Test Harnesses</h2>
+        <p>Test various features and bug scenarios during development</p>
+        <div class="link-grid">
+            <a href="/dev/generic-test-harness.html" class="link-item">
+                <h3>Generic Test Harness <span class="status dev">DEV</span></h3>
+                <p>Main development test harness with multiple configurations</p>
+            </a>
+            <a href="/dev/big_viewport.html" class="link-item">
+                <h3>Big Viewport Test <span class="status dev">DEV</span></h3>
+                <p>Test large viewport rendering scenarios</p>
+            </a>
+            <a href="/dev/bug-daphne-qin-10bp_to_1bp.html" class="link-item">
+                <h3>Daphne Qin Bug - 10bp to 1bp <span class="status dev">DEV</span></h3>
+                <p>Test specific bug scenario with resolution changes</p>
+            </a>
+            <a href="/dev/bug-daphne-qin-vanishing-2d-annotation.html" class="link-item">
+                <h3>Daphne Qin Bug - Vanishing 2D Annotation <span class="status dev">DEV</span></h3>
+                <p>Test 2D annotation display issues</p>
+            </a>
+            <a href="/dev/dat-sequence-gene-track.html" class="link-item">
+                <h3>DAT Sequence Gene Track <span class="status dev">DEV</span></h3>
+                <p>Test gene track functionality with DAT sequences</p>
+            </a>
+            <a href="/dev/jquery-cleanse.html" class="link-item">
+                <h3>jQuery Cleanse Test <span class="status dev">DEV</span></h3>
+                <p>Test jQuery compatibility and cleanup</p>
+            </a>
+            <a href="/dev/juicebox-normalization-warning.html" class="link-item">
+                <h3>Normalization Warning <span class="status dev">DEV</span></h3>
+                <p>Test normalization warning displays</p>
+            </a>
+            <a href="/dev/load-and-reset.html" class="link-item">
+                <h3>Load and Reset <span class="status dev">DEV</span></h3>
+                <p>Test data loading and reset functionality</p>
+            </a>
+            <a href="/dev/non_synched_maps.html" class="link-item">
+                <h3>Non-Synchronized Maps <span class="status dev">DEV</span></h3>
+                <p>Test multiple non-synchronized map displays</p>
+            </a>
+            <a href="/dev/olga-assembly.html" class="link-item">
+                <h3>Olga Assembly <span class="status dev">DEV</span></h3>
+                <p>Test assembly-specific functionality</p>
+            </a>
+            <a href="/dev/test-launcher.html" class="link-item">
+                <h3>Test Launcher <span class="status dev">DEV</span></h3>
+                <p>Automated test launching interface</p>
+            </a>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📚 Examples</h2>
+        <p>Production-ready examples showing different use cases</p>
+        <div class="link-grid">
+            <a href="/examples/juicebox.html" class="link-item">
+                <h3>Basic Juicebox <span class="status example">EXAMPLE</span></h3>
+                <p>Simple Hi-C data visualization with tracks</p>
+            </a>
+            <a href="/examples/juicebox-api.html" class="link-item">
+                <h3>API Example <span class="status example">EXAMPLE</span></h3>
+                <p>Programmatic API usage examples</p>
+            </a>
+            <a href="/examples/juicebox-minimal.html" class="link-item">
+                <h3>Minimal Example <span class="status example">EXAMPLE</span></h3>
+                <p>Minimal setup for quick integration</p>
+            </a>
+            <a href="/examples/juicebox-multiple-browsers.html" class="link-item">
+                <h3>Multiple Browsers <span class="status example">EXAMPLE</span></h3>
+                <p>Multiple synchronized browser instances</p>
+            </a>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🚀 Development Commands</h2>
+        <p>Use these commands in your terminal:</p>
+        <ul>
+            <li><code>npm run dev</code> - Start development server with HMR</li>
+            <li><code>npm run build</code> - Build library for production</li>
+            <li><code>npm run test</code> - Run tests with Vitest</li>
+            <li><code>npm run test:ui</code> - Run tests with UI interface</li>
+            <li><code>npm run preview</code> - Preview production build</li>
+        </ul>
+    </div>
+</body>
+</html>

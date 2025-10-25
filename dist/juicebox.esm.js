@@ -68648,6 +68648,523 @@ class BrowserUIManager {
     return this.components.get(name2);
   }
 }
+class SpinnerManager {
+  constructor(contactMatrixView, userInteractionShield) {
+    this.contactMatrixView = contactMatrixView;
+    this.userInteractionShield = userInteractionShield;
+  }
+  startSpinner() {
+    if (this.contactMatrixView) {
+      this.contactMatrixView.startSpinner();
+    }
+  }
+  stopSpinner() {
+    if (this.contactMatrixView) {
+      this.contactMatrixView.stopSpinner();
+    }
+  }
+  showInteractionShield() {
+    if (this.userInteractionShield) {
+      this.userInteractionShield.style.display = "block";
+    }
+  }
+  hideInteractionShield() {
+    if (this.userInteractionShield) {
+      this.userInteractionShield.style.display = "none";
+    }
+  }
+}
+class CrosshairManager {
+  constructor(contactMatrixView, layoutController, browser) {
+    this.contactMatrixView = contactMatrixView;
+    this.layoutController = layoutController;
+    this.browser = browser;
+    this.customCrosshairsHandler = null;
+  }
+  updateCrosshairs({ x, y, xNormalized, yNormalized }) {
+    const xGuide = y < 0 ? { left: "0px" } : { top: `${y}px`, left: "0px" };
+    this.contactMatrixView.xGuideElement.style.left = xGuide.left;
+    if (xGuide.top !== void 0) this.contactMatrixView.xGuideElement.style.top = xGuide.top;
+    this.layoutController.xTrackGuideElement.style.left = xGuide.left;
+    if (xGuide.top !== void 0) this.layoutController.xTrackGuideElement.style.top = xGuide.top;
+    const yGuide = x < 0 ? { top: "0px" } : { top: "0px", left: `${x}px` };
+    this.contactMatrixView.yGuideElement.style.top = yGuide.top;
+    if (yGuide.left !== void 0) this.contactMatrixView.yGuideElement.style.left = yGuide.left;
+    this.layoutController.yTrackGuideElement.style.top = yGuide.top;
+    if (yGuide.left !== void 0) this.layoutController.yTrackGuideElement.style.left = yGuide.left;
+    if (this.customCrosshairsHandler) {
+      const { x: stateX, y: stateY, pixelSize } = this.browser.state;
+      const resolution = this.browser.resolution();
+      const xBP = (stateX + x / pixelSize) * resolution;
+      const yBP = (stateY + y / pixelSize) * resolution;
+      const { startBP: startXBP, endBP: endXBP } = this.browser.genomicState("x");
+      const { startBP: startYBP, endBP: endYBP } = this.browser.genomicState("y");
+      this.customCrosshairsHandler({
+        xBP,
+        yBP,
+        startXBP,
+        startYBP,
+        endXBP,
+        endYBP,
+        interpolantX: xNormalized,
+        interpolantY: yNormalized
+      });
+    }
+  }
+  setCustomCrosshairsHandler(crosshairsHandler) {
+    this.customCrosshairsHandler = crosshairsHandler;
+  }
+  hideCrosshairs() {
+    this.contactMatrixView.xGuideElement.style.display = "none";
+    this.layoutController.xTrackGuideElement.style.display = "none";
+    this.contactMatrixView.yGuideElement.style.display = "none";
+    this.layoutController.yTrackGuideElement.style.display = "none";
+  }
+  showCrosshairs() {
+    this.contactMatrixView.xGuideElement.style.display = "block";
+    this.layoutController.xTrackGuideElement.style.display = "block";
+    this.contactMatrixView.yGuideElement.style.display = "block";
+    this.layoutController.yTrackGuideElement.style.display = "block";
+  }
+}
+class MenuManager {
+  constructor(rootElement, browser) {
+    this.rootElement = rootElement;
+    this.browser = browser;
+    this.menuElement = null;
+  }
+  createMenu(rootElement) {
+    const html2 = `
+        <div class="hic-menu" style="display: none;">
+            <div class="hic-menu-close-button">
+                <i class="fa fa-times"></i>
+            </div>
+            <div class="hic-chromosome-selector-widget-container">
+                <div>Chromosomes</div>
+                <div>
+                    <select name="x-axis-selector"></select>
+                    <select name="y-axis-selector"></select>
+                    <div></div>
+                </div>
+            </div>
+            <div class="hic-annotation-presentation-button-container">
+                <button type="button">2D Annotations</button>
+            </div>
+        </div>`;
+    const template = document.createElement("template");
+    template.innerHTML = html2.trim();
+    const menuElement = template.content.firstChild;
+    rootElement.appendChild(menuElement);
+    const closeButton = menuElement.querySelector(".fa-times");
+    closeButton.addEventListener("click", () => this.toggleMenu());
+    this.menuElement = menuElement;
+    return menuElement;
+  }
+  toggleMenu() {
+    if (this.menuElement.style.display === "flex") {
+      this.hideMenu();
+    } else {
+      this.showMenu();
+    }
+  }
+  showMenu() {
+    if (this.menuElement) {
+      this.menuElement.style.display = "flex";
+    }
+  }
+  hideMenu() {
+    if (this.menuElement) {
+      this.menuElement.style.display = "none";
+    }
+  }
+  getMenuElement() {
+    return this.menuElement;
+  }
+}
+class CoordinateTransformer {
+  /**
+   * Calculate genomic state for a given axis
+   * @param {Object} dataset - The dataset object
+   * @param {Object} state - The browser state
+   * @param {Object} contactMatrixView - The contact matrix view
+   * @param {Object} genome - The genome object
+   * @param {string} axis - Either 'x' or 'y'
+   * @returns {Object} Genomic state object
+   */
+  static genomicState(dataset, state, contactMatrixView, genome, axis) {
+    let width = contactMatrixView.getViewDimensions().width;
+    let resolution = dataset.bpResolutions[state.zoom];
+    const bpp = dataset.chromosomes[state.chr1].name.toLowerCase() === "all" ? genome.getGenomeLength() / width : resolution / state.pixelSize;
+    const gs = { bpp };
+    if (axis === "x") {
+      gs.chromosome = dataset.chromosomes[state.chr1];
+      gs.startBP = state.x * resolution;
+      gs.endBP = gs.startBP + bpp * width;
+    } else {
+      gs.chromosome = dataset.chromosomes[state.chr2];
+      gs.startBP = state.y * resolution;
+      gs.endBP = gs.startBP + bpp * contactMatrixView.getViewDimensions().height;
+    }
+    return gs;
+  }
+  /**
+   * Get current resolution from dataset and state
+   * @param {Object} dataset - The dataset object
+   * @param {Object} state - The browser state
+   * @returns {number} Current resolution
+   */
+  static resolution(dataset, state) {
+    return dataset.bpResolutions[state.zoom];
+  }
+  /**
+   * Find the closest matching zoom index for the target resolution
+   * @param {number} targetResolution - Target resolution to find
+   * @param {Array} resolutionArray - Array of resolutions or objects with index and binSize
+   * @returns {number} Matching zoom index
+   */
+  static findMatchingZoomIndex(targetResolution, resolutionArray) {
+    const isObject = resolutionArray.length > 0 && resolutionArray[0].index !== void 0;
+    for (let z = resolutionArray.length - 1; z > 0; z--) {
+      const binSize = isObject ? resolutionArray[z].binSize : resolutionArray[z];
+      const index2 = isObject ? resolutionArray[z].index : z;
+      if (binSize >= targetResolution) {
+        return index2;
+      }
+    }
+    return 0;
+  }
+}
+class LocusParser {
+  /**
+   * Parse a locus string into a locus object
+   * @param {string} locus - The locus string to parse
+   * @param {Object} genome - The genome object
+   * @returns {Object|undefined} Parsed locus object or undefined if invalid
+   */
+  static parseLocusString(locus, genome) {
+    const [chrName, range] = locus.trim().toLowerCase().split(":");
+    const chromosome = genome.getChromosome(chrName);
+    if (!chromosome) {
+      return void 0;
+    }
+    const locusObject = {
+      chr: chromosome.name,
+      wholeChr: void 0 === range && "All" !== chromosome.name
+    };
+    if (true === locusObject.wholeChr || "All" === chromosome.name) {
+      locusObject.start = 0;
+      locusObject.end = chromosome.size;
+    } else {
+      const [startStr, endStr] = range.split("-").map((part) => part.replace(/,/g, ""));
+      locusObject.start = isNaN(startStr) ? void 0 : parseInt(startStr, 10) - 1;
+      locusObject.end = isNaN(endStr) ? void 0 : parseInt(endStr, 10);
+    }
+    return locusObject;
+  }
+  /**
+   * Look up a feature or gene by name
+   * @param {string} name - The name to look up
+   * @param {Object} genome - The genome object
+   * @param {Object} state - The browser state (for setting selectedGene)
+   * @returns {Object|undefined} Parsed locus object or undefined if not found
+   */
+  static async lookupFeatureOrGene(name2, genome, state) {
+    const trimmedName = name2.trim();
+    const upperName = trimmedName.toUpperCase();
+    if (genome.featureDB.has(upperName)) {
+      Globals.selectedGene = trimmedName;
+      state.selectedGene = Globals.selectedGene;
+      const { chr, start, end } = genome.featureDB.get(upperName);
+      return this.parseLocusString(`${chr}:${start + 1}-${end}`, genome);
+    }
+    const geneResult = await geneSearch(genome.id, trimmedName);
+    if (geneResult) {
+      Globals.selectedGene = trimmedName;
+      state.selectedGene = Globals.selectedGene;
+      return this.parseLocusString(geneResult, genome);
+    }
+    return void 0;
+  }
+}
+class ZoomCalculator {
+  /**
+   * Calculate minimum zoom level for given chromosomes
+   * @param {number} chr1 - First chromosome index
+   * @param {number} chr2 - Second chromosome index
+   * @param {Object} dataset - The dataset object
+   * @param {Object} contactMatrixView - The contact matrix view
+   * @returns {Promise<number>} Minimum zoom index
+   */
+  static async minZoom(chr1, chr2, dataset, contactMatrixView) {
+    const chromosome1 = dataset.chromosomes[chr1];
+    const chromosome2 = dataset.chromosomes[chr2];
+    const { width, height } = contactMatrixView.getViewDimensions();
+    const binSize = Math.max(chromosome1.size / width, chromosome2.size / height);
+    const matrix = await dataset.getMatrix(chr1, chr2);
+    if (!matrix) {
+      throw new Error(`Data not available for chromosomes ${chromosome1.name} - ${chromosome2.name}`);
+    }
+    return matrix.findZoomForResolution(binSize);
+  }
+  /**
+   * Calculate minimum pixel size for given chromosomes and zoom
+   * @param {number} chr1 - First chromosome index
+   * @param {number} chr2 - Second chromosome index
+   * @param {number} zoomIndex - Zoom index
+   * @param {Object} dataset - The dataset object
+   * @param {Object} contactMatrixView - The contact matrix view
+   * @returns {Promise<number>} Minimum pixel size
+   */
+  static async minPixelSize(chr1, chr2, zoomIndex, dataset, contactMatrixView) {
+    const chr1Length = dataset.chromosomes[chr1].size;
+    const chr2Length = dataset.chromosomes[chr2].size;
+    const matrix = await dataset.getMatrix(chr1, chr2);
+    const { zoom } = matrix.getZoomDataByIndex(zoomIndex, "BP");
+    const nBins1 = chr1Length / zoom.binSize;
+    const nBins2 = chr2Length / zoom.binSize;
+    const { width, height } = contactMatrixView.getViewDimensions();
+    return Math.min(width / nBins1, height / nBins2);
+  }
+}
+class NavigationService {
+  constructor(browser) {
+    this.browser = browser;
+  }
+  /**
+   * Navigate to specific coordinates
+   * @param {string} chr1 - First chromosome
+   * @param {number} bpX - X coordinate in base pairs
+   * @param {number} bpXMax - X end coordinate in base pairs
+   * @param {string} chr2 - Second chromosome
+   * @param {number} bpY - Y coordinate in base pairs
+   * @param {number} bpYMax - Y end coordinate in base pairs
+   */
+  goto(chr1, bpX, bpXMax, chr2, bpY, bpYMax) {
+    const { width, height } = this.browser.contactMatrixView.getViewDimensions();
+    const { chrChanged, resolutionChanged } = this.browser.state.updateWithLoci(chr1, bpX, bpXMax, chr2, bpY, bpYMax, this.browser, width, height);
+    this.browser.contactMatrixView.clearImageCaches();
+    this.browser.update(HICEvent("LocusChange", { state: this.browser.state, resolutionChanged, chrChanged }));
+  }
+  /**
+   * Find the closest matching zoom index for the target resolution
+   * @param {number} targetResolution - Target resolution to find
+   * @param {Array} resolutionArray - Array of resolutions or objects with index and binSize
+   * @returns {number} Matching zoom index
+   */
+  findMatchingZoomIndex(targetResolution, resolutionArray) {
+    return CoordinateTransformer.findMatchingZoomIndex(targetResolution, resolutionArray);
+  }
+  /**
+   * Handle pinch zoom gesture
+   * @param {number} anchorPx - Anchor position in pixels (should not move after transformation)
+   * @param {number} anchorPy - Anchor position in pixels
+   * @param {number} scaleFactor - Scale factor (>1 for zoom in, <1 for zoom out)
+   */
+  async pinchZoom(anchorPx, anchorPy, scaleFactor) {
+    if (this.browser.state.chr1 === 0) {
+      await this.zoomAndCenter(1, anchorPx, anchorPy);
+    } else {
+      try {
+        this.browser.startSpinner();
+        const bpResolutions = this.browser.getResolutions();
+        const currentResolution = bpResolutions[this.browser.state.zoom];
+        let newBinSize;
+        let newZoom;
+        let newPixelSize;
+        let resolutionChanged;
+        if (this.browser.resolutionLocked || this.browser.state.zoom === bpResolutions.length - 1 && scaleFactor > 1 || this.browser.state.zoom === 0 && scaleFactor < 1) {
+          newBinSize = currentResolution.binSize;
+          newPixelSize = Math.min(128, this.browser.state.pixelSize * scaleFactor);
+          newZoom = this.browser.state.zoom;
+          resolutionChanged = false;
+        } else {
+          const targetBinSize = currentResolution.binSize / this.browser.state.pixelSize / scaleFactor;
+          newZoom = this.findMatchingZoomIndex(targetBinSize, bpResolutions);
+          newBinSize = bpResolutions[newZoom].binSize;
+          resolutionChanged = newZoom !== this.browser.state.zoom;
+          newPixelSize = Math.min(128, newBinSize / targetBinSize);
+        }
+        const z = await this.browser.minZoom(this.browser.state.chr1, this.browser.state.chr2);
+        if (!this.browser.resolutionLocked && scaleFactor < 1 && newZoom < z) {
+          const xLocus = LocusParser.parseLocusString("1", this.browser.genome);
+          const yLocus = { ...xLocus };
+          await this.browser.setChromosomes(xLocus, yLocus);
+        } else {
+          await this.browser.state.panWithZoom(newZoom, newPixelSize, anchorPx, anchorPy, newBinSize, this.browser, this.browser.dataset, this.browser.contactMatrixView.getViewDimensions(), bpResolutions);
+          await this.browser.contactMatrixView.zoomIn(anchorPx, anchorPy, 1 / scaleFactor);
+          await this.browser.update(HICEvent("LocusChange", { state: this.browser.state, resolutionChanged, chrChanged: false }));
+        }
+      } finally {
+        this.browser.stopSpinner();
+      }
+    }
+  }
+  /**
+   * Zoom and center on bins at given screen coordinates
+   * @param {number} direction - Direction of zoom (positive for zoom in, negative for zoom out)
+   * @param {number} centerPX - Screen coordinate to center on
+   * @param {number} centerPY - Screen coordinate to center on
+   * @returns {Promise<void>}
+   */
+  async zoomAndCenter(direction, centerPX, centerPY) {
+    if (void 0 === this.browser.dataset) {
+      console.warn("Dataset is undefined");
+      return;
+    }
+    if (this.browser.dataset.isWholeGenome(this.browser.state.chr1) && direction > 0) {
+      const genomeCoordX = centerPX * this.browser.dataset.wholeGenomeResolution / this.browser.state.pixelSize;
+      const genomeCoordY = centerPY * this.browser.dataset.wholeGenomeResolution / this.browser.state.pixelSize;
+      const chrX = this.browser.genome.getChromosomeForCoordinate(genomeCoordX);
+      const chrY = this.browser.genome.getChromosomeForCoordinate(genomeCoordY);
+      const xLocus = { chr: chrX.name, start: 0, end: chrX.size, wholeChr: true };
+      const yLocus = { chr: chrY.name, start: 0, end: chrY.size, wholeChr: true };
+      await this.browser.setChromosomes(xLocus, yLocus);
+    } else {
+      const { width, height } = this.browser.contactMatrixView.getViewDimensions();
+      const dx = centerPX === void 0 ? 0 : centerPX - width / 2;
+      this.browser.state.x += dx / this.browser.state.pixelSize;
+      const dy = centerPY === void 0 ? 0 : centerPY - height / 2;
+      this.browser.state.y += dy / this.browser.state.pixelSize;
+      const resolutions = this.browser.getResolutions();
+      const directionPositive = direction > 0 && this.browser.state.zoom === resolutions[resolutions.length - 1].index;
+      const directionNegative = direction < 0 && this.browser.state.zoom === resolutions[0].index;
+      if (this.browser.resolutionLocked || directionPositive || directionNegative) {
+        const minPS = await this.browser.minPixelSize(this.browser.state.chr1, this.browser.state.chr2, this.browser.state.zoom);
+        const newPixelSize = Math.max(Math.min(128, this.browser.state.pixelSize * (direction > 0 ? 2 : 0.5)), minPS);
+        const shiftRatio = (newPixelSize - this.browser.state.pixelSize) / newPixelSize;
+        this.browser.state.pixelSize = newPixelSize;
+        this.browser.state.x += shiftRatio * (width / this.browser.state.pixelSize);
+        this.browser.state.y += shiftRatio * (height / this.browser.state.pixelSize);
+        this.browser.state.clampXY(this.browser.dataset, this.browser.contactMatrixView.getViewDimensions());
+        this.browser.state.configureLocus(this.browser, this.browser.dataset, { width, height });
+        this.browser.update(HICEvent("LocusChange", { state: this.browser.state, resolutionChanged: false, chrChanged: false }));
+      } else {
+        let i;
+        for (i = 0; i < resolutions.length; i++) {
+          if (this.browser.state.zoom === resolutions[i].index) break;
+        }
+        if (i) {
+          const newZoom = resolutions[i + direction].index;
+          this.setZoom(newZoom);
+        }
+      }
+    }
+  }
+  /**
+   * Set the current zoom state
+   * @param {number} zoom - Index to the datasets resolution array (dataset.bpResolutions)
+   * @returns {Promise<void>}
+   */
+  async setZoom(zoom) {
+    const resolutionChanged = await this.browser.state.setWithZoom(zoom, this.browser.contactMatrixView.getViewDimensions(), this.browser, this.browser.dataset);
+    await this.browser.contactMatrixView.zoomIn();
+    this.browser.update(HICEvent("LocusChange", { state: this.browser.state, resolutionChanged, chrChanged: false }));
+  }
+}
+class StateManager {
+  constructor(browser) {
+    this.browser = browser;
+  }
+  /**
+   * Set the matrix state. Used to restore state from a bookmark
+   * @param {Object} state - Browser state
+   */
+  async setState(state) {
+    const chrChanged = !this.browser.state || this.browser.state.chr1 !== state.chr1 || this.browser.state.chr2 !== state.chr2;
+    this.browser.state = state.clone();
+    const minPS = await this.browser.minPixelSize(this.browser.state.chr1, this.browser.state.chr2, this.browser.state.zoom);
+    this.browser.state.pixelSize = Math.max(state.pixelSize, minPS);
+    if (void 0 === state.locus) {
+      const viewDimensions = this.browser.contactMatrixView.getViewDimensions();
+      this.browser.state.configureLocus(this.browser, this.browser.dataset, viewDimensions);
+    }
+    const hicEvent = new HICEvent("LocusChange", { state: this.browser.state, resolutionChanged: true, chrChanged });
+    this.browser.update(hicEvent);
+    this.browser.eventBus.post(hicEvent);
+  }
+  /**
+   * Return a modified state object used for synching
+   * Other datasets might have different chromosome ordering and resolution arrays
+   */
+  getSyncState() {
+    return {
+      chr1Name: this.browser.dataset.chromosomes[this.browser.state.chr1].name,
+      chr2Name: this.browser.dataset.chromosomes[this.browser.state.chr2].name,
+      binSize: this.browser.dataset.bpResolutions[this.browser.state.zoom],
+      binX: this.browser.state.x,
+      // TODO: translate to lower right corner
+      binY: this.browser.state.y,
+      pixelSize: this.browser.state.pixelSize
+    };
+  }
+  /**
+   * Return true if this browser can be synced to the given state
+   * @param {Object} syncState - State to check compatibility with
+   * @returns {boolean} Whether browser can be synced
+   */
+  canBeSynched(syncState) {
+    if (false === this.browser.synchable) return false;
+    return this.browser.dataset && this.browser.dataset.getChrIndexFromName(syncState.chr1Name) !== void 0 && this.browser.dataset.getChrIndexFromName(syncState.chr2Name) !== void 0;
+  }
+  /**
+   * Sync this browser's state to match the target state
+   * @param {Object} targetState - State to sync to
+   */
+  async syncState(targetState) {
+    if (!targetState || false === this.browser.synchable) return;
+    if (!this.browser.dataset) return;
+    const { zoomChanged, chrChanged } = this.browser.state.sync(targetState, this.browser, this.browser.genome, this.browser.dataset);
+    const payload = { state: this.browser.state, resolutionChanged: zoomChanged, chrChanged };
+    this.browser.update(HICEvent("LocusChange", payload, false));
+  }
+}
+class BrowserLifecycleManager {
+  constructor(browser) {
+    this.browser = browser;
+  }
+  /**
+   * Reset the browser to initial state
+   */
+  reset() {
+    this.browser.layoutController.removeAllTrackXYPairs();
+    this.browser.contactMatrixView.clearImageCaches();
+    this.browser.tracks2D = [];
+    this.browser.tracks = [];
+    this.browser.contactMapLabel.textContent = "";
+    this.browser.contactMapLabel.title = "";
+    this.browser.controlMapLabel.textContent = "";
+    this.browser.controlMapLabel.title = "";
+    this.browser.dataset = void 0;
+    this.browser.controlDataset = void 0;
+    this.unsyncSelf();
+  }
+  /**
+   * Clear current session but keep browser alive
+   */
+  clearSession() {
+    this.browser.dataset = void 0;
+    this.browser.controlDataset = void 0;
+    this.browser.setDisplayMode("A");
+    this.unsyncSelf();
+  }
+  /**
+   * Remove reference to self from all synchedBrowsers lists
+   */
+  unsyncSelf() {
+    const allBrowsers2 = getAllBrowsers();
+    for (let b of allBrowsers2) {
+      b.unsync(this.browser);
+    }
+  }
+  /**
+   * Remove the reference browser from this collection of synched browsers
+   * @param {Object} browser - Browser to remove from sync list
+   */
+  unsync(browser) {
+    const list = [...this.browser.synchedBrowsers];
+    this.browser.synchedBrowsers = new Set(list.filter((b) => b !== browser));
+  }
+}
 const DEFAULT_PIXEL_SIZE = 1;
 const MAX_PIXEL_SIZE = 128;
 const DEFAULT_ANNOTATION_COLOR$1 = "rgb(22, 129, 198)";
@@ -68673,7 +69190,8 @@ class HICBrowser {
     }
     this.layoutController = new LayoutController(this, this.rootElement);
     this.inputDialog = new InputDialog2(appContainer, this);
-    this.menuElement = this.createMenu(this.rootElement);
+    this.menuManager = new MenuManager(this.rootElement, this);
+    this.menuElement = this.menuManager.createMenu(this.rootElement);
     this.menuElement.style.display = "none";
     this.ui = new BrowserUIManager(this);
     this.contactMatrixView = this.ui.getComponent("contactMatrix");
@@ -68681,6 +69199,11 @@ class HICBrowser {
     this.userInteractionShield.className = "hic-root-prevent-interaction";
     this.rootElement.appendChild(this.userInteractionShield);
     this.userInteractionShield.style.display = "none";
+    this.spinnerManager = new SpinnerManager(this.contactMatrixView, this.userInteractionShield);
+    this.crosshairManager = new CrosshairManager(this.contactMatrixView, this.layoutController, this);
+    this.navigationService = new NavigationService(this);
+    this.stateManager = new StateManager(this);
+    this.lifecycleManager = new BrowserLifecycleManager(this);
     this.hideCrosshairs();
   }
   async init(config) {
@@ -68744,52 +69267,25 @@ class HICBrowser {
     }
   }
   createMenu(rootElement) {
-    const html2 = `
-        <div class="hic-menu" style="display: none;">
-            <div class="hic-menu-close-button">
-                <i class="fa fa-times"></i>
-            </div>
-            <div class="hic-chromosome-selector-widget-container">
-                <div>Chromosomes</div>
-                <div>
-                    <select name="x-axis-selector"></select>
-                    <select name="y-axis-selector"></select>
-                    <div></div>
-                </div>
-            </div>
-            <div class="hic-annotation-presentation-button-container">
-                <button type="button">2D Annotations</button>
-            </div>
-        </div>`;
-    const template = document.createElement("template");
-    template.innerHTML = html2.trim();
-    const menuElement = template.content.firstChild;
-    rootElement.appendChild(menuElement);
-    const closeButton = menuElement.querySelector(".fa-times");
-    closeButton.addEventListener("click", () => this.toggleMenu());
-    return menuElement;
+    return this.menuManager.createMenu(rootElement);
   }
   toggleTrackLabelAndGutterState() {
     this.showTrackLabelAndGutter = !this.showTrackLabelAndGutter;
   }
   toggleMenu() {
-    if (this.menuElement.style.display === "flex") {
-      this.hideMenu();
-    } else {
-      this.showMenu();
-    }
+    this.menuManager.toggleMenu();
   }
   showMenu() {
-    this.menuElement.style.display = "flex";
+    this.menuManager.showMenu();
   }
   hideMenu() {
-    this.menuElement.style.display = "none";
+    this.menuManager.hideMenu();
   }
   startSpinner() {
-    this.contactMatrixView.startSpinner();
+    this.spinnerManager.startSpinner();
   }
   stopSpinner() {
-    this.contactMatrixView.stopSpinner();
+    this.spinnerManager.stopSpinner();
   }
   async setDisplayMode(mode) {
     await this.contactMatrixView.setDisplayMode(mode);
@@ -68844,67 +69340,19 @@ class HICBrowser {
     this.contactMatrixView.setColorScaleThreshold(threshold);
   }
   updateCrosshairs({ x, y, xNormalized, yNormalized }) {
-    const xGuide = y < 0 ? { left: "0px" } : { top: `${y}px`, left: "0px" };
-    this.contactMatrixView.xGuideElement.style.left = xGuide.left;
-    if (xGuide.top !== void 0) this.contactMatrixView.xGuideElement.style.top = xGuide.top;
-    this.layoutController.xTrackGuideElement.style.left = xGuide.left;
-    if (xGuide.top !== void 0) this.layoutController.xTrackGuideElement.style.top = xGuide.top;
-    const yGuide = x < 0 ? { top: "0px" } : { top: "0px", left: `${x}px` };
-    this.contactMatrixView.yGuideElement.style.top = yGuide.top;
-    if (yGuide.left !== void 0) this.contactMatrixView.yGuideElement.style.left = yGuide.left;
-    this.layoutController.yTrackGuideElement.style.top = yGuide.top;
-    if (yGuide.left !== void 0) this.layoutController.yTrackGuideElement.style.left = yGuide.left;
-    if (this.customCrosshairsHandler) {
-      const { x: stateX, y: stateY, pixelSize } = this.state;
-      const resolution = this.resolution();
-      const xBP = (stateX + x / pixelSize) * resolution;
-      const yBP = (stateY + y / pixelSize) * resolution;
-      const { startBP: startXBP, endBP: endXBP } = this.genomicState("x");
-      const { startBP: startYBP, endBP: endYBP } = this.genomicState("y");
-      this.customCrosshairsHandler({
-        xBP,
-        yBP,
-        startXBP,
-        startYBP,
-        endXBP,
-        endYBP,
-        interpolantX: xNormalized,
-        interpolantY: yNormalized
-      });
-    }
+    this.crosshairManager.updateCrosshairs({ x, y, xNormalized, yNormalized });
   }
   setCustomCrosshairsHandler(crosshairsHandler) {
-    this.customCrosshairsHandler = crosshairsHandler;
+    this.crosshairManager.setCustomCrosshairsHandler(crosshairsHandler);
   }
   hideCrosshairs() {
-    this.contactMatrixView.xGuideElement.style.display = "none";
-    this.layoutController.xTrackGuideElement.style.display = "none";
-    this.contactMatrixView.yGuideElement.style.display = "none";
-    this.layoutController.yTrackGuideElement.style.display = "none";
+    this.crosshairManager.hideCrosshairs();
   }
   showCrosshairs() {
-    this.contactMatrixView.xGuideElement.style.display = "block";
-    this.layoutController.xTrackGuideElement.style.display = "block";
-    this.contactMatrixView.yGuideElement.style.display = "block";
-    this.layoutController.yTrackGuideElement.style.display = "block";
+    this.crosshairManager.showCrosshairs();
   }
   genomicState(axis) {
-    let width = this.contactMatrixView.getViewDimensions().width;
-    let resolution = this.dataset.bpResolutions[this.state.zoom];
-    const bpp = this.dataset.chromosomes[this.state.chr1].name.toLowerCase() === "all" ? this.genome.getGenomeLength() / width : resolution / this.state.pixelSize;
-    const gs = {
-      bpp
-    };
-    if (axis === "x") {
-      gs.chromosome = this.dataset.chromosomes[this.state.chr1];
-      gs.startBP = this.state.x * resolution;
-      gs.endBP = gs.startBP + bpp * width;
-    } else {
-      gs.chromosome = this.dataset.chromosomes[this.state.chr2];
-      gs.startBP = this.state.y * resolution;
-      gs.endBP = gs.startBP + bpp * this.contactMatrixView.getViewDimensions().height;
-    }
-    return gs;
+    return CoordinateTransformer.genomicState(this.dataset, this.state, this.contactMatrixView, this.genome, axis);
   }
   /**
    * Load a list of 1D genome tracks (wig, etc).
@@ -69002,40 +69450,23 @@ class HICBrowser {
     }
   }
   reset() {
-    this.layoutController.removeAllTrackXYPairs();
-    this.contactMatrixView.clearImageCaches();
-    this.tracks2D = [];
-    this.tracks = [];
-    this.contactMapLabel.textContent = "";
-    this.contactMapLabel.title = "";
-    this.controlMapLabel.textContent = "";
-    this.controlMapLabel.title = "";
-    this.dataset = void 0;
-    this.controlDataset = void 0;
-    this.unsyncSelf();
+    this.lifecycleManager.reset();
   }
   clearSession() {
-    this.dataset = void 0;
-    this.controlDataset = void 0;
-    this.setDisplayMode("A");
-    this.unsyncSelf();
+    this.lifecycleManager.clearSession();
   }
   /**
    * Remove reference to self from all synchedBrowsers lists.
    */
   unsyncSelf() {
-    const allBrowsers2 = getAllBrowsers();
-    for (let b of allBrowsers2) {
-      b.unsync(this);
-    }
+    this.lifecycleManager.unsyncSelf();
   }
   /**
    * Remove the reference browser from this collection of synched browsers
    * @param browser
    */
   unsync(browser) {
-    const list = [...this.synchedBrowsers];
-    this.synchedBrowsers = new Set(list.filter((b) => b !== browser));
+    this.lifecycleManager.unsync(browser);
   }
   /**
    * Load a .hic file
@@ -69185,47 +69616,13 @@ class HICBrowser {
     }
   }
   parseLocusString(locus) {
-    const [chrName, range] = locus.trim().toLowerCase().split(":");
-    const chromosome = this.genome.getChromosome(chrName);
-    if (!chromosome) {
-      return void 0;
-    }
-    const locusObject = {
-      chr: chromosome.name,
-      wholeChr: void 0 === range && "All" !== chromosome.name
-    };
-    if (true === locusObject.wholeChr || "All" === chromosome.name) {
-      locusObject.start = 0;
-      locusObject.end = chromosome.size;
-    } else {
-      const [startStr, endStr] = range.split("-").map((part) => part.replace(/,/g, ""));
-      locusObject.start = isNaN(startStr) ? void 0 : parseInt(startStr, 10) - 1;
-      locusObject.end = isNaN(endStr) ? void 0 : parseInt(endStr, 10);
-    }
-    return locusObject;
+    return LocusParser.parseLocusString(locus, this.genome);
   }
   async lookupFeatureOrGene(name2) {
-    const trimmedName = name2.trim();
-    const upperName = trimmedName.toUpperCase();
-    if (this.genome.featureDB.has(upperName)) {
-      Globals.selectedGene = trimmedName;
-      this.state.selectedGene = Globals.selectedGene;
-      const { chr, start, end } = this.genome.featureDB.get(upperName);
-      return this.parseLocusString(`${chr}:${start + 1}-${end}`);
-    }
-    const geneResult = await geneSearch(this.genome.id, trimmedName);
-    if (geneResult) {
-      Globals.selectedGene = trimmedName;
-      this.state.selectedGene = Globals.selectedGene;
-      return this.parseLocusString(geneResult);
-    }
-    return void 0;
+    return LocusParser.lookupFeatureOrGene(name2, this.genome, this.state);
   }
   goto(chr1, bpX, bpXMax, chr2, bpY, bpYMax) {
-    const { width, height } = this.contactMatrixView.getViewDimensions();
-    const { chrChanged, resolutionChanged } = this.state.updateWithLoci(chr1, bpX, bpXMax, chr2, bpY, bpYMax, this, width, height);
-    this.contactMatrixView.clearImageCaches();
-    this.update(HICEvent("LocusChange", { state: this.state, resolutionChanged, chrChanged }));
+    this.navigationService.goto(chr1, bpX, bpXMax, chr2, bpY, bpYMax);
   }
   /**
    * Find the closest matching zoom index (index into the dataset resolutions array) for the target resolution.
@@ -69238,15 +69635,7 @@ class HICBrowser {
    * @returns {number}
    */
   findMatchingZoomIndex(targetResolution, resolutionArray) {
-    const isObject = resolutionArray.length > 0 && resolutionArray[0].index !== void 0;
-    for (let z = resolutionArray.length - 1; z > 0; z--) {
-      const binSize = isObject ? resolutionArray[z].binSize : resolutionArray[z];
-      const index2 = isObject ? resolutionArray[z].index : z;
-      if (binSize >= targetResolution) {
-        return index2;
-      }
-    }
-    return 0;
+    return this.navigationService.findMatchingZoomIndex(targetResolution, resolutionArray);
   }
   /**
    * @param scaleFactor Values range from greater then 1 to decimal values less then one
@@ -69256,43 +69645,7 @@ class HICBrowser {
    * @param anchorPy
    */
   async pinchZoom(anchorPx, anchorPy, scaleFactor) {
-    if (this.state.chr1 === 0) {
-      await this.zoomAndCenter(1, anchorPx, anchorPy);
-    } else {
-      try {
-        this.startSpinner();
-        const bpResolutions = this.getResolutions();
-        const currentResolution = bpResolutions[this.state.zoom];
-        let newBinSize;
-        let newZoom;
-        let newPixelSize;
-        let resolutionChanged;
-        if (this.resolutionLocked || this.state.zoom === bpResolutions.length - 1 && scaleFactor > 1 || this.state.zoom === 0 && scaleFactor < 1) {
-          newBinSize = currentResolution.binSize;
-          newPixelSize = Math.min(MAX_PIXEL_SIZE, this.state.pixelSize * scaleFactor);
-          newZoom = this.state.zoom;
-          resolutionChanged = false;
-        } else {
-          const targetBinSize = currentResolution.binSize / this.state.pixelSize / scaleFactor;
-          newZoom = this.findMatchingZoomIndex(targetBinSize, bpResolutions);
-          newBinSize = bpResolutions[newZoom].binSize;
-          resolutionChanged = newZoom !== this.state.zoom;
-          newPixelSize = Math.min(MAX_PIXEL_SIZE, newBinSize / targetBinSize);
-        }
-        const z = await this.minZoom(this.state.chr1, this.state.chr2);
-        if (!this.resolutionLocked && scaleFactor < 1 && newZoom < z) {
-          const xLocus = this.parseLocusString("1");
-          const yLocus = { xLocus };
-          await this.setChromosomes(xLocus, yLocus);
-        } else {
-          await this.state.panWithZoom(newZoom, newPixelSize, anchorPx, anchorPy, newBinSize, this, this.dataset, this.contactMatrixView.getViewDimensions(), bpResolutions);
-          await this.contactMatrixView.zoomIn(anchorPx, anchorPy, 1 / scaleFactor);
-          await this.update(HICEvent("LocusChange", { state: this.state, resolutionChanged, chrChanged: false }));
-        }
-      } finally {
-        this.stopSpinner();
-      }
-    }
+    return this.navigationService.pinchZoom(anchorPx, anchorPy, scaleFactor);
   }
   // Zoom in response to a double-click
   /**
@@ -69303,48 +69656,7 @@ class HICBrowser {
    * @returns {Promise<void>}
    */
   async zoomAndCenter(direction, centerPX, centerPY) {
-    if (void 0 === this.dataset) {
-      console.warn("Dataset is undefined");
-      return;
-    }
-    if (this.dataset.isWholeGenome(this.state.chr1) && direction > 0) {
-      const genomeCoordX = centerPX * this.dataset.wholeGenomeResolution / this.state.pixelSize;
-      const genomeCoordY = centerPY * this.dataset.wholeGenomeResolution / this.state.pixelSize;
-      const chrX = this.genome.getChromosomeForCoordinate(genomeCoordX);
-      const chrY = this.genome.getChromosomeForCoordinate(genomeCoordY);
-      const xLocus = { chr: chrX.name, start: 0, end: chrX.size, wholeChr: true };
-      const yLocus = { chr: chrY.name, start: 0, end: chrY.size, wholeChr: true };
-      await this.setChromosomes(xLocus, yLocus);
-    } else {
-      const { width, height } = this.contactMatrixView.getViewDimensions();
-      const dx = centerPX === void 0 ? 0 : centerPX - width / 2;
-      this.state.x += dx / this.state.pixelSize;
-      const dy = centerPY === void 0 ? 0 : centerPY - height / 2;
-      this.state.y += dy / this.state.pixelSize;
-      const resolutions = this.getResolutions();
-      const directionPositive = direction > 0 && this.state.zoom === resolutions[resolutions.length - 1].index;
-      const directionNegative = direction < 0 && this.state.zoom === resolutions[0].index;
-      if (this.resolutionLocked || directionPositive || directionNegative) {
-        const minPS = await this.minPixelSize(this.state.chr1, this.state.chr2, this.state.zoom);
-        const newPixelSize = Math.max(Math.min(MAX_PIXEL_SIZE, this.state.pixelSize * (direction > 0 ? 2 : 0.5)), minPS);
-        const shiftRatio = (newPixelSize - this.state.pixelSize) / newPixelSize;
-        this.state.pixelSize = newPixelSize;
-        this.state.x += shiftRatio * (width / this.state.pixelSize);
-        this.state.y += shiftRatio * (height / this.state.pixelSize);
-        this.state.clampXY(this.dataset, this.contactMatrixView.getViewDimensions());
-        this.state.configureLocus(this, this.dataset, { width, height });
-        this.update(HICEvent("LocusChange", { state: this.state, resolutionChanged: false, chrChanged: false }));
-      } else {
-        let i;
-        for (i = 0; i < resolutions.length; i++) {
-          if (this.state.zoom === resolutions[i].index) break;
-        }
-        if (i) {
-          const newZoom = resolutions[i + direction].index;
-          this.setZoom(newZoom);
-        }
-      }
-    }
+    return this.navigationService.zoomAndCenter(direction, centerPX, centerPY);
   }
   /**
    * Set the current zoom state and opctionally center over supplied coordinates.
@@ -69352,9 +69664,7 @@ class HICBrowser {
    * @returns {Promise<void>}
    */
   async setZoom(zoom) {
-    const resolutionChanged = await this.state.setWithZoom(zoom, this.contactMatrixView.getViewDimensions(), this, this.dataset);
-    await this.contactMatrixView.zoomIn();
-    this.update(HICEvent("LocusChange", { state: this.state, resolutionChanged, chrChanged: false }));
+    return this.navigationService.setZoom(zoom);
   }
   async setChromosomes(xLocus, yLocus) {
     const { index: chr1Index } = this.genome.getChromosome(xLocus.chr);
@@ -69400,47 +69710,24 @@ class HICBrowser {
    * @param state  browser state
    */
   async setState(state) {
-    const chrChanged = !this.state || this.state.chr1 !== state.chr1 || this.state.chr2 !== state.chr2;
-    this.state = state.clone();
-    const minPS = await this.minPixelSize(this.state.chr1, this.state.chr2, this.state.zoom);
-    this.state.pixelSize = Math.max(state.pixelSize, minPS);
-    if (void 0 === state.locus) {
-      const viewDimensions = this.contactMatrixView.getViewDimensions();
-      this.state.configureLocus(this, this.dataset, viewDimensions);
-    }
-    const hicEvent = new HICEvent("LocusChange", { state: this.state, resolutionChanged: true, chrChanged });
-    this.update(hicEvent);
-    this.eventBus.post(hicEvent);
+    return this.stateManager.setState(state);
   }
   /**
    * Return a modified state object used for synching.  Other datasets might have different chromosome ordering
    * and resolution arrays
    */
   getSyncState() {
-    return {
-      chr1Name: this.dataset.chromosomes[this.state.chr1].name,
-      chr2Name: this.dataset.chromosomes[this.state.chr2].name,
-      binSize: this.dataset.bpResolutions[this.state.zoom],
-      binX: this.state.x,
-      // TODO: translate to lower right corner
-      binY: this.state.y,
-      pixelSize: this.state.pixelSize
-    };
+    return this.stateManager.getSyncState();
   }
   /**
    * Return true if this browser can be synced to the given state
    * @param syncState
    */
   canBeSynched(syncState) {
-    if (false === this.synchable) return false;
-    return this.dataset && this.dataset.getChrIndexFromName(syncState.chr1Name) !== void 0 && this.dataset.getChrIndexFromName(syncState.chr2Name) !== void 0;
+    return this.stateManager.canBeSynched(syncState);
   }
   async syncState(targetState) {
-    if (!targetState || false === this.synchable) return;
-    if (!this.dataset) return;
-    const { zoomChanged, chrChanged } = this.state.sync(targetState, this, this.genome, this.dataset);
-    const payload = { state: this.state, resolutionChanged: zoomChanged, chrChanged };
-    this.update(HICEvent("LocusChange", payload, false));
+    return this.stateManager.syncState(targetState);
   }
   setNormalization(normalization) {
     this.state.normalization = normalization;
@@ -69519,7 +69806,7 @@ class HICBrowser {
     this.contactMatrixView.update();
   }
   resolution() {
-    return this.dataset.bpResolutions[this.state.zoom];
+    return CoordinateTransformer.resolution(this.dataset, this.state);
   }
   toJSON() {
     if (!(this.dataset && this.dataset.url)) return "{}";
@@ -69594,25 +69881,10 @@ class HICBrowser {
     return jsonOBJ;
   }
   async minZoom(chr1, chr2) {
-    const chromosome1 = this.dataset.chromosomes[chr1];
-    const chromosome2 = this.dataset.chromosomes[chr2];
-    const { width, height } = this.contactMatrixView.getViewDimensions();
-    const binSize = Math.max(chromosome1.size / width, chromosome2.size / height);
-    const matrix = await this.dataset.getMatrix(chr1, chr2);
-    if (!matrix) {
-      throw new Error(`Data not avaiable for chromosomes ${chromosome1.name} - ${chromosome2.name}`);
-    }
-    return matrix.findZoomForResolution(binSize);
+    return ZoomCalculator.minZoom(chr1, chr2, this.dataset, this.contactMatrixView);
   }
   async minPixelSize(chr1, chr2, zoomIndex) {
-    const chr1Length = this.dataset.chromosomes[chr1].size;
-    const chr2Length = this.dataset.chromosomes[chr2].size;
-    const matrix = await this.dataset.getMatrix(chr1, chr2);
-    const { zoom } = matrix.getZoomDataByIndex(zoomIndex, "BP");
-    const nBins1 = chr1Length / zoom.binSize;
-    const nBins2 = chr2Length / zoom.binSize;
-    const { width, height } = this.contactMatrixView.getViewDimensions();
-    return Math.min(width / nBins1, height / nBins2);
+    return ZoomCalculator.minPixelSize(chr1, chr2, zoomIndex, this.dataset, this.contactMatrixView);
   }
 }
 let allBrowsers = [];

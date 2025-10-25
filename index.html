@@ -74,85 +74,214 @@
         }
         .status.dev { background: #d4edda; color: #155724; }
         .status.example { background: #cce5ff; color: #004085; }
+        
+        /* Hero section */
+        .hero-subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+        
+        /* Examples section */
+        .examples-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .examples-section h2 {
+            color: white;
+            border-bottom-color: rgba(255,255,255,0.3);
+        }
+        
+        .examples-section p {
+            color: rgba(255,255,255,0.9);
+        }
+        
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .example-item {
+            display: block;
+            padding: 25px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .example-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            background: white;
+        }
+        
+        .example-item.primary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+        
+        .example-item.primary:hover {
+            background: linear-gradient(135deg, #ff5252, #d63031);
+        }
+        
+        .example-icon {
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+        
+        .example-item h3 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .example-item p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .example-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #ffd700;
+            color: #333;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        /* Dev section */
+        .dev-section {
+            background: #f8f9fa;
+        }
+        
+        .dev-toggle {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .dev-toggle-btn {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .dev-toggle-btn:hover {
+            background: #005a9e;
+            transform: translateY(-2px);
+        }
+        
+        .dev-tools {
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .dev-tools.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🧬 Juicebox.js Development Environment</h1>
-        <p>Interactive Hi-C data visualization library - Development test harnesses and examples</p>
+        <h1>🧬 Juicebox.js</h1>
+        <p>Interactive Hi-C data visualization library</p>
+        <div class="hero-subtitle">Start with examples, explore with dev tools</div>
     </div>
 
-    <div class="section">
-        <h2>🧪 Development Test Harnesses</h2>
-        <p>Test various features and bug scenarios during development</p>
-        <div class="link-grid">
-            <a href="/dev/generic-test-harness.html" class="link-item">
-                <h3>Generic Test Harness <span class="status dev">DEV</span></h3>
-                <p>Main development test harness with multiple configurations</p>
+    <div class="section examples-section">
+        <h2>🌟 Examples - Start Here</h2>
+        <p>Production-ready examples showing how to integrate Juicebox.js into your applications</p>
+        <div class="examples-grid">
+            <a href="/examples/juicebox.html" class="example-item primary">
+                <div class="example-icon">📊</div>
+                <h3>Basic Juicebox</h3>
+                <p>Complete Hi-C visualization with tracks and annotations</p>
+                <div class="example-badge">Recommended</div>
             </a>
-            <a href="/dev/big_viewport.html" class="link-item">
-                <h3>Big Viewport Test <span class="status dev">DEV</span></h3>
-                <p>Test large viewport rendering scenarios</p>
+            <a href="/examples/juicebox-minimal.html" class="example-item">
+                <div class="example-icon">⚡</div>
+                <h3>Minimal Setup</h3>
+                <p>Quick integration with minimal configuration</p>
             </a>
-            <a href="/dev/bug-daphne-qin-10bp_to_1bp.html" class="link-item">
-                <h3>Daphne Qin Bug - 10bp to 1bp <span class="status dev">DEV</span></h3>
-                <p>Test specific bug scenario with resolution changes</p>
+            <a href="/examples/juicebox-api.html" class="example-item">
+                <div class="example-icon">🔧</div>
+                <h3>API Examples</h3>
+                <p>Programmatic control and customization</p>
             </a>
-            <a href="/dev/bug-daphne-qin-vanishing-2d-annotation.html" class="link-item">
-                <h3>Daphne Qin Bug - Vanishing 2D Annotation <span class="status dev">DEV</span></h3>
-                <p>Test 2D annotation display issues</p>
-            </a>
-            <a href="/dev/dat-sequence-gene-track.html" class="link-item">
-                <h3>DAT Sequence Gene Track <span class="status dev">DEV</span></h3>
-                <p>Test gene track functionality with DAT sequences</p>
-            </a>
-            <a href="/dev/jquery-cleanse.html" class="link-item">
-                <h3>jQuery Cleanse Test <span class="status dev">DEV</span></h3>
-                <p>Test jQuery compatibility and cleanup</p>
-            </a>
-            <a href="/dev/juicebox-normalization-warning.html" class="link-item">
-                <h3>Normalization Warning <span class="status dev">DEV</span></h3>
-                <p>Test normalization warning displays</p>
-            </a>
-            <a href="/dev/load-and-reset.html" class="link-item">
-                <h3>Load and Reset <span class="status dev">DEV</span></h3>
-                <p>Test data loading and reset functionality</p>
-            </a>
-            <a href="/dev/non_synched_maps.html" class="link-item">
-                <h3>Non-Synchronized Maps <span class="status dev">DEV</span></h3>
-                <p>Test multiple non-synchronized map displays</p>
-            </a>
-            <a href="/dev/olga-assembly.html" class="link-item">
-                <h3>Olga Assembly <span class="status dev">DEV</span></h3>
-                <p>Test assembly-specific functionality</p>
-            </a>
-            <a href="/dev/test-launcher.html" class="link-item">
-                <h3>Test Launcher <span class="status dev">DEV</span></h3>
-                <p>Automated test launching interface</p>
+            <a href="/examples/juicebox-multiple-browsers.html" class="example-item">
+                <div class="example-icon">🔄</div>
+                <h3>Multiple Browsers</h3>
+                <p>Synchronized multi-view visualizations</p>
             </a>
         </div>
     </div>
 
-    <div class="section">
-        <h2>📚 Examples</h2>
-        <p>Production-ready examples showing different use cases</p>
-        <div class="link-grid">
-            <a href="/examples/juicebox.html" class="link-item">
-                <h3>Basic Juicebox <span class="status example">EXAMPLE</span></h3>
-                <p>Simple Hi-C data visualization with tracks</p>
-            </a>
-            <a href="/examples/juicebox-api.html" class="link-item">
-                <h3>API Example <span class="status example">EXAMPLE</span></h3>
-                <p>Programmatic API usage examples</p>
-            </a>
-            <a href="/examples/juicebox-minimal.html" class="link-item">
-                <h3>Minimal Example <span class="status example">EXAMPLE</span></h3>
-                <p>Minimal setup for quick integration</p>
-            </a>
-            <a href="/examples/juicebox-multiple-browsers.html" class="link-item">
-                <h3>Multiple Browsers <span class="status example">EXAMPLE</span></h3>
-                <p>Multiple synchronized browser instances</p>
-            </a>
+    <div class="section dev-section">
+        <h2>🛠️ Development Tools</h2>
+        <p>Test harnesses and debugging tools for development</p>
+        <div class="dev-toggle">
+            <button id="devToggle" class="dev-toggle-btn">Show Dev Tools</button>
+        </div>
+        <div id="devTools" class="dev-tools hidden">
+            <div class="link-grid">
+                <a href="/dev/generic-test-harness.html" class="link-item">
+                    <h3>Generic Test Harness <span class="status dev">DEV</span></h3>
+                    <p>Main development test harness with multiple configurations</p>
+                </a>
+                <a href="/dev/big_viewport.html" class="link-item">
+                    <h3>Big Viewport Test <span class="status dev">DEV</span></h3>
+                    <p>Test large viewport rendering scenarios</p>
+                </a>
+                <a href="/dev/bug-daphne-qin-10bp_to_1bp.html" class="link-item">
+                    <h3>Daphne Qin Bug - 10bp to 1bp <span class="status dev">DEV</span></h3>
+                    <p>Test specific bug scenario with resolution changes</p>
+                </a>
+                <a href="/dev/bug-daphne-qin-vanishing-2d-annotation.html" class="link-item">
+                    <h3>Daphne Qin Bug - Vanishing 2D Annotation <span class="status dev">DEV</span></h3>
+                    <p>Test 2D annotation display issues</p>
+                </a>
+                <a href="/dev/dat-sequence-gene-track.html" class="link-item">
+                    <h3>DAT Sequence Gene Track <span class="status dev">DEV</span></h3>
+                    <p>Test gene track functionality with DAT sequences</p>
+                </a>
+                <a href="/dev/jquery-cleanse.html" class="link-item">
+                    <h3>jQuery Cleanse Test <span class="status dev">DEV</span></h3>
+                    <p>Test jQuery compatibility and cleanup</p>
+                </a>
+                <a href="/dev/juicebox-normalization-warning.html" class="link-item">
+                    <h3>Normalization Warning <span class="status dev">DEV</span></h3>
+                    <p>Test normalization warning displays</p>
+                </a>
+                <a href="/dev/load-and-reset.html" class="link-item">
+                    <h3>Load and Reset <span class="status dev">DEV</span></h3>
+                    <p>Test data loading and reset functionality</p>
+                </a>
+                <a href="/dev/non_synched_maps.html" class="link-item">
+                    <h3>Non-Synchronized Maps <span class="status dev">DEV</span></h3>
+                    <p>Test multiple non-synchronized map displays</p>
+                </a>
+                <a href="/dev/olga-assembly.html" class="link-item">
+                    <h3>Olga Assembly <span class="status dev">DEV</span></h3>
+                    <p>Test assembly-specific functionality</p>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -167,5 +296,22 @@
             <li><code>npm run preview</code> - Preview production build</li>
         </ul>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const devToggle = document.getElementById('devToggle');
+            const devTools = document.getElementById('devTools');
+            
+            devToggle.addEventListener('click', function() {
+                if (devTools.classList.contains('hidden')) {
+                    devTools.classList.remove('hidden');
+                    devToggle.textContent = 'Hide Dev Tools';
+                } else {
+                    devTools.classList.add('hidden');
+                    devToggle.textContent = 'Show Dev Tools';
+                }
+            });
+        });
+    </script>
 </body>
 </html>

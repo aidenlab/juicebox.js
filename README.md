@@ -13,7 +13,7 @@ Requirements:
 
 * Juicebox CSS
 
-    ``` <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/css/juicebox.css">```
+    ``` <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/juicebox.js@2.5.3/dist/css/juicebox.css">```
     
 * Juicebox javascript -- see below
 
@@ -21,13 +21,13 @@ Requirements:
 To import juicebox as an ES6 module
 
 ```javascript
-import juicebox from "https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/juicebox.esm.js";
+import juicebox from "https://cdn.jsdelivr.net/npm/juicebox.js@2.5.3/dist/juicebox.esm.js";
 ``` 
 
 Or as a script include (defines the "juicebox" global)
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/juicebox.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/juicebox.js@2.5.3/dist/juicebox.min.js"></script>
 ```   
  
 Alternatively you can install with npm  
@@ -131,26 +131,58 @@ for an example of using the API to load hicfiles and tracks.
 
 ## Requirements
 
-Building juicebox.js requires Linux or MacOS, and  [node.js](https://nodejs.org/).
+Building juicebox.js requires Linux, MacOS, or Windows with [node.js](https://nodejs.org/) (v16 or higher recommended).
 
-Other Unix environments will probably work but have not been tested.  Windows users can use [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
-
-## Building
+## Quick Start
 
 ```  
 git clone https://github.com/igvteam/juicebox.js.git
 cd juicebox.js
 npm install
+npm run dev
+```
+
+This will start the development server at `http://localhost:3000` with a launcher page featuring:
+- **🌟 Examples** - examples to get started quickly
+- **🛠️ Development Tools** - Test harnesses and debugging tools  
+- **⚡ Hot Module Replacement** - Instant updates during development
+
+## Development Launcher
+
+The development server includes a launcher page (`index.html`) that provides:
+
+- **Examples Section** - Examples with:
+  - Basic Juicebox (recommended starting point)
+  - Minimal Setup for quick integration
+  - API Examples for programmatic control
+  - Multiple Browsers for synchronized views
+
+- **Development Tools** - Test harnesses for:
+  - Bug testing scenarios
+  - Feature validation
+  - Performance testing
+  - Compatibility checks
+
+## Building
+
+```  
 npm run build
 ```
 
-This creates a dist folder with the following files
+This creates a dist folder with the following files:
 
-* juicebox.js - ES5 compatible file.  A script include will define the "juicebox" global.
-* juicebox.min.js - minified version of juicebox.js
-* juicebox.esm.js --  ES6 module 
-* css -- folder containing required css file **juicebox.css** and associated images
+* `juicebox.js` - UMD bundle for browser script tags
+* `juicebox.min.js` - Minified UMD bundle for production
+* `juicebox.esm.js` - ES6 module for modern bundlers
+* `css/` - Folder containing required CSS file `juicebox.css` and associated images
 
+## Development Commands
+
+- `npm run dev` - Start development server with HMR
+- `npm run build` - Build library for production  
+- `npm run preview` - Preview production build
+- `npm run test` - Run tests with Vitest
+- `npm run test:ui` - Run tests with UI interface
 
 # Supported Browsers
 

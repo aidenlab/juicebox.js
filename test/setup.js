@@ -40,7 +40,14 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
 }))
 
 // Mock fetch if needed
-global.fetch = vi.fn()
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    status: 200,
+    text: () => Promise.resolve('{"browsers":[{"name":"ADAC_30.hic","tracks":[{},{},{}]}]}'),
+    json: () => Promise.resolve({browsers:[{name:"ADAC_30.hic",tracks:[{},{},{}]}]})
+  })
+)
 
 // Mock console methods to avoid noise in tests
 global.console = {

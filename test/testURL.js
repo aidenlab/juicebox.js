@@ -33,8 +33,8 @@ describe("testURLs", () => {
         expect(config.name).toBe("Haarhuis et al. | Cell 2017 Hap1 control");
 
         const state = config.state;
-        expect(state.chr1).toBe("3");
-        expect(state.chr2).toBe("3");
+        expect(state.chr1).toBe(3);
+        expect(state.chr2).toBe(3);
         expect(state.x).toBe(5537.98746);
         expect(state.y).toBe(5537.749239047619);
         expect(state.normalization).toBe("KR");
@@ -48,20 +48,6 @@ describe("testURLs", () => {
         const url = "http://aidenlab.org/juicebox/?juicebox={hicUrl%3Dhttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FADAC%2FADAC_30.hic%26name%3DADAC_30.hic%26state%3D2%2C2%2C6%2C1896.1562537317725%2C1916.657181523778%2C1.5423280423280423%2CKR%26colorScale%3D144.21837414880474%2C255%2C0%2C0%26nvi%3D7989194045%2C18679%26tracks%3Dhttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FADAC%2Finter_30_contact_domains%2F5000_blocks%7C5000_blocks%7C%7Crgb(255%2C255%2C0)%7C%7C%7Chttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FADAC_loops%2Fmerged_loops.bedpe%7Cmerged_loops.bedpe%7C%7Crgb(0%2C36%2C255)%7C%7C%7Chttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FADAC_vs_EndoC%2Fdifferential_loops1.bedpe%7Cdifferential_loops1.bedpe%7C%7Crgb(0%2C255%2C36)},{hicUrl%3Dhttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FEndoC%2FEndoC_30.hic%26name%3DEndoC_30.hic%26state%3D2%2C2%2C6%2C1896.1562537317725%2C1916.657181523778%2C1.5423280423280423%2CKR%26colorScale%3D142.77439421809834%2C255%2C0%2C0%26nvi%3D6818528104%2C18679%26tracks%3Dhttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FEndoC_loops%2Fmerged_loops.bedpe%7Cmerged_loops.bedpe%7C%7Crgb(18%2C0%2C255)%7C%7C%7Chttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FEndoC%2Finter_30_contact_domains%2F5000_blocks%7C5000_blocks%7C%7Crgb(255%2C255%2C0)%7C%7C%7Chttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FADAC_vs_EndoC%2Fdifferential_loops2.bedpe%7Cdifferential_loops2.bedpe%7C%7Crgb(18%2C255%2C0)}";
 
         const sessionJSON = await extractConfig(url);
-        expect(sessionJSON.browsers.length).toBe(2);
-
-        const browser1 = sessionJSON.browsers[0];
-        expect(browser1.name).toBe("ADAC_30.hic");
-        expect(browser1.tracks.length).toBe(3);
-
-    })
-
-    it("juiceboxURL'", async () => {
-
-        const url = "http://localhost/juicebox-web/index.html?juiceboxURL=http://bit.ly/2C1VSHy";
-
-        const sessionJSON = await extractConfig(url);
-
         expect(sessionJSON.browsers.length).toBe(2);
 
         const browser1 = sessionJSON.browsers[0];

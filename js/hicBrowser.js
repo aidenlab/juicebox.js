@@ -37,8 +37,7 @@ import HICEvent from './hicEvent.js'
 import Dataset from './hicDataset.js'
 import Genome from './genome.js'
 import State from './hicState.js'
-import { geneSearch } from './geneSearch.js'
-import {defaultSize, getAllBrowsers, syncBrowsers} from "./createBrowser.js"
+import {getAllBrowsers, syncBrowsers} from "./createBrowser.js"
 import {isFile} from "./fileUtils.js"
 import {setTrackReorderArrowColors} from "./trackPair.js"
 import nvi from './nvi.js'
@@ -191,10 +190,6 @@ class HICBrowser {
             this.contactMatrixView.disableUpdates = false;
             this.contactMatrixView.update();
         }
-    }
-
-    createMenu(rootElement) {
-        return this.menuManager.createMenu(rootElement);
     }
 
     toggleTrackLabelAndGutterState() {

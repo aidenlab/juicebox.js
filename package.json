@@ -26,7 +26,10 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:math": "vitest run test/testMath.js",
+    "test:url": "vitest run test/testURL.js",
+    "test:track": "vitest run test/testTrack2D.js"
   },
   "keywords": [
     "conformation capture",

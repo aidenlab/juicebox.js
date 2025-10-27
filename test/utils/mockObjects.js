@@ -7,8 +7,6 @@ import {File} from "./File.js"
 import {XMLHttpRequestMock} from "./XMLHttpRequestMock.js"
 import {Document, DOMImplementation} from "./Document.js"
 import {DOMParser} from "./DOMParser.js"
-import atob from 'atob'
-import btoa from 'btoa'
 
 global.document = new Document()
 
@@ -31,6 +29,6 @@ global.navigator = {
 
 global.DOMParser = DOMParser
 
-global.atob = atob
-
-global.btoa = btoa
+// Use native implementations if available, otherwise provide simple mocks
+global.atob = typeof atob !== 'undefined' ? atob : (str) => Buffer.from(str, 'base64').toString('binary')
+global.btoa = typeof btoa !== 'undefined' ? btoa : (str) => Buffer.from(str, 'binary').toString('base64')

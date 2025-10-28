@@ -14,7 +14,26 @@ class LocusParser {
      * @returns {Object|undefined} Parsed locus object or undefined if invalid
      */
     static parseLocusString(locus, genome) {
-        const [chrName, range] = locus.trim().toLowerCase().split(':');
+        const trimmedLocus = locus.trim().toLowerCase();
+        
+        // Handle special case for "all" - whole genome view
+        if (trimmedLocus === 'all') {
+            // Find the whole genome chromosome in the genome
+            const wholeGenomeChr = genome.chromosomes.find(chr => chr.name.toLowerCase() === 'all');
+            if (wholeGenomeChr) {
+                return {
+                    chr: wholeGenomeChr.name,
+                    wholeChr: true,
+                    start: 0,
+                    end: wholeGenomeChr.size
+                };
+            } else {
+                // If no "all" chromosome exists, return undefined to trigger fallback
+                return undefined;
+            }
+        }
+        
+        const [chrName, range] = trimmedLocus.split(':');
         const chromosome = genome.getChromosome(chrName);
 
         if (!chromosome) {

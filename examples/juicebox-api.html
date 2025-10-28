@@ -9,11 +9,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
 
     <!-- Juicebox CSS-->
-   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/css/juicebox.css">
-
-    <!-- Juicebox js -- defines global "juicebox" -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/juicebox.min.js"></script>
-
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/aidenlab/juicebox.js@dat-modernize/dist/css/juicebox.css">
 
 </head>
 
@@ -42,11 +38,32 @@ This example illustrates the use of the juicebox API to dynamically load a map a
     </select>
 </div>
 
+<div style="margin-top: 50px;margin-bottom: 50px">
+    <h2>Step 3: Load Session File (Optional)</h2>
+    <label for="session-input"><span style="font-size: large;font-weight: bold">Session File URL or Local File</span></label>
+    <div style="margin-top: 10px;">
+        <input type="text" id="session-input" placeholder="Enter session file URL or select local file" style="width: 400px; padding: 5px;">
+        <input type="file" id="session-file-input" accept=".json" style="margin-left: 10px;">
+        <button id="load-session-btn" style="margin-left: 10px; padding: 5px 15px;">Load Session</button>
+    </div>
+    <div style="margin-top: 10px;">
+        <small>You can load a session file to restore a previous Juicebox state with tracks, zoom level, and other settings.</small>
+        <br>
+        <small><strong>Note:</strong> Session loading will override any currently loaded Hi-C files and tracks.</small>
+        <br>
+        <small><strong>Supported URLs:</strong> Dropbox URLs are automatically converted to direct download links.</small>
+        <br>
+        <small><strong>Sample:</strong> You can test with a sample session file that includes GM12878 data and tracks.</small>
+    </div>
+</div>
+
 
 <div id="app-container"></div>
 
 
 <script type="module">
+
+    import juicebox from "https://cdn.jsdelivr.net/gh/aidenlab/juicebox.js@dat-modernize/dist/juicebox.esm.js"
 
     const config = {}
 
@@ -62,19 +79,73 @@ This example illustrates the use of the juicebox API to dynamically load a map a
     function initMenus(hicBrowser) {
         const hicSelect = document.getElementById("hic-select");
         const tracksSelect = document.getElementById("tracks-select");
+        const sessionInput = document.getElementById("session-input");
+        const sessionFileInput = document.getElementById("session-file-input");
+        const loadSessionBtn = document.getElementById("load-session-btn");
 
         hicSelect.onchange = async (e) => {
             const idx = hicSelect.selectedIndex;
             const option = hicSelect.options[idx];
-            await hicBrowser.loadHicFile({url: option.value});
-            tracksSelect.removeAttribute("disabled")
+            const currentBrowser = juicebox.getCurrentBrowser();
+            if (currentBrowser) {
+                await currentBrowser.loadHicFile({url: option.value});
+                tracksSelect.removeAttribute("disabled")
+            }
         }
 
         tracksSelect.onchange = (e) => {
             const idx = tracksSelect.selectedIndex;
             const option = tracksSelect.options[idx];
             const trackConfig = trackDictionary[option.value];
-            hicBrowser.loadTracks([trackConfig]);
+            const currentBrowser = juicebox.getCurrentBrowser();
+            if (currentBrowser) {
+                currentBrowser.loadTracks([trackConfig]);
+            }
+        }
+
+        // Handle file input change
+        sessionFileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                sessionInput.value = file.name;
+            }
+        }
+
+        // Handle session loading
+        loadSessionBtn.onclick = async (e) => {
+            try {
+                let sessionData;
+                
+                // Check if a local file is selected
+                if (sessionFileInput.files.length > 0) {
+                    const file = sessionFileInput.files[0];
+                    const text = await file.text();
+                    sessionData = JSON.parse(text);
+                } else if (sessionInput.value.trim()) {
+                    // Load from URL using Juicebox's igvxhr (handles Dropbox URLs properly)
+                    const url = sessionInput.value.trim();
+                    const response = await juicebox.igvxhr.loadString(url);
+                    sessionData = JSON.parse(response);
+                } else {
+                    alert("Please enter a session file URL or select a local file.");
+                    return;
+                }
+
+                // Load the session using the correct API
+                await juicebox.restoreSession(container, sessionData);
+                console.log("Session loaded successfully");
+                
+                // Get the updated browser instance after session restore
+                const updatedBrowser = juicebox.getCurrentBrowser();
+                if (updatedBrowser) {
+                    // Enable tracks select if it was disabled
+                    tracksSelect.removeAttribute("disabled");
+                }
+                
+            } catch (error) {
+                console.error("Error loading session:", error);
+                alert(`Error loading session: ${error.message}`);
+            }
         }
 
     }

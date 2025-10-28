@@ -65588,21 +65588,6 @@ class State {
     return state;
   }
 }
-async function geneSearch(genomeId, featureName) {
-  const searchServiceURL = `https://portals.broadinstitute.org/webservices/igv/locus?genome=${genomeId}&name=${encodeURIComponent(featureName)}`;
-  try {
-    const data = await igvxhr$1.loadString(searchServiceURL);
-    const results = parseSearchResults(data);
-    return results.length ? results[0] : void 0;
-  } catch (error) {
-    console.error(`Error fetching gene data for "${featureName}":`, error);
-    return void 0;
-  }
-}
-function parseSearchResults(data) {
-  const parsed = splitLines$6(data).filter((line) => line.trim() !== "").map((line) => line.split("	")).filter((tokens) => tokens.length >= 3).map((tokens) => tokens[1]);
-  return parsed;
-}
 const nvi = {
   "hicfiles.s3.amazonaws.com%2Fhiseq%2Fgm12878%2Fin-situ%2Fcombined.hic": "54386046426,55860",
   "hicfiles.s3.amazonaws.com%2Fhiseq%2Fgm12878%2Fin-situ%2Fprimary.hic": "33860030033,37504",
@@ -68834,6 +68819,21 @@ class CoordinateTransformer {
     return 0;
   }
 }
+async function geneSearch(genomeId, featureName) {
+  const searchServiceURL = `https://portals.broadinstitute.org/webservices/igv/locus?genome=${genomeId}&name=${encodeURIComponent(featureName)}`;
+  try {
+    const data = await igvxhr$1.loadString(searchServiceURL);
+    const results = parseSearchResults(data);
+    return results.length ? results[0] : void 0;
+  } catch (error) {
+    console.error(`Error fetching gene data for "${featureName}":`, error);
+    return void 0;
+  }
+}
+function parseSearchResults(data) {
+  const parsed = splitLines$6(data).filter((line) => line.trim() !== "").map((line) => line.split("	")).filter((tokens) => tokens.length >= 3).map((tokens) => tokens[1]);
+  return parsed;
+}
 class LocusParser {
   /**
    * Parse a locus string into a locus object
@@ -69265,9 +69265,6 @@ class HICBrowser {
       this.contactMatrixView.disableUpdates = false;
       this.contactMatrixView.update();
     }
-  }
-  createMenu(rootElement) {
-    return this.menuManager.createMenu(rootElement);
   }
   toggleTrackLabelAndGutterState() {
     this.showTrackLabelAndGutter = !this.showTrackLabelAndGutter;

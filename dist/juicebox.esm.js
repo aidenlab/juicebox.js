@@ -68842,7 +68842,21 @@ class LocusParser {
    * @returns {Object|undefined} Parsed locus object or undefined if invalid
    */
   static parseLocusString(locus, genome) {
-    const [chrName, range] = locus.trim().toLowerCase().split(":");
+    const trimmedLocus = locus.trim().toLowerCase();
+    if (trimmedLocus === "all") {
+      const wholeGenomeChr = genome.chromosomes.find((chr) => chr.name.toLowerCase() === "all");
+      if (wholeGenomeChr) {
+        return {
+          chr: wholeGenomeChr.name,
+          wholeChr: true,
+          start: 0,
+          end: wholeGenomeChr.size
+        };
+      } else {
+        return void 0;
+      }
+    }
+    const [chrName, range] = trimmedLocus.split(":");
     const chromosome = genome.getChromosome(chrName);
     if (!chromosome) {
       return void 0;
@@ -69516,7 +69530,8 @@ class HICBrowser {
       } else if (config.synchState && this.canBeSynched(config.synchState)) {
         await this.syncState(config.synchState);
       } else {
-        await this.setState(State.default(config));
+        this.state = State.default(config);
+        await this.parseGotoInput("all");
       }
       this.eventBus.post(HICEvent("MapLoad", this.dataset));
       if (!config.nvi && typeof config.url === "string") {
@@ -69597,6 +69612,20 @@ class HICBrowser {
   async parseGotoInput(input) {
     const loci = input.trim().split(" ");
     let xLocus = this.parseLocusString(loci[0]) || await this.lookupFeatureOrGene(loci[0]);
+    if (!xLocus && loci[0].toLowerCase() === "all") {
+      if (this.dataset && this.dataset.wholeGenomeChromosome) {
+        const wholeGenomeChr = this.dataset.wholeGenomeChromosome;
+        xLocus = {
+          chr: wholeGenomeChr.name,
+          wholeChr: true,
+          start: 0,
+          end: wholeGenomeChr.size
+        };
+      } else {
+        console.error(`No whole genome chromosome available for "all" locus`);
+        return;
+      }
+    }
     if (!xLocus) {
       console.error(`No feature found with name ${loci[0]}`);
       alert(`No feature found with name ${loci[0]}`);

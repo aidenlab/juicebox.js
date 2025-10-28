@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://aidenlab.org/favicon.ico">
     <title>Juicebox.js Development Launcher</title>
     <style>
         body {
@@ -74,7 +75,7 @@
         }
         .status.dev { background: #d4edda; color: #155724; }
         .status.example { background: #cce5ff; color: #004085; }
-        
+
         /* Hero section */
         .hero-subtitle {
             font-size: 18px;
@@ -82,29 +83,29 @@
             margin-top: 10px;
             font-weight: 500;
         }
-        
+
         /* Examples section */
         .examples-section {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
-        
+
         .examples-section h2 {
             color: white;
             border-bottom-color: rgba(255,255,255,0.3);
         }
-        
+
         .examples-section p {
             color: rgba(255,255,255,0.9);
         }
-        
+
         .examples-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
             margin-top: 20px;
         }
-        
+
         .example-item {
             display: block;
             padding: 25px;
@@ -116,39 +117,39 @@
             position: relative;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        
+
         .example-item:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
             background: white;
         }
-        
+
         .example-item.primary {
             background: linear-gradient(135deg, #ff6b6b, #ee5a24);
             color: white;
         }
-        
+
         .example-item.primary:hover {
             background: linear-gradient(135deg, #ff5252, #d63031);
         }
-        
+
         .example-icon {
             font-size: 32px;
             margin-bottom: 15px;
         }
-        
+
         .example-item h3 {
             margin: 0 0 10px 0;
             font-size: 20px;
             font-weight: 600;
         }
-        
+
         .example-item p {
             margin: 0;
             font-size: 14px;
             opacity: 0.8;
         }
-        
+
         .example-badge {
             position: absolute;
             top: 15px;
@@ -160,17 +161,17 @@
             font-size: 11px;
             font-weight: bold;
         }
-        
+
         /* Dev section */
         .dev-section {
             background: #f8f9fa;
         }
-        
+
         .dev-toggle {
             text-align: center;
             margin: 20px 0;
         }
-        
+
         .dev-toggle-btn {
             background: #007acc;
             color: white;
@@ -182,17 +183,17 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        
+
         .dev-toggle-btn:hover {
             background: #005a9e;
             transform: translateY(-2px);
         }
-        
+
         .dev-tools {
             margin-top: 20px;
             transition: all 0.3s ease;
         }
-        
+
         .dev-tools.hidden {
             display: none;
         }
@@ -202,7 +203,6 @@
     <div class="header">
         <h1>🧬 Juicebox.js</h1>
         <p>Interactive Hi-C data visualization library</p>
-        <div class="hero-subtitle">Start with examples, explore with dev tools</div>
     </div>
 
     <div class="section examples-section">
@@ -293,10 +293,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             const devToggle = document.getElementById('devToggle');
             const devTools = document.getElementById('devTools');
-            
+
             // Load dev tools on page load
             loadDevTools();
-            
+
             devToggle.addEventListener('click', function() {
                 if (devTools.classList.contains('hidden')) {
                     devTools.classList.remove('hidden');

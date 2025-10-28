@@ -240,47 +240,8 @@
             <button id="devToggle" class="dev-toggle-btn">Show Dev Tools</button>
         </div>
         <div id="devTools" class="dev-tools hidden">
-            <div class="link-grid">
-                <a href="/dev/generic-test-harness.html" class="link-item">
-                    <h3>Generic Test Harness <span class="status dev">DEV</span></h3>
-                    <p>Main development test harness with multiple configurations</p>
-                </a>
-                <a href="/dev/big_viewport.html" class="link-item">
-                    <h3>Big Viewport Test <span class="status dev">DEV</span></h3>
-                    <p>Test large viewport rendering scenarios</p>
-                </a>
-                <a href="/dev/bug-daphne-qin-10bp_to_1bp.html" class="link-item">
-                    <h3>Daphne Qin Bug - 10bp to 1bp <span class="status dev">DEV</span></h3>
-                    <p>Test specific bug scenario with resolution changes</p>
-                </a>
-                <a href="/dev/bug-daphne-qin-vanishing-2d-annotation.html" class="link-item">
-                    <h3>Daphne Qin Bug - Vanishing 2D Annotation <span class="status dev">DEV</span></h3>
-                    <p>Test 2D annotation display issues</p>
-                </a>
-                <a href="/dev/dat-sequence-gene-track.html" class="link-item">
-                    <h3>DAT Sequence Gene Track <span class="status dev">DEV</span></h3>
-                    <p>Test gene track functionality with DAT sequences</p>
-                </a>
-                <a href="/dev/jquery-cleanse.html" class="link-item">
-                    <h3>jQuery Cleanse Test <span class="status dev">DEV</span></h3>
-                    <p>Test jQuery compatibility and cleanup</p>
-                </a>
-                <a href="/dev/juicebox-normalization-warning.html" class="link-item">
-                    <h3>Normalization Warning <span class="status dev">DEV</span></h3>
-                    <p>Test normalization warning displays</p>
-                </a>
-                <a href="/dev/load-and-reset.html" class="link-item">
-                    <h3>Load and Reset <span class="status dev">DEV</span></h3>
-                    <p>Test data loading and reset functionality</p>
-                </a>
-                <a href="/dev/non_synched_maps.html" class="link-item">
-                    <h3>Non-Synchronized Maps <span class="status dev">DEV</span></h3>
-                    <p>Test multiple non-synchronized map displays</p>
-                </a>
-                <a href="/dev/olga-assembly.html" class="link-item">
-                    <h3>Olga Assembly <span class="status dev">DEV</span></h3>
-                    <p>Test assembly-specific functionality</p>
-                </a>
+            <div id="devToolsGrid" class="link-grid">
+                <!-- Dev tools will be loaded dynamically -->
             </div>
         </div>
     </div>
@@ -297,10 +258,44 @@
         </ul>
     </div>
 
-    <script>
+    <script type="module">
+        // Load dev tools using Vite's glob import (reliable in dev and build)
+        async function loadDevTools() {
+            const cacheBuster = Date.now();
+            const devToolsGrid = document.getElementById('devToolsGrid');
+            devToolsGrid.innerHTML = '';
+
+            // import.meta.glob enumerates files at build time (served by Vite in dev)
+            const pages = import.meta.glob('/dev/*.html', { query: '?url', import: 'default', eager: true });
+            const entries = Object.entries(pages).sort(([aPath], [bPath]) => aPath.localeCompare(bPath));
+
+            if (entries.length === 0) {
+                devToolsGrid.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No development test files found in /dev/ folder</p>';
+                return;
+            }
+
+            for (const [path, url] of entries) {
+                const filename = path.split('/').pop();
+                const displayName = filename.replace('.html', '').replace(/[-_]/g, ' ')
+                    .split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+                const linkItem = document.createElement('a');
+                linkItem.href = `${url}?_=${cacheBuster}`;
+                linkItem.className = 'link-item';
+                linkItem.innerHTML = `
+                    <h3>${displayName} <span class="status dev">DEV</span></h3>
+                    <p>Development test file</p>
+                `;
+                devToolsGrid.appendChild(linkItem);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const devToggle = document.getElementById('devToggle');
             const devTools = document.getElementById('devTools');
+            
+            // Load dev tools on page load
+            loadDevTools();
             
             devToggle.addEventListener('click', function() {
                 if (devTools.classList.contains('hidden')) {

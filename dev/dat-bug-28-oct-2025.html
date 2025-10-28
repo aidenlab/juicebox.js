@@ -1,0 +1,66 @@
+<html>
+<head>
+    <meta charSet="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Juicebox - ES6 </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.css">
+
+    <!-- Juicebox CSS-->
+    <link rel="stylesheet" type="text/css" href="../css/juicebox.css">
+    <!--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/igvteam/juicebox.js@juicebox-llm-project/dist/css/juicebox.css">-->
+
+</head>
+
+<body>
+
+<div id="app-container"></div>
+
+<script type="module">
+
+    import juicebox from '../js/index.js';
+
+    const config =
+        {
+            "backgroundColor": "136,133,1",
+            "url": "https://www.encodeproject.org/files/ENCFF473CAA/@@download/ENCFF473CAA.hic",
+            "name": "in-situ agar GM12878 MboI experiment",
+            "state": "17,17,8,12025.0154,12025.0154,640,640,1,NONE",
+            "colorScale": "12,131,249,2",
+            "selectedGene": "ace",
+            "nvi": "1077514950,36479",
+            "tracks":
+                [
+                    {
+                        "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/combined_peaks.txt",
+                        "name": "Rao & Huntley et al. | Cell 2014 | GM12878 combined loops",
+                        "color": "#ffce6e"
+                    },
+                    {
+                        "url": "https://hicfiles.s3.amazonaws.com/hiseq/huvec/in-situ/combined_peaks.txt",
+                        "name": "Rao & Huntley et al. | Cell 2014 | HUVEC combined loops",
+                        "color": "#ff39ff"
+                    }
+                ]
+        }
+
+    juicebox.init(document.getElementById("app-container"), config)
+        .then(browser => {
+
+            if (Array.isArray(browser)) {
+                for (const b of browser) {
+                    console.log(`${b.id} is good to go`)
+                }
+
+            } else {
+                console.log(`${browser.id} is good to go`)
+            }
+
+        })
+</script>
+
+</body>
+
+</html>

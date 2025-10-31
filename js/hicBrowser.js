@@ -893,6 +893,59 @@ class HICBrowser {
         return CoordinateTransformer.resolution(this.dataset, this.state);
     }
 
+    /**
+     * Serialize a 1D track to JSON.
+     * Only tracks with string URLs are serialized (local File objects are excluded).
+     * 
+     * @param {TrackRenderer} trackRenderer - The track renderer containing the track
+     * @returns {Object|null} Serialized track object or null if not serializable
+     */
+    serializeTrack1D(trackRenderer) {
+        const track = trackRenderer.x.track
+        const config = track.config
+
+        if (typeof config.url === "string") {
+            const t = {url: config.url}
+
+            if (config.type) {
+                t.type = config.type
+            }
+            if (config.format) {
+                t.format = config.format
+            }
+            if (track.name) {
+                t.name = track.name
+            }
+            if (track.dataRange) {
+                t.min = track.dataRange.min
+                t.max = track.dataRange.max
+            }
+            if (track.color) {
+                t.color = track.color
+            }
+            return t
+        } else if ('sequence' === config.type) {
+            // Sequence tracks can be saved without URL
+            return {type: 'sequence', format: 'sequence'}
+        }
+        
+        return null
+    }
+
+    /**
+     * Serialize a 2D track to JSON.
+     * Only tracks with string URLs are serialized (local File objects are excluded).
+     * 
+     * @param {Track2D} track2D - The 2D track to serialize
+     * @returns {Object|null} Serialized track object or null if not serializable
+     */
+    serializeTrack2D(track2D) {
+        if (typeof track2D.config.url === "string") {
+            return track2D.toJSON()
+        }
+        return null
+    }
+
     toJSON() {
 
         if (!(this.dataset && this.dataset.url)) return "{}"   // URL is required
@@ -935,42 +988,22 @@ class HICBrowser {
         }
 
         if (this.trackPairs.length > 0 || this.tracks2D.length > 0) {
-            let tracks = []
+            const tracks = []
             jsonOBJ.tracks = tracks
-            for (let trackRenderer of this.trackPairs) {
-
-                const track = trackRenderer.x.track
-                const config = track.config
-
-                if (typeof config.url === "string") {
-
-                    const t = {url: config.url}
-
-                    if (config.type) {
-                        t.type = config.type
-                    }
-                    if (config.format) {
-                        t.format = config.format
-                    }
-                    if (track.name) {
-                        t.name = track.name
-                    }
-                    if (track.dataRange) {
-                        t.min = track.dataRange.min
-                        t.max = track.dataRange.max
-                    }
-                    if (track.color) {
-                        t.color = track.color
-                    }
-                    tracks.push(t)
-                } else if ('sequence' === config.type) {
-                    tracks.push({type: 'sequence', format: 'sequence'})
+            
+            // Serialize 1D tracks
+            for (const trackRenderer of this.trackPairs) {
+                const serialized = this.serializeTrack1D(trackRenderer)
+                if (serialized) {
+                    tracks.push(serialized)
                 }
-
             }
+            
+            // Serialize 2D tracks
             for (const track2D of this.tracks2D) {
-                if (typeof track2D.config.url === "string") {
-                    tracks.push(track2D.toJSON())
+                const serialized = this.serializeTrack2D(track2D)
+                if (serialized) {
+                    tracks.push(serialized)
                 }
             }
         }

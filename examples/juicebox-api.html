@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
 
     <!-- Juicebox CSS-->
-   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/aidenlab/juicebox.js@dat-modernize/dist/css/juicebox.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/aidenlab/juicebox.js@dat-modernize/dist/css/juicebox.css">
 
 </head>
 
@@ -29,17 +29,42 @@ This example illustrates the use of the juicebox API to dynamically load a map a
 </div>
 
 <div style="margin-top: 50px;margin-bottom: 50px">
-    <h2>Step 2: Select a track</h2>
-    <label for="tracks-select"><span style="font-size: large;font-weight: bold">Tracks</span></label>
-    <select id="tracks-select" disabled>
-        <option value="">None</option>
-        <option value="GM12878">GM12878 CTCF</option>
-        <option value="K562">K562 CTCF</option>
-    </select>
+    <h2>Step 2: Load tracks</h2>
+    <div style="margin-bottom: 20px;">
+        <label for="tracks-select"><span style="font-size: large;font-weight: bold">Predefined Tracks</span></label>
+        <select id="tracks-select" disabled>
+            <option value="">None</option>
+            <option value="GM12878">GM12878 CTCF</option>
+            <option value="K562">K562 CTCF</option>
+        </select>
+    </div>
+    <div style="margin-top: 20px;">
+        <label for="track-url-input"><span style="font-size: large;font-weight: bold">Or Load Custom Track: URL or Local File</span></label>
+        <div style="margin-top: 10px;">
+            <input type="text" id="track-url-input" placeholder="Enter track URL (e.g., .bigWig, .bed, .wig, .bedpe)" style="width: 400px; padding: 5px;">
+            <input type="file" id="track-file-input" accept=".bigwig,.bigWig,.bed,.wig,.bedpe,.interact" style="margin-left: 10px;">
+            <button id="load-track-btn" style="margin-left: 10px; padding: 5px 15px;">Load Track</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <small><strong>Note:</strong> Local track files will not be saved in session files. A warning will be shown when saving.</small>
+        </div>
+    </div>
 </div>
 
 <div style="margin-top: 50px;margin-bottom: 50px">
-    <h2>Step 3: Load Session File (Optional)</h2>
+    <h2>Step 3: Save Session (Test Warning)</h2>
+    <div style="margin-top: 10px;">
+        <button id="save-session-btn" style="padding: 5px 15px;">Save Session (Test Local File Warning)</button>
+    </div>
+    <div style="margin-top: 10px;">
+        <small><strong>Note:</strong> Click this button to test the local file warning. If you've loaded local files (tracks or Hi-C maps), a warning will appear.</small>
+        <br>
+        <small>The session JSON will be logged to the console. Local files will be excluded from the saved session.</small>
+    </div>
+</div>
+
+<div style="margin-top: 50px;margin-bottom: 50px">
+    <h2>Step 4: Load Session File (Optional)</h2>
     <label for="session-input"><span style="font-size: large;font-weight: bold">Session File URL or Local File</span></label>
     <div style="margin-top: 10px;">
         <input type="text" id="session-input" placeholder="Enter session file URL or select local file" style="width: 400px; padding: 5px;">
@@ -63,6 +88,7 @@ This example illustrates the use of the juicebox API to dynamically load a map a
 
 <script type="module">
 
+    // import juicebox from '../js/index.js';
     import juicebox from "https://cdn.jsdelivr.net/gh/aidenlab/juicebox.js@dat-modernize/dist/juicebox.esm.js"
 
     const config = {}
@@ -79,6 +105,10 @@ This example illustrates the use of the juicebox API to dynamically load a map a
     function initMenus(hicBrowser) {
         const hicSelect = document.getElementById("hic-select");
         const tracksSelect = document.getElementById("tracks-select");
+        const trackUrlInput = document.getElementById("track-url-input");
+        const trackFileInput = document.getElementById("track-file-input");
+        const loadTrackBtn = document.getElementById("load-track-btn");
+        const saveSessionBtn = document.getElementById("save-session-btn");
         const sessionInput = document.getElementById("session-input");
         const sessionFileInput = document.getElementById("session-file-input");
         const loadSessionBtn = document.getElementById("load-session-btn");
@@ -103,7 +133,84 @@ This example illustrates the use of the juicebox API to dynamically load a map a
             }
         }
 
-        // Handle file input change
+        // Handle track file input change
+        trackFileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                trackUrlInput.value = file.name;
+            }
+        }
+
+        // Handle custom track loading
+        loadTrackBtn.onclick = async (e) => {
+            try {
+                const currentBrowser = juicebox.getCurrentBrowser();
+                if (!currentBrowser) {
+                    alert("Please load a Hi-C file first.");
+                    return;
+                }
+
+                let trackConfig;
+
+                // Check if a local file is selected
+                if (trackFileInput.files.length > 0) {
+                    const file = trackFileInput.files[0];
+                    trackConfig = {
+                        name: file.name,
+                        url: file,  // Pass File object directly
+                        autoscale: true
+                    };
+                } else if (trackUrlInput.value.trim()) {
+                    // Load from URL
+                    const url = trackUrlInput.value.trim();
+                    trackConfig = {
+                        name: url.substring(url.lastIndexOf('/') + 1) || 'Custom Track',
+                        url: url,
+                        autoscale: true
+                    };
+                } else {
+                    alert("Please enter a track URL or select a local track file.");
+                    return;
+                }
+
+                await currentBrowser.loadTracks([trackConfig]);
+                console.log("Track loaded successfully");
+                
+                // Clear inputs after successful load
+                trackUrlInput.value = '';
+                trackFileInput.value = '';
+                
+            } catch (error) {
+                console.error("Error loading track:", error);
+                alert(`Error loading track: ${error.message}`);
+            }
+        }
+
+        // Handle save session button
+        saveSessionBtn.onclick = (e) => {
+            try {
+                const sessionJSON = juicebox.toJSON();
+                console.log("Session JSON:", JSON.stringify(sessionJSON, null, 2));
+                
+                // Optionally download as file
+                const blob = new Blob([JSON.stringify(sessionJSON, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'juicebox-session.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                console.log("Session saved to file: juicebox-session.json");
+            } catch (error) {
+                console.error("Error saving session:", error);
+                alert(`Error saving session: ${error.message}`);
+            }
+        }
+
+        // Handle session file input change
         sessionFileInput.onchange = (e) => {
             const file = e.target.files[0];
             if (file) {

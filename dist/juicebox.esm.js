@@ -69834,6 +69834,53 @@ class HICBrowser {
   resolution() {
     return CoordinateTransformer.resolution(this.dataset, this.state);
   }
+  /**
+   * Serialize a 1D track to JSON.
+   * Only tracks with string URLs are serialized (local File objects are excluded).
+   * 
+   * @param {TrackRenderer} trackRenderer - The track renderer containing the track
+   * @returns {Object|null} Serialized track object or null if not serializable
+   */
+  serializeTrack1D(trackRenderer) {
+    const track = trackRenderer.x.track;
+    const config = track.config;
+    if (typeof config.url === "string") {
+      const t = { url: config.url };
+      if (config.type) {
+        t.type = config.type;
+      }
+      if (config.format) {
+        t.format = config.format;
+      }
+      if (track.name) {
+        t.name = track.name;
+      }
+      if (track.dataRange) {
+        t.min = track.dataRange.min;
+        t.max = track.dataRange.max;
+      }
+      if (track.color) {
+        t.color = track.color;
+      }
+      return t;
+    } else if ("sequence" === config.type) {
+      return { type: "sequence", format: "sequence" };
+    }
+    return null;
+  }
+  /**
+   * Serialize a 2D track to JSON.
+   * Only tracks with string URLs are serialized (local File objects are excluded).
+   * 
+   * @param {Track2D} track2D - The 2D track to serialize
+   * @returns {Object|null} Serialized track object or null if not serializable
+   */
+  serializeTrack2D(track2D) {
+    if (typeof track2D.config.url === "string") {
+      return track2D.toJSON();
+    }
+    return null;
+  }
   toJSON() {
     if (!(this.dataset && this.dataset.url)) return "{}";
     const jsonOBJ = {};
@@ -69870,37 +69917,18 @@ class HICBrowser {
       }
     }
     if (this.trackPairs.length > 0 || this.tracks2D.length > 0) {
-      let tracks = [];
+      const tracks = [];
       jsonOBJ.tracks = tracks;
-      for (let trackRenderer of this.trackPairs) {
-        const track = trackRenderer.x.track;
-        const config = track.config;
-        if (typeof config.url === "string") {
-          const t = { url: config.url };
-          if (config.type) {
-            t.type = config.type;
-          }
-          if (config.format) {
-            t.format = config.format;
-          }
-          if (track.name) {
-            t.name = track.name;
-          }
-          if (track.dataRange) {
-            t.min = track.dataRange.min;
-            t.max = track.dataRange.max;
-          }
-          if (track.color) {
-            t.color = track.color;
-          }
-          tracks.push(t);
-        } else if ("sequence" === config.type) {
-          tracks.push({ type: "sequence", format: "sequence" });
+      for (const trackRenderer of this.trackPairs) {
+        const serialized = this.serializeTrack1D(trackRenderer);
+        if (serialized) {
+          tracks.push(serialized);
         }
       }
       for (const track2D of this.tracks2D) {
-        if (typeof track2D.config.url === "string") {
-          tracks.push(track2D.toJSON());
+        const serialized = this.serializeTrack2D(track2D);
+        if (serialized) {
+          tracks.push(serialized);
         }
       }
     }
@@ -70010,11 +70038,51 @@ function setDefaults(config) {
   }
 }
 const version = "2.5.3";
+function detectLocalFiles(browser) {
+  const result = {
+    hasLocalHicFile: false,
+    localTracks1D: 0,
+    localTracks2D: 0
+  };
+  if (browser.dataset && !browser.dataset.url) {
+    result.hasLocalHicFile = true;
+  }
+  if (browser.trackPairs && browser.trackPairs.length > 0) {
+    for (const trackRenderer of browser.trackPairs) {
+      const track = trackRenderer.x?.track;
+      const config = track?.config;
+      if (config && config.type === "sequence") {
+        continue;
+      }
+      if (config && config.url && isFile(config.url)) {
+        result.localTracks1D++;
+      }
+    }
+  }
+  if (browser.tracks2D && browser.tracks2D.length > 0) {
+    for (const track2D of browser.tracks2D) {
+      const config = track2D?.config;
+      if (config && config.url && isFile(config.url)) {
+        result.localTracks2D++;
+      }
+    }
+  }
+  return result;
+}
 function toJSON() {
   const jsonOBJ = {};
   const browserJson = [];
   const allBrowsers2 = getAllBrowsers();
+  let totalLocalHicFiles = 0;
+  let totalLocalTracks1D = 0;
+  let totalLocalTracks2D = 0;
   for (let browser of allBrowsers2) {
+    const localFiles = detectLocalFiles(browser);
+    if (localFiles.hasLocalHicFile) {
+      totalLocalHicFiles++;
+    }
+    totalLocalTracks1D += localFiles.localTracks1D;
+    totalLocalTracks2D += localFiles.localTracks2D;
     browserJson.push(browser.toJSON());
   }
   jsonOBJ.browsers = browserJson;
@@ -70030,6 +70098,20 @@ function toJSON() {
         jsonOBJ.caption = captionText;
       }
     }
+  }
+  if (totalLocalHicFiles > 0 || totalLocalTracks1D > 0 || totalLocalTracks2D > 0) {
+    const warningParts = [];
+    if (totalLocalHicFiles > 0) {
+      warningParts.push(`${totalLocalHicFiles} Hi-C file${totalLocalHicFiles > 1 ? "s" : ""}`);
+    }
+    if (totalLocalTracks1D > 0) {
+      warningParts.push(`${totalLocalTracks1D} 1D track${totalLocalTracks1D > 1 ? "s" : ""}`);
+    }
+    if (totalLocalTracks2D > 0) {
+      warningParts.push(`${totalLocalTracks2D} 2D track${totalLocalTracks2D > 1 ? "s" : ""}`);
+    }
+    const warningMessage = `Warning: ${warningParts.join(", ")} with local files ${totalLocalHicFiles + totalLocalTracks1D + totalLocalTracks2D > 1 ? "were" : "was"} not saved to the session. Local files cannot be serialized and will need to be reloaded manually.`;
+    Alert$1.presentAlert(warningMessage);
   }
   return jsonOBJ;
 }

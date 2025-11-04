@@ -64,8 +64,10 @@ class LiveContactMapService {
 
         if ("DidLoadEnsembleFile" === type) {
 
-            const ctx = juiceboxPanel.browser.contactMatrixView.ctx_live
-            ctx.transferFromImageBitmap(null)
+            // Safety check: ctx_live may not exist yet if browser isn't fully initialized
+            if (juiceboxPanel?.browser?.contactMatrixView?.ctx_live) {
+                juiceboxPanel.browser.contactMatrixView.ctx_live.transferFromImageBitmap(null)
+            }
 
             this.contactFrequencies = undefined
             this.rgbaMatrix = undefined

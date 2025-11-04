@@ -781,8 +781,14 @@ class HICBrowser {
                 state = State.default(config);
             }
 
-            await this.setState(state);
+            // Set active dataset BEFORE setState, since setState calls minPixelSize
+            // which requires this.dataset to be available
+            // Ensure dataset is fully initialized
+            if (!dataset.chromosomes || dataset.chromosomes.length === 0) {
+                throw new Error("LiveMapDataset chromosomes array is not initialized");
+            }
             this.setActiveDataset(dataset, state);
+            await this.setState(state);
 
             this.eventBus.post(HICEvent("MapLoad", { dataset: dataset, state: state, datasetType: dataset.datasetType }));
 
@@ -1417,13 +1423,21 @@ class HICBrowser {
 
     async minZoom(chr1, chr2) {
 
-        const chromosome1 = this.dataset.chromosomes[chr1]
-        const chromosome2 = this.dataset.chromosomes[chr2]
+        if (!this.activeDataset) {
+            throw new Error("Dataset not available for minZoom calculation");
+        }
+
+        const chromosome1 = this.activeDataset.chromosomes[chr1]
+        const chromosome2 = this.activeDataset.chromosomes[chr2]
+
+        if (!chromosome1 || !chromosome2) {
+            throw new Error(`Invalid chromosome indices: ${chr1}, ${chr2}`);
+        }
 
         const { width, height } = this.contactMatrixView.getViewDimensions()
         const binSize = Math.max(chromosome1.size / width, chromosome2.size / height)
 
-        const matrix = await this.dataset.getMatrix(chr1, chr2)
+        const matrix = await this.activeDataset.getMatrix(chr1, chr2)
         if (!matrix) {
             throw new Error(`Data not avaiable for chromosomes ${chromosome1.name} - ${chromosome2.name}`)
         }
@@ -1432,11 +1446,21 @@ class HICBrowser {
 
     async minPixelSize(chr1, chr2, zoomIndex) {
 
-        // bp
-        const chr1Length = this.dataset.chromosomes[chr1].size
-        const chr2Length = this.dataset.chromosomes[chr2].size
+        if (!this.activeDataset) {
+            // If dataset not yet set, return default minimum
+            return DEFAULT_PIXEL_SIZE;
+        }
 
-        const matrix = await this.dataset.getMatrix(chr1, chr2)
+        // bp
+        if (!this.activeDataset.chromosomes || !this.activeDataset.chromosomes[chr1] || !this.activeDataset.chromosomes[chr2]) {
+            console.warn(`Invalid chromosome indices or chromosomes array not initialized: ${chr1}, ${chr2}`);
+            return DEFAULT_PIXEL_SIZE;
+        }
+
+        const chr1Length = this.activeDataset.chromosomes[chr1].size
+        const chr2Length = this.activeDataset.chromosomes[chr2].size
+
+        const matrix = await this.activeDataset.getMatrix(chr1, chr2)
         const { zoom } = matrix.getZoomDataByIndex(zoomIndex, "BP")
 
         // bin = bp * bin/bp = bin

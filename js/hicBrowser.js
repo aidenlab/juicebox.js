@@ -34,7 +34,8 @@ import EventBus from "./eventBus.js"
 import Track2D from './track2D.js'
 import LayoutController, {getLayoutDimensions, setViewportSize} from './layoutController.js'
 import HICEvent from './hicEvent.js'
-import Dataset from './hicDataset.js'
+import Dataset, { HiCDataset } from './hicDataset.js'
+import LiveMapDataset from './liveMapDataset.js'
 import Genome from './genome.js'
 import State from './hicState.js'
 import { geneSearch } from './geneSearch.js'
@@ -66,6 +67,13 @@ class HICBrowser {
 
         this.synchable = config.synchable !== false;
         this.synchedBrowsers = new Set();
+
+        // Unified dataset/state system
+        this.activeDataset = undefined;
+        this.activeState = undefined;
+        
+        // Control dataset (for A/B comparisons)
+        this.controlDataset = undefined;
 
         this.isMobile = hicUtils.isMobile();
 
@@ -245,11 +253,13 @@ class HICBrowser {
 
     async getNormalizationOptions() {
 
-        if (!this.dataset) return []
+        if (!this.activeDataset) return []
 
-        const baseOptions = await this.dataset.getNormalizationOptions()
+        const baseOptions = this.activeDataset.getNormalizationOptions ? 
+            await this.activeDataset.getNormalizationOptions() : ['NONE'];
         if (this.controlDataset) {
-            let controlOptions = await this.controlDataset.getNormalizationOptions()
+            let controlOptions = this.controlDataset.getNormalizationOptions ? 
+                await this.controlDataset.getNormalizationOptions() : ['NONE'];
             controlOptions = new Set(controlOptions)
             return baseOptions.filter(base => controlOptions.has(base))
         } else {
@@ -262,9 +272,9 @@ class HICBrowser {
      * @returns {{index: *, binSize: *}[]|Array}
      */
     getResolutions() {
-        if (!this.dataset) return []
+        if (!this.activeDataset) return []
 
-        const baseResolutions = this.dataset.bpResolutions.map(function (resolution, index) {
+        const baseResolutions = this.activeDataset.bpResolutions.map(function (resolution, index) {
             return {index: index, binSize: resolution}
         })
         if (this.controlDataset) {
@@ -276,7 +286,7 @@ class HICBrowser {
     }
 
     isWholeGenome() {
-        return this.dataset && this.state && this.dataset.isWholeGenome(this.state.chr1)
+        return this.activeDataset && this.activeState && this.activeDataset.isWholeGenome(this.activeState.chr1)
     }
 
     getColorScale() {
@@ -473,18 +483,23 @@ class HICBrowser {
 
     async loadNormalizationFile(url) {
 
-        if (!this.dataset) return
+        if (!this.activeDataset) return
+        // Normalization files are only supported for Hi-C datasets
+        if (!this.activeDataset.hicFile) {
+            console.warn("Normalization files are only supported for Hi-C datasets");
+            return;
+        }
         this.eventBus.post(HICEvent("NormalizationFileLoad", "start"))
 
-        const normVectors = await this.dataset.hicFile.readNormalizationVectorFile(url, this.dataset.chromosomes)
+        const normVectors = await this.activeDataset.hicFile.readNormalizationVectorFile(url, this.activeDataset.chromosomes)
         for (let type of normVectors['types']) {
-            if (!this.dataset.normalizationTypes) {
-                this.dataset.normalizationTypes = []
+            if (!this.activeDataset.normalizationTypes) {
+                this.activeDataset.normalizationTypes = []
             }
-            if (!this.dataset.normalizationTypes.includes(type)) {
-                this.dataset.normalizationTypes.push(type)
+            if (!this.activeDataset.normalizationTypes.includes(type)) {
+                this.activeDataset.normalizationTypes.push(type)
             }
-            this.eventBus.post(HICEvent("NormVectorIndexLoad", this.dataset))
+            this.eventBus.post(HICEvent("NormVectorIndexLoad", this.activeDataset))
         }
 
         return normVectors
@@ -505,6 +520,47 @@ class HICBrowser {
         }
     }
 
+    /**
+     * Set the active dataset and state
+     * @param {Dataset} dataset - The dataset to activate
+     * @param {State} state - The state to use with this dataset
+     */
+    setActiveDataset(dataset, state) {
+        this.activeDataset = dataset;
+        if (state) {
+            this.activeState = state;
+        }
+    }
+
+    /**
+     * Backward compatibility: getter for dataset property
+     * Returns activeDataset (the primary dataset, not control)
+     */
+    get dataset() {
+        return this.activeDataset;
+    }
+
+    /**
+     * Backward compatibility: setter for dataset property
+     */
+    set dataset(value) {
+        this.activeDataset = value;
+    }
+
+    /**
+     * Backward compatibility: getter for state property
+     */
+    get state() {
+        return this.activeState;
+    }
+
+    /**
+     * Backward compatibility: setter for state property
+     */
+    set state(value) {
+        this.activeState = value;
+    }
+
     reset() {
         this.layoutController.removeAllTrackXYPairs()
         this.contactMatrixView.clearImageCaches()
@@ -514,15 +570,17 @@ class HICBrowser {
         this.contactMapLabel.title = "";
         this.controlMapLabel.textContent = "";
         this.controlMapLabel.title = "";
-        this.dataset = undefined
-        this.controlDataset = undefined
+        this.activeDataset = undefined;
+        this.activeState = undefined;
+        this.controlDataset = undefined;
         this.unsyncSelf()
     }
 
     clearSession() {
         // Clear current datasets.
-        this.dataset = undefined
-        this.controlDataset = undefined
+        this.activeDataset = undefined;
+        this.activeState = undefined;
+        this.controlDataset = undefined;
         this.setDisplayMode('A')
         this.unsyncSelf()
     }
@@ -582,38 +640,47 @@ class HICBrowser {
                 Alert.presentAlert(str)
             }
 
-            this.dataset = await Dataset.loadDataset(Object.assign({alert: hicFileAlert}, config))
-            this.dataset.name = name
+            const dataset = await Dataset.loadDataset(Object.assign({alert: hicFileAlert}, config))
+            dataset.name = name
 
             const previousGenomeId = this.genome ? this.genome.id : undefined
-            this.genome = new Genome(this.dataset.genomeId, this.dataset.chromosomes)
+            this.genome = new Genome(dataset.genomeId, dataset.chromosomes)
 
             if (this.genome.id !== previousGenomeId) {
                 EventBus.globalBus.post(HICEvent("GenomeChange", this.genome.id))
             }
 
+            let state;
             if (config.locus) {
-                this.state = State.default(config)
+                state = State.default(config)
+                this.setActiveDataset(dataset, state);
                 await this.parseGotoInput(config.locus)
             } else if (config.state) {
 
                 if (typeof config.state === 'string') {
-                    await this.setState( State.parse(config.state) )
+                    state = State.parse(config.state);
+                    await this.setState(state)
                 } else if (typeof config.state === 'object') {
-                    await this.setState( State.fromJSON(config.state) )
+                    state = State.fromJSON(config.state);
+                    await this.setState(state)
                 } else {
                     alert('config.state is of unknown type')
                     console.error('config.state is of unknown type')
+                    state = State.default(config);
                 }
 
 
             } else if (config.synchState && this.canBeSynched(config.synchState)) {
                 await this.syncState(config.synchState)
+                state = this.activeState;
             } else {
-                await this.setState(State.default(config))
+                state = State.default(config);
+                await this.setState(state)
             }
+            
+            this.setActiveDataset(dataset, state);
 
-            this.eventBus.post(HICEvent("MapLoad", this.dataset))
+            this.eventBus.post(HICEvent("MapLoad", { dataset: dataset, state: state, datasetType: dataset.datasetType }))
 
             // Initiate loading of the norm vector index, but don't block if the "nvi" parameter is not available.
             // Let it load in the background
@@ -627,15 +694,15 @@ class HICBrowser {
                 }
             }
 
-            if (config.nvi) {
-                await this.dataset.getNormVectorIndex(config)
-                this.eventBus.post(HICEvent("NormVectorIndexLoad", this.dataset))
-            } else {
+            if (config.nvi && dataset.getNormVectorIndex) {
+                await dataset.getNormVectorIndex(config)
+                this.eventBus.post(HICEvent("NormVectorIndexLoad", dataset))
+            } else if (dataset.getNormVectorIndex) {
 
-                this.dataset.getNormVectorIndex(config)
+                dataset.getNormVectorIndex(config)
                     .then(normVectorIndex => {
                         if (!config.isControl) {
-                            this.eventBus.post(HICEvent("NormVectorIndexLoad", this.dataset))
+                            this.eventBus.post(HICEvent("NormVectorIndexLoad", dataset))
                         }
                     })
             }
@@ -643,7 +710,7 @@ class HICBrowser {
             syncBrowsers()
 
             // Find a browser to sync with, if any
-            const compatibleBrowsers = getAllBrowsers().filter(b => b !== this && b.dataset && b.dataset.isCompatible(this.dataset))
+            const compatibleBrowsers = getAllBrowsers().filter(b => b !== this && b.activeDataset && b.activeDataset.isCompatible(this.activeDataset))
             if (compatibleBrowsers.length > 0) {
                 await this.syncState(compatibleBrowsers[0].getSyncState())
             }
@@ -655,6 +722,76 @@ class HICBrowser {
             throw error
         } finally {
             this.stopSpinner()
+            if (!noUpdates) {
+                this.userInteractionShield.style.display = 'none';
+            }
+        }
+    }
+
+    /**
+     * Load a live map dataset
+     *
+     * NOTE: public API function
+     *
+     * @param {Object} config - Configuration object with:
+     *   - contactRecordList: Array of contact records OR
+     *   - contactMatrix: 2D array of contact totals
+     *   - chromosomes: Array of chromosome definitions
+     *   - genomeId: Genome identifier
+     *   - bpResolutions: Array of available resolutions
+     *   - name: Dataset name
+     *   - binSize: Bin size (if using contactMatrix)
+     *   - state: Optional initial state
+     * @param {boolean} noUpdates - If true, don't trigger UI updates
+     * @returns {Promise<LiveMapDataset>}
+     */
+    async loadLiveMapDataset(config, noUpdates) {
+        this.clearSession();
+
+        try {
+            this.contactMatrixView.startSpinner();
+            if (!noUpdates) {
+                this.userInteractionShield.style.display = 'block';
+            }
+
+            const name = config.name || 'Live Map';
+            this.contactMapLabel.textContent = name;
+            this.contactMapLabel.title = name;
+
+            const dataset = new LiveMapDataset(config);
+            await dataset.init();
+
+            const previousGenomeId = this.genome ? this.genome.id : undefined;
+            this.genome = new Genome(dataset.genomeId, dataset.chromosomes);
+
+            if (this.genome.id !== previousGenomeId) {
+                EventBus.globalBus.post(HICEvent("GenomeChange", this.genome.id));
+            }
+
+            let state;
+            if (config.state) {
+                if (typeof config.state === 'string') {
+                    state = State.parse(config.state);
+                } else if (typeof config.state === 'object') {
+                    state = State.fromJSON(config.state);
+                } else {
+                    state = State.default(config);
+                }
+            } else {
+                state = State.default(config);
+            }
+
+            await this.setState(state);
+            this.setActiveDataset(dataset, state);
+
+            this.eventBus.post(HICEvent("MapLoad", { dataset: dataset, state: state, datasetType: dataset.datasetType }));
+
+        } catch (error) {
+            this.contactMapLabel.textContent = "";
+            this.contactMapLabel.title = "";
+            throw error;
+        } finally {
+            this.stopSpinner();
             if (!noUpdates) {
                 this.userInteractionShield.style.display = 'none';
             }
@@ -687,16 +824,18 @@ class HICBrowser {
 
             controlDataset.name = name
 
-            if (!this.dataset || this.dataset.isCompatible(controlDataset)) {
+            if (!this.activeDataset || this.activeDataset.isCompatible(controlDataset)) {
                 this.controlDataset = controlDataset
-                if (this.dataset) {
-                    this.contactMapLabel.textContent = "A: " + this.dataset.name;
+                if (this.activeDataset) {
+                    this.contactMapLabel.textContent = "A: " + this.activeDataset.name;
                 }
                 this.controlMapLabel.textContent = "B: " + controlDataset.name
                 this.controlMapLabel.title = controlDataset.name
 
                 //For the control dataset, block until the norm vector index is loaded
-                await controlDataset.getNormVectorIndex(config)
+                if (controlDataset.getNormVectorIndex) {
+                    await controlDataset.getNormVectorIndex(config)
+                }
                 this.eventBus.post(HICEvent("ControlMapLoad", this.controlDataset))
 
                 if (!noUpdates) {

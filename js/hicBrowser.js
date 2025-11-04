@@ -659,26 +659,31 @@ class HICBrowser {
 
                 if (typeof config.state === 'string') {
                     state = State.parse(config.state);
-                    await this.setState(state)
                 } else if (typeof config.state === 'object') {
                     state = State.fromJSON(config.state);
-                    await this.setState(state)
                 } else {
                     alert('config.state is of unknown type')
                     console.error('config.state is of unknown type')
                     state = State.default(config);
                 }
-
+                
+                // Set active dataset before setState so configureLocus can access bpResolutions
+                this.setActiveDataset(dataset, state);
+                await this.setState(state)
 
             } else if (config.synchState && this.canBeSynched(config.synchState)) {
                 await this.syncState(config.synchState)
                 state = this.activeState;
+                // syncState already sets activeDataset, but ensure it's set with current dataset
+                if (this.activeDataset !== dataset) {
+                    this.setActiveDataset(dataset, state);
+                }
             } else {
                 state = State.default(config);
+                // Set active dataset before setState so configureLocus can access bpResolutions
+                this.setActiveDataset(dataset, state);
                 await this.setState(state)
             }
-            
-            this.setActiveDataset(dataset, state);
 
             this.eventBus.post(HICEvent("MapLoad", { dataset: dataset, state: state, datasetType: dataset.datasetType }))
 

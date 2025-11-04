@@ -55,7 +55,9 @@ class ChromosomeSelector {
 
         // Subscribe to browser events
         this.browser.eventBus.subscribe("MapLoad", (event) => {
-            this.respondToDataLoadWithDataset(event.data);
+            // Handle both old format (event.data is dataset) and new format (event.data.dataset)
+            const dataset = event.data.dataset || event.data;
+            this.respondToDataLoadWithDataset(dataset);
         });
 
         this.browser.eventBus.subscribe("LocusChange", (event) => {

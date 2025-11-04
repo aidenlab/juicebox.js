@@ -87747,12 +87747,48 @@ class ContactMatrixView {
         this.browser.eventBus.subscribe("ColorChange", this);
 
         this.drawsInProgress = new Set();
+
+        // Optional live map contexts (for Spacewalk integration)
+        // These can be set via setLiveMapContexts() or passed in config
+        this.ctx_live = undefined;
+        this.ctx_live_distance = undefined;
+        
+        // Initialize from config if provided
+        if (browser.config?.liveMapContexts) {
+            this.setLiveMapContexts(
+                browser.config.liveMapContexts.ctx_live,
+                browser.config.liveMapContexts.ctx_live_distance
+            );
+        }
     }
 
     setBackgroundColor(rgb) {
         this.backgroundColor = rgb;
         this.backgroundRGBString = IGVColor$1.rgbColor(rgb.r, rgb.g, rgb.b);
         this.update();
+    }
+
+    /**
+     * Set live map canvas contexts for bitmaprenderer rendering.
+     * This is an optional method for applications that need live map rendering
+     * (e.g., Spacewalk). If not set, live map rendering will be skipped.
+     * 
+     * @param {OffscreenCanvasRenderingContext2D} ctx_live - Context for live contact map canvas
+     * @param {OffscreenCanvasRenderingContext2D} ctx_live_distance - Context for live distance map canvas
+     */
+    setLiveMapContexts(ctx_live, ctx_live_distance) {
+        this.ctx_live = ctx_live;
+        this.ctx_live_distance = ctx_live_distance;
+        
+        // Resize contexts to match main canvas if they exist
+        if (ctx_live && this.canvasElement) {
+            ctx_live.canvas.width = this.canvasElement.width;
+            ctx_live.canvas.height = this.canvasElement.height;
+        }
+        if (ctx_live_distance && this.canvasElement) {
+            ctx_live_distance.canvas.width = this.canvasElement.width;
+            ctx_live_distance.canvas.height = this.canvasElement.height;
+        }
     }
 
     stringifyBackgroundColor() {
@@ -89379,7 +89415,9 @@ class ChromosomeSelector {
 
         // Subscribe to browser events
         this.browser.eventBus.subscribe("MapLoad", (event) => {
-            this.respondToDataLoadWithDataset(event.data);
+            // Handle both old format (event.data is dataset) and new format (event.data.dataset)
+            const dataset = event.data.dataset || event.data;
+            this.respondToDataLoadWithDataset(dataset);
         });
 
         this.browser.eventBus.subscribe("LocusChange", (event) => {

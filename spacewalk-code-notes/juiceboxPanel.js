@@ -78,12 +78,17 @@ class JuiceboxPanel extends Panel {
         this.detachMouseHandlers()
 
         try {
-            this.browser = await hic.restoreSession(document.querySelector('#spacewalk_juicebox_root_container'), session)
+            await hic.restoreSession(document.querySelector('#spacewalk_juicebox_root_container'), session)
         } catch (e) {
             const error = new Error(`Error loading Juicebox Session ${ e.message }`)
             console.error(error.message)
             alert(error.message)
         }
+
+        this.browser = hic.getCurrentBrowser()
+
+        // Initialize live map canvas contexts (Spacewalk-specific)
+        this.initializeLiveMapContexts()
 
         if (ensembleManager.datasource) {
             await this.loadLiveMapDataset()
@@ -93,6 +98,53 @@ class JuiceboxPanel extends Panel {
 
         this.hicMapTab.show()
 
+    }
+
+    /**
+     * Initialize live map canvas contexts for bitmaprenderer rendering.
+     * This method creates and configures the ctx_live and ctx_live_distance
+     * contexts that are required for live map rendering in Spacewalk.
+     */
+    initializeLiveMapContexts() {
+        const browser = this.browser
+        const viewport = browser.layoutController.getContactMatrixViewport()
+        
+        // Get or create live contact map canvas
+        let canvas = viewport.querySelector(`#${browser.id}-live-contact-map-canvas`)
+        if (!canvas) {
+            // Canvas might not exist yet, create it
+            canvas = document.createElement('canvas')
+            canvas.id = `${browser.id}-live-contact-map-canvas`
+            canvas.style.display = 'none' // Hidden by default
+            viewport.appendChild(canvas)
+        }
+        
+        const ctx_live = canvas.getContext('bitmaprenderer')
+        if (ctx_live) {
+            const mainCanvas = browser.contactMatrixView.canvasElement
+            ctx_live.canvas.width = mainCanvas.width
+            ctx_live.canvas.height = mainCanvas.height
+        }
+        
+        // Get or create live distance map canvas
+        canvas = viewport.querySelector(`#${browser.id}-live-distance-map-canvas`)
+        if (!canvas) {
+            // Canvas might not exist yet, create it
+            canvas = document.createElement('canvas')
+            canvas.id = `${browser.id}-live-distance-map-canvas`
+            canvas.style.display = 'none' // Hidden by default
+            viewport.appendChild(canvas)
+        }
+        
+        const ctx_live_distance = canvas.getContext('bitmaprenderer')
+        if (ctx_live_distance) {
+            const mainCanvas = browser.contactMatrixView.canvasElement
+            ctx_live_distance.canvas.width = mainCanvas.width
+            ctx_live_distance.canvas.height = mainCanvas.height
+        }
+        
+        // Set contexts on ContactMatrixView
+        browser.contactMatrixView.setLiveMapContexts(ctx_live, ctx_live_distance)
     }
 
     attachMouseHandlersAndEventSubscribers() {
@@ -238,7 +290,7 @@ class JuiceboxPanel extends Panel {
         const { chr, genomicStart, genomicEnd } = ensembleManager.locus
         const traceLength = ensembleManager.getLiveMapTraceLength()
         const binSize = (genomicEnd - genomicStart) / traceLength
-        
+
         // Get chromosome from IGV genome
         const chromosome = igvPanel.browser.genome.getChromosome(chr)
         if (!chromosome) {
@@ -288,7 +340,7 @@ class JuiceboxPanel extends Panel {
         const xBin = Math.floor(genomicStart / binSize)
         const yBin = Math.floor(genomicStart / binSize)
         const zoom = 0 // Live maps typically have single resolution
-        
+
         // Create state object matching State constructor signature
         // Note: locus can be undefined - setState will derive it using configureLocus()
         // Or we can create it explicitly with the proper structure: { x: {chr, start, end}, y: {chr, start, end} }
@@ -311,9 +363,9 @@ class JuiceboxPanel extends Panel {
 
     async renderLiveMapWithContactData(contactFrequencies, contactFrequencyArray, liveMapTraceLength) {
         console.log('JuiceboxPanel. Render Live Contact Map')
-        
+
         const browser = this.browser
-        
+
         // Ensure live map dataset is loaded
         if (!browser.activeDataset || browser.activeDataset.datasetType !== 'livemap') {
             await this.loadLiveMapDataset()
@@ -341,7 +393,10 @@ class JuiceboxPanel extends Panel {
         // Paint and transfer RGBA matrix to canvas
         this.paintContactMapRGBAMatrix(contactFrequencies, contactFrequencyArray, browser.contactMatrixView.colorScale, browser.contactMatrixView.backgroundColor)
 
-        await transferRGBAMatrixToLiveMapCanvas(browser.contactMatrixView.ctx_live, contactFrequencyArray, liveMapTraceLength)
+        // Transfer RGBA matrix to live map canvas
+        if (browser.contactMatrixView.ctx_live) {
+            await transferRGBAMatrixToLiveMapCanvas(browser.contactMatrixView.ctx_live, contactFrequencyArray, liveMapTraceLength)
+        }
     }
 
     paintContactMapRGBAMatrix(frequencies, rgbaMatrix, colorScale, backgroundRGB) {

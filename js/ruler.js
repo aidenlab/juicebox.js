@@ -187,7 +187,9 @@ class Ruler {
         let offset, element;
 
         if (event.type === 'MapLoad') {
-            this.wholeGenomeLayout(this.axisElement, this.wholeGenomeContainerElement, this.axis, event.data);
+            // Handle both old format (event.data is dataset) and new format (event.data.dataset)
+            const dataset = event.data.dataset || event.data;
+            this.wholeGenomeLayout(this.axisElement, this.wholeGenomeContainerElement, this.axis, dataset);
             this.update();
         } else if (event.type === 'UpdateContactMapMousePosition') {
             if (this.bboxes) {

@@ -43,47 +43,69 @@ const knownGenomes = {
 
 }
 
+/**
+ * Abstract base class for all dataset types (Hi-C files, live maps, etc.)
+ * Defines the common interface that all dataset implementations must provide.
+ */
 class Dataset {
 
     constructor(config) {
-        this.straw = new Straw(config)
+        this.name = config.name;
+        this.datasetType = config.datasetType || 'unknown';
     }
 
+    /**
+     * Initialize the dataset. Must be called after construction.
+     * @abstract
+     */
     async init() {
-
-        this.hicFile = this.straw.hicFile;
-        await this.hicFile.init();
-        this.normalizationTypes = ['NONE'];
-
-        this.genomeId = this.hicFile.genomeId
-        this.chromosomes = this.hicFile.chromosomes
-        this.bpResolutions = this.hicFile.bpResolutions
-        this.wholeGenomeChromosome = this.hicFile.wholeGenomeChromosome
-        this.wholeGenomeResolution = this.hicFile.wholeGenomeResolution
-
-        // Attempt to determine genomeId if not recognized
-        // if (!Object.keys(knownGenomes).includes(this.genomeId)) {
-        const tmp = matchGenome(this.chromosomes);
-        if (tmp) this.genomeId = tmp;
-        //  }
+        throw new Error("Dataset.init() must be implemented by subclass");
     }
 
+    /**
+     * Get contact records for a given region pair
+     * @param {string} normalization - Normalization type
+     * @param {Object} region1 - {chr, start, end}
+     * @param {Object} region2 - {chr, start, end}
+     * @param {string} units - "BP" or "FRAG"
+     * @param {number} binsize - Bin size in base pairs
+     * @returns {Promise<Array>} Array of contact records
+     * @abstract
+     */
     async getContactRecords(normalization, region1, region2, units, binsize) {
-        return this.straw.getContactRecords(normalization, region1, region2, units, binsize)
+        throw new Error("Dataset.getContactRecords() must be implemented by subclass");
     }
 
-    async hasNormalizationVector(type, chr, unit, binSize) {
-        return this.straw.hicFile.hasNormalizationVector(type, chr, unit, binSize);
-    }
-
-    clearCaches() {
-        this.colorScaleCache = {};
-    }
-
+    /**
+     * Get matrix for chromosome pair
+     * @param {number} chr1 - Chromosome index 1
+     * @param {number} chr2 - Chromosome index 2
+     * @returns {Promise<Object>} Matrix object
+     * @abstract
+     */
     async getMatrix(chr1, chr2) {
-        return this.hicFile.getMatrix(chr1, chr2)
+        throw new Error("Dataset.getMatrix() must be implemented by subclass");
     }
 
+    /**
+     * Check if normalization vector is available
+     * @param {string} type - Normalization type
+     * @param {string} chr - Chromosome name
+     * @param {string} unit - "BP" or "FRAG"
+     * @param {number} binSize - Bin size
+     * @returns {Promise<boolean>}
+     * @abstract
+     */
+    async hasNormalizationVector(type, chr, unit, binSize) {
+        throw new Error("Dataset.hasNormalizationVector() must be implemented by subclass");
+    }
+
+    /**
+     * Get zoom index for a given bin size
+     * @param {number} binSize - Bin size in base pairs
+     * @param {string} unit - "BP" or "FRAG"
+     * @returns {number} Zoom index or -1 if not found
+     */
     getZoomIndexForBinSize(binSize, unit) {
         var i,
             resolutionArray;
@@ -105,6 +127,12 @@ class Dataset {
         return -1;
     }
 
+    /**
+     * Get bin size for a given zoom index
+     * @param {number} zoomIndex - Zoom index
+     * @param {string} unit - "BP" or "FRAG"
+     * @returns {number} Bin size in base pairs
+     */
     getBinSizeForZoomIndex(zoomIndex, unit) {
         var i,
             resolutionArray;
@@ -122,6 +150,11 @@ class Dataset {
         return resolutionArray[zoomIndex];
     }
 
+    /**
+     * Get chromosome index from name
+     * @param {string} chrName - Chromosome name
+     * @returns {number|undefined} Chromosome index
+     */
     getChrIndexFromName(chrName) {
         var i;
         for (i = 0; i < this.chromosomes.length; i++) {
@@ -130,6 +163,11 @@ class Dataset {
         return undefined;
     }
 
+    /**
+     * Compare chromosomes with another dataset
+     * @param {Dataset} otherDataset - Other dataset to compare
+     * @returns {boolean} True if chromosomes match
+     */
     compareChromosomes(otherDataset) {
         const chrs = this.chromosomes;
         const otherChrs = otherDataset.chromosomes;
@@ -144,8 +182,84 @@ class Dataset {
         return true;
     }
 
+    /**
+     * Check if chromosome index represents whole genome
+     * @param {number} chrIndex - Chromosome index
+     * @returns {boolean}
+     */
     isWholeGenome(chrIndex) {
         return (this.wholeGenomeChromosome != null && this.wholeGenomeChromosome.index === chrIndex);
+    }
+
+    /**
+     * Clear any internal caches
+     */
+    clearCaches() {
+        // Default implementation - subclasses can override
+    }
+
+    /**
+     * Compare 2 datasets for compatibility.  Compatibility is defined as from the same assembly, even if
+     * different IDs are used (e.g. GRCh38 vs hg38).
+     *
+     * Trust the ID for well-known assemblies (hg19, etc).  However, for others compare chromosome lengths
+     * as its been observed that uniqueness of ID is not guaranteed.
+     *
+     * @param {Dataset} d2 - Other dataset to compare
+     * @returns {boolean} True if compatible
+     */
+    isCompatible(d2) {
+        const id1 = this.genomeId;
+        const id2 = d2.genomeId;
+        return ((id1 === "hg38" || id1 === "GRCh38") && (id2 === "hg38" || id2 === "GRCh38")) ||
+            ((id1 === "hg19" || id1 === "GRCh37") && (id2 === "hg19" || id2 === "GRCh37")) ||
+            ((id1 === "mm10" || id1 === "GRCm38") && (id2 === "mm10" || id2 === "GRCm38")) ||
+            this.compareChromosomes(d2)
+    }
+}
+
+/**
+ * HiCDataset implementation for static .hic files
+ */
+class HiCDataset extends Dataset {
+
+    constructor(config) {
+        super(config);
+        this.straw = new Straw(config)
+        this.datasetType = 'hic';
+    }
+
+    async init() {
+
+        this.hicFile = this.straw.hicFile;
+        await this.hicFile.init();
+        this.normalizationTypes = ['NONE'];
+
+        this.genomeId = this.hicFile.genomeId
+        this.chromosomes = this.hicFile.chromosomes
+        this.bpResolutions = this.hicFile.bpResolutions
+        this.wholeGenomeChromosome = this.hicFile.wholeGenomeChromosome
+        this.wholeGenomeResolution = this.hicFile.wholeGenomeResolution
+
+        // Attempt to determine genomeId if not recognized
+        const tmp = matchGenome(this.chromosomes);
+        if (tmp) this.genomeId = tmp;
+    }
+
+    async getContactRecords(normalization, region1, region2, units, binsize) {
+        return this.straw.getContactRecords(normalization, region1, region2, units, binsize)
+    }
+
+    async hasNormalizationVector(type, chr, unit, binSize) {
+        return this.straw.hicFile.hasNormalizationVector(type, chr, unit, binSize);
+    }
+
+    clearCaches() {
+        this.colorScaleCache = {};
+    }
+
+    async getMatrix(chr1, chr2) {
+        return this.hicFile.getMatrix(chr1, chr2)
     }
 
     async getNormVectorIndex() {
@@ -157,24 +271,10 @@ class Dataset {
     }
 
     /**
-     * Compare 2 datasets for compatibility.  Compatibility is defined as from the same assembly, even if
-     * different IDs are used (e.g. GRCh38 vs hg38).
-     *
-     * Trust the ID for well-known assemblies (hg19, etc).  However, for others compare chromosome lengths
-     * as its been observed that uniqueness of ID is not guaranteed.
-     *
-     * @param d1
-     * @param d2
+     * Factory method to load a Hi-C dataset from a file
+     * @param {Object} config - Configuration object with url, name, etc.
+     * @returns {Promise<HiCDataset>}
      */
-    isCompatible(d2) {
-        const id1 = this.genomeId;
-        const id2 = d2.genomeId;
-        return ((id1 === "hg38" || id1 === "GRCh38") && (id2 === "hg38" || id2 === "GRCh38")) ||
-            ((id1 === "hg19" || id1 === "GRCh37") && (id2 === "hg19" || id2 === "GRCh37")) ||
-            ((id1 === "mm10" || id1 === "GRCm38") && (id2 === "mm10" || id2 === "GRCm38")) ||
-            this.compareChromosomes(d2)
-    }
-
     static async loadDataset(config) {
 
         // If this is a local file, use the "blob" field for straw
@@ -192,12 +292,16 @@ class Dataset {
             }
         }
 
-        const dataset = new Dataset(config)
+        const dataset = new HiCDataset(config)
         await dataset.init();
         dataset.url = config.url
         return dataset
     }
 }
+
+// For backward compatibility, export Dataset as the default and alias HiCDataset
+// Existing code using Dataset.loadDataset() will continue to work
+Dataset.loadDataset = HiCDataset.loadDataset;
 
 function matchGenome(chromosomes) {
 
@@ -233,3 +337,4 @@ function matchGenome(chromosomes) {
 }
 
 export default Dataset
+export { HiCDataset }

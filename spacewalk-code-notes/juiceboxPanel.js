@@ -263,6 +263,16 @@ class JuiceboxPanel extends Panel {
             chromosomes.forEach((chr, idx) => { chr.index = idx })
         }
 
+        // Find the chromosome index in our constructed array (for state chr1/chr2)
+        // Juicebox uses 0-based array indexing, but state.chr1/chr2 use 1-based (0 = whole genome, 1 = first chr)
+        const chrArrayIndex = chromosomes.findIndex(c => c.name === chromosome.name)
+        if (chrArrayIndex < 0) {
+            console.warn(`Chromosome ${chromosome.name} not found in chromosomes array`)
+            return
+        }
+        // Juicebox state: 0 = whole genome, 1 = first chromosome (index 0), 2 = second chromosome (index 1), etc.
+        const chrIndex = chrArrayIndex + 1
+
         // Create LiveMapDataset config
         const datasetConfig = {
             name: 'Live Map',
@@ -275,7 +285,6 @@ class JuiceboxPanel extends Panel {
 
         // Create state from genomic coordinates
         // Calculate bin positions for the genomic region
-        const chrIndex = 1 + chromosome.order // juicebox uses 1-based indexing
         const xBin = Math.floor(genomicStart / binSize)
         const yBin = Math.floor(genomicStart / binSize)
         const zoom = 0 // Live maps typically have single resolution

@@ -68,8 +68,10 @@ class LiveDistanceMapService {
         if ("DidLoadEnsembleFile" === type) {
             // console.log('LiveDistanceMapService - receiveEvent(DidLoadEnsembleFile)')
 
-            const ctx = juiceboxPanel.browser.contactMatrixView.ctx_live_distance
-            ctx.transferFromImageBitmap(null)
+            // Safety check: ctx_live_distance may not exist yet if browser isn't fully initialized
+            if (juiceboxPanel?.browser?.contactMatrixView?.ctx_live_distance) {
+                juiceboxPanel.browser.contactMatrixView.ctx_live_distance.transferFromImageBitmap(null)
+            }
 
             this.rgbaMatrix = undefined
             this.distances = undefined

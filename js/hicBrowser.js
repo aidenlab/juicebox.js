@@ -1190,7 +1190,7 @@ class HICBrowser {
         // Derive locus if none is present in source state
         if (undefined === state.locus) {
             const viewDimensions = this.contactMatrixView.getViewDimensions();
-            this.state.configureLocus(this, this.dataset, viewDimensions)
+            this.state.configureLocus(this, this.activeDataset, viewDimensions)
         }
 
         const hicEvent = new HICEvent("LocusChange", { state: this.state, resolutionChanged: true, chrChanged })

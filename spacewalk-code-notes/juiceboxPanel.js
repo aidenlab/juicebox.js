@@ -290,10 +290,12 @@ class JuiceboxPanel extends Panel {
         const zoom = 0 // Live maps typically have single resolution
         
         // Create state object matching State constructor signature
+        // Note: locus can be undefined - setState will derive it using configureLocus()
+        // Or we can create it explicitly with the proper structure: { x: {chr, start, end}, y: {chr, start, end} }
         const stateConfig = {
             chr1: chrIndex,
             chr2: chrIndex,
-            locus: `${chr}:${genomicStart}-${genomicEnd}`,
+            locus: undefined, // Let setState configure it automatically
             zoom: zoom,
             x: xBin,
             y: yBin,

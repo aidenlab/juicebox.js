@@ -74775,7 +74775,9 @@
             let offset, element;
 
             if (event.type === 'MapLoad') {
-                this.wholeGenomeLayout(this.axisElement, this.wholeGenomeContainerElement, this.axis, event.data);
+                // Handle both old format (event.data is dataset) and new format (event.data.dataset)
+                const dataset = event.data.dataset || event.data;
+                this.wholeGenomeLayout(this.axisElement, this.wholeGenomeContainerElement, this.axis, dataset);
                 this.update();
             } else if (event.type === 'UpdateContactMapMousePosition') {
                 if (this.bboxes) {
@@ -84895,47 +84897,69 @@
 
     };
 
+    /**
+     * Abstract base class for all dataset types (Hi-C files, live maps, etc.)
+     * Defines the common interface that all dataset implementations must provide.
+     */
     class Dataset {
 
         constructor(config) {
-            this.straw = new Straw(config);
+            this.name = config.name;
+            this.datasetType = config.datasetType || 'unknown';
         }
 
+        /**
+         * Initialize the dataset. Must be called after construction.
+         * @abstract
+         */
         async init() {
-
-            this.hicFile = this.straw.hicFile;
-            await this.hicFile.init();
-            this.normalizationTypes = ['NONE'];
-
-            this.genomeId = this.hicFile.genomeId;
-            this.chromosomes = this.hicFile.chromosomes;
-            this.bpResolutions = this.hicFile.bpResolutions;
-            this.wholeGenomeChromosome = this.hicFile.wholeGenomeChromosome;
-            this.wholeGenomeResolution = this.hicFile.wholeGenomeResolution;
-
-            // Attempt to determine genomeId if not recognized
-            // if (!Object.keys(knownGenomes).includes(this.genomeId)) {
-            const tmp = matchGenome(this.chromosomes);
-            if (tmp) this.genomeId = tmp;
-            //  }
+            throw new Error("Dataset.init() must be implemented by subclass");
         }
 
+        /**
+         * Get contact records for a given region pair
+         * @param {string} normalization - Normalization type
+         * @param {Object} region1 - {chr, start, end}
+         * @param {Object} region2 - {chr, start, end}
+         * @param {string} units - "BP" or "FRAG"
+         * @param {number} binsize - Bin size in base pairs
+         * @returns {Promise<Array>} Array of contact records
+         * @abstract
+         */
         async getContactRecords(normalization, region1, region2, units, binsize) {
-            return this.straw.getContactRecords(normalization, region1, region2, units, binsize)
+            throw new Error("Dataset.getContactRecords() must be implemented by subclass");
         }
 
-        async hasNormalizationVector(type, chr, unit, binSize) {
-            return this.straw.hicFile.hasNormalizationVector(type, chr, unit, binSize);
-        }
-
-        clearCaches() {
-            this.colorScaleCache = {};
-        }
-
+        /**
+         * Get matrix for chromosome pair
+         * @param {number} chr1 - Chromosome index 1
+         * @param {number} chr2 - Chromosome index 2
+         * @returns {Promise<Object>} Matrix object
+         * @abstract
+         */
         async getMatrix(chr1, chr2) {
-            return this.hicFile.getMatrix(chr1, chr2)
+            throw new Error("Dataset.getMatrix() must be implemented by subclass");
         }
 
+        /**
+         * Check if normalization vector is available
+         * @param {string} type - Normalization type
+         * @param {string} chr - Chromosome name
+         * @param {string} unit - "BP" or "FRAG"
+         * @param {number} binSize - Bin size
+         * @returns {Promise<boolean>}
+         * @abstract
+         */
+        async hasNormalizationVector(type, chr, unit, binSize) {
+            throw new Error("Dataset.hasNormalizationVector() must be implemented by subclass");
+        }
+
+        /**
+         * Get zoom index for a given bin size
+         * @param {number} binSize - Bin size in base pairs
+         * @param {string} unit - "BP" or "FRAG"
+         * @returns {number} Zoom index or -1 if not found
+         */
         getZoomIndexForBinSize(binSize, unit) {
             var i,
                 resolutionArray;
@@ -84957,6 +84981,12 @@
             return -1;
         }
 
+        /**
+         * Get bin size for a given zoom index
+         * @param {number} zoomIndex - Zoom index
+         * @param {string} unit - "BP" or "FRAG"
+         * @returns {number} Bin size in base pairs
+         */
         getBinSizeForZoomIndex(zoomIndex, unit) {
             var resolutionArray;
 
@@ -84973,6 +85003,11 @@
             return resolutionArray[zoomIndex];
         }
 
+        /**
+         * Get chromosome index from name
+         * @param {string} chrName - Chromosome name
+         * @returns {number|undefined} Chromosome index
+         */
         getChrIndexFromName(chrName) {
             var i;
             for (i = 0; i < this.chromosomes.length; i++) {
@@ -84981,6 +85016,11 @@
             return undefined;
         }
 
+        /**
+         * Compare chromosomes with another dataset
+         * @param {Dataset} otherDataset - Other dataset to compare
+         * @returns {boolean} True if chromosomes match
+         */
         compareChromosomes(otherDataset) {
             const chrs = this.chromosomes;
             const otherChrs = otherDataset.chromosomes;
@@ -84995,8 +85035,84 @@
             return true;
         }
 
+        /**
+         * Check if chromosome index represents whole genome
+         * @param {number} chrIndex - Chromosome index
+         * @returns {boolean}
+         */
         isWholeGenome(chrIndex) {
             return (this.wholeGenomeChromosome != null && this.wholeGenomeChromosome.index === chrIndex);
+        }
+
+        /**
+         * Clear any internal caches
+         */
+        clearCaches() {
+            // Default implementation - subclasses can override
+        }
+
+        /**
+         * Compare 2 datasets for compatibility.  Compatibility is defined as from the same assembly, even if
+         * different IDs are used (e.g. GRCh38 vs hg38).
+         *
+         * Trust the ID for well-known assemblies (hg19, etc).  However, for others compare chromosome lengths
+         * as its been observed that uniqueness of ID is not guaranteed.
+         *
+         * @param {Dataset} d2 - Other dataset to compare
+         * @returns {boolean} True if compatible
+         */
+        isCompatible(d2) {
+            const id1 = this.genomeId;
+            const id2 = d2.genomeId;
+            return ((id1 === "hg38" || id1 === "GRCh38") && (id2 === "hg38" || id2 === "GRCh38")) ||
+                ((id1 === "hg19" || id1 === "GRCh37") && (id2 === "hg19" || id2 === "GRCh37")) ||
+                ((id1 === "mm10" || id1 === "GRCm38") && (id2 === "mm10" || id2 === "GRCm38")) ||
+                this.compareChromosomes(d2)
+        }
+    }
+
+    /**
+     * HiCDataset implementation for static .hic files
+     */
+    class HiCDataset extends Dataset {
+
+        constructor(config) {
+            super(config);
+            this.straw = new Straw(config);
+            this.datasetType = 'hic';
+        }
+
+        async init() {
+
+            this.hicFile = this.straw.hicFile;
+            await this.hicFile.init();
+            this.normalizationTypes = ['NONE'];
+
+            this.genomeId = this.hicFile.genomeId;
+            this.chromosomes = this.hicFile.chromosomes;
+            this.bpResolutions = this.hicFile.bpResolutions;
+            this.wholeGenomeChromosome = this.hicFile.wholeGenomeChromosome;
+            this.wholeGenomeResolution = this.hicFile.wholeGenomeResolution;
+
+            // Attempt to determine genomeId if not recognized
+            const tmp = matchGenome(this.chromosomes);
+            if (tmp) this.genomeId = tmp;
+        }
+
+        async getContactRecords(normalization, region1, region2, units, binsize) {
+            return this.straw.getContactRecords(normalization, region1, region2, units, binsize)
+        }
+
+        async hasNormalizationVector(type, chr, unit, binSize) {
+            return this.straw.hicFile.hasNormalizationVector(type, chr, unit, binSize);
+        }
+
+        clearCaches() {
+            this.colorScaleCache = {};
+        }
+
+        async getMatrix(chr1, chr2) {
+            return this.hicFile.getMatrix(chr1, chr2)
         }
 
         async getNormVectorIndex() {
@@ -85008,24 +85124,10 @@
         }
 
         /**
-         * Compare 2 datasets for compatibility.  Compatibility is defined as from the same assembly, even if
-         * different IDs are used (e.g. GRCh38 vs hg38).
-         *
-         * Trust the ID for well-known assemblies (hg19, etc).  However, for others compare chromosome lengths
-         * as its been observed that uniqueness of ID is not guaranteed.
-         *
-         * @param d1
-         * @param d2
+         * Factory method to load a Hi-C dataset from a file
+         * @param {Object} config - Configuration object with url, name, etc.
+         * @returns {Promise<HiCDataset>}
          */
-        isCompatible(d2) {
-            const id1 = this.genomeId;
-            const id2 = d2.genomeId;
-            return ((id1 === "hg38" || id1 === "GRCh38") && (id2 === "hg38" || id2 === "GRCh38")) ||
-                ((id1 === "hg19" || id1 === "GRCh37") && (id2 === "hg19" || id2 === "GRCh37")) ||
-                ((id1 === "mm10" || id1 === "GRCm38") && (id2 === "mm10" || id2 === "GRCm38")) ||
-                this.compareChromosomes(d2)
-        }
-
         static async loadDataset(config) {
 
             // If this is a local file, use the "blob" field for straw
@@ -85043,12 +85145,16 @@
                 }
             }
 
-            const dataset = new Dataset(config);
+            const dataset = new HiCDataset(config);
             await dataset.init();
             dataset.url = config.url;
             return dataset
         }
     }
+
+    // For backward compatibility, export Dataset as the default and alias HiCDataset
+    // Existing code using Dataset.loadDataset() will continue to work
+    Dataset.loadDataset = HiCDataset.loadDataset;
 
     function matchGenome(chromosomes) {
 
@@ -85081,6 +85187,240 @@
         }
 
 
+    }
+
+    /*
+     *  The MIT License (MIT)
+     *
+     * Copyright (c) 2016-2024 The Regents of the University of California
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+     * associated documentation files (the "Software"), to deal in the Software without restriction, including
+     * without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the
+     * following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in all copies or substantial
+     * portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+     * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A PARTICULAR PURPOSE AND
+     * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+     * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+     * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     *
+     */
+
+    /**
+     * Convert 2D array of contact totals to contact record format
+     * @param {Array<Array<number>>} contactMatrix - 2D array [bin1][bin2] = count
+     * @param {number} binSize - Bin size in base pairs
+     * @returns {Array<Object>} Array of contact records with {bin1, bin2, counts, getKey()}
+     */
+    function convert2DArrayToContactRecords(contactMatrix, binSize) {
+        const records = [];
+        for (let bin1 = 0; bin1 < contactMatrix.length; bin1++) {
+            if (!contactMatrix[bin1]) continue;
+            for (let bin2 = 0; bin2 < contactMatrix[bin1].length; bin2++) {
+                const count = contactMatrix[bin1][bin2];
+                if (count > 0) {
+                    records.push({
+                        bin1: bin1,
+                        bin2: bin2,
+                        counts: count,
+                        getKey: function() {
+                            // Symmetric key for contact matrix
+                            return bin1 <= bin2 ? `${bin1}_${bin2}` : `${bin2}_${bin1}`;
+                        }
+                    });
+                }
+            }
+        }
+        return records;
+    }
+
+    /**
+     * Create a simple Matrix-like object for live maps
+     */
+    class LiveMapMatrix {
+        constructor(chr1, chr2, zoomData) {
+            this.chr1 = chr1;
+            this.chr2 = chr2;
+            this.zoomData = zoomData;
+        }
+
+        getZoomDataByIndex(zoomIndex, unit) {
+            // For live maps, we typically only have one resolution
+            // Return the zoom data if index matches, otherwise return the first one
+            if (this.zoomData && (zoomIndex === 0 || !this.zoomData.zoom)) {
+                return this.zoomData;
+            }
+            // If zoom index doesn't match, return the only available zoom data
+            return this.zoomData;
+        }
+    }
+
+    /**
+     * LiveMapDataset - implements Dataset interface for live/computed contact maps
+     */
+    class LiveMapDataset extends Dataset {
+
+        constructor(config) {
+            super(config);
+            this.datasetType = 'livemap';
+            
+            // Required config properties
+            this.genomeId = config.genomeId;
+            this.chromosomes = config.chromosomes || [];
+            this.bpResolutions = config.bpResolutions || [config.binSize || 1000000];
+            this.name = config.name || 'Live Map';
+            
+            // Contact data - can be provided as contactRecordList or 2D array
+            this.contactRecordList = config.contactRecordList || [];
+            this.contactMatrix = config.contactMatrix; // 2D array format
+            
+            // If 2D array provided, convert to contact records
+            if (this.contactMatrix && this.contactRecordList.length === 0) {
+                config.binSize || this.bpResolutions[0];
+                this.contactRecordList = convert2DArrayToContactRecords(this.contactMatrix);
+            }
+            
+            // Store contact records in a Map for efficient lookup
+            this.contactRecordMap = new Map();
+            this.contactRecordList.forEach(record => {
+                const key = record.getKey ? record.getKey() : `${record.bin1}_${record.bin2}`;
+                this.contactRecordMap.set(key, record);
+            });
+            
+            // Normalization support (limited for live maps)
+            this.normalizationTypes = ['NONE'];
+            this.wholeGenomeChromosome = null;
+            this.wholeGenomeResolution = null;
+        }
+
+        async init() {
+            // Live maps are typically pre-initialized, but we can validate here
+            if (!this.chromosomes || this.chromosomes.length === 0) {
+                throw new Error("LiveMapDataset requires chromosomes array");
+            }
+            if (this.bpResolutions.length === 0) {
+                throw new Error("LiveMapDataset requires at least one resolution");
+            }
+        }
+
+        async getContactRecords(normalization, region1, region2, units, binsize) {
+            // For live maps, normalization is typically not supported
+            if (normalization !== 'NONE') {
+                console.warn(`Normalization ${normalization} not supported for live maps, using NONE`);
+            }
+            
+            // Calculate bin ranges for the regions
+            const chr1Index = this.getChrIndexFromName(region1.chr);
+            const chr2Index = this.getChrIndexFromName(region2.chr);
+            
+            if (chr1Index === undefined || chr2Index === undefined) {
+                return [];
+            }
+            
+            const startBin1 = Math.floor(region1.start / binsize);
+            const endBin1 = Math.ceil(region1.end / binsize);
+            const startBin2 = Math.floor(region2.start / binsize);
+            const endBin2 = Math.ceil(region2.end / binsize);
+            
+            // Filter contact records within the region
+            const records = [];
+            for (const record of this.contactRecordList) {
+                if (record.bin1 >= startBin1 && record.bin1 < endBin1 &&
+                    record.bin2 >= startBin2 && record.bin2 < endBin2) {
+                    records.push(record);
+                }
+                // Also check symmetric pairs (bin2, bin1) for same chromosome
+                if (chr1Index === chr2Index && 
+                    record.bin2 >= startBin1 && record.bin2 < endBin1 &&
+                    record.bin1 >= startBin2 && record.bin1 < endBin2) {
+                    // Add symmetric record if not already included
+                    const key = record.getKey ? record.getKey() : `${record.bin2}_${record.bin1}`;
+                    if (!this.contactRecordMap.has(key)) {
+                        records.push({
+                            bin1: record.bin2,
+                            bin2: record.bin1,
+                            counts: record.counts,
+                            getKey: function() {
+                                return record.bin1 <= record.bin2 ? `${record.bin1}_${record.bin2}` : `${record.bin2}_${record.bin1}`;
+                            }
+                        });
+                    }
+                }
+            }
+            
+            return records;
+        }
+
+        async getMatrix(chr1, chr2) {
+            const chr1Obj = this.chromosomes[chr1];
+            const chr2Obj = this.chromosomes[chr2];
+            
+            if (!chr1Obj || !chr2Obj) {
+                throw new Error(`Invalid chromosome indices: ${chr1}, ${chr2}`);
+            }
+            
+            // Get the first available resolution (live maps typically have one)
+            const binSize = this.bpResolutions[0];
+            
+            // Calculate average count for this chromosome pair
+            let totalCount = 0;
+            let recordCount = 0;
+            for (const record of this.contactRecordList) {
+                totalCount += record.counts;
+                recordCount++;
+            }
+            const averageCount = recordCount > 0 ? totalCount / recordCount : 1;
+            
+            const zoomData = {
+                chr1: chr1Obj,
+                chr2: chr2Obj,
+                zoom: {
+                    binSize: binSize,
+                    unit: 'BP'
+                },
+                averageCount: averageCount
+            };
+            
+            return new LiveMapMatrix(chr1Obj, chr2Obj, zoomData);
+        }
+
+        async hasNormalizationVector(type, chr, unit, binSize) {
+            // Live maps don't support normalization vectors
+            return false;
+        }
+
+        clearCaches() {
+            // Live maps don't have caches that need clearing
+        }
+
+        /**
+         * Update contact records (useful for dynamic updates)
+         * @param {Array|Array<Array<number>>} data - Contact records or 2D array
+         * @param {number} binSize - Bin size if data is 2D array
+         */
+        updateContactRecords(data, binSize) {
+            if (Array.isArray(data[0]) && typeof data[0][0] === 'number') {
+                // 2D array format
+                this.contactMatrix = data;
+                this.contactRecordList = convert2DArrayToContactRecords(data, binSize || this.bpResolutions[0]);
+            } else {
+                // Contact record list format
+                this.contactRecordList = data;
+            }
+            
+            // Rebuild map
+            this.contactRecordMap.clear();
+            this.contactRecordList.forEach(record => {
+                const key = record.getKey ? record.getKey() : `${record.bin1}_${record.bin2}`;
+                this.contactRecordMap.set(key, record);
+            });
+        }
     }
 
     /*
@@ -89542,6 +89882,13 @@
             this.synchable = config.synchable !== false;
             this.synchedBrowsers = new Set();
 
+            // Unified dataset/state system
+            this.activeDataset = undefined;
+            this.activeState = undefined;
+            
+            // Control dataset (for A/B comparisons)
+            this.controlDataset = undefined;
+
             this.isMobile = isMobile();
 
             this.rootElement = document.createElement('div');
@@ -89720,11 +90067,13 @@
 
         async getNormalizationOptions() {
 
-            if (!this.dataset) return []
+            if (!this.activeDataset) return []
 
-            const baseOptions = await this.dataset.getNormalizationOptions();
+            const baseOptions = this.activeDataset.getNormalizationOptions ? 
+                await this.activeDataset.getNormalizationOptions() : ['NONE'];
             if (this.controlDataset) {
-                let controlOptions = await this.controlDataset.getNormalizationOptions();
+                let controlOptions = this.controlDataset.getNormalizationOptions ? 
+                    await this.controlDataset.getNormalizationOptions() : ['NONE'];
                 controlOptions = new Set(controlOptions);
                 return baseOptions.filter(base => controlOptions.has(base))
             } else {
@@ -89737,9 +90086,9 @@
          * @returns {{index: *, binSize: *}[]|Array}
          */
         getResolutions() {
-            if (!this.dataset) return []
+            if (!this.activeDataset) return []
 
-            const baseResolutions = this.dataset.bpResolutions.map(function (resolution, index) {
+            const baseResolutions = this.activeDataset.bpResolutions.map(function (resolution, index) {
                 return {index: index, binSize: resolution}
             });
             if (this.controlDataset) {
@@ -89751,7 +90100,7 @@
         }
 
         isWholeGenome() {
-            return this.dataset && this.state && this.dataset.isWholeGenome(this.state.chr1)
+            return this.activeDataset && this.activeState && this.activeDataset.isWholeGenome(this.activeState.chr1)
         }
 
         getColorScale() {
@@ -89948,18 +90297,23 @@
 
         async loadNormalizationFile(url) {
 
-            if (!this.dataset) return
+            if (!this.activeDataset) return
+            // Normalization files are only supported for Hi-C datasets
+            if (!this.activeDataset.hicFile) {
+                console.warn("Normalization files are only supported for Hi-C datasets");
+                return;
+            }
             this.eventBus.post(HICEvent("NormalizationFileLoad", "start"));
 
-            const normVectors = await this.dataset.hicFile.readNormalizationVectorFile(url, this.dataset.chromosomes);
+            const normVectors = await this.activeDataset.hicFile.readNormalizationVectorFile(url, this.activeDataset.chromosomes);
             for (let type of normVectors['types']) {
-                if (!this.dataset.normalizationTypes) {
-                    this.dataset.normalizationTypes = [];
+                if (!this.activeDataset.normalizationTypes) {
+                    this.activeDataset.normalizationTypes = [];
                 }
-                if (!this.dataset.normalizationTypes.includes(type)) {
-                    this.dataset.normalizationTypes.push(type);
+                if (!this.activeDataset.normalizationTypes.includes(type)) {
+                    this.activeDataset.normalizationTypes.push(type);
                 }
-                this.eventBus.post(HICEvent("NormVectorIndexLoad", this.dataset));
+                this.eventBus.post(HICEvent("NormVectorIndexLoad", this.activeDataset));
             }
 
             return normVectors
@@ -89980,6 +90334,47 @@
             }
         }
 
+        /**
+         * Set the active dataset and state
+         * @param {Dataset} dataset - The dataset to activate
+         * @param {State} state - The state to use with this dataset
+         */
+        setActiveDataset(dataset, state) {
+            this.activeDataset = dataset;
+            if (state) {
+                this.activeState = state;
+            }
+        }
+
+        /**
+         * Backward compatibility: getter for dataset property
+         * Returns activeDataset (the primary dataset, not control)
+         */
+        get dataset() {
+            return this.activeDataset;
+        }
+
+        /**
+         * Backward compatibility: setter for dataset property
+         */
+        set dataset(value) {
+            this.activeDataset = value;
+        }
+
+        /**
+         * Backward compatibility: getter for state property
+         */
+        get state() {
+            return this.activeState;
+        }
+
+        /**
+         * Backward compatibility: setter for state property
+         */
+        set state(value) {
+            this.activeState = value;
+        }
+
         reset() {
             this.layoutController.removeAllTrackXYPairs();
             this.contactMatrixView.clearImageCaches();
@@ -89989,14 +90384,16 @@
             this.contactMapLabel.title = "";
             this.controlMapLabel.textContent = "";
             this.controlMapLabel.title = "";
-            this.dataset = undefined;
+            this.activeDataset = undefined;
+            this.activeState = undefined;
             this.controlDataset = undefined;
             this.unsyncSelf();
         }
 
         clearSession() {
             // Clear current datasets.
-            this.dataset = undefined;
+            this.activeDataset = undefined;
+            this.activeState = undefined;
             this.controlDataset = undefined;
             this.setDisplayMode('A');
             this.unsyncSelf();
@@ -90057,38 +90454,47 @@
                     Alert$1.presentAlert(str);
                 };
 
-                this.dataset = await Dataset.loadDataset(Object.assign({alert: hicFileAlert}, config));
-                this.dataset.name = name;
+                const dataset = await Dataset.loadDataset(Object.assign({alert: hicFileAlert}, config));
+                dataset.name = name;
 
                 const previousGenomeId = this.genome ? this.genome.id : undefined;
-                this.genome = new Genome(this.dataset.genomeId, this.dataset.chromosomes);
+                this.genome = new Genome(dataset.genomeId, dataset.chromosomes);
 
                 if (this.genome.id !== previousGenomeId) {
                     EventBus.globalBus.post(HICEvent("GenomeChange", this.genome.id));
                 }
 
+                let state;
                 if (config.locus) {
-                    this.state = State.default(config);
+                    state = State.default(config);
+                    this.setActiveDataset(dataset, state);
                     await this.parseGotoInput(config.locus);
                 } else if (config.state) {
 
                     if (typeof config.state === 'string') {
-                        await this.setState( State.parse(config.state) );
+                        state = State.parse(config.state);
+                        await this.setState(state);
                     } else if (typeof config.state === 'object') {
-                        await this.setState( State.fromJSON(config.state) );
+                        state = State.fromJSON(config.state);
+                        await this.setState(state);
                     } else {
                         alert('config.state is of unknown type');
                         console.error('config.state is of unknown type');
+                        state = State.default(config);
                     }
 
 
                 } else if (config.synchState && this.canBeSynched(config.synchState)) {
                     await this.syncState(config.synchState);
+                    state = this.activeState;
                 } else {
-                    await this.setState(State.default(config));
+                    state = State.default(config);
+                    await this.setState(state);
                 }
+                
+                this.setActiveDataset(dataset, state);
 
-                this.eventBus.post(HICEvent("MapLoad", this.dataset));
+                this.eventBus.post(HICEvent("MapLoad", { dataset: dataset, state: state, datasetType: dataset.datasetType }));
 
                 // Initiate loading of the norm vector index, but don't block if the "nvi" parameter is not available.
                 // Let it load in the background
@@ -90102,15 +90508,15 @@
                     }
                 }
 
-                if (config.nvi) {
-                    await this.dataset.getNormVectorIndex(config);
-                    this.eventBus.post(HICEvent("NormVectorIndexLoad", this.dataset));
-                } else {
+                if (config.nvi && dataset.getNormVectorIndex) {
+                    await dataset.getNormVectorIndex(config);
+                    this.eventBus.post(HICEvent("NormVectorIndexLoad", dataset));
+                } else if (dataset.getNormVectorIndex) {
 
-                    this.dataset.getNormVectorIndex(config)
+                    dataset.getNormVectorIndex(config)
                         .then(normVectorIndex => {
                             if (!config.isControl) {
-                                this.eventBus.post(HICEvent("NormVectorIndexLoad", this.dataset));
+                                this.eventBus.post(HICEvent("NormVectorIndexLoad", dataset));
                             }
                         });
                 }
@@ -90118,7 +90524,7 @@
                 syncBrowsers();
 
                 // Find a browser to sync with, if any
-                const compatibleBrowsers = getAllBrowsers().filter(b => b !== this && b.dataset && b.dataset.isCompatible(this.dataset));
+                const compatibleBrowsers = getAllBrowsers().filter(b => b !== this && b.activeDataset && b.activeDataset.isCompatible(this.activeDataset));
                 if (compatibleBrowsers.length > 0) {
                     await this.syncState(compatibleBrowsers[0].getSyncState());
                 }
@@ -90128,6 +90534,82 @@
                 this.contactMapLabel.title = "";
                 config.name = name;
                 throw error
+            } finally {
+                this.stopSpinner();
+                if (!noUpdates) {
+                    this.userInteractionShield.style.display = 'none';
+                }
+            }
+        }
+
+        /**
+         * Load a live map dataset
+         *
+         * NOTE: public API function
+         *
+         * @param {Object} config - Configuration object with:
+         *   - contactRecordList: Array of contact records OR
+         *   - contactMatrix: 2D array of contact totals
+         *   - chromosomes: Array of chromosome definitions
+         *   - genomeId: Genome identifier
+         *   - bpResolutions: Array of available resolutions
+         *   - name: Dataset name
+         *   - binSize: Bin size (if using contactMatrix)
+         *   - state: Optional initial state
+         * @param {boolean} noUpdates - If true, don't trigger UI updates
+         * @returns {Promise<LiveMapDataset>}
+         */
+        async loadLiveMapDataset(config, noUpdates) {
+            this.clearSession();
+
+            try {
+                this.contactMatrixView.startSpinner();
+                if (!noUpdates) {
+                    this.userInteractionShield.style.display = 'block';
+                }
+
+                const name = config.name || 'Live Map';
+                this.contactMapLabel.textContent = name;
+                this.contactMapLabel.title = name;
+
+                const dataset = new LiveMapDataset(config);
+                await dataset.init();
+
+                const previousGenomeId = this.genome ? this.genome.id : undefined;
+                this.genome = new Genome(dataset.genomeId, dataset.chromosomes);
+
+                if (this.genome.id !== previousGenomeId) {
+                    EventBus.globalBus.post(HICEvent("GenomeChange", this.genome.id));
+                }
+
+                let state;
+                if (config.state) {
+                    if (typeof config.state === 'string') {
+                        state = State.parse(config.state);
+                    } else if (typeof config.state === 'object') {
+                        state = State.fromJSON(config.state);
+                    } else {
+                        state = State.default(config);
+                    }
+                } else {
+                    state = State.default(config);
+                }
+
+                // Set active dataset BEFORE setState, since setState calls minPixelSize
+                // which requires this.dataset to be available
+                // Ensure dataset is fully initialized
+                if (!dataset.chromosomes || dataset.chromosomes.length === 0) {
+                    throw new Error("LiveMapDataset chromosomes array is not initialized");
+                }
+                this.setActiveDataset(dataset, state);
+                await this.setState(state);
+
+                this.eventBus.post(HICEvent("MapLoad", { dataset: dataset, state: state, datasetType: dataset.datasetType }));
+
+            } catch (error) {
+                this.contactMapLabel.textContent = "";
+                this.contactMapLabel.title = "";
+                throw error;
             } finally {
                 this.stopSpinner();
                 if (!noUpdates) {
@@ -90162,16 +90644,18 @@
 
                 controlDataset.name = name;
 
-                if (!this.dataset || this.dataset.isCompatible(controlDataset)) {
+                if (!this.activeDataset || this.activeDataset.isCompatible(controlDataset)) {
                     this.controlDataset = controlDataset;
-                    if (this.dataset) {
-                        this.contactMapLabel.textContent = "A: " + this.dataset.name;
+                    if (this.activeDataset) {
+                        this.contactMapLabel.textContent = "A: " + this.activeDataset.name;
                     }
                     this.controlMapLabel.textContent = "B: " + controlDataset.name;
                     this.controlMapLabel.title = controlDataset.name;
 
                     //For the control dataset, block until the norm vector index is loaded
-                    await controlDataset.getNormVectorIndex(config);
+                    if (controlDataset.getNormVectorIndex) {
+                        await controlDataset.getNormVectorIndex(config);
+                    }
                     this.eventBus.post(HICEvent("ControlMapLoad", this.controlDataset));
 
                     if (!noUpdates) {
@@ -90520,7 +91004,7 @@
             // Derive locus if none is present in source state
             if (undefined === state.locus) {
                 const viewDimensions = this.contactMatrixView.getViewDimensions();
-                this.state.configureLocus(this, this.dataset, viewDimensions);
+                this.state.configureLocus(this, this.activeDataset, viewDimensions);
             }
 
             const hicEvent = new HICEvent("LocusChange", { state: this.state, resolutionChanged: true, chrChanged });
@@ -90753,13 +91237,21 @@
 
         async minZoom(chr1, chr2) {
 
-            const chromosome1 = this.dataset.chromosomes[chr1];
-            const chromosome2 = this.dataset.chromosomes[chr2];
+            if (!this.activeDataset) {
+                throw new Error("Dataset not available for minZoom calculation");
+            }
+
+            const chromosome1 = this.activeDataset.chromosomes[chr1];
+            const chromosome2 = this.activeDataset.chromosomes[chr2];
+
+            if (!chromosome1 || !chromosome2) {
+                throw new Error(`Invalid chromosome indices: ${chr1}, ${chr2}`);
+            }
 
             const { width, height } = this.contactMatrixView.getViewDimensions();
             const binSize = Math.max(chromosome1.size / width, chromosome2.size / height);
 
-            const matrix = await this.dataset.getMatrix(chr1, chr2);
+            const matrix = await this.activeDataset.getMatrix(chr1, chr2);
             if (!matrix) {
                 throw new Error(`Data not avaiable for chromosomes ${chromosome1.name} - ${chromosome2.name}`)
             }
@@ -90768,11 +91260,21 @@
 
         async minPixelSize(chr1, chr2, zoomIndex) {
 
-            // bp
-            const chr1Length = this.dataset.chromosomes[chr1].size;
-            const chr2Length = this.dataset.chromosomes[chr2].size;
+            if (!this.activeDataset) {
+                // If dataset not yet set, return default minimum
+                return DEFAULT_PIXEL_SIZE;
+            }
 
-            const matrix = await this.dataset.getMatrix(chr1, chr2);
+            // bp
+            if (!this.activeDataset.chromosomes || !this.activeDataset.chromosomes[chr1] || !this.activeDataset.chromosomes[chr2]) {
+                console.warn(`Invalid chromosome indices or chromosomes array not initialized: ${chr1}, ${chr2}`);
+                return DEFAULT_PIXEL_SIZE;
+            }
+
+            const chr1Length = this.activeDataset.chromosomes[chr1].size;
+            const chr2Length = this.activeDataset.chromosomes[chr2].size;
+
+            const matrix = await this.activeDataset.getMatrix(chr1, chr2);
             const { zoom } = matrix.getZoomDataByIndex(zoomIndex, "BP");
 
             // bin = bp * bin/bp = bin
@@ -90913,7 +91415,7 @@
         }
     }
 
-    const version = "2.5.2";
+    const version = "2.5.3";
      //, commit}
 
     function toJSON() {

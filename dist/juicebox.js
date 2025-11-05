@@ -74820,6 +74820,11 @@
             const browser = this.browser;
             const config = {};
 
+            // Safety check: ensure dataset and state exist before accessing them
+            if (!browser.dataset || !browser.state) {
+                return;
+            }
+
             if (browser.dataset.isWholeGenome(browser.state.chr1)) {
                 this.showWholeGenome();
                 return;
@@ -87885,14 +87890,14 @@
 
             await this.repaint();
 
-            if (this.browser.dataset && false === doLegacyTrack2DRendering){
+            if (this.browser.dataset && this.browser.state && false === doLegacyTrack2DRendering){
                 await this.render2DTracks(this.browser.tracks2D, this.browser.dataset, this.browser.state);
             }
 
         }
 
         async repaint() {
-            if (!this.browser.dataset) return;
+            if (!this.browser.dataset || !this.browser.state) return;
 
             const viewportWidth = this.viewportElement.offsetWidth;
             const viewportHeight = this.viewportElement.offsetHeight;
@@ -88164,6 +88169,11 @@
          * @returns {*}
          */
         async checkColorScale(ds, zd, row1, row2, col1, col2, normalization) {
+
+            // Safety check: ensure state exists before accessing it
+            if (!this.browser.state) {
+                return this.colorScale;
+            }
 
             const colorKey = colorScaleKey(this.browser.state, this.displayMode);   // This doesn't feel right, state should be an argument
             if ('AOB' === this.displayMode || 'BOA' === this.displayMode) {
@@ -88661,6 +88671,10 @@
     ContactMatrixView.defaultBackgroundColor = {r: 255, g: 255, b: 255};
 
     function colorScaleKey(state, displayMode) {
+        // Safety check: ensure state exists before accessing its properties
+        if (!state) {
+            return "unknown_" + displayMode;
+        }
         return "" + state.chr1 + "_" + state.chr2 + "_" + state.zoom + "_" + state.normalization + "_" + displayMode
     }
 

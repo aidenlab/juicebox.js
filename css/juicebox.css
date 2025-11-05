@@ -1103,6 +1103,25 @@ div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$
   overflow-x: hidden;
   overflow-y: hidden;
 }
+div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$=viewport] div[id$=contact-map-canvas-container],
+div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$=viewport] div[id$=live-contact-map-canvas-container],
+div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$=viewport] div[id$=live-distance-map-canvas-container] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$=viewport] div[id$=contact-map-canvas-container] canvas,
+div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$=viewport] div[id$=live-contact-map-canvas-container] canvas,
+div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$=viewport] div[id$=live-distance-map-canvas-container] canvas {
+  width: 100%;
+  height: 100%;
+}
+div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$=viewport] div[id$=live-contact-map-canvas-container],
+div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$=viewport] div[id$=live-distance-map-canvas-container] {
+  display: none;
+}
 div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$=viewport] div[id$=viewport-spinner-container] {
   display: table-cell;
   margin: auto;

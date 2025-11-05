@@ -1009,6 +1009,23 @@ div[id$="content-container"] {
       height: 100%;
       overflow-x: hidden;
       overflow-y: hidden;
+      div[id$="contact-map-canvas-container"],
+      div[id$="live-contact-map-canvas-container"],
+      div[id$="live-distance-map-canvas-container"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        canvas {
+          width: 100%;
+          height: 100%;
+        }
+      }
+      div[id$="live-contact-map-canvas-container"],
+      div[id$="live-distance-map-canvas-container"] {
+        display: none;
+      }
       div[id$="viewport-spinner-container"] {
         display: table-cell;
         margin: auto;

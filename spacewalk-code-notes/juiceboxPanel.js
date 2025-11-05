@@ -2,20 +2,17 @@ import hic from 'juicebox.js'
 import SpacewalkEventBus from '../spacewalkEventBus.js'
 import Panel from '../panel.js'
 import { ballAndStick, liveContactMapService, liveDistanceMapService, ensembleManager, ribbon, igvPanel, genomicNavigator } from '../app.js'
-// LiveMapDataset is now part of juicebox.js and will be used via browser.loadLiveMapDataset()
 import { renderLiveMapWithDistanceData } from './liveDistanceMapService.js'
 import {appleCrayonColorRGB255, rgb255String, compositeColors} from "../utils/colorUtils"
 import {transferRGBAMatrixToLiveMapCanvas} from "../utils/utils.js"
 
-// Helper function to create ImageBitmap (polyfill if needed)
-async function createImageBitmap(...args) {
-    if (window.createImageBitmap) {
-        return window.createImageBitmap(...args)
-    } else {
-        // Fallback for browsers without createImageBitmap
-        throw new Error('createImageBitmap not supported')
-    }
-}
+// async function createImageBitmap(...args) {
+//     if (window.createImageBitmap) {
+//         return window.createImageBitmap(...args)
+//     } else {
+//         throw new Error('createImageBitmap not supported')
+//     }
+// }
 
 // Store reference to the singleton JuiceboxPanel instance for event handlers
 let juiceboxPanelInstance = null;
@@ -36,6 +33,12 @@ class JuiceboxPanel extends Panel {
 
         // Store singleton instance for event handlers to access
         juiceboxPanelInstance = this;
+
+        // Store references to both datasets for tab switching
+        this.hicDataset = null;
+        this.hicState = null;
+        this.liveMapDataset = null;
+        this.liveMapState = null;
 
         // const dragHandle = panel.querySelector('.spacewalk_card_drag_container')
         // makeDraggable(panel, dragHandle)
@@ -97,112 +100,144 @@ class JuiceboxPanel extends Panel {
 
         this.browser = hic.getCurrentBrowser()
 
+        // Check if session has a url property (indicating a Hi-C file)
+        const hasHicFile = session.url || (session.browsers && session.browsers[0]?.url)
+        
+        // Store reference to Hi-C dataset before loading live map (if it exists)
+        if (hasHicFile && this.browser.activeDataset && this.browser.activeDataset.datasetType !== 'livemap') {
+            this.hicDataset = this.browser.activeDataset
+            this.hicState = this.browser.activeState
+        }
+
         // Initialize live map canvas contexts (Spacewalk-specific)
         this.initializeLiveMapContexts()
 
+        // Only load live map dataset if ensemble datasource is available
+        // But if we have a Hi-C file, we'll switch back to it when showing Hi-C tab
         if (ensembleManager.datasource) {
             await this.loadLiveMapDataset()
+            // Store live map dataset reference
+            if (this.browser.activeDataset && this.browser.activeDataset.datasetType === 'livemap') {
+                this.liveMapDataset = this.browser.activeDataset
+                this.liveMapState = this.browser.activeState
+            }
         }
 
         this.attachMouseHandlersAndEventSubscribers()
 
-        this.hicMapTab.show()
+        // Determine which tab to show based on session content
+        if (hasHicFile && this.hicDataset) {
+            // Session contains a Hi-C file, switch back to Hi-C dataset and show Hi-C tab
+            this.browser.setActiveDataset(this.hicDataset, this.hicState)
+            this.hicMapTab.show()
+            // Ensure Hi-C map is repainted after session load
+            setTimeout(() => {
+                const activeTabButton = this.container.querySelector('button.nav-link.active')
+                if (activeTabButton && activeTabButton.id === 'spacewalk-juicebox-panel-hic-map-tab') {
+                    tabAssessment(this.browser, activeTabButton, this)
+                    if (this.browser.contactMatrixView && this.browser.activeDataset) {
+                        this.browser.contactMatrixView.update().catch(err => console.warn('Error updating contact matrix view after session load:', err))
+                    }
+                }
+            }, 150)
+        } else {
+            // No Hi-C file in session, show live map tab
+            this.liveMapTab.show()
+        }
 
     }
 
     /**
      * Initialize live map canvas contexts for bitmaprenderer rendering.
-     * This method creates and configures the ctx_live and ctx_live_distance
+     * This method injects the live map canvas containers into the viewport
+     * (created by layoutController) and configures the ctx_live and ctx_live_distance
      * contexts that are required for live map rendering in Spacewalk.
      */
     initializeLiveMapContexts() {
         const browser = this.browser
-        const rootElement = browser.rootElement
+        const viewport = browser.layoutController.getContactMatrixViewport()
         
-        // Find or create container divs for live map canvases
-        let liveContactContainer = rootElement.querySelector(`#${browser.id}-live-contact-map-canvas-container`)
+        if (!viewport) {
+            console.warn('Viewport not found, cannot initialize live map contexts')
+            return
+        }
+
+        // Find or create live contact map container inside the viewport
+        let liveContactContainer = viewport.querySelector(`#${browser.id}-live-contact-map-canvas-container`)
         if (!liveContactContainer) {
             liveContactContainer = document.createElement('div')
             liveContactContainer.id = `${browser.id}-live-contact-map-canvas-container`
-            liveContactContainer.style.position = 'relative'
-            liveContactContainer.style.width = '100%'
-            liveContactContainer.style.height = '100%'
-            liveContactContainer.style.display = 'none' // Hidden by default, shown via tab
-            // Insert after the main contact map viewport
-            const viewport = browser.layoutController.getContactMatrixViewport()
-            viewport.parentNode.insertBefore(liveContactContainer, viewport.nextSibling)
+            // Insert after the Hi-C contact map container
+            const hicContainer = viewport.querySelector(`#${browser.id}-contact-map-canvas-container`)
+            if (hicContainer && hicContainer.nextSibling) {
+                viewport.insertBefore(liveContactContainer, hicContainer.nextSibling)
+            } else {
+                viewport.appendChild(liveContactContainer)
+            }
         }
-        
+
         // Get or create live contact map canvas
         let canvas = liveContactContainer.querySelector(`#${browser.id}-live-contact-map-canvas`)
         if (!canvas) {
             canvas = document.createElement('canvas')
             canvas.id = `${browser.id}-live-contact-map-canvas`
-            canvas.style.width = '100%'
-            canvas.style.height = '100%'
             liveContactContainer.appendChild(canvas)
         }
-        
+
         const ctx_live = canvas.getContext('bitmaprenderer')
         if (!ctx_live) {
             console.warn('bitmaprenderer context not available for live contact map')
         }
-        
-        // Find or create container for live distance map canvas
-        let liveDistanceContainer = rootElement.querySelector(`#${browser.id}-live-distance-map-canvas-container`)
+
+        // Find or create live distance map container inside the viewport
+        let liveDistanceContainer = viewport.querySelector(`#${browser.id}-live-distance-map-canvas-container`)
         if (!liveDistanceContainer) {
             liveDistanceContainer = document.createElement('div')
             liveDistanceContainer.id = `${browser.id}-live-distance-map-canvas-container`
-            liveDistanceContainer.style.position = 'relative'
-            liveDistanceContainer.style.width = '100%'
-            liveDistanceContainer.style.height = '100%'
-            liveDistanceContainer.style.display = 'none' // Hidden by default, shown via tab
             // Insert after live contact container
-            liveContactContainer.parentNode.insertBefore(liveDistanceContainer, liveContactContainer.nextSibling)
+            if (liveContactContainer.nextSibling) {
+                viewport.insertBefore(liveDistanceContainer, liveContactContainer.nextSibling)
+            } else {
+                viewport.appendChild(liveDistanceContainer)
+            }
         }
-        
+
         // Get or create live distance map canvas
         canvas = liveDistanceContainer.querySelector(`#${browser.id}-live-distance-map-canvas`)
         if (!canvas) {
             canvas = document.createElement('canvas')
             canvas.id = `${browser.id}-live-distance-map-canvas`
-            canvas.style.width = '100%'
-            canvas.style.height = '100%'
             liveDistanceContainer.appendChild(canvas)
         }
-        
+
         const ctx_live_distance = canvas.getContext('bitmaprenderer')
         if (!ctx_live_distance) {
             console.warn('bitmaprenderer context not available for live distance map')
         }
-        
+
         // Set contexts on ContactMatrixView
         browser.contactMatrixView.setLiveMapContexts(ctx_live, ctx_live_distance)
-        
+
         // Update canvas sizes to match viewport when viewport is resized
-        this.updateLiveMapCanvasSizes()
+        this.updateLiveMapCanvasSizes(this.browser.contactMatrixView)
     }
-    
+
     /**
      * Update live map canvas sizes to match the main canvas viewport
      * Uses viewport dimensions directly, matching the old approach where width/height
      * were passed directly from the ContactMatrixView viewport.
      */
-    updateLiveMapCanvasSizes() {
-        const browser = this.browser
-        const contactMatrixView = browser.contactMatrixView
-        
-        // Get viewport dimensions directly - this matches the old approach
-        // where width and height were passed directly from the viewport
+    updateLiveMapCanvasSizes(contactMatrixView) {
+
         const width = contactMatrixView.viewportElement.offsetWidth
         const height = contactMatrixView.viewportElement.offsetHeight
-        
+
         // Ensure we have valid dimensions
         if (width === 0 || height === 0) {
             console.warn(`Viewport dimensions are invalid: ${width}x${height}. Canvas sizes not updated.`)
             return
         }
-        
+
         if (contactMatrixView.ctx_live) {
             const canvas = contactMatrixView.ctx_live.canvas
             canvas.width = width
@@ -212,7 +247,7 @@ class JuiceboxPanel extends Panel {
             canvas.style.height = `${height}px`
             console.log(`Updated ctx_live canvas size: ${canvas.width}x${canvas.height}`)
         }
-        
+
         if (contactMatrixView.ctx_live_distance) {
             const canvas = contactMatrixView.ctx_live_distance.canvas
             canvas.width = width
@@ -245,7 +280,15 @@ class JuiceboxPanel extends Panel {
 
         this.browser.eventBus.subscribe('MapLoad', async event => {
             const activeTabButton = this.container.querySelector('button.nav-link.active')
-            tabAssessment(this.browser, activeTabButton)
+            tabAssessment(this.browser, activeTabButton, this)
+            // Ensure repaint after MapLoad event (especially important for session loading)
+            if (this.browser.activeDataset && this.browser.activeDataset.datasetType !== 'livemap') {
+                setTimeout(() => {
+                    if (this.browser.contactMatrixView && this.browser.activeDataset) {
+                        this.browser.contactMatrixView.update().catch(err => console.warn('Error updating contact matrix view after MapLoad:', err))
+                    }
+                }, 50)
+            }
         })
 
         this.browser.setCustomCrosshairsHandler(({ xBP, yBP, startXBP, startYBP, endXBP, endYBP, interpolantX, interpolantY }) => {
@@ -272,11 +315,16 @@ class JuiceboxPanel extends Panel {
         this.liveMapTab = new bootstrap.Tab(liveMapTabElement)
         this.liveDistanceMapTab = new bootstrap.Tab(liveDistanceMapTabElement)
 
-        // Default to show Live Map tab
-        this.liveMapTab.show()
+        // Determine which tab to show based on active dataset
+        // If a Hi-C dataset is loaded, show Hi-C tab; otherwise show live map tab
+        if (this.browser.activeDataset && this.browser.activeDataset.datasetType !== 'livemap') {
+            this.hicMapTab.show()
+        } else {
+            this.liveMapTab.show()
+        }
 
         const activeTabButton = this.container.querySelector('button.nav-link.active')
-        tabAssessment(this.browser, activeTabButton)
+        tabAssessment(this.browser, activeTabButton, this)
 
         for (const tabElement of this.container.querySelectorAll('button[data-bs-toggle="tab"]')) {
             tabElement.addEventListener('show.bs.tab', tabEventHandler)
@@ -452,11 +500,10 @@ class JuiceboxPanel extends Panel {
         const dataset = browser.activeDataset
 
         if (!state || !dataset) {
-            console.warn('Live map state or dataset not available')
+            console.warn('renderLiveMapWithContactData(...) - Live map state or dataset not available')
             return
         }
 
-        // Update locus if needed
         const { chr, genomicStart, genomicEnd } = ensembleManager.locus
         try {
             await browser.parseGotoInput(`${chr}:${genomicStart}-${genomicEnd}`)
@@ -465,7 +512,7 @@ class JuiceboxPanel extends Panel {
         }
 
         // Update canvas sizes to match current viewport
-        this.updateLiveMapCanvasSizes()
+        this.updateLiveMapCanvasSizes(this.browser.contactMatrixView)
 
         // Trigger color scale check (will use standard checkColorScale method)
         await browser.contactMatrixView.update()
@@ -477,20 +524,18 @@ class JuiceboxPanel extends Panel {
         const ctx_live = browser.contactMatrixView.ctx_live
         if (ctx_live) {
             const canvas = ctx_live.canvas
-            
-            // Ensure canvas has valid dimensions
+
             if (canvas.width === 0 || canvas.height === 0) {
                 console.warn(`Canvas dimensions are invalid: ${canvas.width}x${canvas.height}. Updating sizes...`)
-                this.updateLiveMapCanvasSizes()
-                // Check again after update
+                this.updateLiveMapCanvasSizes(this.browser.contactMatrixView)
                 if (canvas.width === 0 || canvas.height === 0) {
                     console.error(`Cannot render: canvas dimensions are still invalid: ${canvas.width}x${canvas.height}`)
                     return
                 }
             }
-            
+
             console.log(`Transferring RGBA matrix: matrixDimension=${liveMapTraceLength}, canvas size=${canvas.width}x${canvas.height}`)
-            
+
             // Scale the matrix to match canvas size if needed
             if (liveMapTraceLength !== canvas.width || liveMapTraceLength !== canvas.height) {
                 // Create a temporary canvas at source size
@@ -500,26 +545,22 @@ class JuiceboxPanel extends Panel {
                 const tempCtx = tempCanvas.getContext('2d')
                 const imageData = new ImageData(contactFrequencyArray, liveMapTraceLength, liveMapTraceLength)
                 tempCtx.putImageData(imageData, 0, 0)
-                
+
                 // Create an offscreen canvas at target size and scale the image
                 const scaledCanvas = document.createElement('canvas')
                 scaledCanvas.width = canvas.width
                 scaledCanvas.height = canvas.height
                 const scaledCtx = scaledCanvas.getContext('2d')
-                // Use imageSmoothingEnabled: false for pixelated scaling
                 scaledCtx.imageSmoothingEnabled = false
                 scaledCtx.drawImage(tempCanvas, 0, 0, liveMapTraceLength, liveMapTraceLength, 0, 0, canvas.width, canvas.height)
-                
-                // Verify scaled canvas has valid dimensions before creating ImageBitmap
+
                 if (scaledCanvas.width > 0 && scaledCanvas.height > 0) {
-                    // Create image bitmap from scaled canvas
                     const imageBitmap = await createImageBitmap(scaledCanvas)
                     ctx_live.transferFromImageBitmap(imageBitmap)
                 } else {
                     console.error(`Cannot create ImageBitmap: scaled canvas dimensions are invalid: ${scaledCanvas.width}x${scaledCanvas.height}`)
                 }
             } else {
-                // Direct transfer if dimensions match
                 await transferRGBAMatrixToLiveMapCanvas(ctx_live, contactFrequencyArray, liveMapTraceLength)
             }
         } else {
@@ -596,22 +637,25 @@ function isLiveMapSupported() {
     }
 }
 
-
 function tabEventHandler(event) {
-    tabAssessment(juiceboxPanelInstance.browser, event.target);
+    tabAssessment(juiceboxPanelInstance.browser, event.target, juiceboxPanelInstance);
 }
 
-function tabAssessment(browser, activeTabButton) {
+function tabAssessment(browser, activeTabButton, panel) {
 
     // console.log(`JuiceboxPanel. Tab ${ activeTabButton.id } is active`);
 
-    // Hide all canvas containers first
+    // Get all canvas containers from inside the viewport
     const viewport = browser.layoutController.getContactMatrixViewport()
-    const mainContainer = viewport.parentElement
-    const hicContainer = viewport
-    const liveContactContainer = mainContainer.querySelector(`#${browser.id}-live-contact-map-canvas-container`)
-    const liveDistanceContainer = mainContainer.querySelector(`#${browser.id}-live-distance-map-canvas-container`)
-    
+    if (!viewport) {
+        console.warn('Viewport not found for tab assessment')
+        return
+    }
+
+    const hicContainer = viewport.querySelector(`#${browser.id}-contact-map-canvas-container`)
+    const liveContactContainer = viewport.querySelector(`#${browser.id}-live-contact-map-canvas-container`)
+    const liveDistanceContainer = viewport.querySelector(`#${browser.id}-live-distance-map-canvas-container`)
+
     // Hide all containers
     if (hicContainer) hicContainer.style.display = 'none'
     if (liveContactContainer) liveContactContainer.style.display = 'none'
@@ -619,14 +663,32 @@ function tabAssessment(browser, activeTabButton) {
 
     switch (activeTabButton.id) {
         case 'spacewalk-juicebox-panel-hic-map-tab':
-            if (hicContainer) hicContainer.style.display = 'block'
+            if (hicContainer) {
+                hicContainer.style.display = 'block'
+                // Switch to Hi-C dataset if available
+                if (panel && panel.hicDataset && panel.hicState) {
+                    browser.setActiveDataset(panel.hicDataset, panel.hicState)
+                }
+                // Trigger repaint after showing the viewport to ensure canvas is visible
+                setTimeout(() => {
+                    if (browser.contactMatrixView && browser.activeDataset) {
+                        browser.contactMatrixView.update().catch(err => console.warn('Error updating contact matrix view:', err))
+                    }
+                }, 0)
+            }
             document.getElementById('hic-live-distance-map-toggle-widget').style.display = 'none'
             document.getElementById('hic-live-contact-frequency-map-threshold-widget').style.display = 'none'
             document.getElementById('hic-file-chooser-dropdown').style.display = 'block'
             break;
 
         case 'spacewalk-juicebox-panel-live-map-tab':
-            if (liveContactContainer) liveContactContainer.style.display = 'block'
+            if (liveContactContainer) {
+                liveContactContainer.style.display = 'block'
+                // Switch to live map dataset if available
+                if (panel && panel.liveMapDataset && panel.liveMapState) {
+                    browser.setActiveDataset(panel.liveMapDataset, panel.liveMapState)
+                }
+            }
             document.getElementById('hic-live-distance-map-toggle-widget').style.display = 'none'
             document.getElementById('hic-live-contact-frequency-map-threshold-widget').style.display = 'block'
             document.getElementById('hic-file-chooser-dropdown').style.display = 'none'

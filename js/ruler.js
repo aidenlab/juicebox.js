@@ -232,6 +232,11 @@ class Ruler {
         const browser = this.browser;
         const config = {};
 
+        // Safety check: ensure dataset and state exist before accessing them
+        if (!browser.dataset || !browser.state) {
+            return;
+        }
+
         if (browser.dataset.isWholeGenome(browser.state.chr1)) {
             this.showWholeGenome();
             return;

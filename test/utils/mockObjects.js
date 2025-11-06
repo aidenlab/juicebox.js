@@ -24,10 +24,15 @@ global.File = File
 
 global.XMLHttpRequest = XMLHttpRequestMock
 
-global.navigator = {
-    userAgent: "Node",
-    vendor: "Node"
-}
+// navigator is read-only in Node.js, use defineProperty
+Object.defineProperty(global, 'navigator', {
+    value: {
+        userAgent: "Node",
+        vendor: "Node"
+    },
+    writable: true,
+    configurable: true
+})
 
 global.DOMParser = DOMParser
 

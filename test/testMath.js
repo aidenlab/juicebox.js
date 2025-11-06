@@ -1,9 +1,7 @@
-import "./utils/mockObjects.js"
-import {assert} from 'chai';
-
+import { describe, test, expect } from 'vitest';
 import HICMath from "../js/hicMath.js"
 
-suite("math", function () {
+describe("math", function () {
 
     test("Percentile", function () {
 
@@ -23,7 +21,7 @@ suite("math", function () {
         });
         const p1 = elements[idx];
 
-        assert.equal(p0, p1);
+        expect(p0).toBe(p1);
 
     })
 
@@ -45,7 +43,7 @@ suite("math", function () {
         });
         const p1 = elements[idx];
 
-        assert.equal(p0, p1);
+        expect(p0).toBe(p1);
 
     })
 })

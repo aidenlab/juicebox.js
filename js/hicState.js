@@ -55,8 +55,12 @@ class State {
         }
         this.normalization = normalization;
 
-        if (Number.isNaN(pixelSize)) {
-            pixelSize = 1
+        // Validate and convert pixelSize to a number
+        if (typeof pixelSize === 'string') {
+            const parsed = parseFloat(pixelSize);
+            pixelSize = isNaN(parsed) ? 1 : parsed;
+        } else if (typeof pixelSize !== 'number' || Number.isNaN(pixelSize) || pixelSize <= 0) {
+            pixelSize = 1;
         }
         this.pixelSize = pixelSize;
 

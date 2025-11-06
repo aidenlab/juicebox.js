@@ -23,7 +23,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "prepublishOnly": "npm run build",
-    "test": "mocha -ui tdd"
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   },
   "keywords": [
     "conformation capture",
@@ -36,18 +38,19 @@
     "url": "git+https://github.com/igvteam/juicebox.js.git"
   },
   "devDependencies": {
+    "@vitest/ui": "^4.0.7",
     "@xmldom/xmldom": "^0.7.5",
     "atob": "^2.1.2",
     "btoa": "^1.2.1",
-    "chai": "^4.2.0",
     "google-utils": "github:igvteam/google-utils#v1.0.2",
     "hic-straw": "^2.1.2",
     "igv": "^2.15.5",
     "igv-ui": "github:igvteam/igv-ui#v1.5.0",
     "igv-utils": "github:igvteam/igv-utils#v1.4.5",
-    "mocha": "^8.2.1",
     "sass": "^1.93.3",
     "vite": "^7.2.1",
-    "vite-plugin-static-copy": "^3.1.4"
+    "vite-plugin-static-copy": "^3.1.4",
+    "vitest": "^4.0.7",
+    "w3c-xmlhttprequest": "^3.0.4"
   }
 }

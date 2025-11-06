@@ -21,6 +21,7 @@
  *
  */
 
+import '../css/juicebox.scss';
 import {igvxhr} from '../node_modules/igv-utils/src/index.js'
 import {createBrowser, setCurrentBrowser, getAllBrowsers, getCurrentBrowser} from './createBrowser.js';
 import {version} from "./version.js";

@@ -1,3 +1,8 @@
+// Variables with defaults - can be overridden via @use ... with
+$igv-trackgear-grey-color: #7F7F7F !default;
+$igv-trackgear-popover-border-radius: 4px !default;
+$igv-trackgear-font-color: #4b4b4b !default;
+$igv-trackgear-default-font-face: 'Open Sans', sans-serif !default;
 
 .jb-igv-menu-popup {
   position: absolute;

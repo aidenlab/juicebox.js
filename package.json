@@ -19,9 +19,9 @@
     "url": "https://github.com/igvteam/juicebox.js/issues"
   },
   "scripts": {
-    "prepack": "npm run build",
-    "prepare": "npm run build",
-    "build": "node scripts/updateVersion.cjs && npx rollup --config",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "mocha -ui tdd"
   },
   "keywords": [
@@ -35,25 +35,20 @@
     "url": "git+https://github.com/igvteam/juicebox.js.git"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.16.0",
     "@rollup/plugin-strip": "^3.0.1",
     "@xmldom/xmldom": "^0.7.5",
     "atob": "^2.1.2",
     "btoa": "^1.2.1",
     "chai": "^4.2.0",
-    "core-js": "^3.6.5",
-    "finalhandler": "^1.1.2",
-    "fs-extra": "^8.1.0",
     "google-utils": "github:igvteam/google-utils#v1.0.2",
     "hic-straw": "^2.1.2",
     "igv": "^2.15.5",
     "igv-ui": "github:igvteam/igv-ui#v1.5.0",
     "igv-utils": "github:igvteam/igv-utils#v1.4.5",
     "mocha": "^8.2.1",
-    "node-fetch": "^2.6.1",
-    "rollup": "^2.59.0",
-    "rollup-plugin-copy": "^3.4.0",
-    "rollup-plugin-terser": "^7.0.2",
-    "w3c-xmlhttprequest": "^3.0.0"
+    "sass": "^1.93.3",
+    "terser": "^5.44.1",
+    "vite": "^7.2.1",
+    "vite-plugin-static-copy": "^3.1.4"
   }
 }

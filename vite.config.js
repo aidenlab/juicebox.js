@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import strip from '@rollup/plugin-strip';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { versionPlugin } from './vite-plugin-version.js';
 
@@ -33,16 +32,10 @@ export default defineConfig({
       },
     },
     outDir: 'dist',
-    minify: 'terser',
+    minify: true, // Use esbuild (faster, built into Vite)
     sourcemap: true,
     cssCodeSplit: false, // Extract all CSS into a single file
     rollupOptions: {
-      plugins: [
-        strip({
-          debugger: true,
-          functions: ['assert.*', 'debug'],
-        }),
-      ],
       output: {
         assetFileNames: (assetInfo) => {
           // Ensure CSS is named juicebox.css

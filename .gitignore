@@ -13,3 +13,4 @@ node_modules
 /dev/Figure_S20_geo.json
 /dev/issue_360.html
 /package-lock.json
+dist/

@@ -1,16 +1,3 @@
-:root {
-  --nav-bar-label-height: 36px;
-  --nav-bar-widget-container-height: 36px;
-  --nav-bar-widget-container-margin: 4px;
-  --hic-scrollbar-height: 20px;
-  --hic-axis-height: 40px;
-  --track-margin: 2px;
-  --track-height: 36px;
-  --hic-viewport-width: 640px;
-  --hic-viewport-height: 640px;
-  --hic-viewport-spinner-size: 120px;
-}
-
 .jb-igv-menu-popup {
   position: absolute;
   top: 0;
@@ -144,6 +131,19 @@
 }
 .jb-igv-menu-popup-chart > div:nth-child(4) {
   background-color: rgb(209, 113, 5);
+}
+
+:root {
+  --nav-bar-label-height: 36px;
+  --nav-bar-widget-container-height: 36px;
+  --nav-bar-widget-container-margin: 4px;
+  --hic-scrollbar-height: 20px;
+  --hic-axis-height: 40px;
+  --track-margin: 2px;
+  --track-height: 36px;
+  --hic-viewport-width: 640px;
+  --hic-viewport-height: 640px;
+  --hic-viewport-spinner-size: 120px;
 }
 
 .hic-igv-right-hand-gutter {
@@ -1285,5 +1285,3 @@ div[id$=content-container] div[id$=x-scrollbar-container] div[id$=x-axis-scrollb
   cursor: pointer;
   color: #444;
 }
-
-/*# sourceMappingURL=juicebox.css.map */

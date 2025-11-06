@@ -1,3 +1,10 @@
+@use "igv-menu-popup" as * with (
+  $igv-trackgear-grey-color: #7F7F7F,
+  $igv-trackgear-popover-border-radius: 4px,
+  $igv-trackgear-font-color: #4b4b4b,
+  $igv-trackgear-default-font-face: ('Open Sans', sans-serif)
+);
+
 :root {
   --nav-bar-label-height: 36px;
   --nav-bar-widget-container-height: 36px;
@@ -22,11 +29,6 @@ $track-height: var(--track-height);
 
 //
 $hic-color-swatch-size: 24px;
-
-$igv-trackgear-grey-color: #7F7F7F;
-$igv-trackgear-popover-border-radius: 4px;
-$igv-trackgear-font-color: #4b4b4b;
-$igv-trackgear-default-font-face: 'Open Sans', sans-serif;
 
 $nav-bar-widget-height: 24px;
 
@@ -75,8 +77,6 @@ $scrollbar-handle-color: #a5a5a5;
 $scrollbar-color: #efefef;
 
 $default-font-family: 'Open Sans', sans-serif;
-
-@import "igv-menu-popup";
 
 @mixin x-scrollbar-label {
   div {

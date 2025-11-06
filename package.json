@@ -22,6 +22,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "prepublishOnly": "npm run build",
     "test": "mocha -ui tdd"
   },
   "keywords": [
@@ -35,7 +36,6 @@
     "url": "git+https://github.com/igvteam/juicebox.js.git"
   },
   "devDependencies": {
-    "@rollup/plugin-strip": "^3.0.1",
     "@xmldom/xmldom": "^0.7.5",
     "atob": "^2.1.2",
     "btoa": "^1.2.1",
@@ -47,7 +47,6 @@
     "igv-utils": "github:igvteam/igv-utils#v1.4.5",
     "mocha": "^8.2.1",
     "sass": "^1.93.3",
-    "terser": "^5.44.1",
     "vite": "^7.2.1",
     "vite-plugin-static-copy": "^3.1.4"
   }

@@ -1,9 +1,18 @@
 {
   "name": "juicebox.js",
   "version": "2.5.3",
-  "main": "dist/juicebox.min.js",
-  "module": "dist/juicebox.esm.js",
   "type": "module",
+  "main": "./dist/juicebox.esm.js",
+  "module": "./dist/juicebox.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/juicebox.esm.js",
+      "default": "./dist/juicebox.esm.js"
+    },
+    "./dist/juicebox.esm.js": "./dist/juicebox.esm.js",
+    "./dist/juicebox.min.js": "./dist/juicebox.min.js",
+    "./dist/css/juicebox.css": "./dist/css/juicebox.css"
+  },
   "files": [
     "dist/**"
   ],
@@ -22,6 +31,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run build",
     "test": "vitest",
     "test:ui": "vitest --ui",

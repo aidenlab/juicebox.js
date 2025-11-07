@@ -38,6 +38,7 @@ import NotificationCoordinator from "./notificationCoordinator.js"
 import StateManager from "./stateManager.js"
 import InteractionHandler from "./interactionHandler.js"
 import DataLoader from "./dataLoader.js"
+import RenderCoordinator from "./renderCoordinator.js"
 
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
@@ -96,6 +97,9 @@ class HICBrowser {
         // Initialize data loader for data loading operations
         this.dataLoader = new DataLoader(this);
 
+        // Initialize render coordinator for rendering operations
+        this.renderCoordinator = new RenderCoordinator(this);
+
         // prevent user interaction during lengthy data loads
         this.userInteractionShield = document.createElement('div');
         this.userInteractionShield.className = 'hic-root-prevent-interaction';
@@ -106,7 +110,7 @@ class HICBrowser {
     }
 
     async init(config) {
-        this.pending = new Map();
+        this.renderCoordinator.init();
 
         this.contactMatrixView.disableUpdates = true;
 
@@ -464,17 +468,12 @@ class HICBrowser {
 
     /**
      * Render the XY pair of tracks.
+     * Delegates to RenderCoordinator.
      *
      * @param xy
      */
     async renderTrackXY(xy) {
-
-        try {
-            this.startSpinner()
-            await xy.updateViews()
-        } finally {
-            this.stopSpinner()
-        }
+        return this.renderCoordinator.renderTrackXY(xy);
     }
 
     /**
@@ -835,27 +834,10 @@ class HICBrowser {
 
     /**
      * Pure rendering method - repaints all visual components.
-     * Reads state directly from this.state, no parameters needed.
-     * This is the core rendering logic separated from update coordination.
+     * Delegates to RenderCoordinator.
      */
     async repaint() {
-        if (!this.activeDataset || !this.activeState) {
-            return; // Can't render without dataset and state
-        }
-
-        // Update rulers with current state
-        const pseudoEvent = { type: "LocusChange", data: { state: this.activeState } }
-        this.layoutController.xAxisRuler.locusChange(pseudoEvent)
-        this.layoutController.yAxisRuler.locusChange(pseudoEvent)
-
-        // Render all tracks and contact matrix in parallel
-        const promises = []
-
-        for (let xyTrackRenderPair of this.trackPairs) {
-            promises.push(this.renderTrackXY(xyTrackRenderPair))
-        }
-        promises.push(this.contactMatrixView.update())
-        await Promise.all(promises)
+        return this.renderCoordinator.repaint();
     }
 
     /**
@@ -875,54 +857,13 @@ class HICBrowser {
 
     /**
      * Public API for updating/repainting the browser.
-     *
-     * Handles queuing logic for rapid calls (e.g., during mouse dragging).
-     * If called while an update is in progress, queues the request for later processing.
-     * Only the most recent request per type is kept in the queue.
+     * Delegates to RenderCoordinator.
      *
      * @param shouldSync - Whether to synchronize state to other browsers (default: true)
      *                     Set to false when called from syncState() to avoid infinite loops
      */
     async update(shouldSync = true) {
-
-        if (this.updating) {
-            // Queue this update request - use a simple key since we don't need event types anymore
-            this.pending.set("update", { shouldSync })
-            return
-        }
-
-        this.updating = true
-        try {
-            this.startSpinner()
-
-            // Render everything
-            await this.repaint()
-
-            // Optionally sync to other browsers
-            if (shouldSync) {
-                this.syncToOtherBrowsers()
-            }
-
-        } finally {
-            this.updating = false
-
-            // Process any queued updates
-            if (this.pending.size > 0) {
-                const queued = []
-                for (let [k, v] of this.pending) {
-                    queued.push(v)
-                }
-                this.pending.clear()
-
-                // Process queued updates (only need to process the last one)
-                if (queued.length > 0) {
-                    const lastQueued = queued[queued.length - 1]
-                    await this.update(lastQueued.shouldSync)
-                }
-            }
-
-            this.stopSpinner()
-        }
+        return this.renderCoordinator.update(shouldSync);
     }
 
     repaintMatrix() {

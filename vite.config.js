@@ -3,6 +3,29 @@ import { resolve } from 'path';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { versionPlugin } from './vite-plugin-version.js';
 
+// Plugin to suppress source map warnings for third-party dependencies
+// These warnings occur because igv-ui and igv reference CSS source maps that don't exist
+function suppressSourceMapWarnings() {
+  return {
+    name: 'suppress-sourcemap-warnings',
+    configureServer(server) {
+      // Intercept WebSocket messages to filter out source map errors
+      const originalSend = server.ws.send;
+      server.ws.send = function (payload) {
+        if (payload.type === 'error' && payload.err) {
+          const errorMessage = payload.err.message || payload.err.toString() || '';
+          // Suppress warnings about missing CSS source maps for igv dependencies
+          if (errorMessage.includes('igv-ui.css.map') || 
+              errorMessage.includes('Failed to load source map')) {
+            return; // Don't send this error to the client
+          }
+        }
+        return originalSend.call(this, payload);
+      };
+    },
+  };
+}
+
 export default defineConfig({
   root: '.',
   publicDir: 'public',
@@ -54,10 +77,42 @@ export default defineConfig({
         { src: 'css/img', dest: 'css/' },
       ],
     }),
+    suppressSourceMapWarnings(),
   ],
   resolve: {
     alias: {
       '@': resolve(__dirname, './'),
+    },
+  },
+  // Custom logger to suppress source map warnings for third-party dependencies
+  customLogger: {
+    warn(msg, options) {
+      // Filter out source map warnings for igv dependencies
+      const message = typeof msg === 'string' ? msg : String(msg);
+      if (message.includes('igv-ui.css.map') || 
+          message.includes('Failed to load source map') ||
+          (message.includes('ENOENT') && message.includes('igv'))) {
+        return; // Suppress these warnings
+      }
+      // Use default warning logger for other messages
+      console.warn(msg, options);
+    },
+    error(msg, options) {
+      // Filter out source map errors for igv dependencies
+      const message = typeof msg === 'string' ? msg : String(msg);
+      if (message.includes('igv-ui.css.map') || 
+          message.includes('Failed to load source map') ||
+          (message.includes('ENOENT') && message.includes('igv'))) {
+        return; // Suppress these errors
+      }
+      // Use default error logger for other messages
+      console.error(msg, options);
+    },
+    info(msg, options) {
+      console.info(msg, options);
+    },
+    clearScreen() {
+      // Keep default clear screen behavior
     },
   },
 });

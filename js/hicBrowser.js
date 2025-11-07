@@ -27,7 +27,7 @@
 
 import igv from '../node_modules/igv/dist/igv.esm.js'
 import {Alert, InputDialog, DOMUtils} from '../node_modules/igv-ui/dist/igv-ui.js'
-import {FileUtils, IGVColor} from '../node_modules/igv-utils/src/index.js'
+import {FileUtils} from '../node_modules/igv-utils/src/index.js'
 import * as hicUtils from './hicUtils.js'
 import {Globals} from "./globals.js"
 import EventBus from "./eventBus.js"
@@ -39,14 +39,12 @@ import LiveMapDataset from './liveMapDataset.js'
 import Genome from './genome.js'
 import State from './hicState.js'
 import { geneSearch } from './geneSearch.js'
-import {defaultSize, getAllBrowsers, syncBrowsers} from "./createBrowser.js"
+import {getAllBrowsers, syncBrowsers} from "./createBrowser.js"
 import {isFile} from "./fileUtils.js"
 import {setTrackReorderArrowColors} from "./trackPair.js"
 import nvi from './nvi.js'
-import {extractName, presentError} from "./utils.js"
+import {extractName, presentError, hitTestBbox} from "./utils.js"
 import BrowserUIManager from "./browserUIManager.js"
-import ColorScale from './colorScale.js'
-import RatioColorScale from './ratioColorScale.js'
 
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
@@ -367,6 +365,17 @@ class HICBrowser {
      */
 
     /**
+     * Private helper: Get a UI component by name.
+     * Reduces repetitive getComponent calls and provides a consistent pattern.
+     *
+     * @param {string} componentName - The name of the component to retrieve
+     * @returns {Object|undefined} - The component instance, or undefined if not found
+     */
+    _getUIComponent(componentName) {
+        return this.ui.getComponent(componentName);
+    }
+
+    /**
      * Private helper: Initialize ContactMatrixView when a map is loaded.
      * Enables mouse handlers and clears caches.
      */
@@ -384,7 +393,7 @@ class HICBrowser {
      * Private helper: Update chromosome selector when a map is loaded.
      */
     _updateChromosomeSelectorForMapLoad(dataset) {
-        const chromosomeSelector = this.ui.getComponent('chromosomeSelector');
+        const chromosomeSelector = this._getUIComponent('chromosomeSelector');
         if (chromosomeSelector) {
             chromosomeSelector.respondToDataLoadWithDataset(dataset);
         }
@@ -410,7 +419,7 @@ class HICBrowser {
      * Private helper: Update normalization widget when a map is loaded.
      */
     _updateNormalizationWidgetForMapLoad(data) {
-        const normalizationWidget = this.ui.getComponent('normalization');
+        const normalizationWidget = this._getUIComponent('normalization');
         if (normalizationWidget) {
             normalizationWidget.receiveEvent({ type: "MapLoad", data });
         }
@@ -420,7 +429,7 @@ class HICBrowser {
      * Private helper: Update resolution selector when a map is loaded.
      */
     _updateResolutionSelectorForMapLoad() {
-        const resolutionSelector = this.ui.getComponent('resolutionSelector');
+        const resolutionSelector = this._getUIComponent('resolutionSelector');
         if (resolutionSelector) {
             this.resolutionLocked = false;
             resolutionSelector.setResolutionLock(false);
@@ -432,7 +441,7 @@ class HICBrowser {
      * Private helper: Update color scale widget when a map is loaded.
      */
     _updateColorScaleWidgetForMapLoad() {
-        const colorScaleWidget = this.ui.getComponent('colorScaleWidget');
+        const colorScaleWidget = this._getUIComponent('colorScaleWidget');
         if (colorScaleWidget) {
             colorScaleWidget.updateMapBackgroundColor(this.contactMatrixView.backgroundColor);
         }
@@ -442,7 +451,7 @@ class HICBrowser {
      * Private helper: Update control map widget when a map is loaded.
      */
     _updateControlMapWidgetForMapLoad() {
-        const controlMapWidget = this.ui.getComponent('controlMap');
+        const controlMapWidget = this._getUIComponent('controlMap');
         if (controlMapWidget && !this.controlDataset) {
             controlMapWidget.hide();
         }
@@ -464,13 +473,13 @@ class HICBrowser {
     }
 
     notifyControlMapLoaded(controlDataset) {
-        const controlMapWidget = this.ui.getComponent('controlMap');
+        const controlMapWidget = this._getUIComponent('controlMap');
         if (controlMapWidget) {
             controlMapWidget.updateDisplayMode(this.getDisplayMode());
             controlMapWidget.show();
         }
 
-        const resolutionSelector = this.ui.getComponent('resolutionSelector');
+        const resolutionSelector = this._getUIComponent('resolutionSelector');
         if (resolutionSelector) {
             resolutionSelector.updateResolutions(this.state.zoom);
         }
@@ -484,7 +493,7 @@ class HICBrowser {
      * Private helper: Update chromosome selector when locus changes.
      */
     _updateChromosomeSelectorForLocusChange(state) {
-        const chromosomeSelector = this.ui.getComponent('chromosomeSelector');
+        const chromosomeSelector = this._getUIComponent('chromosomeSelector');
         if (chromosomeSelector) {
             chromosomeSelector.respondToLocusChangeWithState(state);
         }
@@ -494,7 +503,7 @@ class HICBrowser {
      * Private helper: Update scrollbar widget when locus changes.
      */
     _updateScrollbarForLocusChange(state) {
-        const scrollbarWidget = this.ui.getComponent('scrollbar');
+        const scrollbarWidget = this._getUIComponent('scrollbar');
         if (scrollbarWidget && !scrollbarWidget.isDragging) {
             scrollbarWidget.receiveEvent({ type: "LocusChange", data: { state } });
         }
@@ -504,7 +513,7 @@ class HICBrowser {
      * Private helper: Update resolution selector when locus changes.
      */
     _updateResolutionSelectorForLocusChange(state, resolutionChanged, chrChanged) {
-        const resolutionSelector = this.ui.getComponent('resolutionSelector');
+        const resolutionSelector = this._getUIComponent('resolutionSelector');
         if (!resolutionSelector) {
             return;
         }
@@ -527,7 +536,7 @@ class HICBrowser {
      * Private helper: Update locus goto widget when locus changes.
      */
     _updateLocusGotoForLocusChange(state) {
-        const locusGoto = this.ui.getComponent('locusGoto');
+        const locusGoto = this._getUIComponent('locusGoto');
         if (locusGoto) {
             locusGoto.receiveEvent({ type: "LocusChange", data: { state } });
         }
@@ -558,7 +567,7 @@ class HICBrowser {
      * Private helper: Update color scale widget for display mode changes.
      */
     _updateColorScaleWidgetForDisplayMode(mode) {
-        const colorScaleWidget = this.ui.getComponent('colorScaleWidget');
+        const colorScaleWidget = this._getUIComponent('colorScaleWidget');
         if (colorScaleWidget) {
             colorScaleWidget.updateForDisplayMode(
                 mode,
@@ -572,7 +581,7 @@ class HICBrowser {
      * Private helper: Update control map widget for display mode changes.
      */
     _updateControlMapWidgetForDisplayMode(mode) {
-        const controlMapWidget = this.ui.getComponent('controlMap');
+        const controlMapWidget = this._getUIComponent('controlMap');
         if (controlMapWidget) {
             controlMapWidget.updateDisplayMode(mode);
         }
@@ -584,7 +593,7 @@ class HICBrowser {
     }
 
     notifyColorScale(colorScale) {
-        const colorScaleWidget = this.ui.getComponent('colorScaleWidget');
+        const colorScaleWidget = this._getUIComponent('colorScaleWidget');
         if (colorScaleWidget) {
             colorScaleWidget.updateForColorScale(colorScale);
         }
@@ -599,7 +608,7 @@ class HICBrowser {
     }
 
     notifyNormVectorIndexLoad(dataset) {
-        const normalizationWidget = this.ui.getComponent('normalization');
+        const normalizationWidget = this._getUIComponent('normalization');
         if (normalizationWidget) {
             normalizationWidget.updateOptions();
             normalizationWidget.stopNotReady();
@@ -607,7 +616,7 @@ class HICBrowser {
     }
 
     notifyNormalizationFileLoad(status) {
-        const normalizationWidget = this.ui.getComponent('normalization');
+        const normalizationWidget = this._getUIComponent('normalization');
         if (normalizationWidget) {
             if (status === "start") {
                 normalizationWidget.startNotReady();
@@ -618,7 +627,7 @@ class HICBrowser {
     }
 
     notifyNormalizationExternalChange(normalization) {
-        const normalizationWidget = this.ui.getComponent('normalization');
+        const normalizationWidget = this._getUIComponent('normalization');
         if (normalizationWidget) {
             Array.from(normalizationWidget.normalizationSelector.options).forEach(option => {
                 option.selected = option.value === normalization;
@@ -631,19 +640,6 @@ class HICBrowser {
     }
 
     /**
-     * Private helper: Find the element that contains the given offset value.
-     * Used for highlighting chromosomes in whole-genome view.
-     */
-    _hitTestBbox(bboxes, value) {
-        for (const bbox of bboxes) {
-            if (value >= bbox.a && value <= bbox.b) {
-                return bbox.element;
-            }
-        }
-        return undefined;
-    }
-
-    /**
      * Private helper: Update ruler highlighting for mouse position.
      */
     _updateRulerHighlightingForMousePosition(ruler, xy) {
@@ -653,7 +649,7 @@ class HICBrowser {
 
         ruler.unhighlightWholeChromosome();
         const offset = ruler.axis === 'x' ? xy.x : xy.y;
-        const element = this._hitTestBbox(ruler.bboxes, offset);
+        const element = hitTestBbox(ruler.bboxes, offset);
         if (element) {
             element.classList.add('hic-whole-genome-chromosome-highlight');
         }
@@ -1632,11 +1628,11 @@ class HICBrowser {
 
     /**
      * Public API for updating/repainting the browser.
-     * 
+     *
      * Handles queuing logic for rapid calls (e.g., during mouse dragging).
      * If called while an update is in progress, queues the request for later processing.
      * Only the most recent request per type is kept in the queue.
-     * 
+     *
      * @param shouldSync - Whether to synchronize state to other browsers (default: true)
      *                     Set to false when called from syncState() to avoid infinite loops
      */
@@ -1670,7 +1666,7 @@ class HICBrowser {
                     queued.push(v)
                 }
                 this.pending.clear()
-                
+
                 // Process queued updates (only need to process the last one)
                 if (queued.length > 0) {
                     const lastQueued = queued[queued.length - 1]

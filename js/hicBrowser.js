@@ -34,7 +34,7 @@ import EventBus from "./eventBus.js"
 import Track2D from './track2D.js'
 import LayoutController, {getLayoutDimensions, setViewportSize} from './layoutController.js'
 import HICEvent from './hicEvent.js'
-import Dataset, { HiCDataset } from './hicDataset.js'
+import Dataset from './hicDataset.js'
 import LiveMapDataset from './liveMapDataset.js'
 import Genome from './genome.js'
 import State from './hicState.js'

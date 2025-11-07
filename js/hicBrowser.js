@@ -27,7 +27,7 @@
 
 import igv from '../node_modules/igv/dist/igv.esm.js'
 import {Alert, InputDialog, DOMUtils} from '../node_modules/igv-ui/dist/igv-ui.js'
-import {FileUtils} from '../node_modules/igv-utils/src/index.js'
+import {FileUtils, IGVColor} from '../node_modules/igv-utils/src/index.js'
 import * as hicUtils from './hicUtils.js'
 import {Globals} from "./globals.js"
 import EventBus from "./eventBus.js"
@@ -45,6 +45,8 @@ import {setTrackReorderArrowColors} from "./trackPair.js"
 import nvi from './nvi.js'
 import {extractName, presentError} from "./utils.js"
 import BrowserUIManager from "./browserUIManager.js"
+import ColorScale from './colorScale.js'
+import RatioColorScale from './ratioColorScale.js'
 
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
@@ -71,7 +73,7 @@ class HICBrowser {
         // Unified dataset/state system
         this.activeDataset = undefined;
         this.activeState = undefined;
-        
+
         // Control dataset (for A/B comparisons)
         this.controlDataset = undefined;
 
@@ -110,7 +112,7 @@ class HICBrowser {
 
     async init(config) {
         this.pending = new Map();
-        this.eventBus.hold();
+
         this.contactMatrixView.disableUpdates = true;
 
         try {
@@ -134,7 +136,7 @@ class HICBrowser {
 
             if (config.displayMode) {
                 this.contactMatrixView.displayMode = config.displayMode;
-                this.eventBus.post({ type: "DisplayMode", data: config.displayMode });
+                this.notifyDisplayMode(config.displayMode);
             }
 
             if (config.colorScale) {
@@ -142,7 +144,7 @@ class HICBrowser {
                     this.state.normalization = config.normalization;
                 }
                 this.contactMatrixView.setColorScale(config.colorScale);
-                this.eventBus.post({ type: "ColorScale", data: this.contactMatrixView.getColorScale() });
+                this.notifyColorScale(this.contactMatrixView.getColorScale());
             }
 
             const promises = [];
@@ -165,8 +167,8 @@ class HICBrowser {
                 this.state.normalization = validNormalizations.has(config.normalization) ? config.normalization : 'NONE';
             }
 
+            // No longer need hold/release - notifications happen directly
             const tmp = this.contactMatrixView.colorScaleThresholdCache;
-            this.eventBus.release();
             this.contactMatrixView.colorScaleThresholdCache = tmp;
 
             if (config.cycle) {
@@ -244,7 +246,7 @@ class HICBrowser {
 
     async setDisplayMode(mode) {
         await this.contactMatrixView.setDisplayMode(mode)
-        this.eventBus.post(HICEvent("DisplayMode", mode))
+        this.notifyDisplayMode(mode)
     }
 
     getDisplayMode() {
@@ -255,10 +257,10 @@ class HICBrowser {
 
         if (!this.activeDataset) return []
 
-        const baseOptions = this.activeDataset.getNormalizationOptions ? 
+        const baseOptions = this.activeDataset.getNormalizationOptions ?
             await this.activeDataset.getNormalizationOptions() : ['NONE'];
         if (this.controlDataset) {
-            let controlOptions = this.controlDataset.getNormalizationOptions ? 
+            let controlOptions = this.controlDataset.getNormalizationOptions ?
                 await this.controlDataset.getNormalizationOptions() : ['NONE'];
             controlOptions = new Set(controlOptions)
             return baseOptions.filter(base => controlOptions.has(base))
@@ -357,6 +359,268 @@ class HICBrowser {
 
         this.contactMatrixView.yGuideElement.style.display = 'none';
         this.layoutController.yTrackGuideElement.style.display = 'none';
+    }
+
+    /**
+     * Explicit notification methods to replace internal event system.
+     * These methods directly call components that need to be notified of state changes.
+     */
+
+    notifyMapLoaded(dataset, state, datasetType) {
+
+        const data = { dataset, state, datasetType };
+
+        // ContactMatrixView needs to enable mouse handlers and clear caches
+        if (!this.contactMatrixView.mouseHandlersEnabled) {
+            this.contactMatrixView.addTouchHandlers(this.contactMatrixView.viewportElement);
+            this.contactMatrixView.addMouseHandlers(this.contactMatrixView.viewportElement);
+            this.contactMatrixView.mouseHandlersEnabled = true;
+        }
+        this.contactMatrixView.clearImageCaches();
+        this.contactMatrixView.colorScaleThresholdCache = {};
+
+        // Update UI components
+        const chromosomeSelector = this.ui.getComponent('chromosomeSelector');
+        if (chromosomeSelector) {
+            chromosomeSelector.respondToDataLoadWithDataset(dataset);
+        }
+
+        const ruler = this.layoutController.xAxisRuler;
+        if (ruler) {
+            ruler.wholeGenomeLayout(ruler.axisElement, ruler.wholeGenomeContainerElement, ruler.axis, dataset);
+            ruler.update();
+        }
+        const yRuler = this.layoutController.yAxisRuler;
+        if (yRuler) {
+            yRuler.wholeGenomeLayout(yRuler.axisElement, yRuler.wholeGenomeContainerElement, yRuler.axis, dataset);
+            yRuler.update();
+        }
+
+        const normalizationWidget = this.ui.getComponent('normalization');
+        if (normalizationWidget) {
+            normalizationWidget.receiveEvent({ type: "MapLoad", data });
+        }
+
+        const resolutionSelector = this.ui.getComponent('resolutionSelector');
+        if (resolutionSelector) {
+            this.resolutionLocked = false;
+            resolutionSelector.setResolutionLock(false);
+            resolutionSelector.updateResolutions(this.state.zoom);
+        }
+
+        const colorScaleWidget = this.ui.getComponent('colorScaleWidget');
+        if (colorScaleWidget && colorScaleWidget.mapBackgroundColorpickerButton) {
+            const paintSwatch = (swatch, { r, g, b }) => {
+                swatch.style.backgroundColor = IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b));
+            };
+            paintSwatch(colorScaleWidget.mapBackgroundColorpickerButton, this.contactMatrixView.backgroundColor);
+        }
+
+        const controlMapWidget = this.ui.getComponent('controlMap');
+        if (controlMapWidget && !this.controlDataset) {
+            controlMapWidget.container.style.display = 'none';
+        }
+
+        // Note: locusGoto is notified via notifyLocusChange() which is called from setState()
+        // after the locus is properly configured. Don't notify here as state.locus might not exist yet.
+    }
+
+    notifyControlMapLoaded(controlDataset) {
+        const controlMapWidget = this.ui.getComponent('controlMap');
+        if (controlMapWidget) {
+            controlMapWidget.controlMapHash.updateOptions(this.getDisplayMode());
+            controlMapWidget.container.style.display = 'block';
+        }
+
+        const resolutionSelector = this.ui.getComponent('resolutionSelector');
+        if (resolutionSelector) {
+            resolutionSelector.updateResolutions(this.state.zoom);
+        }
+
+        // ContactMatrixView also needs to know about control map
+        this.contactMatrixView.clearImageCaches();
+        this.contactMatrixView.colorScaleThresholdCache = {};
+    }
+
+    notifyLocusChange(eventData) {
+        const { state, resolutionChanged, chrChanged, dragging } = eventData;
+
+        // ContactMatrixView - only clear caches if not a locus change
+        // (locus changes don't require cache clearing)
+
+        // ChromosomeSelector
+        const chromosomeSelector = this.ui.getComponent('chromosomeSelector');
+        if (chromosomeSelector) {
+            chromosomeSelector.respondToLocusChangeWithState(state);
+        }
+
+        // ScrollbarWidget
+        const scrollbarWidget = this.ui.getComponent('scrollbar');
+        if (scrollbarWidget && !scrollbarWidget.isDragging) {
+            scrollbarWidget.receiveEvent({ type: "LocusChange", data: { state } });
+        }
+
+        // ResolutionSelector
+        const resolutionSelector = this.ui.getComponent('resolutionSelector');
+        if (resolutionSelector) {
+            if (resolutionChanged) {
+                this.resolutionLocked = false;
+                resolutionSelector.setResolutionLock(false);
+            }
+
+            if (chrChanged !== false) {
+                const isWholeGenome = this.dataset.isWholeGenome(state.chr1);
+                const labelElement = resolutionSelector.labelElement;
+                if (labelElement) {
+                    labelElement.textContent = isWholeGenome ? 'Resolution (mb)' : 'Resolution (kb)';
+                }
+                resolutionSelector.updateResolutions(state.zoom);
+            } else {
+                const selectedIndex = state.zoom;
+                Array.from(resolutionSelector.resolutionSelectorElement.options).forEach((option, index) => {
+                    option.selected = index === selectedIndex;
+                });
+            }
+        }
+
+        // LocusGoto
+        const locusGoto = this.ui.getComponent('locusGoto');
+        if (locusGoto) {
+            locusGoto.receiveEvent({ type: "LocusChange", data: { state } });
+        }
+
+        // Rulers are updated directly in update() method, not here
+    }
+
+    notifyNormalizationChange(normalization) {
+        // ContactMatrixView
+        this.contactMatrixView.receiveEvent({ type: "NormalizationChange", data: normalization });
+
+        // NormalizationWidget - no direct notification needed, it updates via selector change
+    }
+
+    notifyDisplayMode(mode) {
+        const colorScaleWidget = this.ui.getComponent('colorScaleWidget');
+        if (colorScaleWidget && colorScaleWidget.minusButton && colorScaleWidget.plusButton) {
+            const paintSwatch = (swatch, { r, g, b }) => {
+                swatch.style.backgroundColor = IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b));
+            };
+
+            if (mode === "AOB" || mode === "BOA") {
+                colorScaleWidget.minusButton.style.display = 'block';
+                paintSwatch(colorScaleWidget.minusButton, this.contactMatrixView.ratioColorScale.negativeScale);
+                paintSwatch(colorScaleWidget.plusButton, this.contactMatrixView.ratioColorScale.positiveScale);
+            } else {
+                colorScaleWidget.minusButton.style.display = 'none';
+                paintSwatch(colorScaleWidget.plusButton, this.contactMatrixView.colorScale);
+            }
+        }
+
+        const controlMapWidget = this.ui.getComponent('controlMap');
+        if (controlMapWidget) {
+            controlMapWidget.controlMapHash.updateOptions(mode);
+        }
+    }
+
+    notifyColorScale(colorScale) {
+        const colorScaleWidget = this.ui.getComponent('colorScaleWidget');
+        if (colorScaleWidget && colorScaleWidget.highColorscaleInput && colorScaleWidget.plusButton) {
+            const paintSwatch = (swatch, { r, g, b }) => {
+                swatch.style.backgroundColor = IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b));
+            };
+
+            if (colorScale instanceof ColorScale) {
+                colorScaleWidget.highColorscaleInput.value = colorScale.threshold;
+                paintSwatch(colorScaleWidget.plusButton, colorScale);
+            } else if (colorScale instanceof RatioColorScale) {
+                colorScaleWidget.highColorscaleInput.value = colorScale.threshold;
+                if (colorScaleWidget.minusButton) {
+                    paintSwatch(colorScaleWidget.minusButton, colorScale.negativeScale);
+                }
+                paintSwatch(colorScaleWidget.plusButton, colorScale.positiveScale);
+            }
+        }
+    }
+
+    notifyTrackLoad2D(tracks2D) {
+        this.contactMatrixView.receiveEvent({ type: "TrackLoad2D", data: tracks2D });
+    }
+
+    notifyTrackState2D(trackData) {
+        this.contactMatrixView.receiveEvent({ type: "TrackState2D", data: trackData });
+    }
+
+    notifyNormVectorIndexLoad(dataset) {
+        const normalizationWidget = this.ui.getComponent('normalization');
+        if (normalizationWidget) {
+            normalizationWidget.updateOptions();
+            normalizationWidget.stopNotReady();
+        }
+    }
+
+    notifyNormalizationFileLoad(status) {
+        const normalizationWidget = this.ui.getComponent('normalization');
+        if (normalizationWidget) {
+            if (status === "start") {
+                normalizationWidget.startNotReady();
+            } else {
+                normalizationWidget.stopNotReady();
+            }
+        }
+    }
+
+    notifyNormalizationExternalChange(normalization) {
+        const normalizationWidget = this.ui.getComponent('normalization');
+        if (normalizationWidget) {
+            Array.from(normalizationWidget.normalizationSelector.options).forEach(option => {
+                option.selected = option.value === normalization;
+            });
+        }
+    }
+
+    notifyColorChange() {
+        this.contactMatrixView.receiveEvent({ type: "ColorChange" });
+    }
+
+    notifyUpdateContactMapMousePosition(xy) {
+        const ruler = this.layoutController.xAxisRuler;
+        if (ruler && ruler.bboxes) {
+            ruler.unhighlightWholeChromosome();
+            const offset = ruler.axis === 'x' ? xy.x : xy.y;
+            const hitTest = (bboxes, value) => {
+                let hitElement = undefined;
+                for (const bbox of bboxes) {
+                    if (value >= bbox.a && value <= bbox.b) {
+                        hitElement = bbox.element;
+                        break;
+                    }
+                }
+                return hitElement;
+            };
+            const element = hitTest(ruler.bboxes, offset);
+            if (element) {
+                element.classList.add('hic-whole-genome-chromosome-highlight');
+            }
+        }
+        const yRuler = this.layoutController.yAxisRuler;
+        if (yRuler && yRuler.bboxes) {
+            yRuler.unhighlightWholeChromosome();
+            const offset = yRuler.axis === 'x' ? xy.x : xy.y;
+            const hitTest = (bboxes, value) => {
+                let hitElement = undefined;
+                for (const bbox of bboxes) {
+                    if (value >= bbox.a && value <= bbox.b) {
+                        hitElement = bbox.element;
+                        break;
+                    }
+                }
+                return hitElement;
+            };
+            const element = hitTest(yRuler.bboxes, offset);
+            if (element) {
+                element.classList.add('hic-whole-genome-chromosome-highlight');
+            }
+        }
     }
 
     showCrosshairs() {
@@ -468,7 +732,7 @@ class HICBrowser {
                 const tracks2D = await Promise.all(promises2D);
                 if (tracks2D && tracks2D.length > 0) {
                     this.tracks2D = this.tracks2D.concat(tracks2D);
-                    this.eventBus.post(HICEvent("TrackLoad2D", this.tracks2D));
+                    this.notifyTrackLoad2D(this.tracks2D);
                 }
             }
 
@@ -489,7 +753,7 @@ class HICBrowser {
             console.warn("Normalization files are only supported for Hi-C datasets");
             return;
         }
-        this.eventBus.post(HICEvent("NormalizationFileLoad", "start"))
+        this.notifyNormalizationFileLoad("start")
 
         const normVectors = await this.activeDataset.hicFile.readNormalizationVectorFile(url, this.activeDataset.chromosomes)
         for (let type of normVectors['types']) {
@@ -499,7 +763,7 @@ class HICBrowser {
             if (!this.activeDataset.normalizationTypes.includes(type)) {
                 this.activeDataset.normalizationTypes.push(type)
             }
-            this.eventBus.post(HICEvent("NormVectorIndexLoad", this.activeDataset))
+            this.notifyNormVectorIndexLoad(this.activeDataset)
         }
 
         return normVectors
@@ -636,7 +900,7 @@ class HICBrowser {
             config.name = name
 
             const hicFileAlert = str => {
-                this.eventBus.post(HICEvent('NormalizationExternalChange', 'NONE'))
+                this.notifyNormalizationExternalChange('NONE')
                 Alert.presentAlert(str)
             }
 
@@ -666,7 +930,7 @@ class HICBrowser {
                     console.error('config.state is of unknown type')
                     state = State.default(config);
                 }
-                
+
                 // Set active dataset before setState so configureLocus can access bpResolutions
                 this.setActiveDataset(dataset, state);
                 await this.setState(state)
@@ -685,7 +949,7 @@ class HICBrowser {
                 await this.setState(state)
             }
 
-            this.eventBus.post(HICEvent("MapLoad", { dataset: dataset, state: state, datasetType: dataset.datasetType }))
+            this.notifyMapLoaded(dataset, state, dataset.datasetType)
 
             // Initiate loading of the norm vector index, but don't block if the "nvi" parameter is not available.
             // Let it load in the background
@@ -701,13 +965,15 @@ class HICBrowser {
 
             if (config.nvi && dataset.getNormVectorIndex) {
                 await dataset.getNormVectorIndex(config)
-                this.eventBus.post(HICEvent("NormVectorIndexLoad", dataset))
+                if (!config.isControl) {
+                    this.notifyNormVectorIndexLoad(dataset)
+                }
             } else if (dataset.getNormVectorIndex) {
 
                 dataset.getNormVectorIndex(config)
                     .then(normVectorIndex => {
                         if (!config.isControl) {
-                            this.eventBus.post(HICEvent("NormVectorIndexLoad", dataset))
+                            this.notifyNormVectorIndexLoad(dataset)
                         }
                     })
             }
@@ -795,7 +1061,7 @@ class HICBrowser {
             this.setActiveDataset(dataset, state);
             await this.setState(state);
 
-            this.eventBus.post(HICEvent("MapLoad", { dataset: dataset, state: state, datasetType: dataset.datasetType }));
+            this.notifyMapLoaded(dataset, state, dataset.datasetType);
 
         } catch (error) {
             this.contactMapLabel.textContent = "";
@@ -827,7 +1093,7 @@ class HICBrowser {
             config.name = name
 
             const hicFileAlert = str => {
-                this.eventBus.post(HICEvent('NormalizationExternalChange', 'NONE'))
+                this.notifyNormalizationExternalChange('NONE')
                 Alert.presentAlert(str)
             }
 
@@ -847,10 +1113,10 @@ class HICBrowser {
                 if (controlDataset.getNormVectorIndex) {
                     await controlDataset.getNormVectorIndex(config)
                 }
-                this.eventBus.post(HICEvent("ControlMapLoad", this.controlDataset))
+                this.notifyControlMapLoaded(this.controlDataset)
 
                 if (!noUpdates) {
-                    this.update()
+                    await this.update()
                 }
             } else {
                 Alert.presentAlert('"B" map genome (' + controlDataset.genomeId + ') does not match "A" map genome (' + this.genome.id + ')')
@@ -880,7 +1146,7 @@ class HICBrowser {
         if (xLocus.wholeChr && yLocus.wholeChr || 'All' === xLocus.chr && 'All' === yLocus.chr) {
             await this.setChromosomes(xLocus, yLocus)
         } else {
-            this.goto(xLocus.chr, xLocus.start, xLocus.end, yLocus.chr, yLocus.start, yLocus.end)
+            await this.goto(xLocus.chr, xLocus.start, xLocus.end, yLocus.chr, yLocus.start, yLocus.end)
         }
     }
 
@@ -939,14 +1205,17 @@ class HICBrowser {
         return undefined;  // No match found
     }
 
-    goto(chr1, bpX, bpXMax, chr2, bpY, bpYMax) {
+    async goto(chr1, bpX, bpXMax, chr2, bpY, bpYMax) {
 
         const { width, height } = this.contactMatrixView.getViewDimensions()
         const { chrChanged, resolutionChanged } = this.state.updateWithLoci(chr1, bpX, bpXMax, chr2, bpY, bpYMax, this, width, height)
 
         this.contactMatrixView.clearImageCaches()
 
-        this.update(HICEvent("LocusChange", { state: this.state, resolutionChanged, chrChanged }))
+        const eventData = { state: this.state, resolutionChanged, chrChanged }
+
+        await this.update()
+        this.notifyLocusChange(eventData)
 
     }
 
@@ -1024,7 +1293,9 @@ class HICBrowser {
 
                     await this.contactMatrixView.zoomIn(anchorPx, anchorPy, 1/scaleFactor)
 
-                    await this.update(HICEvent("LocusChange", { state: this.state, resolutionChanged, chrChanged: false }))
+                    const eventData = { state: this.state, resolutionChanged, chrChanged: false }
+                    await this.update()
+                    this.notifyLocusChange(eventData)
                 }
             } finally {
                 this.stopSpinner()
@@ -1088,7 +1359,9 @@ class HICBrowser {
 
                 this.state.configureLocus(this, this.dataset, { width, height })
 
-                this.update(HICEvent("LocusChange", {state: this.state, resolutionChanged: false, chrChanged: false}))
+                const eventData = { state: this.state, resolutionChanged: false, chrChanged: false }
+                await this.update()
+                this.notifyLocusChange(eventData)
 
             } else {
                 let i
@@ -1114,7 +1387,9 @@ class HICBrowser {
 
         await this.contactMatrixView.zoomIn()
 
-        this.update(HICEvent("LocusChange", { state: this.state, resolutionChanged, chrChanged: false }))
+        const eventData = { state: this.state, resolutionChanged, chrChanged: false }
+        await this.update()
+        this.notifyLocusChange(eventData)
 
     }
 
@@ -1147,7 +1422,9 @@ class HICBrowser {
 
         }
 
-        await this.update(HICEvent("LocusChange", {state: this.state, resolutionChanged: true, chrChanged: true}))
+        const eventData = { state: this.state, resolutionChanged: true, chrChanged: true }
+        await this.update()
+        this.notifyLocusChange(eventData)
 
     }
 
@@ -1198,9 +1475,9 @@ class HICBrowser {
             this.state.configureLocus(this, this.activeDataset, viewDimensions)
         }
 
-        const hicEvent = new HICEvent("LocusChange", { state: this.state, resolutionChanged: true, chrChanged })
-        this.update(hicEvent)
-        this.eventBus.post(hicEvent)
+        const eventData = { state: this.state, resolutionChanged: true, chrChanged }
+        await this.update()
+        this.notifyLocusChange(eventData)
     }
 
     /**
@@ -1240,18 +1517,19 @@ class HICBrowser {
 
         const { zoomChanged, chrChanged } = this.state.sync(targetState, this, this.genome, this.dataset)
 
-        const payload = { state: this.state, resolutionChanged: zoomChanged, chrChanged }
-        this.update(HICEvent("LocusChange", payload, false))
+        // For sync, we don't want to propagate back to other browsers (would cause infinite loop)
+        // So we update without syncing
+        await this.update(false)
 
     }
 
     setNormalization(normalization) {
 
         this.state.normalization = normalization
-        this.eventBus.post(HICEvent("NormalizationChange", this.state.normalization))
+        this.notifyNormalizationChange(this.state.normalization)
     }
 
-    shiftPixels(dx, dy) {
+    async shiftPixels(dx, dy) {
 
         if (undefined === this.dataset) {
             console.warn('dataset is undefined')
@@ -1260,74 +1538,106 @@ class HICBrowser {
 
         this.state.panShift(dx, dy, this, this.dataset, this.contactMatrixView.getViewDimensions())
 
-        const locusChangeEvent = HICEvent("LocusChange", {
+        const eventData = {
             state: this.state,
             resolutionChanged: false,
             dragging: true,
             chrChanged: false
-        })
-        locusChangeEvent.dragging = true
+        }
 
-        this.update(locusChangeEvent)
-        this.eventBus.post(locusChangeEvent)
+        await this.update()
+        this.notifyLocusChange(eventData)
     }
 
     /**
-     * Update the maps and tracks.  This method can be called from the browser event thread repeatedly, for example
-     * while mouse dragging.  If called while an update is in progress queue the event for processing later.  It
-     * is only neccessary to queue the most recent recently received event, so a simple instance variable will suffice
-     * for the queue.
-     *
-     * @param event
+     * Pure rendering method - repaints all visual components.
+     * Reads state directly from this.state, no parameters needed.
+     * This is the core rendering logic separated from update coordination.
      */
-    async update(event) {
+    async repaint() {
+        if (!this.activeDataset || !this.activeState) {
+            return; // Can't render without dataset and state
+        }
+
+        // Update rulers with current state
+        const pseudoEvent = { type: "LocusChange", data: { state: this.activeState } }
+        this.layoutController.xAxisRuler.locusChange(pseudoEvent)
+        this.layoutController.yAxisRuler.locusChange(pseudoEvent)
+
+        // Render all tracks and contact matrix in parallel
+        const promises = []
+
+        for (let xyTrackRenderPair of this.trackPairs) {
+            promises.push(this.renderTrackXY(xyTrackRenderPair))
+        }
+        promises.push(this.contactMatrixView.update())
+        await Promise.all(promises)
+    }
+
+    /**
+     * Synchronize this browser's state to other synched browsers.
+     * Called separately from rendering to keep concerns separated.
+     */
+    syncToOtherBrowsers() {
+        if (this.synchedBrowsers.size === 0) {
+            return; // Nothing to sync
+        }
+
+        const syncState = this.getSyncState()
+        for (const browser of [...this.synchedBrowsers]) {
+            browser.syncState(syncState)
+        }
+    }
+
+    /**
+     * Public API for updating/repainting the browser.
+     * 
+     * Handles queuing logic for rapid calls (e.g., during mouse dragging).
+     * If called while an update is in progress, queues the request for later processing.
+     * Only the most recent request per type is kept in the queue.
+     * 
+     * @param shouldSync - Whether to synchronize state to other browsers (default: true)
+     *                     Set to false when called from syncState() to avoid infinite loops
+     */
+    async update(shouldSync = true) {
 
         if (this.updating) {
-            const type = event ? event.type : "NONE"
-            this.pending.set(type, event)
-        } else {
-            this.updating = true
-            try {
+            // Queue this update request - use a simple key since we don't need event types anymore
+            this.pending.set("update", { shouldSync })
+            return
+        }
 
-                this.startSpinner()
-                if (event !== undefined && "LocusChange" === event.type) {
-                    this.layoutController.xAxisRuler.locusChange(event)
-                    this.layoutController.yAxisRuler.locusChange(event)
-                }
+        this.updating = true
+        try {
+            this.startSpinner()
 
-                const promises = []
+            // Render everything
+            await this.repaint()
 
-                for (let xyTrackRenderPair of this.trackPairs) {
-                    promises.push(this.renderTrackXY(xyTrackRenderPair))
-                }
-                promises.push(this.contactMatrixView.update(event))
-                await Promise.all(promises)
-
-                if (event && event.propogate) {
-                    let syncState1 = this.getSyncState()
-                    for (const browser of [...this.synchedBrowsers]) {
-                        browser.syncState(syncState1)
-                    }
-                }
-
-            } finally {
-                this.updating = false
-                if (this.pending.size > 0) {
-                    const events = []
-                    for (let [k, v] of this.pending) {
-                        events.push(v)
-                    }
-                    this.pending.clear()
-                    for (let e of events) {
-                        this.update(e)
-                    }
-                }
-                if (event) {
-                    // possibly, unless update was called from an event post (infinite loop)
-                    this.eventBus.post(event)
-                }
-                this.stopSpinner()
+            // Optionally sync to other browsers
+            if (shouldSync) {
+                this.syncToOtherBrowsers()
             }
+
+        } finally {
+            this.updating = false
+
+            // Process any queued updates
+            if (this.pending.size > 0) {
+                const queued = []
+                for (let [k, v] of this.pending) {
+                    queued.push(v)
+                }
+                this.pending.clear()
+                
+                // Process queued updates (only need to process the last one)
+                if (queued.length > 0) {
+                    const lastQueued = queued[queued.length - 1]
+                    await this.update(lastQueued.shouldSync)
+                }
+            }
+
+            this.stopSpinner()
         }
     }
 

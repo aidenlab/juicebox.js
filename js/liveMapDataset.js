@@ -185,7 +185,6 @@ class LiveMapDataset extends Dataset {
         
         // Get the first available resolution (live maps typically have one)
         const binSize = this.bpResolutions[0];
-        const zoomIndex = 0;
         
         // Calculate average count for this chromosome pair
         let totalCount = 0;

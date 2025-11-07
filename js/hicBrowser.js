@@ -366,11 +366,19 @@ class HICBrowser {
      * These methods directly call components that need to be notified of state changes.
      */
 
-    notifyMapLoaded(dataset, state, datasetType) {
+    /**
+     * Private helper: Paint a color swatch with the given RGB color.
+     * Extracted to eliminate duplication across notification methods.
+     */
+    _paintSwatch(swatch, { r, g, b }) {
+        swatch.style.backgroundColor = IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b));
+    }
 
-        const data = { dataset, state, datasetType };
-
-        // ContactMatrixView needs to enable mouse handlers and clear caches
+    /**
+     * Private helper: Initialize ContactMatrixView when a map is loaded.
+     * Enables mouse handlers and clears caches.
+     */
+    _initializeContactMatrixViewForMapLoad() {
         if (!this.contactMatrixView.mouseHandlersEnabled) {
             this.contactMatrixView.addTouchHandlers(this.contactMatrixView.viewportElement);
             this.contactMatrixView.addMouseHandlers(this.contactMatrixView.viewportElement);
@@ -378,48 +386,86 @@ class HICBrowser {
         }
         this.contactMatrixView.clearImageCaches();
         this.contactMatrixView.colorScaleThresholdCache = {};
+    }
 
-        // Update UI components
+    /**
+     * Private helper: Update chromosome selector when a map is loaded.
+     */
+    _updateChromosomeSelectorForMapLoad(dataset) {
         const chromosomeSelector = this.ui.getComponent('chromosomeSelector');
         if (chromosomeSelector) {
             chromosomeSelector.respondToDataLoadWithDataset(dataset);
         }
+    }
 
-        const ruler = this.layoutController.xAxisRuler;
-        if (ruler) {
-            ruler.wholeGenomeLayout(ruler.axisElement, ruler.wholeGenomeContainerElement, ruler.axis, dataset);
-            ruler.update();
+    /**
+     * Private helper: Update rulers when a map is loaded.
+     */
+    _updateRulersForMapLoad(dataset) {
+        const xRuler = this.layoutController.xAxisRuler;
+        if (xRuler) {
+            xRuler.wholeGenomeLayout(xRuler.axisElement, xRuler.wholeGenomeContainerElement, xRuler.axis, dataset);
+            xRuler.update();
         }
         const yRuler = this.layoutController.yAxisRuler;
         if (yRuler) {
             yRuler.wholeGenomeLayout(yRuler.axisElement, yRuler.wholeGenomeContainerElement, yRuler.axis, dataset);
             yRuler.update();
         }
+    }
 
+    /**
+     * Private helper: Update normalization widget when a map is loaded.
+     */
+    _updateNormalizationWidgetForMapLoad(data) {
         const normalizationWidget = this.ui.getComponent('normalization');
         if (normalizationWidget) {
             normalizationWidget.receiveEvent({ type: "MapLoad", data });
         }
+    }
 
+    /**
+     * Private helper: Update resolution selector when a map is loaded.
+     */
+    _updateResolutionSelectorForMapLoad() {
         const resolutionSelector = this.ui.getComponent('resolutionSelector');
         if (resolutionSelector) {
             this.resolutionLocked = false;
             resolutionSelector.setResolutionLock(false);
             resolutionSelector.updateResolutions(this.state.zoom);
         }
+    }
 
+    /**
+     * Private helper: Update color scale widget when a map is loaded.
+     */
+    _updateColorScaleWidgetForMapLoad() {
         const colorScaleWidget = this.ui.getComponent('colorScaleWidget');
         if (colorScaleWidget && colorScaleWidget.mapBackgroundColorpickerButton) {
-            const paintSwatch = (swatch, { r, g, b }) => {
-                swatch.style.backgroundColor = IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b));
-            };
-            paintSwatch(colorScaleWidget.mapBackgroundColorpickerButton, this.contactMatrixView.backgroundColor);
+            this._paintSwatch(colorScaleWidget.mapBackgroundColorpickerButton, this.contactMatrixView.backgroundColor);
         }
+    }
 
+    /**
+     * Private helper: Update control map widget when a map is loaded.
+     */
+    _updateControlMapWidgetForMapLoad() {
         const controlMapWidget = this.ui.getComponent('controlMap');
         if (controlMapWidget && !this.controlDataset) {
             controlMapWidget.container.style.display = 'none';
         }
+    }
+
+    notifyMapLoaded(dataset, state, datasetType) {
+        const data = { dataset, state, datasetType };
+
+        this._initializeContactMatrixViewForMapLoad();
+        this._updateChromosomeSelectorForMapLoad(dataset);
+        this._updateRulersForMapLoad(dataset);
+        this._updateNormalizationWidgetForMapLoad(data);
+        this._updateResolutionSelectorForMapLoad();
+        this._updateColorScaleWidgetForMapLoad();
+        this._updateControlMapWidgetForMapLoad();
 
         // Note: locusGoto is notified via notifyLocusChange() which is called from setState()
         // after the locus is properly configured. Don't notify here as state.locus might not exist yet.
@@ -442,52 +488,75 @@ class HICBrowser {
         this.contactMatrixView.colorScaleThresholdCache = {};
     }
 
+    /**
+     * Private helper: Update chromosome selector when locus changes.
+     */
+    _updateChromosomeSelectorForLocusChange(state) {
+        const chromosomeSelector = this.ui.getComponent('chromosomeSelector');
+        if (chromosomeSelector) {
+            chromosomeSelector.respondToLocusChangeWithState(state);
+        }
+    }
+
+    /**
+     * Private helper: Update scrollbar widget when locus changes.
+     */
+    _updateScrollbarForLocusChange(state) {
+        const scrollbarWidget = this.ui.getComponent('scrollbar');
+        if (scrollbarWidget && !scrollbarWidget.isDragging) {
+            scrollbarWidget.receiveEvent({ type: "LocusChange", data: { state } });
+        }
+    }
+
+    /**
+     * Private helper: Update resolution selector when locus changes.
+     */
+    _updateResolutionSelectorForLocusChange(state, resolutionChanged, chrChanged) {
+        const resolutionSelector = this.ui.getComponent('resolutionSelector');
+        if (!resolutionSelector) {
+            return;
+        }
+
+        if (resolutionChanged) {
+            this.resolutionLocked = false;
+            resolutionSelector.setResolutionLock(false);
+        }
+
+        if (chrChanged !== false) {
+            const isWholeGenome = this.dataset.isWholeGenome(state.chr1);
+            const labelElement = resolutionSelector.labelElement;
+            if (labelElement) {
+                labelElement.textContent = isWholeGenome ? 'Resolution (mb)' : 'Resolution (kb)';
+            }
+            resolutionSelector.updateResolutions(state.zoom);
+        } else {
+            const selectedIndex = state.zoom;
+            Array.from(resolutionSelector.resolutionSelectorElement.options).forEach((option, index) => {
+                option.selected = index === selectedIndex;
+            });
+        }
+    }
+
+    /**
+     * Private helper: Update locus goto widget when locus changes.
+     */
+    _updateLocusGotoForLocusChange(state) {
+        const locusGoto = this.ui.getComponent('locusGoto');
+        if (locusGoto) {
+            locusGoto.receiveEvent({ type: "LocusChange", data: { state } });
+        }
+    }
+
     notifyLocusChange(eventData) {
         const { state, resolutionChanged, chrChanged, dragging } = eventData;
 
         // ContactMatrixView - only clear caches if not a locus change
         // (locus changes don't require cache clearing)
 
-        // ChromosomeSelector
-        const chromosomeSelector = this.ui.getComponent('chromosomeSelector');
-        if (chromosomeSelector) {
-            chromosomeSelector.respondToLocusChangeWithState(state);
-        }
-
-        // ScrollbarWidget
-        const scrollbarWidget = this.ui.getComponent('scrollbar');
-        if (scrollbarWidget && !scrollbarWidget.isDragging) {
-            scrollbarWidget.receiveEvent({ type: "LocusChange", data: { state } });
-        }
-
-        // ResolutionSelector
-        const resolutionSelector = this.ui.getComponent('resolutionSelector');
-        if (resolutionSelector) {
-            if (resolutionChanged) {
-                this.resolutionLocked = false;
-                resolutionSelector.setResolutionLock(false);
-            }
-
-            if (chrChanged !== false) {
-                const isWholeGenome = this.dataset.isWholeGenome(state.chr1);
-                const labelElement = resolutionSelector.labelElement;
-                if (labelElement) {
-                    labelElement.textContent = isWholeGenome ? 'Resolution (mb)' : 'Resolution (kb)';
-                }
-                resolutionSelector.updateResolutions(state.zoom);
-            } else {
-                const selectedIndex = state.zoom;
-                Array.from(resolutionSelector.resolutionSelectorElement.options).forEach((option, index) => {
-                    option.selected = index === selectedIndex;
-                });
-            }
-        }
-
-        // LocusGoto
-        const locusGoto = this.ui.getComponent('locusGoto');
-        if (locusGoto) {
-            locusGoto.receiveEvent({ type: "LocusChange", data: { state } });
-        }
+        this._updateChromosomeSelectorForLocusChange(state);
+        this._updateScrollbarForLocusChange(state);
+        this._updateResolutionSelectorForLocusChange(state, resolutionChanged, chrChanged);
+        this._updateLocusGotoForLocusChange(state);
 
         // Rulers are updated directly in update() method, not here
     }
@@ -499,46 +568,69 @@ class HICBrowser {
         // NormalizationWidget - no direct notification needed, it updates via selector change
     }
 
-    notifyDisplayMode(mode) {
+    /**
+     * Private helper: Update color scale widget for display mode changes.
+     */
+    _updateColorScaleWidgetForDisplayMode(mode) {
         const colorScaleWidget = this.ui.getComponent('colorScaleWidget');
-        if (colorScaleWidget && colorScaleWidget.minusButton && colorScaleWidget.plusButton) {
-            const paintSwatch = (swatch, { r, g, b }) => {
-                swatch.style.backgroundColor = IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b));
-            };
-
-            if (mode === "AOB" || mode === "BOA") {
-                colorScaleWidget.minusButton.style.display = 'block';
-                paintSwatch(colorScaleWidget.minusButton, this.contactMatrixView.ratioColorScale.negativeScale);
-                paintSwatch(colorScaleWidget.plusButton, this.contactMatrixView.ratioColorScale.positiveScale);
-            } else {
-                colorScaleWidget.minusButton.style.display = 'none';
-                paintSwatch(colorScaleWidget.plusButton, this.contactMatrixView.colorScale);
-            }
+        if (!colorScaleWidget || !colorScaleWidget.minusButton || !colorScaleWidget.plusButton) {
+            return;
         }
 
+        if (mode === "AOB" || mode === "BOA") {
+            colorScaleWidget.minusButton.style.display = 'block';
+            this._paintSwatch(colorScaleWidget.minusButton, this.contactMatrixView.ratioColorScale.negativeScale);
+            this._paintSwatch(colorScaleWidget.plusButton, this.contactMatrixView.ratioColorScale.positiveScale);
+        } else {
+            colorScaleWidget.minusButton.style.display = 'none';
+            this._paintSwatch(colorScaleWidget.plusButton, this.contactMatrixView.colorScale);
+        }
+    }
+
+    /**
+     * Private helper: Update control map widget for display mode changes.
+     */
+    _updateControlMapWidgetForDisplayMode(mode) {
         const controlMapWidget = this.ui.getComponent('controlMap');
         if (controlMapWidget) {
             controlMapWidget.controlMapHash.updateOptions(mode);
         }
     }
 
+    notifyDisplayMode(mode) {
+        this._updateColorScaleWidgetForDisplayMode(mode);
+        this._updateControlMapWidgetForDisplayMode(mode);
+    }
+
+    /**
+     * Private helper: Update color scale widget for standard color scale.
+     */
+    _updateColorScaleWidgetForStandardScale(colorScaleWidget, colorScale) {
+        colorScaleWidget.highColorscaleInput.value = colorScale.threshold;
+        this._paintSwatch(colorScaleWidget.plusButton, colorScale);
+    }
+
+    /**
+     * Private helper: Update color scale widget for ratio color scale.
+     */
+    _updateColorScaleWidgetForRatioScale(colorScaleWidget, ratioColorScale) {
+        colorScaleWidget.highColorscaleInput.value = ratioColorScale.threshold;
+        if (colorScaleWidget.minusButton) {
+            this._paintSwatch(colorScaleWidget.minusButton, ratioColorScale.negativeScale);
+        }
+        this._paintSwatch(colorScaleWidget.plusButton, ratioColorScale.positiveScale);
+    }
+
     notifyColorScale(colorScale) {
         const colorScaleWidget = this.ui.getComponent('colorScaleWidget');
-        if (colorScaleWidget && colorScaleWidget.highColorscaleInput && colorScaleWidget.plusButton) {
-            const paintSwatch = (swatch, { r, g, b }) => {
-                swatch.style.backgroundColor = IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b));
-            };
+        if (!colorScaleWidget || !colorScaleWidget.highColorscaleInput || !colorScaleWidget.plusButton) {
+            return;
+        }
 
-            if (colorScale instanceof ColorScale) {
-                colorScaleWidget.highColorscaleInput.value = colorScale.threshold;
-                paintSwatch(colorScaleWidget.plusButton, colorScale);
-            } else if (colorScale instanceof RatioColorScale) {
-                colorScaleWidget.highColorscaleInput.value = colorScale.threshold;
-                if (colorScaleWidget.minusButton) {
-                    paintSwatch(colorScaleWidget.minusButton, colorScale.negativeScale);
-                }
-                paintSwatch(colorScaleWidget.plusButton, colorScale.positiveScale);
-            }
+        if (colorScale instanceof ColorScale) {
+            this._updateColorScaleWidgetForStandardScale(colorScaleWidget, colorScale);
+        } else if (colorScale instanceof RatioColorScale) {
+            this._updateColorScaleWidgetForRatioScale(colorScaleWidget, colorScale);
         }
     }
 
@@ -582,45 +674,38 @@ class HICBrowser {
         this.contactMatrixView.receiveEvent({ type: "ColorChange" });
     }
 
+    /**
+     * Private helper: Find the element that contains the given offset value.
+     * Used for highlighting chromosomes in whole-genome view.
+     */
+    _hitTestBbox(bboxes, value) {
+        for (const bbox of bboxes) {
+            if (value >= bbox.a && value <= bbox.b) {
+                return bbox.element;
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * Private helper: Update ruler highlighting for mouse position.
+     */
+    _updateRulerHighlightingForMousePosition(ruler, xy) {
+        if (!ruler || !ruler.bboxes) {
+            return;
+        }
+
+        ruler.unhighlightWholeChromosome();
+        const offset = ruler.axis === 'x' ? xy.x : xy.y;
+        const element = this._hitTestBbox(ruler.bboxes, offset);
+        if (element) {
+            element.classList.add('hic-whole-genome-chromosome-highlight');
+        }
+    }
+
     notifyUpdateContactMapMousePosition(xy) {
-        const ruler = this.layoutController.xAxisRuler;
-        if (ruler && ruler.bboxes) {
-            ruler.unhighlightWholeChromosome();
-            const offset = ruler.axis === 'x' ? xy.x : xy.y;
-            const hitTest = (bboxes, value) => {
-                let hitElement = undefined;
-                for (const bbox of bboxes) {
-                    if (value >= bbox.a && value <= bbox.b) {
-                        hitElement = bbox.element;
-                        break;
-                    }
-                }
-                return hitElement;
-            };
-            const element = hitTest(ruler.bboxes, offset);
-            if (element) {
-                element.classList.add('hic-whole-genome-chromosome-highlight');
-            }
-        }
-        const yRuler = this.layoutController.yAxisRuler;
-        if (yRuler && yRuler.bboxes) {
-            yRuler.unhighlightWholeChromosome();
-            const offset = yRuler.axis === 'x' ? xy.x : xy.y;
-            const hitTest = (bboxes, value) => {
-                let hitElement = undefined;
-                for (const bbox of bboxes) {
-                    if (value >= bbox.a && value <= bbox.b) {
-                        hitElement = bbox.element;
-                        break;
-                    }
-                }
-                return hitElement;
-            };
-            const element = hitTest(yRuler.bboxes, offset);
-            if (element) {
-                element.classList.add('hic-whole-genome-chromosome-highlight');
-            }
-        }
+        this._updateRulerHighlightingForMousePosition(this.layoutController.xAxisRuler, xy);
+        this._updateRulerHighlightingForMousePosition(this.layoutController.yAxisRuler, xy);
     }
 
     showCrosshairs() {

@@ -105,6 +105,60 @@ class ColorScaleWidget {
             paintSwatch(this.mapBackgroundColorpickerButton, browser.contactMatrixView.backgroundColor);
         });
     }
+
+    /**
+     * Update the map background color swatch.
+     * @param {{r: number, g: number, b: number}} backgroundColor - RGB color object
+     */
+    updateMapBackgroundColor(backgroundColor) {
+        if (this.mapBackgroundColorpickerButton) {
+            paintSwatch(this.mapBackgroundColorpickerButton, backgroundColor);
+        }
+    }
+
+    /**
+     * Update the widget for display mode changes.
+     * Shows/hides the minus button and updates swatches based on mode.
+     * @param {string} mode - Display mode ("AOB", "BOA", "A", or "B")
+     * @param {RatioColorScale} ratioColorScale - Ratio color scale for AOB/BOA modes
+     * @param {ColorScale} colorScale - Standard color scale for A/B modes
+     */
+    updateForDisplayMode(mode, ratioColorScale, colorScale) {
+        if (!this.minusButton || !this.plusButton) {
+            return;
+        }
+
+        if (mode === "AOB" || mode === "BOA") {
+            this.minusButton.style.display = 'block';
+            paintSwatch(this.minusButton, ratioColorScale.negativeScale);
+            paintSwatch(this.plusButton, ratioColorScale.positiveScale);
+        } else {
+            this.minusButton.style.display = 'none';
+            paintSwatch(this.plusButton, colorScale);
+        }
+    }
+
+    /**
+     * Update the widget for color scale changes.
+     * Handles both standard ColorScale and RatioColorScale instances.
+     * @param {ColorScale|RatioColorScale} colorScale - The color scale to display
+     */
+    updateForColorScale(colorScale) {
+        if (!this.highColorscaleInput || !this.plusButton) {
+            return;
+        }
+
+        if (colorScale instanceof ColorScale) {
+            this.highColorscaleInput.value = colorScale.threshold;
+            paintSwatch(this.plusButton, colorScale);
+        } else if (colorScale instanceof RatioColorScale) {
+            this.highColorscaleInput.value = colorScale.threshold;
+            if (this.minusButton) {
+                paintSwatch(this.minusButton, colorScale.negativeScale);
+            }
+            paintSwatch(this.plusButton, colorScale.positiveScale);
+        }
+    }
 }
 
 function paintSwatch(swatch, { r, g, b }) {

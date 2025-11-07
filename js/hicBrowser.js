@@ -367,14 +367,6 @@ class HICBrowser {
      */
 
     /**
-     * Private helper: Paint a color swatch with the given RGB color.
-     * Extracted to eliminate duplication across notification methods.
-     */
-    _paintSwatch(swatch, { r, g, b }) {
-        swatch.style.backgroundColor = IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b));
-    }
-
-    /**
      * Private helper: Initialize ContactMatrixView when a map is loaded.
      * Enables mouse handlers and clears caches.
      */
@@ -441,8 +433,8 @@ class HICBrowser {
      */
     _updateColorScaleWidgetForMapLoad() {
         const colorScaleWidget = this.ui.getComponent('colorScaleWidget');
-        if (colorScaleWidget && colorScaleWidget.mapBackgroundColorpickerButton) {
-            this._paintSwatch(colorScaleWidget.mapBackgroundColorpickerButton, this.contactMatrixView.backgroundColor);
+        if (colorScaleWidget) {
+            colorScaleWidget.updateMapBackgroundColor(this.contactMatrixView.backgroundColor);
         }
     }
 
@@ -452,7 +444,7 @@ class HICBrowser {
     _updateControlMapWidgetForMapLoad() {
         const controlMapWidget = this.ui.getComponent('controlMap');
         if (controlMapWidget && !this.controlDataset) {
-            controlMapWidget.container.style.display = 'none';
+            controlMapWidget.hide();
         }
     }
 
@@ -474,8 +466,8 @@ class HICBrowser {
     notifyControlMapLoaded(controlDataset) {
         const controlMapWidget = this.ui.getComponent('controlMap');
         if (controlMapWidget) {
-            controlMapWidget.controlMapHash.updateOptions(this.getDisplayMode());
-            controlMapWidget.container.style.display = 'block';
+            controlMapWidget.updateDisplayMode(this.getDisplayMode());
+            controlMapWidget.show();
         }
 
         const resolutionSelector = this.ui.getComponent('resolutionSelector');
@@ -524,16 +516,10 @@ class HICBrowser {
 
         if (chrChanged !== false) {
             const isWholeGenome = this.dataset.isWholeGenome(state.chr1);
-            const labelElement = resolutionSelector.labelElement;
-            if (labelElement) {
-                labelElement.textContent = isWholeGenome ? 'Resolution (mb)' : 'Resolution (kb)';
-            }
+            resolutionSelector.updateLabelForWholeGenome(isWholeGenome);
             resolutionSelector.updateResolutions(state.zoom);
         } else {
-            const selectedIndex = state.zoom;
-            Array.from(resolutionSelector.resolutionSelectorElement.options).forEach((option, index) => {
-                option.selected = index === selectedIndex;
-            });
+            resolutionSelector.setSelectedResolution(state.zoom);
         }
     }
 
@@ -573,17 +559,12 @@ class HICBrowser {
      */
     _updateColorScaleWidgetForDisplayMode(mode) {
         const colorScaleWidget = this.ui.getComponent('colorScaleWidget');
-        if (!colorScaleWidget || !colorScaleWidget.minusButton || !colorScaleWidget.plusButton) {
-            return;
-        }
-
-        if (mode === "AOB" || mode === "BOA") {
-            colorScaleWidget.minusButton.style.display = 'block';
-            this._paintSwatch(colorScaleWidget.minusButton, this.contactMatrixView.ratioColorScale.negativeScale);
-            this._paintSwatch(colorScaleWidget.plusButton, this.contactMatrixView.ratioColorScale.positiveScale);
-        } else {
-            colorScaleWidget.minusButton.style.display = 'none';
-            this._paintSwatch(colorScaleWidget.plusButton, this.contactMatrixView.colorScale);
+        if (colorScaleWidget) {
+            colorScaleWidget.updateForDisplayMode(
+                mode,
+                this.contactMatrixView.ratioColorScale,
+                this.contactMatrixView.colorScale
+            );
         }
     }
 
@@ -593,7 +574,7 @@ class HICBrowser {
     _updateControlMapWidgetForDisplayMode(mode) {
         const controlMapWidget = this.ui.getComponent('controlMap');
         if (controlMapWidget) {
-            controlMapWidget.controlMapHash.updateOptions(mode);
+            controlMapWidget.updateDisplayMode(mode);
         }
     }
 
@@ -602,35 +583,10 @@ class HICBrowser {
         this._updateControlMapWidgetForDisplayMode(mode);
     }
 
-    /**
-     * Private helper: Update color scale widget for standard color scale.
-     */
-    _updateColorScaleWidgetForStandardScale(colorScaleWidget, colorScale) {
-        colorScaleWidget.highColorscaleInput.value = colorScale.threshold;
-        this._paintSwatch(colorScaleWidget.plusButton, colorScale);
-    }
-
-    /**
-     * Private helper: Update color scale widget for ratio color scale.
-     */
-    _updateColorScaleWidgetForRatioScale(colorScaleWidget, ratioColorScale) {
-        colorScaleWidget.highColorscaleInput.value = ratioColorScale.threshold;
-        if (colorScaleWidget.minusButton) {
-            this._paintSwatch(colorScaleWidget.minusButton, ratioColorScale.negativeScale);
-        }
-        this._paintSwatch(colorScaleWidget.plusButton, ratioColorScale.positiveScale);
-    }
-
     notifyColorScale(colorScale) {
         const colorScaleWidget = this.ui.getComponent('colorScaleWidget');
-        if (!colorScaleWidget || !colorScaleWidget.highColorscaleInput || !colorScaleWidget.plusButton) {
-            return;
-        }
-
-        if (colorScale instanceof ColorScale) {
-            this._updateColorScaleWidgetForStandardScale(colorScaleWidget, colorScale);
-        } else if (colorScale instanceof RatioColorScale) {
-            this._updateColorScaleWidgetForRatioScale(colorScaleWidget, colorScale);
+        if (colorScaleWidget) {
+            colorScaleWidget.updateForColorScale(colorScale);
         }
     }
 

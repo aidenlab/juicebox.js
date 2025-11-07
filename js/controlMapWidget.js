@@ -76,6 +76,28 @@ class ControlMapWidget {
     getDisplayModeCycle() {
         return this.controlMapHash.cycleID;
     }
+
+    /**
+     * Hide the control map widget container.
+     */
+    hide() {
+        this.container.style.display = 'none';
+    }
+
+    /**
+     * Show the control map widget container.
+     */
+    show() {
+        this.container.style.display = 'block';
+    }
+
+    /**
+     * Update the display mode options.
+     * @param {string} displayMode - The current display mode
+     */
+    updateDisplayMode(displayMode) {
+        this.controlMapHash.updateOptions(displayMode);
+    }
 }
 
 class ControlMapHash {

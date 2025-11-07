@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.css">
 
     <!-- Juicebox CSS-->
-    <link rel="stylesheet" type="text/css" href="../dist/css/juicebox.css">
+    <link rel="stylesheet" href="../css/juicebox.css">
 
 </head>
 
@@ -19,18 +19,15 @@
 
 <script type="module">
 
-    import juicebox from "https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/juicebox.esm.js"
+import juicebox from '../js/index.js';
 
-    const config =
+const config =
         {
             "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/dilution/combined.hic",
         }
 
-
-    juicebox.init(document.getElementById("app-container"), config)
-        .then(browser => {
-            console.log(`${browser.id} is good to go`)
-        })
+        const browser = await juicebox.init(document.getElementById("app-container"), config)
+        console.log(`${browser.id} is good to go`)
 
 
 </script>

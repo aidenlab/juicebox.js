@@ -138,6 +138,26 @@ class ResolutionSelector {
             this.resolutionSelectorElement.appendChild(option);
         });
     }
+
+    /**
+     * Update the label text based on whether we're in whole-genome view.
+     * @param {boolean} isWholeGenome - True if in whole-genome view
+     */
+    updateLabelForWholeGenome(isWholeGenome) {
+        if (this.labelElement) {
+            this.labelElement.textContent = isWholeGenome ? 'Resolution (mb)' : 'Resolution (kb)';
+        }
+    }
+
+    /**
+     * Set the selected resolution by zoom index.
+     * @param {number} zoomIndex - The zoom index to select
+     */
+    setSelectedResolution(zoomIndex) {
+        Array.from(this.resolutionSelectorElement.options).forEach((option, index) => {
+            option.selected = index === zoomIndex;
+        });
+    }
 }
 
 export default ResolutionSelector;

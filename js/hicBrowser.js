@@ -43,8 +43,10 @@ import {getAllBrowsers, syncBrowsers} from "./createBrowser.js"
 import {isFile} from "./fileUtils.js"
 import {setTrackReorderArrowColors} from "./trackPair.js"
 import nvi from './nvi.js'
-import {extractName, presentError, hitTestBbox} from "./utils.js"
+import {extractName, presentError} from "./utils.js"
 import BrowserUIManager from "./browserUIManager.js"
+import NotificationCoordinator from "./notificationCoordinator.js"
+import StateManager from "./stateManager.js"
 
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
@@ -68,12 +70,8 @@ class HICBrowser {
         this.synchable = config.synchable !== false;
         this.synchedBrowsers = new Set();
 
-        // Unified dataset/state system
-        this.activeDataset = undefined;
-        this.activeState = undefined;
-
-        // Control dataset (for A/B comparisons)
-        this.controlDataset = undefined;
+        // Initialize state manager for dataset/state management
+        this.stateManager = new StateManager(this);
 
         this.isMobile = hicUtils.isMobile();
 
@@ -98,6 +96,9 @@ class HICBrowser {
 
         // Get the contact matrix view from UI manager
         this.contactMatrixView = this.ui.getComponent('contactMatrix');
+
+        // Initialize notification coordinator for UI updates
+        this.notifications = new NotificationCoordinator(this);
 
         // prevent user interaction during lengthy data loads
         this.userInteractionShield = document.createElement('div');
@@ -360,304 +361,60 @@ class HICBrowser {
     }
 
     /**
-     * Explicit notification methods to replace internal event system.
-     * These methods directly call components that need to be notified of state changes.
+     * Notification methods delegate to NotificationCoordinator.
+     * These methods are kept for backward compatibility and to maintain the public API.
      */
-
-    /**
-     * Private helper: Get a UI component by name.
-     * Reduces repetitive getComponent calls and provides a consistent pattern.
-     *
-     * @param {string} componentName - The name of the component to retrieve
-     * @returns {Object|undefined} - The component instance, or undefined if not found
-     */
-    _getUIComponent(componentName) {
-        return this.ui.getComponent(componentName);
-    }
-
-    /**
-     * Private helper: Initialize ContactMatrixView when a map is loaded.
-     * Enables mouse handlers and clears caches.
-     */
-    _initializeContactMatrixViewForMapLoad() {
-        if (!this.contactMatrixView.mouseHandlersEnabled) {
-            this.contactMatrixView.addTouchHandlers(this.contactMatrixView.viewportElement);
-            this.contactMatrixView.addMouseHandlers(this.contactMatrixView.viewportElement);
-            this.contactMatrixView.mouseHandlersEnabled = true;
-        }
-        this.contactMatrixView.clearImageCaches();
-        this.contactMatrixView.colorScaleThresholdCache = {};
-    }
-
-    /**
-     * Private helper: Update chromosome selector when a map is loaded.
-     */
-    _updateChromosomeSelectorForMapLoad(dataset) {
-        const chromosomeSelector = this._getUIComponent('chromosomeSelector');
-        if (chromosomeSelector) {
-            chromosomeSelector.respondToDataLoadWithDataset(dataset);
-        }
-    }
-
-    /**
-     * Private helper: Update rulers when a map is loaded.
-     */
-    _updateRulersForMapLoad(dataset) {
-        const xRuler = this.layoutController.xAxisRuler;
-        if (xRuler) {
-            xRuler.wholeGenomeLayout(xRuler.axisElement, xRuler.wholeGenomeContainerElement, xRuler.axis, dataset);
-            xRuler.update();
-        }
-        const yRuler = this.layoutController.yAxisRuler;
-        if (yRuler) {
-            yRuler.wholeGenomeLayout(yRuler.axisElement, yRuler.wholeGenomeContainerElement, yRuler.axis, dataset);
-            yRuler.update();
-        }
-    }
-
-    /**
-     * Private helper: Update normalization widget when a map is loaded.
-     */
-    _updateNormalizationWidgetForMapLoad(data) {
-        const normalizationWidget = this._getUIComponent('normalization');
-        if (normalizationWidget) {
-            normalizationWidget.receiveEvent({ type: "MapLoad", data });
-        }
-    }
-
-    /**
-     * Private helper: Update resolution selector when a map is loaded.
-     */
-    _updateResolutionSelectorForMapLoad() {
-        const resolutionSelector = this._getUIComponent('resolutionSelector');
-        if (resolutionSelector) {
-            this.resolutionLocked = false;
-            resolutionSelector.setResolutionLock(false);
-            resolutionSelector.updateResolutions(this.state.zoom);
-        }
-    }
-
-    /**
-     * Private helper: Update color scale widget when a map is loaded.
-     */
-    _updateColorScaleWidgetForMapLoad() {
-        const colorScaleWidget = this._getUIComponent('colorScaleWidget');
-        if (colorScaleWidget) {
-            colorScaleWidget.updateMapBackgroundColor(this.contactMatrixView.backgroundColor);
-        }
-    }
-
-    /**
-     * Private helper: Update control map widget when a map is loaded.
-     */
-    _updateControlMapWidgetForMapLoad() {
-        const controlMapWidget = this._getUIComponent('controlMap');
-        if (controlMapWidget && !this.controlDataset) {
-            controlMapWidget.hide();
-        }
-    }
 
     notifyMapLoaded(dataset, state, datasetType) {
-        const data = { dataset, state, datasetType };
-
-        this._initializeContactMatrixViewForMapLoad();
-        this._updateChromosomeSelectorForMapLoad(dataset);
-        this._updateRulersForMapLoad(dataset);
-        this._updateNormalizationWidgetForMapLoad(data);
-        this._updateResolutionSelectorForMapLoad();
-        this._updateColorScaleWidgetForMapLoad();
-        this._updateControlMapWidgetForMapLoad();
-
-        // Note: locusGoto is notified via notifyLocusChange() which is called from setState()
-        // after the locus is properly configured. Don't notify here as state.locus might not exist yet.
+        this.notifications.notifyMapLoaded(dataset, state, datasetType);
     }
 
     notifyControlMapLoaded(controlDataset) {
-        const controlMapWidget = this._getUIComponent('controlMap');
-        if (controlMapWidget) {
-            controlMapWidget.updateDisplayMode(this.getDisplayMode());
-            controlMapWidget.show();
-        }
-
-        const resolutionSelector = this._getUIComponent('resolutionSelector');
-        if (resolutionSelector) {
-            resolutionSelector.updateResolutions(this.state.zoom);
-        }
-
-        // ContactMatrixView also needs to know about control map
-        this.contactMatrixView.clearImageCaches();
-        this.contactMatrixView.colorScaleThresholdCache = {};
-    }
-
-    /**
-     * Private helper: Update chromosome selector when locus changes.
-     */
-    _updateChromosomeSelectorForLocusChange(state) {
-        const chromosomeSelector = this._getUIComponent('chromosomeSelector');
-        if (chromosomeSelector) {
-            chromosomeSelector.respondToLocusChangeWithState(state);
-        }
-    }
-
-    /**
-     * Private helper: Update scrollbar widget when locus changes.
-     */
-    _updateScrollbarForLocusChange(state) {
-        const scrollbarWidget = this._getUIComponent('scrollbar');
-        if (scrollbarWidget && !scrollbarWidget.isDragging) {
-            scrollbarWidget.receiveEvent({ type: "LocusChange", data: { state } });
-        }
-    }
-
-    /**
-     * Private helper: Update resolution selector when locus changes.
-     */
-    _updateResolutionSelectorForLocusChange(state, resolutionChanged, chrChanged) {
-        const resolutionSelector = this._getUIComponent('resolutionSelector');
-        if (!resolutionSelector) {
-            return;
-        }
-
-        if (resolutionChanged) {
-            this.resolutionLocked = false;
-            resolutionSelector.setResolutionLock(false);
-        }
-
-        if (chrChanged !== false) {
-            const isWholeGenome = this.dataset.isWholeGenome(state.chr1);
-            resolutionSelector.updateLabelForWholeGenome(isWholeGenome);
-            resolutionSelector.updateResolutions(state.zoom);
-        } else {
-            resolutionSelector.setSelectedResolution(state.zoom);
-        }
-    }
-
-    /**
-     * Private helper: Update locus goto widget when locus changes.
-     */
-    _updateLocusGotoForLocusChange(state) {
-        const locusGoto = this._getUIComponent('locusGoto');
-        if (locusGoto) {
-            locusGoto.receiveEvent({ type: "LocusChange", data: { state } });
-        }
+        this.notifications.notifyControlMapLoaded(controlDataset);
     }
 
     notifyLocusChange(eventData) {
-        const { state, resolutionChanged, chrChanged, dragging } = eventData;
-
-        // ContactMatrixView - only clear caches if not a locus change
-        // (locus changes don't require cache clearing)
-
-        this._updateChromosomeSelectorForLocusChange(state);
-        this._updateScrollbarForLocusChange(state);
-        this._updateResolutionSelectorForLocusChange(state, resolutionChanged, chrChanged);
-        this._updateLocusGotoForLocusChange(state);
-
-        // Rulers are updated directly in update() method, not here
+        this.notifications.notifyLocusChange(eventData);
     }
 
     notifyNormalizationChange(normalization) {
-        // ContactMatrixView
-        this.contactMatrixView.receiveEvent({ type: "NormalizationChange", data: normalization });
-
-        // NormalizationWidget - no direct notification needed, it updates via selector change
-    }
-
-    /**
-     * Private helper: Update color scale widget for display mode changes.
-     */
-    _updateColorScaleWidgetForDisplayMode(mode) {
-        const colorScaleWidget = this._getUIComponent('colorScaleWidget');
-        if (colorScaleWidget) {
-            colorScaleWidget.updateForDisplayMode(
-                mode,
-                this.contactMatrixView.ratioColorScale,
-                this.contactMatrixView.colorScale
-            );
-        }
-    }
-
-    /**
-     * Private helper: Update control map widget for display mode changes.
-     */
-    _updateControlMapWidgetForDisplayMode(mode) {
-        const controlMapWidget = this._getUIComponent('controlMap');
-        if (controlMapWidget) {
-            controlMapWidget.updateDisplayMode(mode);
-        }
+        this.notifications.notifyNormalizationChange(normalization);
     }
 
     notifyDisplayMode(mode) {
-        this._updateColorScaleWidgetForDisplayMode(mode);
-        this._updateControlMapWidgetForDisplayMode(mode);
+        this.notifications.notifyDisplayMode(mode);
     }
 
     notifyColorScale(colorScale) {
-        const colorScaleWidget = this._getUIComponent('colorScaleWidget');
-        if (colorScaleWidget) {
-            colorScaleWidget.updateForColorScale(colorScale);
-        }
+        this.notifications.notifyColorScale(colorScale);
     }
 
     notifyTrackLoad2D(tracks2D) {
-        this.contactMatrixView.receiveEvent({ type: "TrackLoad2D", data: tracks2D });
+        this.notifications.notifyTrackLoad2D(tracks2D);
     }
 
     notifyTrackState2D(trackData) {
-        this.contactMatrixView.receiveEvent({ type: "TrackState2D", data: trackData });
+        this.notifications.notifyTrackState2D(trackData);
     }
 
     notifyNormVectorIndexLoad(dataset) {
-        const normalizationWidget = this._getUIComponent('normalization');
-        if (normalizationWidget) {
-            normalizationWidget.updateOptions();
-            normalizationWidget.stopNotReady();
-        }
+        this.notifications.notifyNormVectorIndexLoad(dataset);
     }
 
     notifyNormalizationFileLoad(status) {
-        const normalizationWidget = this._getUIComponent('normalization');
-        if (normalizationWidget) {
-            if (status === "start") {
-                normalizationWidget.startNotReady();
-            } else {
-                normalizationWidget.stopNotReady();
-            }
-        }
+        this.notifications.notifyNormalizationFileLoad(status);
     }
 
     notifyNormalizationExternalChange(normalization) {
-        const normalizationWidget = this._getUIComponent('normalization');
-        if (normalizationWidget) {
-            Array.from(normalizationWidget.normalizationSelector.options).forEach(option => {
-                option.selected = option.value === normalization;
-            });
-        }
+        this.notifications.notifyNormalizationExternalChange(normalization);
     }
 
     notifyColorChange() {
-        this.contactMatrixView.receiveEvent({ type: "ColorChange" });
-    }
-
-    /**
-     * Private helper: Update ruler highlighting for mouse position.
-     */
-    _updateRulerHighlightingForMousePosition(ruler, xy) {
-        if (!ruler || !ruler.bboxes) {
-            return;
-        }
-
-        ruler.unhighlightWholeChromosome();
-        const offset = ruler.axis === 'x' ? xy.x : xy.y;
-        const element = hitTestBbox(ruler.bboxes, offset);
-        if (element) {
-            element.classList.add('hic-whole-genome-chromosome-highlight');
-        }
+        this.notifications.notifyColorChange();
     }
 
     notifyUpdateContactMapMousePosition(xy) {
-        this._updateRulerHighlightingForMousePosition(this.layoutController.xAxisRuler, xy);
-        this._updateRulerHighlightingForMousePosition(this.layoutController.yAxisRuler, xy);
+        this.notifications.notifyUpdateContactMapMousePosition(xy);
     }
 
     showCrosshairs() {
@@ -826,11 +583,13 @@ class HICBrowser {
      * @param {Dataset} dataset - The dataset to activate
      * @param {State} state - The state to use with this dataset
      */
+    /**
+     * State management methods delegate to StateManager.
+     * These methods are kept for backward compatibility and to maintain the public API.
+     */
+
     setActiveDataset(dataset, state) {
-        this.activeDataset = dataset;
-        if (state) {
-            this.activeState = state;
-        }
+        this.stateManager.setActiveDataset(dataset, state);
     }
 
     /**
@@ -838,28 +597,84 @@ class HICBrowser {
      * Returns activeDataset (the primary dataset, not control)
      */
     get dataset() {
-        return this.activeDataset;
+        return this.stateManager.getActiveDataset();
     }
 
     /**
      * Backward compatibility: setter for dataset property
      */
     set dataset(value) {
-        this.activeDataset = value;
+        this.stateManager.setActiveDataset(value, undefined);
     }
 
     /**
      * Backward compatibility: getter for state property
      */
     get state() {
-        return this.activeState;
+        return this.stateManager.getActiveState();
     }
 
     /**
      * Backward compatibility: setter for state property
+     * Note: Direct assignment bypasses validation. Use setState() for proper state management.
      */
     set state(value) {
-        this.activeState = value;
+        // Direct assignment - store directly without validation
+        // This is for backward compatibility only
+        if (value) {
+            this.stateManager.activeState = value;
+        } else {
+            this.stateManager.activeState = undefined;
+        }
+    }
+
+    /**
+     * Getter for activeDataset (backward compatibility)
+     */
+    get activeDataset() {
+        return this.stateManager.getActiveDataset();
+    }
+
+    /**
+     * Setter for activeDataset (backward compatibility)
+     */
+    set activeDataset(value) {
+        this.stateManager.setActiveDataset(value, undefined);
+    }
+
+    /**
+     * Getter for activeState (backward compatibility)
+     */
+    get activeState() {
+        return this.stateManager.getActiveState();
+    }
+
+    /**
+     * Setter for activeState (backward compatibility)
+     * Note: Direct assignment bypasses validation. Use setState() for proper state management.
+     */
+    set activeState(value) {
+        // Direct assignment - store directly without validation
+        // This is for backward compatibility only
+        if (value) {
+            this.stateManager.activeState = value;
+        } else {
+            this.stateManager.activeState = undefined;
+        }
+    }
+
+    /**
+     * Getter for controlDataset (backward compatibility)
+     */
+    get controlDataset() {
+        return this.stateManager.getControlDataset();
+    }
+
+    /**
+     * Setter for controlDataset (backward compatibility)
+     */
+    set controlDataset(value) {
+        this.stateManager.setControlDataset(value);
     }
 
     reset() {
@@ -871,17 +686,13 @@ class HICBrowser {
         this.contactMapLabel.title = "";
         this.controlMapLabel.textContent = "";
         this.controlMapLabel.title = "";
-        this.activeDataset = undefined;
-        this.activeState = undefined;
-        this.controlDataset = undefined;
+        this.stateManager.clearState();
         this.unsyncSelf()
     }
 
     clearSession() {
         // Clear current datasets.
-        this.activeDataset = undefined;
-        this.activeState = undefined;
-        this.controlDataset = undefined;
+        this.stateManager.clearState();
         this.setDisplayMode('A')
         this.unsyncSelf()
     }
@@ -1497,24 +1308,15 @@ class HICBrowser {
      * @param state  browser state
      */
     async setState(state) {
+        const { chrChanged, resolutionChanged } = await this.stateManager.setState(state);
 
-        const chrChanged = !this.state || this.state.chr1 !== state.chr1 || this.state.chr2 !== state.chr2
-
-        this.state = state.clone()
-
-        // Possibly adjust pixel size
-        const minPS = await this.minPixelSize(this.state.chr1, this.state.chr2, this.state.zoom)
-        this.state.pixelSize = Math.max(state.pixelSize, minPS)
-
-        // Derive locus if none is present in source state
-        if (undefined === state.locus) {
-            const viewDimensions = this.contactMatrixView.getViewDimensions();
-            this.state.configureLocus(this, this.activeDataset, viewDimensions)
-        }
-
-        const eventData = { state: this.state, resolutionChanged: true, chrChanged }
-        await this.update()
-        this.notifyLocusChange(eventData)
+        const eventData = { 
+            state: this.state, 
+            resolutionChanged, 
+            chrChanged 
+        };
+        await this.update();
+        this.notifyLocusChange(eventData);
     }
 
     /**
@@ -1522,14 +1324,7 @@ class HICBrowser {
      * and resolution arrays
      */
     getSyncState() {
-        return {
-            chr1Name: this.dataset.chromosomes[this.state.chr1].name,
-            chr2Name: this.dataset.chromosomes[this.state.chr2].name,
-            binSize: this.dataset.bpResolutions[this.state.zoom],
-            binX: this.state.x,            // TODO: translate to lower right corner
-            binY: this.state.y,
-            pixelSize: this.state.pixelSize
-        }
+        return this.stateManager.getSyncState();
     }
 
     /**
@@ -1537,33 +1332,28 @@ class HICBrowser {
      * @param syncState
      */
     canBeSynched(syncState) {
-
-        if (false === this.synchable) return false   // Explicitly not synchable
-
-        return this.dataset &&
-            (this.dataset.getChrIndexFromName(syncState.chr1Name) !== undefined) &&
-            (this.dataset.getChrIndexFromName(syncState.chr2Name) !== undefined)
-
+        return this.stateManager.canBeSynched(syncState);
     }
 
     async syncState(targetState) {
+        if (!targetState || false === this.synchable) {
+            return;
+        }
 
-        if (!targetState || false === this.synchable) return
+        if (!this.dataset) {
+            return;
+        }
 
-        if (!this.dataset) return
-
-        const { zoomChanged, chrChanged } = this.state.sync(targetState, this, this.genome, this.dataset)
+        const { zoomChanged, chrChanged } = await this.stateManager.syncState(targetState);
 
         // For sync, we don't want to propagate back to other browsers (would cause infinite loop)
         // So we update without syncing
-        await this.update(false)
-
+        await this.update(false);
     }
 
     setNormalization(normalization) {
-
-        this.state.normalization = normalization
-        this.notifyNormalizationChange(this.state.normalization)
+        this.stateManager.setNormalization(normalization);
+        this.notifyNormalizationChange(this.stateManager.getNormalization());
     }
 
     async shiftPixels(dx, dy) {

@@ -25,32 +25,22 @@
  * @author Jim Robinson
  */
 
-import igv from '../node_modules/igv/dist/igv.esm.js'
-import {Alert, InputDialog, DOMUtils} from '../node_modules/igv-ui/dist/igv-ui.js'
-import {FileUtils} from '../node_modules/igv-utils/src/index.js'
+import {InputDialog, DOMUtils} from '../node_modules/igv-ui/dist/igv-ui.js'
 import * as hicUtils from './hicUtils.js'
 import {Globals} from "./globals.js"
 import EventBus from "./eventBus.js"
-import Track2D from './track2D.js'
-import LayoutController, {getLayoutDimensions, setViewportSize} from './layoutController.js'
-import HICEvent from './hicEvent.js'
-import Dataset from './hicDataset.js'
-import LiveMapDataset from './liveMapDataset.js'
-import Genome from './genome.js'
-import State from './hicState.js'
+import LayoutController, {setViewportSize} from './layoutController.js'
 import { geneSearch } from './geneSearch.js'
-import {getAllBrowsers, syncBrowsers} from "./createBrowser.js"
-import {isFile} from "./fileUtils.js"
+import {getAllBrowsers} from "./createBrowser.js"
 import {setTrackReorderArrowColors} from "./trackPair.js"
-import nvi from './nvi.js'
-import {extractName, presentError} from "./utils.js"
 import BrowserUIManager from "./browserUIManager.js"
 import NotificationCoordinator from "./notificationCoordinator.js"
 import StateManager from "./stateManager.js"
+import InteractionHandler from "./interactionHandler.js"
+import DataLoader from "./dataLoader.js"
 
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
-const DEFAULT_ANNOTATION_COLOR = "rgb(22, 129, 198)"
 
 class HICBrowser {
 
@@ -100,6 +90,12 @@ class HICBrowser {
         // Initialize notification coordinator for UI updates
         this.notifications = new NotificationCoordinator(this);
 
+        // Initialize interaction handler for user interactions
+        this.interactions = new InteractionHandler(this);
+
+        // Initialize data loader for data loading operations
+        this.dataLoader = new DataLoader(this);
+
         // prevent user interaction during lengthy data loads
         this.userInteractionShield = document.createElement('div');
         this.userInteractionShield.className = 'hic-root-prevent-interaction';
@@ -118,10 +114,10 @@ class HICBrowser {
             this.contactMatrixView.startSpinner();
             this.userInteractionShield.style.display = 'block';
 
-            await this.loadHicFile(config, true);
+            await this.dataLoader.loadHicFile(config, true);
 
             if (config.controlUrl) {
-                await this.loadHicControlFile({
+                await this.dataLoader.loadHicControlFile({
                     url: config.controlUrl,
                     name: config.controlName,
                     nvi: config.controlNvi,
@@ -149,12 +145,12 @@ class HICBrowser {
             const promises = [];
 
             if (config.tracks) {
-                promises.push(this.loadTracks(config.tracks));
+                promises.push(this.dataLoader.loadTracks(config.tracks));
             }
 
             if (config.normVectorFiles) {
                 config.normVectorFiles.forEach(nv => {
-                    promises.push(this.loadNormalizationFile(nv));
+                    promises.push(this.dataLoader.loadNormalizationFile(nv));
                 });
             }
 
@@ -459,108 +455,11 @@ class HICBrowser {
      * @param configs
      */
     async loadTracks(configs) {
-        const errorPrefix = configs.length === 1 ? `Error loading track ${configs[0].name}` : "Error loading tracks";
-
-        try {
-            this.contactMatrixView.startSpinner();
-
-            const tracks = [];
-            const promises2D = [];
-
-            for (let config of configs) {
-                const fileName = isFile(config.url)
-                    ? config.url.name
-                    : config.filename || await FileUtils.getFilename(config.url);
-
-                const extension = hicUtils.getExtension(fileName);
-
-                if (['fasta', 'fa'].includes(extension)) {
-                    config.type = config.format = 'sequence';
-                }
-
-                if (!config.format) {
-                    config.format = igv.TrackUtils.inferFileFormat(fileName);
-                }
-
-                if (config.type === 'annotation') {
-                    config.displayMode = 'COLLAPSED';
-                    if (config.color === DEFAULT_ANNOTATION_COLOR) {
-                        delete config.color;
-                    }
-                }
-
-                if (config.max === undefined) {
-                    config.autoscale = true;
-                }
-
-                const { trackHeight } = getLayoutDimensions()
-                config.height = trackHeight;
-
-                if (config.format === undefined || ['bedpe', 'interact'].includes(config.format)) {
-                    promises2D.push(Track2D.loadTrack2D(config, this.genome));
-                } else {
-                    const track = await igv.createTrack(config, this);
-
-                    if (typeof track.postInit === 'function') {
-                        await track.postInit();
-                    }
-
-                    tracks.push(track);
-                }
-            }
-
-            if (tracks.length > 0) {
-                this.layoutController.updateLayoutWithTracks(tracks);
-
-                const gearContainer = document.querySelector('.hic-igv-right-hand-gutter');
-                if (this.showTrackLabelAndGutter) {
-                    gearContainer.style.display = 'block';
-                } else {
-                    gearContainer.style.display = 'none';
-                }
-
-                await this.updateLayout();
-            }
-
-            if (promises2D.length > 0) {
-                const tracks2D = await Promise.all(promises2D);
-                if (tracks2D && tracks2D.length > 0) {
-                    this.tracks2D = this.tracks2D.concat(tracks2D);
-                    this.notifyTrackLoad2D(this.tracks2D);
-                }
-            }
-
-        } catch (error) {
-            presentError(errorPrefix, error);
-            console.error(error);
-
-        } finally {
-            this.contactMatrixView.stopSpinner();
-        }
+        return this.dataLoader.loadTracks(configs);
     }
 
     async loadNormalizationFile(url) {
-
-        if (!this.activeDataset) return
-        // Normalization files are only supported for Hi-C datasets
-        if (!this.activeDataset.hicFile) {
-            console.warn("Normalization files are only supported for Hi-C datasets");
-            return;
-        }
-        this.notifyNormalizationFileLoad("start")
-
-        const normVectors = await this.activeDataset.hicFile.readNormalizationVectorFile(url, this.activeDataset.chromosomes)
-        for (let type of normVectors['types']) {
-            if (!this.activeDataset.normalizationTypes) {
-                this.activeDataset.normalizationTypes = []
-            }
-            if (!this.activeDataset.normalizationTypes.includes(type)) {
-                this.activeDataset.normalizationTypes.push(type)
-            }
-            this.notifyNormVectorIndexLoad(this.activeDataset)
-        }
-
-        return normVectors
+        return this.dataLoader.loadNormalizationFile(url);
     }
 
     /**
@@ -717,6 +616,11 @@ class HICBrowser {
     }
 
     /**
+     * Data loading methods delegate to DataLoader.
+     * These methods are kept for backward compatibility and to maintain the public API.
+     */
+
+    /**
      * Load a .hic file
      *
      * NOTE: public API function
@@ -726,125 +630,7 @@ class HICBrowser {
      * @param noUpdates
      */
     async loadHicFile(config, noUpdates) {
-
-        if (!config.url) {
-            console.log("No .hic url specified")
-            return undefined
-        }
-
-        this.clearSession()
-
-        try {
-
-            this.contactMatrixView.startSpinner()
-            if (!noUpdates) {
-                this.userInteractionShield.style.display = 'block';
-            }
-
-            const name = extractName(config)
-            const prefix = this.controlDataset ? "A: " : ""
-            this.contactMapLabel.textContent = prefix + name;
-            this.contactMapLabel.title = name
-            config.name = name
-
-            const hicFileAlert = str => {
-                this.notifyNormalizationExternalChange('NONE')
-                Alert.presentAlert(str)
-            }
-
-            const dataset = await Dataset.loadDataset(Object.assign({alert: hicFileAlert}, config))
-            dataset.name = name
-
-            const previousGenomeId = this.genome ? this.genome.id : undefined
-            this.genome = new Genome(dataset.genomeId, dataset.chromosomes)
-
-            if (this.genome.id !== previousGenomeId) {
-                EventBus.globalBus.post(HICEvent("GenomeChange", this.genome.id))
-            }
-
-            let state;
-            if (config.locus) {
-                state = State.default(config)
-                this.setActiveDataset(dataset, state);
-                await this.parseGotoInput(config.locus)
-            } else if (config.state) {
-
-                if (typeof config.state === 'string') {
-                    state = State.parse(config.state);
-                } else if (typeof config.state === 'object') {
-                    state = State.fromJSON(config.state);
-                } else {
-                    alert('config.state is of unknown type')
-                    console.error('config.state is of unknown type')
-                    state = State.default(config);
-                }
-
-                // Set active dataset before setState so configureLocus can access bpResolutions
-                this.setActiveDataset(dataset, state);
-                await this.setState(state)
-
-            } else if (config.synchState && this.canBeSynched(config.synchState)) {
-                await this.syncState(config.synchState)
-                state = this.activeState;
-                // syncState already sets activeDataset, but ensure it's set with current dataset
-                if (this.activeDataset !== dataset) {
-                    this.setActiveDataset(dataset, state);
-                }
-            } else {
-                state = State.default(config);
-                // Set active dataset before setState so configureLocus can access bpResolutions
-                this.setActiveDataset(dataset, state);
-                await this.setState(state)
-            }
-
-            this.notifyMapLoaded(dataset, state, dataset.datasetType)
-
-            // Initiate loading of the norm vector index, but don't block if the "nvi" parameter is not available.
-            // Let it load in the background
-
-            // If nvi is not supplied, try lookup table of known values
-            if (!config.nvi && typeof config.url === "string") {
-                const url = new URL(config.url)
-                const key = encodeURIComponent(url.hostname + url.pathname)
-                if (nvi.hasOwnProperty(key)) {
-                    config.nvi = nvi[key]
-                }
-            }
-
-            if (config.nvi && dataset.getNormVectorIndex) {
-                await dataset.getNormVectorIndex(config)
-                if (!config.isControl) {
-                    this.notifyNormVectorIndexLoad(dataset)
-                }
-            } else if (dataset.getNormVectorIndex) {
-
-                dataset.getNormVectorIndex(config)
-                    .then(normVectorIndex => {
-                        if (!config.isControl) {
-                            this.notifyNormVectorIndexLoad(dataset)
-                        }
-                    })
-            }
-
-            syncBrowsers()
-
-            // Find a browser to sync with, if any
-            const compatibleBrowsers = getAllBrowsers().filter(b => b !== this && b.activeDataset && b.activeDataset.isCompatible(this.activeDataset))
-            if (compatibleBrowsers.length > 0) {
-                await this.syncState(compatibleBrowsers[0].getSyncState())
-            }
-
-        } catch (error) {
-            this.contactMapLabel.textContent = "";
-            this.contactMapLabel.title = "";
-            config.name = name
-            throw error
-        } finally {
-            this.stopSpinner()
-            if (!noUpdates) {
-                this.userInteractionShield.style.display = 'none';
-            }
-        }
+        return this.dataLoader.loadHicFile(config, noUpdates);
     }
 
     /**
@@ -852,75 +638,12 @@ class HICBrowser {
      *
      * NOTE: public API function
      *
-     * @param {Object} config - Configuration object with:
-     *   - contactRecordList: Array of contact records OR
-     *   - contactMatrix: 2D array of contact totals
-     *   - chromosomes: Array of chromosome definitions
-     *   - genomeId: Genome identifier
-     *   - bpResolutions: Array of available resolutions
-     *   - name: Dataset name
-     *   - binSize: Bin size (if using contactMatrix)
-     *   - state: Optional initial state
+     * @param {Object} config - Configuration object
      * @param {boolean} noUpdates - If true, don't trigger UI updates
      * @returns {Promise<LiveMapDataset>}
      */
     async loadLiveMapDataset(config, noUpdates) {
-        this.clearSession();
-
-        try {
-            this.contactMatrixView.startSpinner();
-            if (!noUpdates) {
-                this.userInteractionShield.style.display = 'block';
-            }
-
-            const name = config.name || 'Live Map';
-            this.contactMapLabel.textContent = name;
-            this.contactMapLabel.title = name;
-
-            const dataset = new LiveMapDataset(config);
-            await dataset.init();
-
-            const previousGenomeId = this.genome ? this.genome.id : undefined;
-            this.genome = new Genome(dataset.genomeId, dataset.chromosomes);
-
-            if (this.genome.id !== previousGenomeId) {
-                EventBus.globalBus.post(HICEvent("GenomeChange", this.genome.id));
-            }
-
-            let state;
-            if (config.state) {
-                if (typeof config.state === 'string') {
-                    state = State.parse(config.state);
-                } else if (typeof config.state === 'object') {
-                    state = State.fromJSON(config.state);
-                } else {
-                    state = State.default(config);
-                }
-            } else {
-                state = State.default(config);
-            }
-
-            // Set active dataset BEFORE setState, since setState calls minPixelSize
-            // which requires this.dataset to be available
-            // Ensure dataset is fully initialized
-            if (!dataset.chromosomes || dataset.chromosomes.length === 0) {
-                throw new Error("LiveMapDataset chromosomes array is not initialized");
-            }
-            this.setActiveDataset(dataset, state);
-            await this.setState(state);
-
-            this.notifyMapLoaded(dataset, state, dataset.datasetType);
-
-        } catch (error) {
-            this.contactMapLabel.textContent = "";
-            this.contactMapLabel.title = "";
-            throw error;
-        } finally {
-            this.stopSpinner();
-            if (!noUpdates) {
-                this.userInteractionShield.style.display = 'none';
-            }
-        }
+        return this.dataLoader.loadLiveMapDataset(config, noUpdates);
     }
 
     /**
@@ -932,101 +655,15 @@ class HICBrowser {
      * @param config
      */
     async loadHicControlFile(config, noUpdates) {
-
-        try {
-            this.userInteractionShield.style.display = 'block';
-            this.contactMatrixView.startSpinner()
-            this.controlUrl = config.url
-            const name = extractName(config)
-            config.name = name
-
-            const hicFileAlert = str => {
-                this.notifyNormalizationExternalChange('NONE')
-                Alert.presentAlert(str)
-            }
-
-            const controlDataset = await Dataset.loadDataset(Object.assign({alert: hicFileAlert}, config))
-
-            controlDataset.name = name
-
-            if (!this.activeDataset || this.activeDataset.isCompatible(controlDataset)) {
-                this.controlDataset = controlDataset
-                if (this.activeDataset) {
-                    this.contactMapLabel.textContent = "A: " + this.activeDataset.name;
-                }
-                this.controlMapLabel.textContent = "B: " + controlDataset.name
-                this.controlMapLabel.title = controlDataset.name
-
-                //For the control dataset, block until the norm vector index is loaded
-                if (controlDataset.getNormVectorIndex) {
-                    await controlDataset.getNormVectorIndex(config)
-                }
-                this.notifyControlMapLoaded(this.controlDataset)
-
-                if (!noUpdates) {
-                    await this.update()
-                }
-            } else {
-                Alert.presentAlert('"B" map genome (' + controlDataset.genomeId + ') does not match "A" map genome (' + this.genome.id + ')')
-            }
-        } finally {
-            this.userInteractionShield.style.display = 'none';
-            this.stopSpinner()
-        }
+        return this.dataLoader.loadHicControlFile(config, noUpdates);
     }
 
     async parseGotoInput(input) {
-        const loci = input.trim().split(' ');
-
-        let xLocus = this.parseLocusString(loci[0]) || await this.lookupFeatureOrGene(loci[0]);
-
-        if (!xLocus) {
-            console.error(`No feature found with name ${loci[ 0 ]}`)
-            alert(`No feature found with name ${loci[ 0 ]}`)
-            return;
-        }
-
-        let yLocus = loci[1] ? this.parseLocusString(loci[1]) : { ...xLocus }
-        if (!yLocus) {
-            yLocus = { ...xLocus }
-        }
-
-        if (xLocus.wholeChr && yLocus.wholeChr || 'All' === xLocus.chr && 'All' === yLocus.chr) {
-            await this.setChromosomes(xLocus, yLocus)
-        } else {
-            await this.goto(xLocus.chr, xLocus.start, xLocus.end, yLocus.chr, yLocus.start, yLocus.end)
-        }
+        return this.interactions.parseGotoInput(input);
     }
 
     parseLocusString(locus) {
-        const [chrName, range] = locus.trim().toLowerCase().split(':');
-        const chromosome = this.genome.getChromosome(chrName);
-
-        if (!chromosome) {
-            return undefined;
-        }
-
-        const locusObject =
-            {
-                chr: chromosome.name,
-                wholeChr: (undefined === range && 'All' !== chromosome.name)
-            };
-
-        if (true === locusObject.wholeChr || 'All' === chromosome.name) {
-            // Chromosome name only or All: Set to whole range
-            locusObject.start = 0;
-            locusObject.end = chromosome.size
-        } else {
-
-            const [startStr, endStr] = range.split('-').map(part => part.replace(/,/g, ''));
-
-            // Internally, loci are 0-based.
-            locusObject.start = isNaN(startStr) ? undefined : parseInt(startStr, 10) - 1;
-            locusObject.end = isNaN(endStr) ? undefined : parseInt(endStr, 10);
-
-        }
-
-        return locusObject;
+        return this.interactions.parseLocusString(locus);
     }
 
     async lookupFeatureOrGene(name) {
@@ -1053,18 +690,13 @@ class HICBrowser {
         return undefined;  // No match found
     }
 
+    /**
+     * Interaction methods delegate to InteractionHandler.
+     * These methods are kept for backward compatibility and to maintain the public API.
+     */
+
     async goto(chr1, bpX, bpXMax, chr2, bpY, bpYMax) {
-
-        const { width, height } = this.contactMatrixView.getViewDimensions()
-        const { chrChanged, resolutionChanged } = this.state.updateWithLoci(chr1, bpX, bpXMax, chr2, bpY, bpYMax, this, width, height)
-
-        this.contactMatrixView.clearImageCaches()
-
-        const eventData = { state: this.state, resolutionChanged, chrChanged }
-
-        await this.update()
-        this.notifyLocusChange(eventData)
-
+        return this.interactions.goto(chr1, bpX, bpXMax, chr2, bpY, bpYMax);
     }
 
     /**
@@ -1078,16 +710,8 @@ class HICBrowser {
      * @returns {number}
      */
     findMatchingZoomIndex(targetResolution, resolutionArray) {
-        const isObject = resolutionArray.length > 0 && resolutionArray[0].index !== undefined
-        for (let z = resolutionArray.length - 1; z > 0; z--) {
-            const binSize = isObject ? resolutionArray[z].binSize : resolutionArray[z]
-            const index = isObject ? resolutionArray[z].index : z
-            if (binSize >= targetResolution) {
-                return index
-            }
-        }
-        return 0
-    };
+        return this.interactions.findMatchingZoomIndex(targetResolution, resolutionArray);
+    }
 
     /**
      * @param scaleFactor Values range from greater then 1 to decimal values less then one
@@ -1097,59 +721,7 @@ class HICBrowser {
      * @param anchorPy
      */
     async pinchZoom(anchorPx, anchorPy, scaleFactor) {
-
-        if (this.state.chr1 === 0) {
-            await this.zoomAndCenter(1, anchorPx, anchorPy)
-        } else {
-            try {
-                this.startSpinner()
-
-                const bpResolutions = this.getResolutions()
-                const currentResolution = bpResolutions[this.state.zoom]
-
-                let newBinSize
-                let newZoom
-                let newPixelSize
-                let resolutionChanged
-
-                if (this.resolutionLocked ||
-                    (this.state.zoom === bpResolutions.length - 1 && scaleFactor > 1) ||
-                    (this.state.zoom === 0 && scaleFactor < 1)) {
-                    // Can't change resolution level, must adjust pixel size
-                    newBinSize = currentResolution.binSize
-                    newPixelSize = Math.min(MAX_PIXEL_SIZE, this.state.pixelSize * scaleFactor)
-                    newZoom = this.state.zoom
-                    resolutionChanged = false
-                } else {
-                    const targetBinSize = (currentResolution.binSize / this.state.pixelSize) / scaleFactor
-                    newZoom = this.findMatchingZoomIndex(targetBinSize, bpResolutions)
-                    newBinSize = bpResolutions[newZoom].binSize
-                    resolutionChanged = newZoom !== this.state.zoom
-                    newPixelSize = Math.min(MAX_PIXEL_SIZE, newBinSize / targetBinSize)
-                }
-                const z = await this.minZoom(this.state.chr1, this.state.chr2)
-
-
-                if (!this.resolutionLocked && scaleFactor < 1 && newZoom < z) {
-                    // Zoom out to whole genome
-                    const xLocus = this.parseLocusString('1')
-                    const yLocus = { xLocus }
-                    await this.setChromosomes(xLocus, yLocus)
-                } else {
-
-                    await this.state.panWithZoom(newZoom, newPixelSize, anchorPx, anchorPy, newBinSize, this, this.dataset, this.contactMatrixView.getViewDimensions(), bpResolutions)
-
-                    await this.contactMatrixView.zoomIn(anchorPx, anchorPy, 1/scaleFactor)
-
-                    const eventData = { state: this.state, resolutionChanged, chrChanged: false }
-                    await this.update()
-                    this.notifyLocusChange(eventData)
-                }
-            } finally {
-                this.stopSpinner()
-            }
-        }
-
+        return this.interactions.pinchZoom(anchorPx, anchorPy, scaleFactor);
     }
 
     // Zoom in response to a double-click
@@ -1161,67 +733,7 @@ class HICBrowser {
      * @returns {Promise<void>}
      */
     async zoomAndCenter(direction, centerPX, centerPY) {
-
-        if (undefined === this.dataset) {
-            console.warn('Dataset is undefined')
-            return
-        }
-
-        if (this.dataset.isWholeGenome(this.state.chr1) && direction > 0) {
-            // jump from whole genome to chromosome
-            const genomeCoordX = centerPX * this.dataset.wholeGenomeResolution / this.state.pixelSize
-            const genomeCoordY = centerPY * this.dataset.wholeGenomeResolution / this.state.pixelSize
-            const chrX = this.genome.getChromosomeForCoordinate(genomeCoordX)
-            const chrY = this.genome.getChromosomeForCoordinate(genomeCoordY)
-            const xLocus = { chr: chrX.name, start: 0, end: chrX.size, wholeChr: true }
-            const yLocus = { chr: chrY.name, start: 0, end: chrY.size, wholeChr: true }
-            await this.setChromosomes(xLocus, yLocus)
-        } else {
-
-            const { width, height } = this.contactMatrixView.getViewDimensions()
-
-            const dx = centerPX === undefined ? 0 : centerPX - width / 2
-            this.state.x += (dx / this.state.pixelSize)
-
-            const dy = centerPY === undefined ? 0 : centerPY - height / 2
-            this.state.y += (dy / this.state.pixelSize)
-
-            const resolutions = this.getResolutions()
-            const directionPositive = direction > 0 && this.state.zoom === resolutions[resolutions.length - 1].index
-            const directionNegative = direction < 0 && this.state.zoom === resolutions[0].index
-            if (this.resolutionLocked || directionPositive || directionNegative) {
-
-                const minPS = await this.minPixelSize(this.state.chr1, this.state.chr2, this.state.zoom)
-
-                const newPixelSize = Math.max(Math.min(MAX_PIXEL_SIZE, this.state.pixelSize * (direction > 0 ? 2 : 0.5)), minPS)
-
-                const shiftRatio = (newPixelSize - this.state.pixelSize) / newPixelSize
-
-                this.state.pixelSize = newPixelSize
-
-
-                this.state.x += shiftRatio * (width / this.state.pixelSize)
-                this.state.y += shiftRatio * (height / this.state.pixelSize)
-
-                this.state.clampXY(this.dataset, this.contactMatrixView.getViewDimensions())
-
-                this.state.configureLocus(this, this.dataset, { width, height })
-
-                const eventData = { state: this.state, resolutionChanged: false, chrChanged: false }
-                await this.update()
-                this.notifyLocusChange(eventData)
-
-            } else {
-                let i
-                for (i = 0; i < resolutions.length; i++) {
-                    if (this.state.zoom === resolutions[i].index) break
-                }
-                if (i) {
-                    const newZoom = resolutions[i + direction].index
-                    this.setZoom(newZoom)
-                }
-            }
-        }
+        return this.interactions.zoomAndCenter(direction, centerPX, centerPY);
     }
 
     /**
@@ -1230,50 +742,11 @@ class HICBrowser {
      * @returns {Promise<void>}
      */
     async setZoom(zoom) {
-
-        const resolutionChanged = await this.state.setWithZoom(zoom, this.contactMatrixView.getViewDimensions(), this, this.dataset)
-
-        await this.contactMatrixView.zoomIn()
-
-        const eventData = { state: this.state, resolutionChanged, chrChanged: false }
-        await this.update()
-        this.notifyLocusChange(eventData)
-
+        return this.interactions.setZoom(zoom);
     }
 
     async setChromosomes(xLocus, yLocus) {
-
-        const { index:chr1Index } = this.genome.getChromosome(xLocus.chr)
-        const { index:chr2Index } = this.genome.getChromosome(yLocus.chr)
-
-        this.state.chr1 = Math.min(chr1Index, chr2Index)
-        this.state.x = 0
-
-        this.state.chr2 = Math.max(chr1Index, chr2Index)
-        this.state.y = 0
-
-        this.state.locus =
-            {
-                x: { chr: xLocus.chr, start: xLocus.start, end: xLocus.end },
-                y: { chr: yLocus.chr, start: yLocus.start, end: yLocus.end }
-            };
-
-        if (xLocus.wholeChr && yLocus.wholeChr) {
-            this.state.zoom = await this.minZoom(this.state.chr1, this.state.chr2)
-            const minPS = await this.minPixelSize(this.state.chr1, this.state.chr2, this.state.zoom)
-            this.state.pixelSize = Math.min(100, Math.max(DEFAULT_PIXEL_SIZE, minPS))
-        } else {
-            // Whole Genome
-            this.state.zoom = 0
-            const minPS = await this.minPixelSize(this.state.chr1, this.state.chr2, this.state.zoom)
-            this.state.pixelSize = Math.max(this.state.pixelSize, minPS)
-
-        }
-
-        const eventData = { state: this.state, resolutionChanged: true, chrChanged: true }
-        await this.update()
-        this.notifyLocusChange(eventData)
-
+        return this.interactions.setChromosomes(xLocus, yLocus);
     }
 
     /**
@@ -1310,10 +783,10 @@ class HICBrowser {
     async setState(state) {
         const { chrChanged, resolutionChanged } = await this.stateManager.setState(state);
 
-        const eventData = { 
-            state: this.state, 
-            resolutionChanged, 
-            chrChanged 
+        const eventData = {
+            state: this.state,
+            resolutionChanged,
+            chrChanged
         };
         await this.update();
         this.notifyLocusChange(eventData);
@@ -1357,23 +830,7 @@ class HICBrowser {
     }
 
     async shiftPixels(dx, dy) {
-
-        if (undefined === this.dataset) {
-            console.warn('dataset is undefined')
-            return
-        }
-
-        this.state.panShift(dx, dy, this, this.dataset, this.contactMatrixView.getViewDimensions())
-
-        const eventData = {
-            state: this.state,
-            resolutionChanged: false,
-            dragging: true,
-            chrChanged: false
-        }
-
-        await this.update()
-        this.notifyLocusChange(eventData)
+        return this.interactions.shiftPixels(dx, dy);
     }
 
     /**

@@ -335,4 +335,4 @@ async function expandURL(url) {
 
 }
 
-export {extractConfig}
+export {extractConfig, DEFAULT_ANNOTATION_COLOR}

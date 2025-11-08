@@ -7,7 +7,7 @@
     {
       "name": "Spacewalk (External Reference)",
       "path": "../../SpacewalkDevelopment/spacewalk",
-      "//": "https://github.com/igvteam/spacewalk"
+      "//": "https://github.com/aidenlab/spacewalk"
     }
   ],
   "settings": {

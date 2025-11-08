@@ -24,6 +24,8 @@ import State from './hicState.js';
 import ColorScale from "./colorScale.js"
 import {Globals} from "./globals.js";
 import {StringUtils, BGZip} from '../node_modules/igv-utils/src/index.js'
+import {isFile} from './fileUtils.js'
+import {igvxhr} from '../node_modules/igv-utils/src/index.js'
 
 const DEFAULT_ANNOTATION_COLOR = "rgb(22, 129, 198)";
 
@@ -41,11 +43,44 @@ async function extractConfig(queryString) {
     let sessionConfig;
 
     if (query.hasOwnProperty("session")) {
-        if (query.session.startsWith("blob:") || query.session.startsWith("data:")) {
-            sessionConfig = JSON.parse(BGZip.uncompressString(query.session.substr(5)));
-        } else {
-            // TODO - handle session url
-
+        const sessionValue = query.session;
+        if (sessionValue.startsWith("blob:") || sessionValue.startsWith("data:")) {
+            sessionConfig = JSON.parse(BGZip.uncompressString(sessionValue.substr(5)));
+        } else if (isFile(sessionValue)) {
+            // Handle File object
+            const sessionText = await sessionValue.text();
+            try {
+                // Try to parse as compressed blob first
+                if (sessionText.startsWith("blob:") || sessionText.startsWith("data:")) {
+                    sessionConfig = JSON.parse(BGZip.uncompressString(sessionText.substr(5)));
+                } else {
+                    // Parse as plain JSON
+                    sessionConfig = JSON.parse(sessionText);
+                }
+            } catch (e) {
+                console.error("Error parsing session file:", e);
+                throw new Error(`Failed to parse session file: ${e.message}`);
+            }
+        } else if (typeof sessionValue === 'string') {
+            // Handle session URL or local file path
+            try {
+                const sessionText = await igvxhr.loadString(sessionValue);
+                try {
+                    // Try to parse as compressed blob first
+                    if (sessionText.startsWith("blob:") || sessionText.startsWith("data:")) {
+                        sessionConfig = JSON.parse(BGZip.uncompressString(sessionText.substr(5)));
+                    } else {
+                        // Parse as plain JSON
+                        sessionConfig = JSON.parse(sessionText);
+                    }
+                } catch (e) {
+                    console.error("Error parsing session from URL/file:", e);
+                    throw new Error(`Failed to parse session from URL/file: ${e.message}`);
+                }
+            } catch (e) {
+                console.error("Error loading session from URL/file:", e);
+                throw new Error(`Failed to load session from URL/file: ${e.message}`);
+            }
         }
     }
 

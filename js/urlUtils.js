@@ -37,6 +37,23 @@ const urlShortcuts = {
     "*enc/": "https://www.encodeproject.org/files/"
 }
 
+/**
+ * Expand URL shortcuts in a URL string (e.g., *s3/ -> full URL)
+ * @param {string} url - URL that may contain shortcuts
+ * @returns {string} - URL with shortcuts expanded
+ */
+function expandUrlShortcuts(url) {
+    if (!url || typeof url !== 'string') return url;
+    let expandedUrl = url;
+    Object.keys(urlShortcuts).forEach(function (key) {
+        const value = urlShortcuts[key];
+        if (expandedUrl.startsWith(key)) {
+            expandedUrl = expandedUrl.replace(key, value);
+        }
+    });
+    return expandedUrl;
+}
+
 async function extractConfig(queryString) {
 
     let query = extractQuery(queryString);
@@ -176,10 +193,7 @@ function decodeQuery(query, uriDecode) {
 
     if (hicUrl) {
         hicUrl = paramDecode(hicUrl, uriDecode);
-        Object.keys(urlShortcuts).forEach(function (key) {
-            var value = urlShortcuts[key];
-            if (hicUrl.startsWith(key)) hicUrl = hicUrl.replace(key, value);
-        });
+        hicUrl = expandUrlShortcuts(hicUrl);
         config.url = hicUrl;
 
     }
@@ -188,10 +202,7 @@ function decodeQuery(query, uriDecode) {
     }
     if (controlUrl) {
         controlUrl = paramDecode(controlUrl, uriDecode);
-        Object.keys(urlShortcuts).forEach(function (key) {
-            var value = urlShortcuts[key];
-            if (controlUrl.startsWith(key)) controlUrl = controlUrl.replace(key, value);
-        });
+        controlUrl = expandUrlShortcuts(controlUrl);
         config.controlUrl = controlUrl;
     }
     if (controlName) {
@@ -248,14 +259,7 @@ function decodeQuery(query, uriDecode) {
             const color = tokens.pop();
             let url = tokens.length > 1 ? tokens[0] : trackString;
             if (url && url.trim().length > 0 && "undefined" !== url) {
-                const keys = Object.keys(urlShortcuts);
-                for (let key of keys) {
-                    var value = urlShortcuts[key];
-                    if (url.startsWith(key)) {
-                        url = url.replace(key, value);
-                        break;
-                    }
-                }
+                url = expandUrlShortcuts(url);
                 const trackConfig = {url: url};
 
                 if (tokens.length > 1) {
@@ -370,4 +374,4 @@ async function expandURL(url) {
 
 }
 
-export {extractConfig, DEFAULT_ANNOTATION_COLOR}
+export {extractConfig, DEFAULT_ANNOTATION_COLOR, expandUrlShortcuts}

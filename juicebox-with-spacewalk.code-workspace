@@ -6,8 +6,8 @@
     },
     {
       "name": "Spacewalk (External Reference)",
-      "path": "../spacewalk",
-      "//": "Update this path to point to your Spacewalk repository location. Default assumes Spacewalk is cloned as a sibling directory."
+      "path": "../../SpacewalkDevelopment/spacewalk",
+      "//": "https://github.com/igvteam/spacewalk"
     }
   ],
   "settings": {

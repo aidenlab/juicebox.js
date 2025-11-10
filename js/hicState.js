@@ -26,7 +26,6 @@
  * @author Jim Robinson
  */
 
-import { defaultSize } from './createBrowser.js'
 import {DEFAULT_PIXEL_SIZE, MAX_PIXEL_SIZE} from "./hicBrowser.js"
 
 class State {
@@ -50,7 +49,7 @@ class State {
         this.zoom = zoom;
 
         if (undefined === normalization) {
-            console.warn("Normalization is undefined. Will use NONE");
+            // console.warn("Normalization is undefined. Will use NONE");
             normalization = 'NONE';
         }
         this.normalization = normalization;
@@ -66,23 +65,6 @@ class State {
 
         this.locus = locus
     }
-
-    // Getters and setters for width and height
-    // get width() {
-    //     return this._width;
-    // }
-    //
-    // set width(value) {
-    //     this._width = value;
-    // }
-    //
-    // get height() {
-    //     return this._height;
-    // }
-    //
-    // set height(value) {
-    //     this._height = value;
-    // }
 
     clampXY(dataset, viewDimensions) {
         const { width, height } = viewDimensions

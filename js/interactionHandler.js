@@ -28,7 +28,7 @@ import {DEFAULT_PIXEL_SIZE, MAX_PIXEL_SIZE} from "./hicBrowser.js"
  * 
  * This class manages:
  * - Navigation (goto, setChromosomes)
- * - Zoom operations (pinchZoom, zoomAndCenter, setZoom)
+ * - Zoom operations (pinchZoom, handleWheelZoom, zoomAndCenter, setZoom)
  * - Pan operations (shiftPixels)
  * - Locus parsing (parseGotoInput, parseLocusString)
  * - Zoom index finding (findMatchingZoomIndex)
@@ -40,6 +40,8 @@ class InteractionHandler {
      */
     constructor(browser) {
         this.browser = browser;
+        this.wheelZoomInProgress = false;
+        this.pendingWheelZoom = null;
     }
 
     /**
@@ -74,7 +76,10 @@ class InteractionHandler {
             this.browser.contactMatrixView.clearImageCaches();
         }
 
-        if (zoomIn) {
+        // Only use smooth zoomIn animation when resolution hasn't changed
+        // Resolution changes require loading new data tiles, so smooth zoom doesn't work correctly
+        // and causes visual "pops" due to binSize unit mismatches
+        if (zoomIn && !resolutionChanged) {
             if (zoomIn.anchorPx !== undefined && zoomIn.anchorPy !== undefined && zoomIn.scaleFactor !== undefined) {
                 await this.browser.contactMatrixView.zoomIn(zoomIn.anchorPx, zoomIn.anchorPy, zoomIn.scaleFactor);
             } else {
@@ -195,6 +200,132 @@ class InteractionHandler {
                     this.browser, this.browser.dataset,
                     this.browser.contactMatrixView.getViewDimensions(),
                     bpResolutions
+                );
+
+                // Update the locus after zooming
+                this.browser.state.configureLocus(
+                    this.browser.dataset,
+                    this.browser.contactMatrixView.getViewDimensions()
+                );
+
+                await this._applyStateChange({
+                    resolutionChanged,
+                    chrChanged: false,
+                    zoomIn: {
+                        anchorPx,
+                        anchorPy,
+                        scaleFactor: 1 / scaleFactor
+                    }
+                });
+            }
+        } finally {
+            this.browser.stopSpinner();
+        }
+    }
+
+    /**
+     * Handle wheel-based zoom gesture.
+     * Similar to pinchZoom but optimized for wheel events with smaller incremental steps.
+     * Prevents concurrent zoom operations to avoid race conditions and discrete jumps.
+     * 
+     * @param {number} anchorPx - Anchor X position in pixels
+     * @param {number} anchorPy - Anchor Y position in pixels
+     * @param {number} scaleFactor - Scale factor (>1 = zoom in, <1 = zoom out)
+     */
+    async handleWheelZoom(anchorPx, anchorPy, scaleFactor) {
+        if (!this._validateDataset()) {
+            return;
+        }
+
+        // If a zoom operation is already in progress, queue this one
+        // (only keep the most recent pending operation)
+        if (this.wheelZoomInProgress) {
+            this.pendingWheelZoom = { anchorPx, anchorPy, scaleFactor };
+            return;
+        }
+
+        // Process zoom operations sequentially to prevent race conditions
+        this.wheelZoomInProgress = true;
+        try {
+            await this._performWheelZoom(anchorPx, anchorPy, scaleFactor);
+            
+            // Process any pending zoom operation
+            while (this.pendingWheelZoom) {
+                const pending = this.pendingWheelZoom;
+                this.pendingWheelZoom = null;
+                await this._performWheelZoom(pending.anchorPx, pending.anchorPy, pending.scaleFactor);
+            }
+        } finally {
+            this.wheelZoomInProgress = false;
+        }
+    }
+
+    /**
+     * Internal method to perform the actual wheel zoom operation.
+     * 
+     * @param {number} anchorPx - Anchor X position in pixels
+     * @param {number} anchorPy - Anchor Y position in pixels
+     * @param {number} scaleFactor - Scale factor (>1 = zoom in, <1 = zoom out)
+     */
+    async _performWheelZoom(anchorPx, anchorPy, scaleFactor) {
+        // Handle transition from whole genome to chromosome view
+        if (this.browser.state.chr1 === 0) {
+            // In whole genome view, only zoom in (jump to chromosome)
+            // Zoom out doesn't make sense at whole genome level
+            if (scaleFactor > 1) {
+                // Use zoomAndCenter which safely handles the whole genome to chromosome transition
+                // It will navigate to the chromosome under the mouse cursor
+                await this.zoomAndCenter(1, anchorPx, anchorPy);
+            }
+            return;
+        }
+
+        try {
+            this.browser.startSpinner();
+
+            const bpResolutions = this.browser.getResolutions();
+            const currentResolution = bpResolutions[this.browser.state.zoom];
+
+            let newBinSize;
+            let newZoom;
+            let newPixelSize;
+            let resolutionChanged;
+
+            if (this.browser.resolutionLocked ||
+                (this.browser.state.zoom === bpResolutions.length - 1 && scaleFactor > 1) ||
+                (this.browser.state.zoom === 0 && scaleFactor < 1)) {
+                // Can't change resolution level, must adjust pixel size
+                newBinSize = currentResolution.binSize;
+                newPixelSize = Math.min(MAX_PIXEL_SIZE, this.browser.state.pixelSize * scaleFactor);
+                newZoom = this.browser.state.zoom;
+                resolutionChanged = false;
+            } else {
+                const targetBinSize = (currentResolution.binSize / this.browser.state.pixelSize) / scaleFactor;
+                newZoom = this.findMatchingZoomIndex(targetBinSize, bpResolutions);
+                newBinSize = bpResolutions[newZoom].binSize;
+                resolutionChanged = newZoom !== this.browser.state.zoom;
+                newPixelSize = Math.min(MAX_PIXEL_SIZE, newBinSize / targetBinSize);
+            }
+
+            const z = await this.browser.minZoom(this.browser.state.chr1, this.browser.state.chr2);
+
+            if (!this.browser.resolutionLocked && scaleFactor < 1 && newZoom < z) {
+                // Zoom out to whole genome
+                const xLocus = this.parseLocusString('All');
+                const yLocus = { ...xLocus };
+                await this.setChromosomes(xLocus, yLocus);
+            } else {
+                await this.browser.state.panWithZoom(
+                    newZoom, newPixelSize, anchorPx, anchorPy, newBinSize,
+                    this.browser, this.browser.dataset,
+                    this.browser.contactMatrixView.getViewDimensions(),
+                    bpResolutions
+                );
+
+                // Update the locus after zooming
+                this.browser.state.configureLocus(
+                    this.browser.dataset,
+                    this.browser.contactMatrixView.getViewDimensions()
                 );
 
                 await this._applyStateChange({

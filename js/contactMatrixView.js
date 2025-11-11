@@ -805,6 +805,21 @@ class ContactMatrixView {
                 this.browser.zoomAndCenter(1, mouseX, mouseY);
             })
 
+            viewportElement.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const zoomFactor = 0.008;
+                // deltaY > 0 means scroll down (zoom out), deltaY < 0 means scroll up (zoom in)
+                // For juicebox: scaleFactor > 1 = zoom in, scaleFactor < 1 = zoom out
+                const scaleFactor = e.deltaY > 0 ? 1 - zoomFactor : 1 + zoomFactor;
+                const anchorPx = e.offsetX;
+                const anchorPy = e.offsetY;
+
+                this.browser.interactions.handleWheelZoom(anchorPx, anchorPy, scaleFactor)
+                    .catch(err => console.error('Error in handleWheelZoom:', err));
+            })
+
             viewportElement.addEventListener('mouseover', () => mouseOver = true)
             viewportElement.addEventListener('mouseout', () => mouseOver = undefined)
 

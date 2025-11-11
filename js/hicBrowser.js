@@ -821,6 +821,15 @@ class HICBrowser {
         // For sync, we don't want to propagate back to other browsers (would cause infinite loop)
         // So we update without syncing
         await this.update(false);
+        
+        // Notify UI components (scrollbars, locus display, etc.) of the state change
+        // This ensures synchronized browsers update their UI elements properly
+        const eventData = {
+            state: this.state,
+            resolutionChanged: zoomChanged,
+            chrChanged
+        };
+        this.notifyLocusChange(eventData);
     }
 
     setNormalization(normalization) {

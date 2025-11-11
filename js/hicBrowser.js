@@ -1010,7 +1010,31 @@ class HICBrowser {
         const chr2Length = this.activeDataset.chromosomes[chr2].size
 
         const matrix = await this.activeDataset.getMatrix(chr1, chr2)
-        const { zoom } = matrix.getZoomDataByIndex(zoomIndex, "BP")
+        if (!matrix) {
+            console.warn(`Matrix not available for chromosomes ${chr1}, ${chr2}`);
+            return DEFAULT_PIXEL_SIZE;
+        }
+
+        const zoomData = matrix.getZoomDataByIndex(zoomIndex, "BP");
+        if (!zoomData || !zoomData.zoom) {
+            // Fallback: try to get zoom data for index 0, or use dataset resolution
+            const fallbackZoomData = matrix.getZoomDataByIndex(0, "BP");
+            if (!fallbackZoomData || !fallbackZoomData.zoom) {
+                // Last resort: use dataset resolution directly
+                const binSize = this.activeDataset.bpResolutions[zoomIndex] || this.activeDataset.bpResolutions[0] || 1000;
+                const nBins1 = chr1Length / binSize;
+                const nBins2 = chr2Length / binSize;
+                const { width, height } = this.contactMatrixView.getViewDimensions();
+                return Math.min(width / nBins1, height / nBins2);
+            }
+            const zoom = fallbackZoomData.zoom;
+            const nBins1 = chr1Length / zoom.binSize;
+            const nBins2 = chr2Length / zoom.binSize;
+            const { width, height } = this.contactMatrixView.getViewDimensions();
+            return Math.min(width / nBins1, height / nBins2);
+        }
+
+        const { zoom } = zoomData;
 
         // bin = bp * bin/bp = bin
         const nBins1 = chr1Length / zoom.binSize

@@ -227,6 +227,8 @@ class InteractionHandler {
      * Handle wheel-based zoom gesture.
      * Similar to pinchZoom but optimized for wheel events with smaller incremental steps.
      * Prevents concurrent zoom operations to avoid race conditions and discrete jumps.
+     * Accumulates zoom scale factors when there are pending operations to maintain responsiveness
+     * even when track rendering is slow.
      * 
      * @param {number} anchorPx - Anchor X position in pixels
      * @param {number} anchorPy - Anchor Y position in pixels
@@ -237,10 +239,18 @@ class InteractionHandler {
             return;
         }
 
-        // If a zoom operation is already in progress, queue this one
-        // (only keep the most recent pending operation)
+        // If a zoom operation is already in progress, accumulate the scale factor
+        // This ensures that rapid wheel events don't get lost when track rendering is slow
         if (this.wheelZoomInProgress) {
-            this.pendingWheelZoom = { anchorPx, anchorPy, scaleFactor };
+            if (this.pendingWheelZoom) {
+                // Accumulate scale factors multiplicatively
+                // Use the most recent anchor position (where the mouse currently is)
+                this.pendingWheelZoom.scaleFactor *= scaleFactor;
+                this.pendingWheelZoom.anchorPx = anchorPx;
+                this.pendingWheelZoom.anchorPy = anchorPy;
+            } else {
+                this.pendingWheelZoom = { anchorPx, anchorPy, scaleFactor };
+            }
             return;
         }
 
@@ -249,7 +259,7 @@ class InteractionHandler {
         try {
             await this._performWheelZoom(anchorPx, anchorPy, scaleFactor);
             
-            // Process any pending zoom operation
+            // Process any pending zoom operation (with accumulated scale factor)
             while (this.pendingWheelZoom) {
                 const pending = this.pendingWheelZoom;
                 this.pendingWheelZoom = null;

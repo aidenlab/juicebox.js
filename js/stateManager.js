@@ -104,7 +104,6 @@ class StateManager {
         if (undefined === state.locus) {
             const viewDimensions = this.browser.contactMatrixView.getViewDimensions();
             this.activeState.configureLocus(
-                this.browser, 
                 this.activeDataset, 
                 viewDimensions
             );
@@ -201,19 +200,14 @@ class StateManager {
             return { zoomChanged: false, chrChanged: false };
         }
 
-        const { zoomChanged, chrChanged } = this.activeState.sync(
+        const { zoomChanged, chrChanged } = await this.activeState.sync(
             targetState, 
             this.browser, 
             this.browser.genome, 
             this.activeDataset
         );
 
-        // Configure locus after sync
-        this.activeState.configureLocus(
-            this.browser, 
-            this.activeDataset, 
-            this.browser.contactMatrixView.getViewDimensions()
-        );
+        // Note: configureLocus is now handled by sync's _finalizeUpdate
 
         return { zoomChanged, chrChanged };
     }

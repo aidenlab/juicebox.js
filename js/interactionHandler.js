@@ -43,6 +43,57 @@ class InteractionHandler {
     }
 
     /**
+     * Validate that the dataset is available.
+     * 
+     * @returns {boolean} - True if dataset is valid, false otherwise
+     */
+    _validateDataset() {
+        if (undefined === this.browser.dataset) {
+            console.warn('dataset is undefined');
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Apply state changes and notify listeners.
+     * Centralizes the common post-state-change workflow.
+     * 
+     * @param {Object} options - State change options
+     * @param {boolean} options.resolutionChanged - Whether resolution changed
+     * @param {boolean} options.chrChanged - Whether chromosome changed
+     * @param {boolean} [options.dragging] - Whether currently dragging (optional)
+     * @param {boolean} [options.clearCaches] - Whether to clear image caches (optional)
+     * @param {Object} [options.zoomIn] - Zoom in options {anchorPx?, anchorPy?, scaleFactor?} (optional)
+     * @returns {Promise<void>}
+     */
+    async _applyStateChange(options) {
+        const { resolutionChanged, chrChanged, dragging = false, clearCaches = false, zoomIn } = options;
+
+        if (clearCaches) {
+            this.browser.contactMatrixView.clearImageCaches();
+        }
+
+        if (zoomIn) {
+            if (zoomIn.anchorPx !== undefined && zoomIn.anchorPy !== undefined && zoomIn.scaleFactor !== undefined) {
+                await this.browser.contactMatrixView.zoomIn(zoomIn.anchorPx, zoomIn.anchorPy, zoomIn.scaleFactor);
+            } else {
+                await this.browser.contactMatrixView.zoomIn();
+            }
+        }
+
+        const eventData = {
+            state: this.browser.state,
+            resolutionChanged,
+            chrChanged,
+            ...(dragging && { dragging })
+        };
+
+        await this.browser.update();
+        this.browser.notifyLocusChange(eventData);
+    }
+
+    /**
      * Navigate to a specific genomic locus.
      * 
      * @param {string|number} chr1 - Chromosome 1 name or index
@@ -54,21 +105,16 @@ class InteractionHandler {
      */
     async goto(chr1, bpX, bpXMax, chr2, bpY, bpYMax) {
         const { width, height } = this.browser.contactMatrixView.getViewDimensions();
-        const { chrChanged, resolutionChanged } = this.browser.state.updateWithLoci(
+        const { chrChanged, resolutionChanged } = await this.browser.state.updateWithLoci(
             chr1, bpX, bpXMax, chr2, bpY, bpYMax, 
             this.browser, width, height
         );
 
-        this.browser.contactMatrixView.clearImageCaches();
-
-        const eventData = { 
-            state: this.browser.state, 
-            resolutionChanged, 
-            chrChanged 
-        };
-
-        await this.browser.update();
-        this.browser.notifyLocusChange(eventData);
+        await this._applyStateChange({
+            resolutionChanged,
+            chrChanged,
+            clearCaches: true
+        });
     }
 
     /**
@@ -78,8 +124,7 @@ class InteractionHandler {
      * @param {number} dy - Y pixel offset
      */
     async shiftPixels(dx, dy) {
-        if (undefined === this.browser.dataset) {
-            console.warn('dataset is undefined');
+        if (!this._validateDataset()) {
             return;
         }
 
@@ -90,15 +135,11 @@ class InteractionHandler {
             this.browser.contactMatrixView.getViewDimensions()
         );
 
-        const eventData = {
-            state: this.browser.state,
+        await this._applyStateChange({
             resolutionChanged: false,
-            dragging: true,
-            chrChanged: false
-        };
-
-        await this.browser.update();
-        this.browser.notifyLocusChange(eventData);
+            chrChanged: false,
+            dragging: true
+        });
     }
 
     /**
@@ -156,15 +197,15 @@ class InteractionHandler {
                     bpResolutions
                 );
 
-                await this.browser.contactMatrixView.zoomIn(anchorPx, anchorPy, 1 / scaleFactor);
-
-                const eventData = { 
-                    state: this.browser.state, 
-                    resolutionChanged, 
-                    chrChanged: false 
-                };
-                await this.browser.update();
-                this.browser.notifyLocusChange(eventData);
+                await this._applyStateChange({
+                    resolutionChanged,
+                    chrChanged: false,
+                    zoomIn: {
+                        anchorPx,
+                        anchorPy,
+                        scaleFactor: 1 / scaleFactor
+                    }
+                });
             }
         } finally {
             this.browser.stopSpinner();
@@ -180,8 +221,7 @@ class InteractionHandler {
      * @param {number} centerPY - Screen Y coordinate to center on
      */
     async zoomAndCenter(direction, centerPX, centerPY) {
-        if (undefined === this.browser.dataset) {
-            console.warn('Dataset is undefined');
+        if (!this._validateDataset()) {
             return;
         }
 
@@ -227,15 +267,12 @@ class InteractionHandler {
                 this.browser.state.y += shiftRatio * (height / this.browser.state.pixelSize);
 
                 this.browser.state.clampXY(this.browser.dataset, this.browser.contactMatrixView.getViewDimensions());
-                this.browser.state.configureLocus(this.browser, this.browser.dataset, { width, height });
+                this.browser.state.configureLocus(this.browser.dataset, { width, height });
 
-                const eventData = { 
-                    state: this.browser.state, 
-                    resolutionChanged: false, 
-                    chrChanged: false 
-                };
-                await this.browser.update();
-                this.browser.notifyLocusChange(eventData);
+                await this._applyStateChange({
+                    resolutionChanged: false,
+                    chrChanged: false
+                });
             } else {
                 let i;
                 for (i = 0; i < resolutions.length; i++) {
@@ -262,15 +299,11 @@ class InteractionHandler {
             this.browser.dataset
         );
 
-        await this.browser.contactMatrixView.zoomIn();
-
-        const eventData = { 
-            state: this.browser.state, 
-            resolutionChanged, 
-            chrChanged: false 
-        };
-        await this.browser.update();
-        this.browser.notifyLocusChange(eventData);
+        await this._applyStateChange({
+            resolutionChanged,
+            chrChanged: false,
+            zoomIn: {}
+        });
     }
 
     /**
@@ -305,13 +338,11 @@ class InteractionHandler {
             this.browser.state.pixelSize = Math.max(this.browser.state.pixelSize, minPS);
         }
 
-        const eventData = { 
-            state: this.browser.state, 
-            resolutionChanged: true, 
-            chrChanged: true 
-        };
-        await this.browser.update();
-        this.browser.notifyLocusChange(eventData);
+        await this._applyStateChange({
+            resolutionChanged: true,
+            chrChanged: true,
+            clearCaches: true
+        });
     }
 
     /**

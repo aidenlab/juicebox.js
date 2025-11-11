@@ -1,0 +1,30 @@
+{
+  "folders": [
+    {
+      "name": "juicebox.js",
+      "path": "."
+    },
+    {
+      "name": "pg-spike-genomic-ruler",
+      "path": "../pg-spike-genomic-ruler"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/dist": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true
+    },
+    "files.watcherExclude": {
+      "**/node_modules/**": true,
+      "**/dist/**": true
+    }
+  },
+  "extensions": {
+    "recommendations": []
+  }
+}
+

@@ -66,6 +66,105 @@ class State {
         this.locus = locus
     }
 
+    /**
+     * Detect if resolution changed.
+     * 
+     * @param {number} newZoom - New zoom index
+     * @returns {boolean} - True if resolution changed
+     */
+    _detectResolutionChange(newZoom) {
+        return this.zoom !== newZoom;
+    }
+
+    /**
+     * Detect if chromosome changed.
+     * 
+     * @param {number} newChr1 - New chromosome 1 index
+     * @param {number} newChr2 - New chromosome 2 index
+     * @returns {boolean} - True if chromosome changed
+     */
+    _detectChromosomeChange(newChr1, newChr2) {
+        return this.chr1 !== newChr1 || this.chr2 !== newChr2;
+    }
+
+    /**
+     * Adjust pixel size with validation and clamping.
+     * Centralizes pixel size adjustment logic.
+     * 
+     * @param {number} targetPixelSize - Target pixel size (or undefined if calculating from bpPerPixelTarget)
+     * @param {Object} browser - Browser instance
+     * @param {number} zoom - Zoom index
+     * @param {Object} options - Adjustment options
+     * @param {number} [options.minPixelSize] - Pre-calculated minimum pixel size (if provided, won't call browser.minPixelSize)
+     * @param {number} [options.bpPerPixelTarget] - Base pairs per pixel target (for calculation mode)
+     * @param {number} [options.binSize] - Bin size for calculation (required if bpPerPixelTarget provided)
+     * @param {boolean} [options.useDefaultMin=false] - Whether to use DEFAULT_PIXEL_SIZE as minimum (for setWithZoom pattern)
+     * @returns {Promise<number>} - Adjusted pixel size
+     */
+    async _adjustPixelSize(targetPixelSize, browser, zoom, options = {}) {
+        const { minPixelSize, bpPerPixelTarget, binSize, useDefaultMin = false } = options;
+        
+        let adjustedPixelSize;
+
+        // If bpPerPixelTarget and binSize are provided, calculate from them
+        if (bpPerPixelTarget !== undefined && binSize !== undefined) {
+            adjustedPixelSize = binSize / bpPerPixelTarget;
+        } else {
+            adjustedPixelSize = targetPixelSize;
+        }
+
+        // Clamp to minimum of 1
+        adjustedPixelSize = Math.max(1, adjustedPixelSize);
+
+        // Get minimum pixel size from browser if not provided
+        let actualMinPixelSize = minPixelSize;
+        if (actualMinPixelSize === undefined && browser) {
+            actualMinPixelSize = await browser.minPixelSize(this.chr1, this.chr2, zoom);
+        }
+
+        // Apply minimum pixel size constraint
+        if (actualMinPixelSize !== undefined) {
+            if (useDefaultMin) {
+                // For setWithZoom pattern: use max of DEFAULT_PIXEL_SIZE and minPixelSize
+                adjustedPixelSize = Math.max(DEFAULT_PIXEL_SIZE, actualMinPixelSize);
+            } else {
+                // For other patterns: use max of current value and minPixelSize
+                adjustedPixelSize = Math.max(adjustedPixelSize, actualMinPixelSize);
+            }
+        } else if (useDefaultMin) {
+            // If no minPixelSize but useDefaultMin is true, use DEFAULT_PIXEL_SIZE
+            adjustedPixelSize = Math.max(DEFAULT_PIXEL_SIZE, adjustedPixelSize);
+        }
+
+        // Clamp to MAX_PIXEL_SIZE
+        adjustedPixelSize = Math.min(MAX_PIXEL_SIZE, adjustedPixelSize);
+
+        return adjustedPixelSize;
+    }
+
+    /**
+     * Finalize state update with validation.
+     * Standardizes post-update validation workflow.
+     * 
+     * @param {Object} browser - Browser instance
+     * @param {Object} dataset - Dataset instance
+     * @param {Object} viewDimensions - View dimensions {width, height}
+     * @param {Object} options - Finalization options
+     * @param {boolean} [options.clampXY=true] - Whether to clamp XY coordinates
+     * @param {boolean} [options.configureLocus=false] - Whether to configure locus
+     */
+    _finalizeUpdate(browser, dataset, viewDimensions, options = {}) {
+        const { clampXY = true, configureLocus = false } = options;
+
+        if (clampXY) {
+            this.clampXY(dataset, viewDimensions);
+        }
+
+        if (configureLocus) {
+            this.configureLocus(dataset, viewDimensions);
+        }
+    }
+
     clampXY(dataset, viewDimensions) {
         const { width, height } = viewDimensions
         const { chromosomes, bpResolutions } = dataset;
@@ -80,11 +179,10 @@ class State {
 
     async panWithZoom(zoom, pixelSize, anchorPx, anchorPy, binSize, browser, dataset, viewDimensions, bpResolutions){
 
-        const minPixelSize = await browser.minPixelSize(this.chr1, this.chr2, zoom)
-        pixelSize = Math.max(pixelSize, minPixelSize)
+        // Adjust pixel size with minimum constraint
+        pixelSize = await this._adjustPixelSize(pixelSize, browser, zoom)
 
         // Genomic anchor  -- this position should remain at anchorPx, anchorPy after state change
-        bpResolutions[this.zoom]
         const gx = (this.x + anchorPx / this.pixelSize) * bpResolutions[this.zoom].binSize
         const gy = (this.y + anchorPy / this.pixelSize) * bpResolutions[this.zoom].binSize
 
@@ -94,7 +192,7 @@ class State {
         this.zoom = zoom
         this.pixelSize = pixelSize
 
-        this.clampXY(dataset, viewDimensions)
+        this._finalizeUpdate(browser, dataset, viewDimensions, { clampXY: true, configureLocus: false })
 
     }
 
@@ -102,9 +200,8 @@ class State {
 
         this.x += (dx / this.pixelSize)
         this.y += (dy / this.pixelSize)
-        this.clampXY(dataset, viewDimensions)
 
-        this.configureLocus(browser, dataset, viewDimensions)
+        this._finalizeUpdate(browser, dataset, viewDimensions, { clampXY: true, configureLocus: true })
 
     }
 
@@ -124,24 +221,22 @@ class State {
         const xCenterNew = xCenter * scaleFactor
         const yCenterNew = yCenter * scaleFactor
 
+        const resolutionChanged = this._detectResolutionChange(zoom)
+
+        // Adjust pixel size with DEFAULT_PIXEL_SIZE minimum
         const minPixelSize = await browser.minPixelSize(this.chr1, this.chr2, zoom)
-
-        this.pixelSize = Math.max(DEFAULT_PIXEL_SIZE, minPixelSize)
-
-        const resolutionChanged = (this.zoom !== zoom)
+        this.pixelSize = await this._adjustPixelSize(undefined, browser, zoom, { minPixelSize, useDefaultMin: true })
 
         this.zoom = zoom
         this.x = Math.max(0, xCenterNew - width / (2 * this.pixelSize))
         this.y = Math.max(0, yCenterNew - height / (2 * this.pixelSize))
 
-        this.clampXY(dataset, viewDimensions)
-
-        this.configureLocus(browser, dataset, viewDimensions)
+        this._finalizeUpdate(browser, dataset, viewDimensions, { clampXY: true, configureLocus: true })
 
         return resolutionChanged
     }
 
-    configureLocus(browser, dataset, viewDimensions){
+    configureLocus(dataset, viewDimensions){
 
         const bpPerBin = dataset.bpResolutions[this.zoom];
 
@@ -160,31 +255,36 @@ class State {
         this.locus = { x, y }
     }
 
-    updateWithLoci(chr1Name, bpX, bpXMax, chr2Name, bpY, bpYMax, browser, width, height){
+    async updateWithLoci(chr1Name, bpX, bpXMax, chr2Name, bpY, bpYMax, browser, width, height){
 
         const bpResolutions = browser.getResolutions()
 
         // bp/pixel
-        let bpPerPixelTarget = Math.max((bpXMax - bpX) / width, (bpYMax - bpY) / height)
-        let resolutionChanged
+        const bpPerPixelTarget = Math.max((bpXMax - bpX) / width, (bpYMax - bpY) / height)
         let zoomNew
         if (true === browser.resolutionLocked) {
-            resolutionChanged = false
             zoomNew = this.zoom
         } else {
             zoomNew = browser.findMatchingZoomIndex(bpPerPixelTarget, bpResolutions)
-            resolutionChanged = (zoomNew !== this.zoom)
         }
 
+        const resolutionChanged = this._detectResolutionChange(zoomNew)
+
         const { binSize:binSizeNew } = bpResolutions[zoomNew]
-        const pixelSize = Math.min(MAX_PIXEL_SIZE, Math.max(1, binSizeNew / bpPerPixelTarget))
+        
+        // Adjust pixel size from bpPerPixelTarget
+        const pixelSize = await this._adjustPixelSize(undefined, browser, zoomNew, {
+            bpPerPixelTarget,
+            binSize: binSizeNew
+        })
+
         const newXBin = bpX / binSizeNew
         const newYBin = bpY / binSizeNew
 
         const { index:chr1Index } = browser.genome.getChromosome( chr1Name )
         const { index:chr2Index } = browser.genome.getChromosome( chr2Name )
 
-        const chrChanged = this.chr1 !== chr1Index || this.chr2 !== chr2Index
+        const chrChanged = this._detectChromosomeChange(chr1Index, chr2Index)
 
         this.chr1 = chr1Index
         this.chr2 = chr2Index
@@ -201,7 +301,7 @@ class State {
         return { chrChanged, resolutionChanged }
     }
 
-    sync(targetState, browser, genome, dataset){
+    async sync(targetState, browser, genome, dataset){
 
         const chr1 = genome.getChromosome(targetState.chr1Name)
         const chr2 = genome.getChromosome(targetState.chr2Name)
@@ -210,13 +310,18 @@ class State {
 
         const zoomNew = browser.findMatchingZoomIndex(bpPerPixelTarget, dataset.bpResolutions)
         const binSizeNew = dataset.bpResolutions[ zoomNew ]
-        const pixelSizeNew = Math.min(MAX_PIXEL_SIZE, Math.max(1, binSizeNew / bpPerPixelTarget))
+        
+        // Adjust pixel size from bpPerPixelTarget
+        const pixelSizeNew = await this._adjustPixelSize(undefined, browser, zoomNew, {
+            bpPerPixelTarget,
+            binSize: binSizeNew
+        })
 
         const xBinNew = targetState.binX * (targetState.binSize/binSizeNew)
         const yBinNew = targetState.binY * (targetState.binSize/binSizeNew)
 
-        const zoomChanged = (browser.state.zoom !== zoomNew)
-        const chrChanged = (browser.state.chr1 !== chr1.index || browser.state.chr2 !== chr2.index)
+        const zoomChanged = this._detectResolutionChange(zoomNew)
+        const chrChanged = this._detectChromosomeChange(chr1.index, chr2.index)
 
         this.chr1 = chr1.index
         this.chr2 = chr2.index
@@ -225,7 +330,11 @@ class State {
         this.y = yBinNew
         this.pixelSize = pixelSizeNew
 
-        this.configureLocus(browser, dataset, browser.contactMatrixView.getViewDimensions())
+        // Finalize with both clampXY and configureLocus (fixes missing clampXY)
+        this._finalizeUpdate(browser, dataset, browser.contactMatrixView.getViewDimensions(), { 
+            clampXY: true, 
+            configureLocus: true 
+        })
 
         return { zoomChanged, chrChanged }
 

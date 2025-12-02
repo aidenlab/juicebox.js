@@ -240,7 +240,7 @@ class NotificationCoordinator {
      * @param {boolean} eventData.dragging - Whether currently dragging
      */
     notifyLocusChange(eventData) {
-        const { state, resolutionChanged, chrChanged, dragging } = eventData;
+        const { state, resolutionChanged, chrChanged } = eventData;
 
         // ContactMatrixView - only clear caches if not a locus change
         // (locus changes don't require cache clearing)

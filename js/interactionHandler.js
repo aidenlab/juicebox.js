@@ -419,7 +419,7 @@ class InteractionHandler {
                 for (i = 0; i < resolutions.length; i++) {
                     if (this.browser.state.zoom === resolutions[i].index) break;
                 }
-                if (i !== undefined) {
+                if (i < resolutions.length && i + direction >= 0 && i + direction < resolutions.length) {
                     const newZoom = resolutions[i + direction].index;
                     await this.setZoom(newZoom);
                 }

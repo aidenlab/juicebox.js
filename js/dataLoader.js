@@ -74,14 +74,14 @@ class DataLoader {
         }
 
         this.browser.clearSession();
-
+        let name
         try {
             this.browser.contactMatrixView.startSpinner();
             if (!noUpdates) {
                 this.browser.userInteractionShield.style.display = 'block';
             }
 
-            const name = extractName(config);
+            name = extractName(config);
             const prefix = this.browser.controlDataset ? "A: " : "";
             this.browser.contactMapLabel.textContent = prefix + name;
             this.browser.contactMapLabel.title = name;
@@ -163,7 +163,7 @@ class DataLoader {
                     });
             }
 
-            syncBrowsers();
+            syncBrowsers(); // Sync browsers to ensure all browsers are updated with the new dataset
 
             // Find a browser to sync with, if any
             const compatibleBrowsers = getAllBrowsers().filter(

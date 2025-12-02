@@ -4,7 +4,6 @@
 
 import { describe, test, expect } from 'vitest';
 import { extractConfig } from "../js/urlUtils.js";
-import { restoreSession } from "../js/session.js";
 import { createFile } from "./utils/File.js";
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';

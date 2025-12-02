@@ -838,7 +838,7 @@ class HICBrowser {
     }
 
     async shiftPixels(dx, dy) {
-        return this.interactions.shiftPixels(dx, dy);
+        await this.interactions.shiftPixels(dx, dy);
     }
 
     /**

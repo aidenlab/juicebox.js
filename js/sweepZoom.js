@@ -48,7 +48,7 @@ class SweepZoom {
         this.rulerSweeperElement.style.top = top
     }
 
-    commit({ xPixel, yPixel, width, height }) {
+    async commit({ xPixel, yPixel, width, height }) {
 
         this.rulerSweeperElement.style.display = 'none';
 
@@ -64,7 +64,7 @@ class SweepZoom {
         const  widthBP = ( width / pixelSize) * bpResolution;
         const heightBP = (height / pixelSize) * bpResolution;
 
-        this.browser.goto(locus.x.chr, Math.round(xBP), Math.round(xBP + widthBP), locus.y.chr, Math.round(yBP), Math.round(yBP + heightBP));
+        await this.browser.goto(locus.x.chr, Math.round(xBP), Math.round(xBP + widthBP), locus.y.chr, Math.round(yBP), Math.round(yBP + heightBP));
 
     }
 }

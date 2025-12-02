@@ -271,7 +271,7 @@ class ContactMatrixView {
         if (state.normalization !== "NONE") {
             if (!ds.hasNormalizationVector(state.normalization, zd.chr1.name, zd.zoom.unit, zd.zoom.binSize)) {
                 Alert.presentAlert(`Normalization option ${state.normalization} unavailable at this resolution.`);
-                this.browser.eventBus.post(new HICEvent("NormalizationExternalChange", "NONE"));
+                this.browser.notifyNormalizationExternalChange("NONE");
                 state.normalization = "NONE";
             }
         }
@@ -569,7 +569,7 @@ class ContactMatrixView {
             const changed = this.colorScale.threshold !== this.colorScaleThresholdCache[colorKey]
             this.colorScale.setThreshold(this.colorScaleThresholdCache[colorKey])
             if (changed) {
-                this.browser.eventBus.post(HICEvent("ColorScale", this.colorScale))
+                this.browser.notifyColorScale(this.colorScale)
             }
             return this.colorScale
         } else {
@@ -589,7 +589,7 @@ class ContactMatrixView {
                     this.colorScale = new ColorScale(this.colorScale)
                     this.colorScale.setThreshold(s)
                     this.computeColorScale = false
-                    this.browser.eventBus.post(HICEvent("ColorScale", this.colorScale))
+                    this.browser.notifyColorScale(this.colorScale)
                     this.colorScaleThresholdCache[colorKey] = s
                 }
 
@@ -758,7 +758,7 @@ class ContactMatrixView {
                 xy.xNormalized = xy.x / width;
                 xy.yNormalized = xy.y / height;
 
-                this.browser.eventBus.post(HICEvent("UpdateContactMapMousePosition", xy, false));
+                this.browser.notifyUpdateContactMapMousePosition(xy);
 
                 if (this.willShowCrosshairs) {
                     this.browser.updateCrosshairs(xy);
@@ -789,7 +789,7 @@ class ContactMatrixView {
                         this.isDragging = true;
                         const dx = mouseLast.x - coords.x;
                         const dy = mouseLast.y - coords.y;
-                        this.browser.shiftPixels(dx, dy);
+                        this.browser.shiftPixels(dx, dy).catch(err => console.error('Error in shiftPixels:', err));
                     }
                     mouseLast = coords;
                 }
@@ -803,6 +803,21 @@ class ContactMatrixView {
                 const mouseX = e.offsetX;
                 const mouseY = e.offsetY;
                 this.browser.zoomAndCenter(1, mouseX, mouseY);
+            })
+
+            viewportElement.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const zoomFactor = 0.008;
+                // deltaY > 0 means scroll down (zoom out), deltaY < 0 means scroll up (zoom in)
+                // For juicebox: scaleFactor > 1 = zoom in, scaleFactor < 1 = zoom out
+                const scaleFactor = e.deltaY > 0 ? 1 - zoomFactor : 1 + zoomFactor;
+                const anchorPx = e.offsetX;
+                const anchorPy = e.offsetY;
+
+                this.browser.interactions.handleWheelZoom(anchorPx, anchorPy, scaleFactor)
+                    .catch(err => console.error('Error in handleWheelZoom:', err));
             })
 
             viewportElement.addEventListener('mouseover', () => mouseOver = true)
@@ -843,7 +858,7 @@ class ContactMatrixView {
                             height: Math.abs(currentY - startY)
                         };
 
-                    this.sweepZoom.commit(sweepRect)
+                    this.sweepZoom.commit(sweepRect).catch(err => console.error('Error in sweepZoom.commit:', err));
                 }
             })
         }
@@ -935,7 +950,7 @@ class ContactMatrixView {
                     const dy = lastTouch.y - offsetY;
                     if (!isNaN(dx) && !isNaN(dy)) {
                         this.isDragging = true;
-                        this.browser.shiftPixels(dx, dy);
+                        this.browser.shiftPixels(dx, dy).catch(err => console.error('Error in shiftPixels:', err));
                     }
                 }
 

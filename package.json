@@ -25,7 +25,7 @@
     }
   ],
   "bugs": {
-    "url": "https://github.com/igvteam/juicebox.js/issues"
+    "url": "https://github.com/aidenlab/juicebox.js/issues"
   },
   "scripts": {
     "dev": "vite",
@@ -45,7 +45,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/igvteam/juicebox.js.git"
+    "url": "git+https://github.com/aidenlab/juicebox.js.git"
   },
   "devDependencies": {
     "@vitest/ui": "^4.0.7",

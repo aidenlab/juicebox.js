@@ -24,6 +24,8 @@ import State from './hicState.js';
 import ColorScale from "./colorScale.js"
 import {Globals} from "./globals.js";
 import {StringUtils, BGZip} from '../node_modules/igv-utils/src/index.js'
+import {isFile} from './fileUtils.js'
+import {igvxhr} from '../node_modules/igv-utils/src/index.js'
 
 const DEFAULT_ANNOTATION_COLOR = "rgb(22, 129, 198)";
 
@@ -35,17 +37,67 @@ const urlShortcuts = {
     "*enc/": "https://www.encodeproject.org/files/"
 }
 
+/**
+ * Expand URL shortcuts in a URL string (e.g., *s3/ -> full URL)
+ * @param {string} url - URL that may contain shortcuts
+ * @returns {string} - URL with shortcuts expanded
+ */
+function expandUrlShortcuts(url) {
+    if (!url || typeof url !== 'string') return url;
+    let expandedUrl = url;
+    Object.keys(urlShortcuts).forEach(function (key) {
+        const value = urlShortcuts[key];
+        if (expandedUrl.startsWith(key)) {
+            expandedUrl = expandedUrl.replace(key, value);
+        }
+    });
+    return expandedUrl;
+}
+
 async function extractConfig(queryString) {
 
     let query = extractQuery(queryString);
     let sessionConfig;
 
     if (query.hasOwnProperty("session")) {
-        if (query.session.startsWith("blob:") || query.session.startsWith("data:")) {
-            sessionConfig = JSON.parse(BGZip.uncompressString(query.session.substr(5)));
-        } else {
-            // TODO - handle session url
-
+        const sessionValue = query.session;
+        if (sessionValue.startsWith("blob:") || sessionValue.startsWith("data:")) {
+            sessionConfig = JSON.parse(BGZip.uncompressString(sessionValue.substr(5)));
+        } else if (isFile(sessionValue)) {
+            // Handle File object
+            const sessionText = await sessionValue.text();
+            try {
+                // Try to parse as compressed blob first
+                if (sessionText.startsWith("blob:") || sessionText.startsWith("data:")) {
+                    sessionConfig = JSON.parse(BGZip.uncompressString(sessionText.substr(5)));
+                } else {
+                    // Parse as plain JSON
+                    sessionConfig = JSON.parse(sessionText);
+                }
+            } catch (e) {
+                console.error("Error parsing session file:", e);
+                throw new Error(`Failed to parse session file: ${e.message}`);
+            }
+        } else if (typeof sessionValue === 'string') {
+            // Handle session URL or local file path
+            try {
+                const sessionText = await igvxhr.loadString(sessionValue);
+                try {
+                    // Try to parse as compressed blob first
+                    if (sessionText.startsWith("blob:") || sessionText.startsWith("data:")) {
+                        sessionConfig = JSON.parse(BGZip.uncompressString(sessionText.substr(5)));
+                    } else {
+                        // Parse as plain JSON
+                        sessionConfig = JSON.parse(sessionText);
+                    }
+                } catch (e) {
+                    console.error("Error parsing session from URL/file:", e);
+                    throw new Error(`Failed to parse session from URL/file: ${e.message}`);
+                }
+            } catch (e) {
+                console.error("Error loading session from URL/file:", e);
+                throw new Error(`Failed to load session from URL/file: ${e.message}`);
+            }
         }
     }
 
@@ -141,10 +193,7 @@ function decodeQuery(query, uriDecode) {
 
     if (hicUrl) {
         hicUrl = paramDecode(hicUrl, uriDecode);
-        Object.keys(urlShortcuts).forEach(function (key) {
-            var value = urlShortcuts[key];
-            if (hicUrl.startsWith(key)) hicUrl = hicUrl.replace(key, value);
-        });
+        hicUrl = expandUrlShortcuts(hicUrl);
         config.url = hicUrl;
 
     }
@@ -153,10 +202,7 @@ function decodeQuery(query, uriDecode) {
     }
     if (controlUrl) {
         controlUrl = paramDecode(controlUrl, uriDecode);
-        Object.keys(urlShortcuts).forEach(function (key) {
-            var value = urlShortcuts[key];
-            if (controlUrl.startsWith(key)) controlUrl = controlUrl.replace(key, value);
-        });
+        controlUrl = expandUrlShortcuts(controlUrl);
         config.controlUrl = controlUrl;
     }
     if (controlName) {
@@ -213,14 +259,7 @@ function decodeQuery(query, uriDecode) {
             const color = tokens.pop();
             let url = tokens.length > 1 ? tokens[0] : trackString;
             if (url && url.trim().length > 0 && "undefined" !== url) {
-                const keys = Object.keys(urlShortcuts);
-                for (let key of keys) {
-                    var value = urlShortcuts[key];
-                    if (url.startsWith(key)) {
-                        url = url.replace(key, value);
-                        break;
-                    }
-                }
+                url = expandUrlShortcuts(url);
                 const trackConfig = {url: url};
 
                 if (tokens.length > 1) {
@@ -335,4 +374,4 @@ async function expandURL(url) {
 
 }
 
-export {extractConfig}
+export {extractConfig, DEFAULT_ANNOTATION_COLOR, expandUrlShortcuts}

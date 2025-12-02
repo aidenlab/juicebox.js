@@ -51,7 +51,7 @@ class BrowserUIManager {
         this.components.set('resolutionSelector', new ResolutionSelector(this.browser, navContainer));
         this.getComponent('resolutionSelector').setResolutionLock(this.browser.resolutionLocked);
 
-        this.components.set('colorScale', new ColorScaleWidget(this.browser, navContainer));
+        this.components.set('colorScaleWidget', new ColorScaleWidget(this.browser, navContainer));
 
         this.components.set('controlMap', new ControlMapWidget(this.browser, navContainer));
 

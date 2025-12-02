@@ -1,6 +1,7 @@
 import {createBrowserList, deleteAllBrowsers, getAllBrowsers, syncBrowsers} from "./createBrowser.js"
 import {Globals} from "./globals.js"
 import {StringUtils, BGZip} from "../node_modules/igv-utils/src/index.js";
+import {expandUrlShortcuts} from "./urlUtils.js";
 
 function toJSON() {
     const jsonOBJ = {};
@@ -38,6 +39,42 @@ function compressedSession() {
 async function restoreSession(container, session) {
 
     deleteAllBrowsers();
+
+    // Expand URL shortcuts in session config for backward compatibility
+    // This ensures sessions passed directly to restoreSession (not through extractConfig)
+    // still work with URL shortcuts like *s3/, *enc/, etc.
+    if (session.browsers) {
+        for (let browser of session.browsers) {
+            if (browser.url) {
+                browser.url = expandUrlShortcuts(browser.url);
+            }
+            if (browser.controlUrl) {
+                browser.controlUrl = expandUrlShortcuts(browser.controlUrl);
+            }
+            if (browser.tracks) {
+                for (let track of browser.tracks) {
+                    if (track.url) {
+                        track.url = expandUrlShortcuts(track.url);
+                    }
+                }
+            }
+        }
+    } else {
+        // Single browser config (not in browsers array)
+        if (session.url) {
+            session.url = expandUrlShortcuts(session.url);
+        }
+        if (session.controlUrl) {
+            session.controlUrl = expandUrlShortcuts(session.controlUrl);
+        }
+        if (session.tracks) {
+            for (let track of session.tracks) {
+                if (track.url) {
+                    track.url = expandUrlShortcuts(track.url);
+                }
+            }
+        }
+    }
 
     if (session.hasOwnProperty("selectedGene")) {
         Globals.selectedGene = session.selectedGene;

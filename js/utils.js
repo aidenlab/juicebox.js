@@ -52,6 +52,23 @@ function extractName(config) {
     }
 }
 
+/**
+ * Hit test function for bounding box arrays.
+ * Finds the element whose bounding box contains the given value.
+ * 
+ * @param {Array<{a: number, b: number, element: HTMLElement}>} bboxes - Array of bounding boxes
+ * @param {number} value - The value to test against bounding boxes
+ * @returns {HTMLElement|undefined} - The element whose bounding box contains the value, or undefined
+ */
+function hitTestBbox(bboxes, value) {
+    for (const bbox of bboxes) {
+        if (value >= bbox.a && value <= bbox.b) {
+            return bbox.element;
+        }
+    }
+    return undefined;
+}
+
 function presentError(prefix, error) {
     const httpMessages =
         {
@@ -64,4 +81,4 @@ function presentError(prefix, error) {
     Alert.presentAlert(`${prefix}: ${msg}`);
 }
 
-export { createDOMFromHTMLString, getOffset, parseRgbString, prettyPrint, extractName, presentError }
+export { createDOMFromHTMLString, getOffset, parseRgbString, prettyPrint, extractName, presentError, hitTestBbox }

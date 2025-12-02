@@ -1,0 +1,47 @@
+{
+  "browsers": [
+    {
+      "backgroundColor": "136,133,1",
+      "url": "https://www.encodeproject.org/files/ENCFF473CAA/@@download/ENCFF473CAA.hic",
+      "name": "Test Browser 1",
+      "state": {
+        "chr1": 17,
+        "chr2": 17,
+        "zoom": 8,
+        "x": 12025.0154,
+        "y": 12025.0154,
+        "pixelSize": 1,
+        "normalization": "NONE",
+        "locus": {
+          "x": {
+            "chr": "17",
+            "start": 60125077,
+            "end": 63305077
+          },
+          "y": {
+            "chr": "17",
+            "start": 60125077,
+            "end": 63305077
+          }
+        }
+      },
+      "colorScale": "12,131,249,2",
+      "selectedGene": "ace",
+      "nvi": "1077514950,36479",
+      "tracks": [
+        {
+          "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/combined_peaks.txt",
+          "name": "Test Track 1",
+          "color": "#ffce6e"
+        },
+        {
+          "url": "https://hicfiles.s3.amazonaws.com/hiseq/huvec/in-situ/combined_peaks.txt",
+          "name": "Test Track 2",
+          "color": "#ff39ff"
+        }
+      ]
+    }
+  ],
+  "selectedGene": "ace"
+}
+

@@ -75,13 +75,15 @@ class DataLoader {
 
         this.browser.clearSession();
 
+        // Extract name before try block so it's available in catch for error handling
+        const name = extractName(config);
+
         try {
             this.browser.contactMatrixView.startSpinner();
             if (!noUpdates) {
                 this.browser.userInteractionShield.style.display = 'block';
             }
 
-            const name = extractName(config);
             const prefix = this.browser.controlDataset ? "A: " : "";
             this.browser.contactMapLabel.textContent = prefix + name;
             this.browser.contactMapLabel.title = name;

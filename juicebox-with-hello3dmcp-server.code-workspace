@@ -1,0 +1,29 @@
+{
+  "folders": [
+    {
+      "name": "juicebox.js",
+      "path": "."
+    },
+    {
+      "name": "hello3dmcp-server",
+      "path": "../../MCPDevelopment/hello3dmcp-server"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/dist": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true
+    },
+    "files.watcherExclude": {
+      "**/node_modules/**": true,
+      "**/dist/**": true
+    }
+  },
+  "extensions": {
+    "recommendations": []
+  }
+}

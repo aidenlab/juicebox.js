@@ -38,6 +38,7 @@ import {getLayoutDimensions} from './layoutController.js'
 import Track2D from './track2D.js'
 
 import {DEFAULT_ANNOTATION_COLOR} from "./urlUtils.js"
+import {inferFileFormatFromName} from "./igvjs-utils.js"
 
 /**
  * DataLoader handles all data loading responsibilities for HICBrowser.
@@ -353,7 +354,7 @@ class DataLoader {
                 }
 
                 if (!config.format) {
-                    config.format = igv.TrackUtils.inferFileFormat(fileName);
+                    config.format = inferFileFormatFromName(fileName);
                 }
 
                 if (config.type === 'annotation') {

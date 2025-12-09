@@ -133,6 +133,12 @@ class Genome {
     }
 
     // Required for igv.js
+    // Returns undefined since juicebox doesn't use chromAlias system
+    async getAliasRecord(chr) {
+        return undefined;
+    }
+
+    // Required for igv.js
     addFeaturesToDB(featureList, config) {
 
         const insertFeature = (name, feature) => {

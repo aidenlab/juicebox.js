@@ -1,0 +1,29 @@
+{
+  "folders": [
+    {
+      "name": "juicebox.js",
+      "path": "."
+    },
+    {
+      "name": "igv.js",
+      "path": "../../IGVDevelopment/igv.js"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/dist": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true
+    },
+    "files.watcherExclude": {
+      "**/node_modules/**": true,
+      "**/dist/**": true
+    }
+  },
+  "extensions": {
+    "recommendations": []
+  }
+}

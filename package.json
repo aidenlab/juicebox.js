@@ -48,8 +48,8 @@
     "url": "git+https://github.com/aidenlab/juicebox.js.git"
   },
   "devDependencies": {
-    "@vitest/ui": "^4.0.7",
-    "@xmldom/xmldom": "^0.7.5",
+    "@vitest/ui": "^4.0.15",
+    "@xmldom/xmldom": "^0.8.11",
     "atob": "^2.1.2",
     "btoa": "^1.2.1",
     "google-utils": "github:igvteam/google-utils#v1.0.2",
@@ -57,10 +57,10 @@
     "igv": "^2.15.5",
     "igv-ui": "github:igvteam/igv-ui#v1.5.0",
     "igv-utils": "github:igvteam/igv-utils#v1.4.5",
-    "sass": "^1.93.3",
-    "vite": "^7.2.1",
+    "sass": "^1.95.0",
+    "vite": "^7.2.7",
     "vite-plugin-static-copy": "^3.1.4",
-    "vitest": "^4.0.7",
+    "vitest": "^4.0.15",
     "w3c-xmlhttprequest": "^3.0.4"
   }
 }

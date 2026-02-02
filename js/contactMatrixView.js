@@ -71,11 +71,12 @@ class ContactMatrixView {
         this.imageTileCacheLimit = 8; // 8 is the minimum number required to support A/B cycling
         this.colorScaleThresholdCache = {};
 
+        // Note: MapLoad and ControlMapLoad subscriptions removed - now handled by BrowserCoordinator
+        // NormalizationChange, TrackLoad2D, TrackState2D, and ColorChange are still posted to eventBus
+        // for cross-browser synchronization, so we keep those subscriptions
         this.browser.eventBus.subscribe("NormalizationChange", this);
         this.browser.eventBus.subscribe("TrackLoad2D", this);
         this.browser.eventBus.subscribe("TrackState2D", this);
-        this.browser.eventBus.subscribe("MapLoad", this);
-        this.browser.eventBus.subscribe("ControlMapLoad", this);
         this.browser.eventBus.subscribe("ColorChange", this);
 
         this.drawsInProgress = new Set();

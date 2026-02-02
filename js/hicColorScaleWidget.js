@@ -101,9 +101,8 @@ class ColorScaleWidget {
             }
         });
 
-        browser.eventBus.subscribe("MapLoad", () => {
-            paintSwatch(this.mapBackgroundColorpickerButton, browser.contactMatrixView.backgroundColor);
-        });
+        // Note: MapLoad subscription removed - now handled by BrowserCoordinator
+        // Color scale widget is updated via coordinator.onMapLoaded()
     }
 
     /**

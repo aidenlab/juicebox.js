@@ -39,7 +39,8 @@ class ScrollbarWidget {
         this.yLabelElement = this.yAxisScrollbarElement.querySelector('.scrollbar-label-rotation-in-place');
         this.yLabelElement.textContent = '';
 
-        this.browser.eventBus.subscribe("LocusChange", this);
+        // Note: LocusChange subscription removed - now handled by BrowserCoordinator
+        // Scrollbar widget is updated via coordinator.onLocusChange()
     }
 
     receiveEvent(event) {

@@ -47,7 +47,8 @@ class Ruler {
 
         this.setAxisTransform(axis);
 
-        browser.eventBus.subscribe('MapLoad', this);
+        // Note: MapLoad subscription removed - now handled by BrowserCoordinator
+        // UpdateContactMapMousePosition is still used for cross-browser sync
         browser.eventBus.subscribe("UpdateContactMapMousePosition", this);
     }
 

@@ -34,7 +34,7 @@ import { geneSearch } from './geneSearch.js'
 import {getAllBrowsers} from "./createBrowser.js"
 import {setTrackReorderArrowColors} from "./trackPair.js"
 import BrowserUIManager from "./browserUIManager.js"
-import NotificationCoordinator from "./notificationCoordinator.js"
+import BrowserCoordinator from "./browserCoordinator.js"
 import StateManager from "./stateManager.js"
 import InteractionHandler from "./interactionHandler.js"
 import DataLoader from "./dataLoader.js"
@@ -88,8 +88,8 @@ class HICBrowser {
         // Get the contact matrix view from UI manager
         this.contactMatrixView = this.ui.getComponent('contactMatrix');
 
-        // Initialize notification coordinator for UI updates
-        this.notifications = new NotificationCoordinator(this);
+        // Initialize browser coordinator for explicit component orchestration
+        this.coordinator = new BrowserCoordinator(this);
 
         // Initialize interaction handler for user interactions
         this.interactions = new InteractionHandler(this);
@@ -361,60 +361,65 @@ class HICBrowser {
     }
 
     /**
-     * Notification methods delegate to NotificationCoordinator.
+     * Notification methods delegate to BrowserCoordinator.
      * These methods are kept for backward compatibility and to maintain the public API.
+     * The coordinator provides explicit, traceable component orchestration.
      */
 
     notifyMapLoaded(dataset, state, datasetType) {
-        this.notifications.notifyMapLoaded(dataset, state, datasetType);
+        this.coordinator.onMapLoaded(dataset, state, datasetType);
     }
 
     notifyControlMapLoaded(controlDataset) {
-        this.notifications.notifyControlMapLoaded(controlDataset);
+        this.coordinator.onControlMapLoaded(controlDataset);
     }
 
     notifyLocusChange(eventData) {
-        this.notifications.notifyLocusChange(eventData);
+        this.coordinator.onLocusChange(eventData);
     }
 
     notifyNormalizationChange(normalization) {
-        this.notifications.notifyNormalizationChange(normalization);
+        this.coordinator.onNormalizationChange(normalization);
     }
 
     notifyDisplayMode(mode) {
-        this.notifications.notifyDisplayMode(mode);
+        this.coordinator.onDisplayMode(mode);
     }
 
     notifyColorScale(colorScale) {
-        this.notifications.notifyColorScale(colorScale);
+        this.coordinator.onColorScale(colorScale);
     }
 
     notifyTrackLoad2D(tracks2D) {
-        this.notifications.notifyTrackLoad2D(tracks2D);
+        this.coordinator.onTrackLoad2D(tracks2D);
     }
 
     notifyTrackState2D(trackData) {
-        this.notifications.notifyTrackState2D(trackData);
+        this.coordinator.onTrackState2D(trackData);
     }
 
     notifyNormVectorIndexLoad(dataset) {
-        this.notifications.notifyNormVectorIndexLoad(dataset);
+        this.coordinator.onNormVectorIndexLoad(dataset);
+    }
+
+    notifyGenomeChange(genomeId) {
+        this.coordinator.onGenomeChange(genomeId);
     }
 
     notifyNormalizationFileLoad(status) {
-        this.notifications.notifyNormalizationFileLoad(status);
+        this.coordinator.onNormalizationFileLoad(status);
     }
 
     notifyNormalizationExternalChange(normalization) {
-        this.notifications.notifyNormalizationExternalChange(normalization);
+        this.coordinator.onNormalizationExternalChange(normalization);
     }
 
     notifyColorChange() {
-        this.notifications.notifyColorChange();
+        this.coordinator.onColorChange();
     }
 
     notifyUpdateContactMapMousePosition(xy) {
-        this.notifications.notifyUpdateContactMapMousePosition(xy);
+        this.coordinator.onUpdateContactMapMousePosition(xy);
     }
 
     showCrosshairs() {

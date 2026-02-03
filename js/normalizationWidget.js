@@ -42,9 +42,13 @@ class NormalizationWidget {
 
         this.normalizationSelector = document.createElement('select');
         this.normalizationSelector.name = 'normalization_selector';
-        this.normalizationSelector.addEventListener('change', () => {
-            this.browser.setNormalization(this.normalizationSelector.value);
-        });
+        this._changeHandler = () => {
+            // Only process change events if not programmatically updating
+            if (!this._isProgrammaticUpdate) {
+                this.browser.setNormalization(this.normalizationSelector.value);
+            }
+        };
+        this.normalizationSelector.addEventListener('change', this._changeHandler);
         this.container.appendChild(this.normalizationSelector);
 
         this.spinner = document.createElement('div');
@@ -52,7 +56,9 @@ class NormalizationWidget {
         this.container.appendChild(this.spinner);
         this.spinner.style.display = 'none';
 
-        this.browser.eventBus.subscribe("MapLoad", this);
+        // Note: MapLoad subscription removed - now handled by BrowserCoordinator
+        // NormVectorIndexLoad, NormalizationFileLoad, and NormalizationExternalChange 
+        // are still posted to eventBus for cross-browser synchronization
         this.browser.eventBus.subscribe("NormVectorIndexLoad", this);
         this.browser.eventBus.subscribe("NormalizationFileLoad", this);
         this.browser.eventBus.subscribe("NormalizationExternalChange", this);
@@ -79,9 +85,25 @@ class NormalizationWidget {
                 this.stopNotReady();
             }
         } else if ("NormalizationExternalChange" === event.type) {
+            this.setNormalizationProgrammatically(event.data);
+        }
+    }
+
+    /**
+     * Set the normalization selector value programmatically without triggering change events.
+     * This prevents feedback loops when the normalization is changed externally.
+     * 
+     * @param {string} normalization - The normalization value to set
+     */
+    setNormalizationProgrammatically(normalization) {
+        this._isProgrammaticUpdate = true;
+        try {
             Array.from(this.normalizationSelector.options).forEach(option => {
-                option.selected = option.value === event.data;
+                option.selected = option.value === normalization;
             });
+        } finally {
+            // Always reset the flag, even if an error occurs
+            this._isProgrammaticUpdate = false;
         }
     }
 

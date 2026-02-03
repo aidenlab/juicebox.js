@@ -69,9 +69,8 @@ class ResolutionSelector {
             this.browser.setZoom(zoomIndex);
         });
 
-        this.browser.eventBus.subscribe("LocusChange", this);
-        this.browser.eventBus.subscribe("MapLoad", this);
-        this.browser.eventBus.subscribe("ControlMapLoad", this);
+        // Note: MapLoad, ControlMapLoad, and LocusChange subscriptions removed - now handled by BrowserCoordinator
+        // These components are updated directly via coordinator methods
     }
 
     setResolutionLock(resolutionLocked) {

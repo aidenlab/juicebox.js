@@ -48,7 +48,8 @@ class LocusGoto {
             this.resolutionSelectorElement.blur();
         });
 
-        this.browser.eventBus.subscribe("LocusChange", this);
+        // Note: LocusChange subscription removed - now handled by BrowserCoordinator
+        // Locus goto widget is updated via coordinator.onLocusChange()
     }
 
     receiveEvent(event) {

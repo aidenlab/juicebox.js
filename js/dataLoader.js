@@ -99,6 +99,9 @@ class DataLoader {
             this.browser.genome = new Genome(dataset.genomeId, dataset.chromosomes);
 
             if (this.browser.genome.id !== previousGenomeId) {
+                // Use coordinator instead of event bus for explicit, traceable genome change handling
+                this.browser.notifyGenomeChange(this.browser.genome.id);
+                // Still post to event bus for cross-browser synchronization (if needed)
                 EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
             }
 
@@ -226,6 +229,9 @@ class DataLoader {
             this.browser.genome = new Genome(dataset.genomeId, dataset.chromosomes);
 
             if (this.browser.genome.id !== previousGenomeId) {
+                // Use coordinator instead of event bus for explicit, traceable genome change handling
+                this.browser.notifyGenomeChange(this.browser.genome.id);
+                // Still post to event bus for cross-browser synchronization (if needed)
                 EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
             }
 

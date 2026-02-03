@@ -49,16 +49,8 @@ class ControlMapWidget {
 
         this.controlMapHash = new ControlMapHash(browser, this.select, toggleContainer, cycleContainer, toggleArrowsUp(), toggleArrowsDown());
 
-        browser.eventBus.subscribe("ControlMapLoad", () => {
-            this.controlMapHash.updateOptions(browser.getDisplayMode());
-            this.container.style.display = 'block';
-        });
-
-        browser.eventBus.subscribe("MapLoad", () => {
-            if (!browser.controlDataset) {
-                this.container.style.display = 'none';
-            }
-        });
+        // Note: MapLoad and ControlMapLoad subscriptions removed - now handled by BrowserCoordinator
+        // Control map widget is updated via coordinator.onMapLoaded() and coordinator.onControlMapLoaded()
 
         browser.eventBus.subscribe("DisplayMode", (event) => {
             this.controlMapHash.updateOptions(event.data);

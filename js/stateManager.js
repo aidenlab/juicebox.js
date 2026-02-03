@@ -80,16 +80,12 @@ class StateManager {
      * This method handles:
      * - Cloning the state to avoid mutations
      * - Adjusting pixel size based on minimum requirements
-     * - Configuring locus if not present (unless skipConfigureLocus is true)
+     * - Configuring locus if not present
      * 
      * @param {State} state - The state to set
-     * @param {Object} [options] - Optional configuration
-     * @param {boolean} [options.skipConfigureLocus=false] - If true, skip configureLocus even if locus is undefined
      * @returns {Promise<{chrChanged: boolean, resolutionChanged: boolean}>} - Change flags
      */
-    async setState(state, options = {}) {
-        const { skipConfigureLocus = false } = options;
-        
+    async setState(state) {
         const chrChanged = !this.activeState || 
             this.activeState.chr1 !== state.chr1 || 
             this.activeState.chr2 !== state.chr2;
@@ -104,9 +100,8 @@ class StateManager {
         );
         this.activeState.pixelSize = Math.max(state.pixelSize, minPS);
 
-        // Derive locus if none is present in source state (unless skipConfigureLocus is true)
-        // This allows external code (e.g., Spacewalk) to skip locus derivation and set it explicitly later
-        if (undefined === state.locus && !skipConfigureLocus) {
+        // Derive locus if none is present in source state
+        if (undefined === state.locus) {
             const viewDimensions = this.browser.contactMatrixView.getViewDimensions();
             this.activeState.configureLocus(
                 this.activeDataset, 

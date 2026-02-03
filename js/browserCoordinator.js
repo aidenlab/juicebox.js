@@ -48,7 +48,6 @@ class BrowserCoordinator {
             onMapLoaded: [],
             onControlMapLoaded: [],
             onLocusChange: [],
-            onStateChange: [],
             onGenomeChange: []
         };
     }
@@ -381,7 +380,7 @@ class BrowserCoordinator {
      * This provides a clear API for external applications (e.g., Spacewalk) to hook into
      * browser events without needing to understand the internal event system.
      * 
-     * @param {string} event - Event name ('onMapLoaded', 'onControlMapLoaded', 'onLocusChange', 'onStateChange')
+     * @param {string} event - Event name ('onMapLoaded', 'onControlMapLoaded', 'onLocusChange', 'onGenomeChange')
      * @param {Function} callback - Callback function to call when event occurs
      * @returns {Function} - Unsubscribe function to remove the callback
      * @throws {Error} - If event name is unknown

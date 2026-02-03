@@ -135,12 +135,7 @@ class DataLoader {
                 state = State.default(config);
                 // Set active dataset before setState so configureLocus can access bpResolutions
                 this.browser.setActiveDataset(dataset, state);
-                
-                // If external code (e.g., Spacewalk) wants to control locus setting, skip configureLocus
-                // The locus will be set explicitly when the map loads via onMapLoaded callback
-                // This decouples genome changes from locus/state derivation
-                const skipConfigureLocus = this.browser._skipConfigureLocus || false;
-                await this.browser.setState(state, { skipConfigureLocus });
+                await this.browser.setState(state);
             }
 
             this.browser.notifyMapLoaded(dataset, state, dataset.datasetType);

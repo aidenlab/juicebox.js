@@ -402,6 +402,10 @@ class HICBrowser {
         this.coordinator.onNormVectorIndexLoad(dataset);
     }
 
+    notifyGenomeChange(genomeId) {
+        this.coordinator.onGenomeChange(genomeId);
+    }
+
     notifyNormalizationFileLoad(status) {
         this.coordinator.onNormalizationFileLoad(status);
     }

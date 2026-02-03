@@ -99,6 +99,9 @@ class DataLoader {
             this.browser.genome = new Genome(dataset.genomeId, dataset.chromosomes);
 
             if (this.browser.genome.id !== previousGenomeId) {
+                // Use coordinator instead of event bus for explicit, traceable genome change handling
+                this.browser.notifyGenomeChange(this.browser.genome.id);
+                // Still post to event bus for cross-browser synchronization (if needed)
                 EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
             }
 
@@ -132,7 +135,12 @@ class DataLoader {
                 state = State.default(config);
                 // Set active dataset before setState so configureLocus can access bpResolutions
                 this.browser.setActiveDataset(dataset, state);
-                await this.browser.setState(state);
+                
+                // If external code (e.g., Spacewalk) wants to control locus setting, skip configureLocus
+                // The locus will be set explicitly when the map loads via onMapLoaded callback
+                // This decouples genome changes from locus/state derivation
+                const skipConfigureLocus = this.browser._skipConfigureLocus || false;
+                await this.browser.setState(state, { skipConfigureLocus });
             }
 
             this.browser.notifyMapLoaded(dataset, state, dataset.datasetType);
@@ -226,6 +234,9 @@ class DataLoader {
             this.browser.genome = new Genome(dataset.genomeId, dataset.chromosomes);
 
             if (this.browser.genome.id !== previousGenomeId) {
+                // Use coordinator instead of event bus for explicit, traceable genome change handling
+                this.browser.notifyGenomeChange(this.browser.genome.id);
+                // Still post to event bus for cross-browser synchronization (if needed)
                 EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
             }
 

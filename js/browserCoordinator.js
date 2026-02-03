@@ -48,7 +48,8 @@ class BrowserCoordinator {
             onMapLoaded: [],
             onControlMapLoaded: [],
             onLocusChange: [],
-            onStateChange: []
+            onStateChange: [],
+            onGenomeChange: []
         };
     }
 
@@ -416,6 +417,34 @@ class BrowserCoordinator {
      */
     getCallbacksFor(event) {
         return this.externalCallbacks[event] || [];
+    }
+
+    /**
+     * Orchestrate component updates when the genome changes.
+     * 
+     * This method is called when a new genome is loaded (e.g., when loading a Hi-C file
+     * with a different genome assembly). Components that depend on the genome need to
+     * be updated.
+     * 
+     * @param {string} genomeId - The ID of the new genome (e.g., "hg38", "mm10")
+     */
+    onGenomeChange(genomeId) {
+        // Update chromosome selector with new genome's chromosomes
+        if (this.components.chromosomeSelector) {
+            this.components.chromosomeSelector.receiveEvent({
+                type: 'GenomeChange',
+                data: { genomeId }
+            });
+        }
+
+        // Notify external callbacks (e.g., Spacewalk integration)
+        this.externalCallbacks.onGenomeChange.forEach(callback => {
+            try {
+                callback({ genomeId });
+            } catch (error) {
+                console.error('Error in onGenomeChange callback:', error);
+            }
+        });
     }
 
     /**

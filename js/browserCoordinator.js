@@ -423,21 +423,18 @@ class BrowserCoordinator {
      * Orchestrate component updates when the genome changes.
      * 
      * This method is called when a new genome is loaded (e.g., when loading a Hi-C file
-     * with a different genome assembly). Components that depend on the genome need to
-     * be updated.
+     * with a different genome assembly). 
+     * 
+     * Note: Component updates (like chromosome selector) happen automatically when the
+     * dataset loads via onMapLoaded(), so we don't need to update them here. This method
+     * primarily exists to notify external callbacks (e.g., Spacewalk integration) so they
+     * can coordinate locus setting before configureLocus() runs.
      * 
      * @param {string} genomeId - The ID of the new genome (e.g., "hg38", "mm10")
      */
     onGenomeChange(genomeId) {
-        // Update chromosome selector with new genome's chromosomes
-        if (this.components.chromosomeSelector) {
-            this.components.chromosomeSelector.receiveEvent({
-                type: 'GenomeChange',
-                data: { genomeId }
-            });
-        }
-
         // Notify external callbacks (e.g., Spacewalk integration)
+        // This allows external code to set locus before configureLocus() derives a default
         this.externalCallbacks.onGenomeChange.forEach(callback => {
             try {
                 callback({ genomeId });

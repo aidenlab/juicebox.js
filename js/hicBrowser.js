@@ -638,16 +638,16 @@ class HICBrowser {
     }
 
     /**
-     * Load a live map dataset
+     * Load a live contact map via hic-straw LiveContactMap.
      *
      * NOTE: public API function
      *
-     * @param {Object} config - Configuration object
+     * @param {Object} config - Configuration with liveContactMap, name, locus, state
      * @param {boolean} noUpdates - If true, don't trigger UI updates
-     * @returns {Promise<LiveMapDataset>}
+     * @returns {Promise<HiCDataset>}
      */
-    async loadLiveMapDataset(config, noUpdates) {
-        return this.dataLoader.loadLiveMapDataset(config, noUpdates);
+    async loadLiveContactMap(config, noUpdates) {
+        return this.dataLoader.loadLiveContactMap(config, noUpdates);
     }
 
     /**

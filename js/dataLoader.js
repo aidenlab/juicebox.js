@@ -23,8 +23,7 @@
 import igv from '../node_modules/igv/dist/igv.esm.js'
 import {Alert} from '../node_modules/igv-ui/dist/igv-ui.js'
 import {FileUtils} from '../node_modules/igv-utils/src/index.js'
-import Dataset from './hicDataset.js'
-import LiveMapDataset from './liveMapDataset.js'
+import Dataset, { HiCDataset } from './hicDataset.js'
 import State from './hicState.js'
 import Genome from './genome.js'
 import {extractName, presentError} from "./utils.js"
@@ -45,7 +44,7 @@ import {DEFAULT_ANNOTATION_COLOR} from "./urlUtils.js"
  *
  * This class manages:
  * - Hi-C file loading (main and control)
- * - Live map dataset loading
+ * - Live contact map loading (via hic-straw LiveContactMap)
  * - Track loading (1D and 2D)
  * - Normalization vector file loading
  */
@@ -193,23 +192,20 @@ class DataLoader {
     }
 
     /**
-     * Load a live map dataset
+     * Load a live contact map via hic-straw LiveContactMap.
+     * Routes through HiCDataset → Straw → LiveContactMap (HicFile interface).
      *
      * NOTE: public API function
      *
      * @param {Object} config - Configuration object with:
-     *   - contactRecordList: Array of contact records OR
-     *   - contactMatrix: 2D array of contact totals
-     *   - chromosomes: Array of chromosome definitions
-     *   - genomeId: Genome identifier
-     *   - bpResolutions: Array of available resolutions
-     *   - name: Dataset name
-     *   - binSize: Bin size (if using contactMatrix)
+     *   - liveContactMap: A LiveContactMap instance (already init'd or will be init'd via HiCDataset)
+     *   - name: Display name
+     *   - locus: Optional locus string to navigate to (defaults to data extent)
      *   - state: Optional initial state
      * @param {boolean} noUpdates - If true, don't trigger UI updates
-     * @returns {Promise<LiveMapDataset>}
+     * @returns {Promise<HiCDataset>}
      */
-    async loadLiveMapDataset(config, noUpdates) {
+    async loadLiveContactMap(config, noUpdates) {
         this.browser.clearSession();
 
         try {
@@ -218,46 +214,40 @@ class DataLoader {
                 this.browser.userInteractionShield.style.display = 'block';
             }
 
-            const name = config.name || 'Live Map';
+            const lcm = config.liveContactMap;
+            const name = config.name || 'Live Contact Map';
             this.browser.contactMapLabel.textContent = name;
             this.browser.contactMapLabel.title = name;
 
-            const dataset = new LiveMapDataset(config);
+            // Route through HiCDataset → Straw → lcm (HicFile interface)
+            const dataset = new HiCDataset({ liveContactMap: lcm });
             await dataset.init();
 
             const previousGenomeId = this.browser.genome ? this.browser.genome.id : undefined;
             this.browser.genome = new Genome(dataset.genomeId, dataset.chromosomes);
 
             if (this.browser.genome.id !== previousGenomeId) {
-                // Use coordinator instead of event bus for explicit, traceable genome change handling
                 this.browser.notifyGenomeChange(this.browser.genome.id);
-                // Still post to event bus for cross-browser synchronization (if needed)
                 EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
             }
 
             let state;
             if (config.state) {
-                if (typeof config.state === 'string') {
-                    state = State.parse(config.state);
-                } else if (typeof config.state === 'object') {
-                    state = State.fromJSON(config.state);
-                } else {
-                    state = State.default(config);
-                }
+                state = typeof config.state === 'object'
+                    ? State.fromJSON(config.state)
+                    : State.parse(config.state);
             } else {
                 state = State.default(config);
             }
 
-            // Set active dataset BEFORE setState, since setState calls minPixelSize
-            // which requires this.dataset to be available
-            // Ensure dataset is fully initialized
-            if (!dataset.chromosomes || dataset.chromosomes.length === 0) {
-                throw new Error("LiveMapDataset chromosomes array is not initialized");
-            }
             this.browser.setActiveDataset(dataset, state);
             await this.browser.setState(state);
 
-            this.browser.notifyMapLoaded(dataset, state, dataset.datasetType);
+            // Navigate to the data region so it fills the viewport
+            const locus = config.locus || `${lcm.chromosomes[1].name}:${lcm.genomicStart}-${lcm.genomicEnd}`;
+            await this.browser.parseGotoInput(locus);
+
+            this.browser.notifyMapLoaded(dataset, state, 'livecontactmap');
 
             return dataset;
         } catch (error) {

@@ -189,6 +189,7 @@ function createColorPicker(browser, parent, type) {
             const [r, g, b] = parseRgbString(rgbString)
             browser.getColorScale().setColorComponents({ r, g, b }, type);
             browser.repaintMatrix();
+            browser.eventBus.post({ type: "ForegroundColorChange", data: { r, g, b } })
         };
     }
     return new ColorPicker({ parent, top: 64, left: 64, width: 432, defaultColors, colorHandler });

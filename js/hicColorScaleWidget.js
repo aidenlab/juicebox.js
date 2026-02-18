@@ -180,6 +180,7 @@ function createColorPicker(browser, parent, type) {
             const rgbString = IGVColor.hexToRgb(hex)
             const [r, g, b] = parseRgbString(rgbString)
             browser.contactMatrixView.setBackgroundColor({ r, g, b });
+            browser.coordinator.onBackgroundColorChange({ r, g, b });
         };
     } else {
         defaultColors = [defaultRatioColorScaleConfig.negative, defaultRatioColorScaleConfig.positive].map(({ r, g, b }) => IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b)));
@@ -189,7 +190,7 @@ function createColorPicker(browser, parent, type) {
             const [r, g, b] = parseRgbString(rgbString)
             browser.getColorScale().setColorComponents({ r, g, b }, type);
             browser.repaintMatrix();
-            browser.eventBus.post({ type: "ForegroundColorChange", data: { r, g, b } })
+            browser.coordinator.onForegroundColorChange({ r, g, b });
         };
     }
     return new ColorPicker({ parent, top: 64, left: 64, width: 432, defaultColors, colorHandler });

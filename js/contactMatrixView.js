@@ -85,7 +85,6 @@ class ContactMatrixView {
     setBackgroundColor(rgb) {
         this.backgroundColor = rgb
         this.backgroundRGBString = IGVColor.rgbColor(rgb.r, rgb.g, rgb.b)
-        this.browser.eventBus.post({ type: "BackgroundColorChange", data: rgb })
         this.update()
     }
 

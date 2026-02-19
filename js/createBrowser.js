@@ -2,7 +2,7 @@
  * @author Jim Robinson Dec-2020
  */
 
-import { StringUtils } from '../node_modules/igv-utils/src/index.js';
+import { StringUtils } from 'igv-utils';
 import HICBrowser from './hicBrowser.js';
 import ColorScale from './colorScale.js';
 import ContactMatrixView from "./contactMatrixView.js";

@@ -1,4 +1,4 @@
-import {Alert} from '../node_modules/igv-ui/dist/igv-ui.js'
+import {Alert} from 'igv-ui'
 import {isFile} from "./fileUtils.js"
 
 function createDOMFromHTMLString(string) {

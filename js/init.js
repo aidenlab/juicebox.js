@@ -25,7 +25,7 @@ import {extractConfig} from "./urlUtils.js"
 import {getCurrentBrowser} from "./createBrowser.js"
 import {getAllBrowsers} from "./createBrowser.js"
 import {restoreSession} from "./session.js"
-import {Alert} from "../node_modules/igv-ui/dist/igv-ui.js"
+import {Alert} from "igv-ui"
 
 async function init(container, config) {
 

@@ -26,7 +26,7 @@
  * @author Jim Robinson
  */
 
-import {igvxhr, StringUtils} from '../node_modules/igv-utils/src/index.js'
+import {igvxhr, StringUtils} from 'igv-utils'
 
 async function geneSearch(genomeId, featureName) {
     const searchServiceURL = `https://portals.broadinstitute.org/webservices/igv/locus?genome=${genomeId}&name=${encodeURIComponent(featureName)}`;

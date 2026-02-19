@@ -24,8 +24,8 @@
 /**
  * Created by dat on 3/3/17.
  */
-import { IGVColor, StringUtils } from '../node_modules/igv-utils/src/index.js';
-import { DOMUtils, ColorPicker } from '../node_modules/igv-ui/dist/igv-ui.js';
+import { IGVColor, StringUtils } from 'igv-utils';
+import { DOMUtils, ColorPicker } from 'igv-ui';
 import RatioColorScale, { defaultRatioColorScaleConfig } from './ratioColorScale.js';
 import ContactMatrixView from "./contactMatrixView.js";
 import ColorScale from "./colorScale.js";

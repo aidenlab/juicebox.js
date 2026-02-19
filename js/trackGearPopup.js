@@ -23,7 +23,7 @@
  * THE SOFTWARE.
  */
 
-import {makeDraggable, UIUtils} from '../node_modules/igv-ui/dist/igv-ui.js'
+import {makeDraggable, UIUtils} from 'igv-ui'
 
 class TrackGearPopup {
 

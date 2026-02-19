@@ -21,7 +21,7 @@
  *
  */
 
-import {IGVMath} from "../node_modules/igv-utils/src/index.js"
+import {IGVMath} from "igv-utils"
 import RatioColorScale from "./ratioColorScale.js";
 
 const defaultColorScaleConfig = {threshold: 2000, r: 255, g: 0, b: 0}

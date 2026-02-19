@@ -20,9 +20,9 @@
  * THE SOFTWARE.
  */
 
-import igv from '../node_modules/igv/dist/igv.esm.js'
-import {Alert} from '../node_modules/igv-ui/dist/igv-ui.js'
-import {FileUtils} from '../node_modules/igv-utils/src/index.js'
+import igv from 'igv'
+import {Alert} from 'igv-ui'
+import {FileUtils} from 'igv-utils'
 import Dataset, { HiCDataset } from './hicDataset.js'
 import State from './hicState.js'
 import Genome from './genome.js'

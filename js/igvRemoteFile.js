@@ -7,7 +7,7 @@
  * oAuth and apiKey automatically.
  */
 
-import {igvxhr} from '../node_modules/igv-utils/src/index.js'
+import {igvxhr} from 'igv-utils'
 
 class IGVRemoteFile {
 

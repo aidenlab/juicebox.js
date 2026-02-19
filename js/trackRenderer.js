@@ -1,4 +1,4 @@
-import { DOMUtils } from '../node_modules/igv-ui/dist/igv-ui.js';
+import { DOMUtils } from 'igv-ui';
 
 class TrackRenderer {
 

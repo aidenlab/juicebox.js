@@ -23,9 +23,9 @@
 import State from './hicState.js';
 import ColorScale from "./colorScale.js"
 import {Globals} from "./globals.js";
-import {StringUtils, BGZip} from '../node_modules/igv-utils/src/index.js'
+import {StringUtils, BGZip} from 'igv-utils'
 import {isFile} from './fileUtils.js'
-import {igvxhr} from '../node_modules/igv-utils/src/index.js'
+import {igvxhr} from 'igv-utils'
 
 const DEFAULT_ANNOTATION_COLOR = "rgb(22, 129, 198)";
 

@@ -27,9 +27,9 @@
  */
 
 import {isFile} from "./fileUtils.js"
-import Straw from '../node_modules/hic-straw/src/straw.js'
-import * as GoogleUtils from "../node_modules/google-utils/src/googleUtils.js"
-import * as GoogleDrive from "../node_modules/google-utils/src/googleDrive.js"
+import Straw from 'hic-straw'
+import * as GoogleUtils from "google-utils/src/googleUtils.js"
+import * as GoogleDrive from "google-utils/src/googleDrive.js"
 
 import IGVRemoteFile from "./igvRemoteFile.js"
 

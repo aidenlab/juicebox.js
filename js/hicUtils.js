@@ -21,7 +21,7 @@
  *
  */
 
-import {FileUtils} from '../node_modules/igv-utils/src/index.js'
+import {FileUtils} from 'igv-utils'
 
 function isMobile() {
     return (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));

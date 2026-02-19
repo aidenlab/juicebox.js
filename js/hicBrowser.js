@@ -25,7 +25,7 @@
  * @author Jim Robinson
  */
 
-import {InputDialog, DOMUtils} from '../node_modules/igv-ui/dist/igv-ui.js'
+import {InputDialog, DOMUtils} from 'igv-ui'
 import * as hicUtils from './hicUtils.js'
 import {Globals} from "./globals.js"
 import EventBus from "./eventBus.js"

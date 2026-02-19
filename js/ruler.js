@@ -26,8 +26,8 @@
  * @author Jim Robinson
  */
 
-import {IGVColor, IGVMath} from '../node_modules/igv-utils/src/index.js'
-import igv from '../node_modules/igv/dist/igv.esm.js'
+import {IGVColor, IGVMath} from 'igv-utils'
+import igv from 'igv'
 
 class Ruler {
 

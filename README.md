@@ -137,12 +137,27 @@ Other Unix environments will probably work but have not been tested.  Windows us
 
 ## Building
 
-```  
+```
 git clone https://github.com/igvteam/juicebox.js.git
 cd juicebox.js
 npm install
 npm run build
 ```
+
+## Dev Server & Dashboard
+
+juicebox.js is designed to be embedded in a host application (e.g., [Juicebox-web](https://github.com/aidenlab/juicebox-web)), so it does not run standalone. To give developers a quick way to see the library in action and to aid in debugging, a lightweight Vite dev server is included with a launch dashboard.
+
+```
+npm run dev
+```
+
+This opens a dashboard at `http://localhost:3000` with links to all available pages, organized into two sections:
+
+- **Examples** — Minimal, stripped-down pages that demonstrate juicebox.js features and API usage, giving developers a quick look and feel without the overhead of a full host application.
+- **Dev Files** — Test harnesses for developing and debugging specific features such as live contact maps, 2D annotations, normalization, and bug reproductions.
+
+Note: The Vite dev server is required because the source files use bare npm import specifiers and SCSS, which browsers cannot resolve from a plain static file server.
 
 This creates a dist folder with the following files
 

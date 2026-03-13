@@ -21,8 +21,8 @@
  *
  */
 
-import { Alert, createColorSwatchSelector } from '../node_modules/igv-ui/dist/igv-ui.js';
-import { makeDraggable } from '../node_modules/igv-ui/dist/igv-ui.js';
+import { Alert, createColorSwatchSelector } from 'igv-ui';
+import { makeDraggable } from 'igv-ui';
 import HICEvent from './hicEvent.js';
 import Track2D from './track2D.js';
 

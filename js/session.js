@@ -1,6 +1,6 @@
 import {createBrowserList, deleteAllBrowsers, getAllBrowsers, syncBrowsers} from "./createBrowser.js"
 import {Globals} from "./globals.js"
-import {StringUtils, BGZip} from "../node_modules/igv-utils/src/index.js";
+import {StringUtils, BGZip} from "igv-utils";
 import {expandUrlShortcuts} from "./urlUtils.js";
 
 function toJSON() {

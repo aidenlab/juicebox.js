@@ -1,0 +1,143 @@
+<html>
+<head>
+    <meta charSet="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Juicebox - Live Contact Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.css">
+
+    <!-- Juicebox CSS-->
+    <link rel="stylesheet" href="../css/juicebox.css">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 10px 16px;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .control-group label {
+            font-size: 13px;
+            color: #555;
+            white-space: nowrap;
+        }
+        .control-group input[type="range"] {
+            width: 120px;
+        }
+        .control-group .value {
+            font-size: 13px;
+            color: #333;
+            min-width: 30px;
+            text-align: right;
+        }
+        #app-container {
+            position: absolute;
+            top: 50px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="controls">
+    <div class="control-group">
+        <label for="swt-file">SWT File:</label>
+        <input type="file" id="swt-file" accept=".swt,.sw,.txt">
+    </div>
+    <div class="control-group">
+        <label for="threshold">Threshold:</label>
+        <input type="range" id="threshold" min="10" max="2000" value="200" step="10">
+        <span class="value" id="threshold-value">200</span>
+    </div>
+    <div class="control-group">
+        <label for="exclusion">Neighbor Exclusion:</label>
+        <input type="range" id="exclusion" min="0" max="20" value="3" step="1">
+        <span class="value" id="exclusion-value">3</span>
+    </div>
+</div>
+
+<div id="app-container"></div>
+
+<script type="module">
+
+import juicebox from '../js/index.js';
+import { LiveContactMap } from 'hic-straw';
+
+// Initialize Juicebox with an empty container
+const container = document.getElementById('app-container');
+const browser = await juicebox.init(container, {});
+
+let currentLCM = null;
+
+// File picker handler
+document.getElementById('swt-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const swtText = await file.text();
+    const threshold = parseInt(document.getElementById('threshold').value);
+    const exclusion = parseInt(document.getElementById('exclusion').value);
+
+    const lcm = new LiveContactMap({
+        swtText,
+        distanceThreshold: threshold,
+        neighborExclusion: exclusion,
+        contactMode: 'frequency'
+    });
+    await lcm.init();
+
+    currentLCM = lcm;
+
+    await browser.loadLiveContactMap({
+        liveContactMap: lcm,
+        name: file.name
+    });
+});
+
+// Threshold slider
+const thresholdSlider = document.getElementById('threshold');
+const thresholdValue = document.getElementById('threshold-value');
+thresholdSlider.addEventListener('input', (e) => {
+    thresholdValue.textContent = e.target.value;
+});
+thresholdSlider.addEventListener('change', async (e) => {
+    if (!currentLCM) return;
+    currentLCM.setDistanceThreshold(parseInt(e.target.value));
+    browser.repaintMatrix();
+});
+
+// Neighbor exclusion slider
+const exclusionSlider = document.getElementById('exclusion');
+const exclusionValue = document.getElementById('exclusion-value');
+exclusionSlider.addEventListener('input', (e) => {
+    exclusionValue.textContent = e.target.value;
+});
+exclusionSlider.addEventListener('change', async (e) => {
+    if (!currentLCM) return;
+    currentLCM.setNeighborExclusion(parseInt(e.target.value));
+    browser.repaintMatrix();
+});
+
+</script>
+
+</body>
+
+</html>

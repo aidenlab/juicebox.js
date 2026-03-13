@@ -24,8 +24,8 @@
 /**
  * Created by dat on 3/3/17.
  */
-import { IGVColor, StringUtils } from '../node_modules/igv-utils/src/index.js';
-import { DOMUtils, ColorPicker } from '../node_modules/igv-ui/dist/igv-ui.js';
+import { IGVColor, StringUtils } from 'igv-utils';
+import { DOMUtils, ColorPicker } from 'igv-ui';
 import RatioColorScale, { defaultRatioColorScaleConfig } from './ratioColorScale.js';
 import ContactMatrixView from "./contactMatrixView.js";
 import ColorScale from "./colorScale.js";
@@ -180,6 +180,7 @@ function createColorPicker(browser, parent, type) {
             const rgbString = IGVColor.hexToRgb(hex)
             const [r, g, b] = parseRgbString(rgbString)
             browser.contactMatrixView.setBackgroundColor({ r, g, b });
+            browser.coordinator.onBackgroundColorChange({ r, g, b });
         };
     } else {
         defaultColors = [defaultRatioColorScaleConfig.negative, defaultRatioColorScaleConfig.positive].map(({ r, g, b }) => IGVColor.rgbToHex(IGVColor.rgbColor(r, g, b)));
@@ -189,6 +190,7 @@ function createColorPicker(browser, parent, type) {
             const [r, g, b] = parseRgbString(rgbString)
             browser.getColorScale().setColorComponents({ r, g, b }, type);
             browser.repaintMatrix();
+            browser.coordinator.onForegroundColorChange({ r, g, b });
         };
     }
     return new ColorPicker({ parent, top: 64, left: 64, width: 432, defaultColors, colorHandler });

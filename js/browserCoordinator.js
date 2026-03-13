@@ -48,7 +48,9 @@ class BrowserCoordinator {
             onMapLoaded: [],
             onControlMapLoaded: [],
             onLocusChange: [],
-            onGenomeChange: []
+            onGenomeChange: [],
+            onBackgroundColorChange: [],
+            onForegroundColorChange: []
         };
     }
 
@@ -338,6 +340,28 @@ class BrowserCoordinator {
      */
     onColorChange() {
         this.components.contactMatrix.receiveEvent({ type: "ColorChange" });
+    }
+
+    /**
+     * Notify external callbacks when background color changes.
+     *
+     * @param {{r: number, g: number, b: number}} rgb - The new background color
+     */
+    onBackgroundColorChange(rgb) {
+        for (const callback of this.externalCallbacks.onBackgroundColorChange) {
+            callback({ rgb, browser: this.browser });
+        }
+    }
+
+    /**
+     * Notify external callbacks when foreground color changes.
+     *
+     * @param {{r: number, g: number, b: number}} rgb - The new foreground color
+     */
+    onForegroundColorChange(rgb) {
+        for (const callback of this.externalCallbacks.onForegroundColorChange) {
+            callback({ rgb, browser: this.browser });
+        }
     }
 
     /**

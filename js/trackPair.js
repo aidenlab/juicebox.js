@@ -2,8 +2,8 @@
  * Created by dat on 4/5/17.
  */
 
-import igv from '../node_modules/igv/dist/igv.esm.js'
-import {ColorPicker, DataRangeDialog} from '../node_modules/igv-ui/dist/igv-ui.js'
+import igv from 'igv'
+import {ColorPicker, DataRangeDialog} from 'igv-ui'
 import MenuUtils from "./trackMenuUtils.js"
 import TrackGearPopup from "./trackGearPopup.js"
 import {createIcon} from "./igv-icons.js"

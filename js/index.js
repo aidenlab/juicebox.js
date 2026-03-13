@@ -22,7 +22,7 @@
  */
 
 import '../css/juicebox.scss';
-import {igvxhr} from '../node_modules/igv-utils/src/index.js'
+import {igvxhr} from 'igv-utils'
 import {createBrowser, setCurrentBrowser, getAllBrowsers, getCurrentBrowser} from './createBrowser.js';
 import {version} from "./version.js";
 import {compressedSession, restoreSession, toJSON} from "./session.js";

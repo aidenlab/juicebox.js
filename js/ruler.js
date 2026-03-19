@@ -243,6 +243,18 @@ class Ruler {
             return;
         }
 
+        // The width of the element can be out of sync with the offset width in the browser
+        // double check that before redrawing the rulers
+        const currentWidth = this.axisElement.offsetWidth;
+        const currentHeight = this.axisElement.offsetHeight;
+
+        if (currentWidth > 0 && this.canvasElement.width !== currentWidth) {
+            this.canvasElement.width = currentWidth;
+        }
+        if (currentHeight > 0 && this.canvasElement.height !== currentHeight) {
+            this.canvasElement.height = currentHeight;
+        }
+
         this.hideWholeGenome();
 
         identityTransformWithContext(this.ctx);

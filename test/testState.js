@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'vitest'
 import State from '../js/hicState.js'
+import InteractionHandler from '../js/interactionHandler.js'
 
 /**
  * Mock helpers for State characterization tests.
@@ -509,5 +510,117 @@ describe('State.sync', () => {
         const result = await state.sync(targetState, browser, browser.genome, dataset)
 
         expect(result).toEqual({ zoomChanged: false, chrChanged: false })
+    })
+})
+
+/**
+ * Mock browser shaped for InteractionHandler.zoomAndCenter.
+ * Adds: state, dataset (with isWholeGenome), update(), notifyLocusChange(),
+ * contactMatrixView with the methods _applyStateChange touches.
+ */
+function createInteractionBrowser(overrides = {}) {
+    const dataset = overrides.dataset ?? {
+        ...createMockDataset(),
+        isWholeGenome: () => false,
+    }
+    const base = createMockBrowser({
+        ...overrides,
+        contactMatrixView: {
+            getViewDimensions: () => DEFAULT_VIEW_DIMENSIONS,
+            clearImageCaches: () => {},
+            zoomIn: async () => {},
+        },
+    })
+    return {
+        ...base,
+        dataset,
+        state: overrides.state ?? createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 }),
+        update: async () => {},
+        notifyLocusChange: () => {},
+    }
+}
+
+describe('InteractionHandler.zoomAndCenter — inline-mutation path', () => {
+    test('resolutionLocked + zoom in: pixelSize doubles, x/y shift by shiftRatio', async () => {
+        const browser = createInteractionBrowser({ resolutionLocked: true })
+        const handler = new InteractionHandler(browser)
+
+        // direction=1 (in), center at view center (no recenter shift)
+        await handler.zoomAndCenter(1, 400, 400)
+
+        // newPixelSize = min(MAX, 4*2) = 8; shiftRatio = (8-4)/8 = 0.5
+        // x += 0.5 * (800/8) = 50 -> 250; y -> 250
+        expect(browser.state.pixelSize).toBe(8)
+        expect(browser.state.x).toBe(250)
+        expect(browser.state.y).toBe(250)
+    })
+
+    test('resolutionLocked + zoom out: pixelSize halves', async () => {
+        const browser = createInteractionBrowser({ resolutionLocked: true })
+        const handler = new InteractionHandler(browser)
+
+        await handler.zoomAndCenter(-1, 400, 400)
+
+        // newPixelSize = max(min(MAX, 4*0.5), minPS=1) = 2; shiftRatio = (2-4)/2 = -1
+        // x += -1 * (800/2) = -400 -> -200, then clampXY -> 0
+        expect(browser.state.pixelSize).toBe(2)
+        expect(browser.state.x).toBe(0)
+        expect(browser.state.y).toBe(0)
+    })
+
+    test('off-center anchor: state.x/y are recentered before the zoom math', async () => {
+        const browser = createInteractionBrowser({ resolutionLocked: true })
+        const handler = new InteractionHandler(browser)
+
+        // centerPX=600 -> dx = 600-400 = 200 -> state.x += 200/4 = 50 -> 250
+        // centerPY=300 -> dy = 300-400 = -100 -> state.y += -100/4 = -25 -> 175
+        // Then zoom-in math on the recentered values:
+        // newPixelSize=8; shiftRatio=0.5; x += 0.5*(800/8)=50 -> 300; y += 50 -> 225
+        await handler.zoomAndCenter(1, 600, 300)
+
+        expect(browser.state.pixelSize).toBe(8)
+        expect(browser.state.x).toBe(300)
+        expect(browser.state.y).toBe(225)
+    })
+
+    test('boundary: at highest zoom index + zoom in -> still inline path', async () => {
+        // Highest zoom index in DEFAULT_BIN_SIZES is 8; resolutions[length-1].index === 8
+        const browser = createInteractionBrowser({
+            state: createState({ chr1: 1, chr2: 2, zoom: 8, x: 100, y: 100, pixelSize: 4 }),
+        })
+        const handler = new InteractionHandler(browser)
+
+        await handler.zoomAndCenter(1, 400, 400)
+
+        // direct zoom-in math should have applied (pixelSize doubled).
+        expect(browser.state.pixelSize).toBe(8)
+        expect(browser.state.zoom).toBe(8) // unchanged
+    })
+
+    test('minPixelSize clamps newPixelSize on zoom out', async () => {
+        const browser = createInteractionBrowser({
+            resolutionLocked: true,
+            minPixelSize: async () => 3, // floor higher than 4*0.5=2
+        })
+        const handler = new InteractionHandler(browser)
+
+        await handler.zoomAndCenter(-1, 400, 400)
+
+        expect(browser.state.pixelSize).toBe(3)
+    })
+
+    test('configureLocus runs — state.locus is rebuilt from new x/y', async () => {
+        const sentinel = { x: { chr: 'sentinel' }, y: { chr: 'sentinel' } }
+        const browser = createInteractionBrowser({
+            resolutionLocked: true,
+            state: createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4, locus: sentinel }),
+        })
+        const handler = new InteractionHandler(browser)
+
+        await handler.zoomAndCenter(1, 400, 400)
+
+        expect(browser.state.locus).not.toBe(sentinel)
+        expect(browser.state.locus.x.chr).toBe('chr1')
+        expect(browser.state.locus.y.chr).toBe('chr2')
     })
 })

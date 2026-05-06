@@ -308,3 +308,98 @@ describe('State.panWithZoom', () => {
         expect(state.pixelSize).toBe(5)
     })
 })
+
+describe('State.setWithZoom', () => {
+    test('returns resolutionChanged=true when zoom differs, false when same', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 })
+
+        const changed = await state.setWithZoom(4, DEFAULT_VIEW_DIMENSIONS, browser, dataset)
+        expect(changed).toBe(true)
+
+        const sameState = createState({ chr1: 1, chr2: 2, zoom: 4, x: 100, y: 100, pixelSize: 1 })
+        const unchanged = await sameState.setWithZoom(4, DEFAULT_VIEW_DIMENSIONS, browser, dataset)
+        expect(unchanged).toBe(false)
+    })
+
+    test('DEFAULT_PIXEL_SIZE floor: pixelSize is at least 1 even when minPixelSize is below 1', async () => {
+        // This is the resolution-selector-only floor that produces the "jump"
+        // when alternating with wheel zoom (which has no such floor).
+        // The refactor explicitly preserves this behavior.
+        const browser = createMockBrowser({
+            minPixelSize: async () => 0.5,
+        })
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 })
+
+        await state.setWithZoom(4, DEFAULT_VIEW_DIMENSIONS, browser, dataset)
+
+        expect(state.pixelSize).toBe(1)
+    })
+
+    test('minPixelSize wins when above DEFAULT_PIXEL_SIZE', async () => {
+        const browser = createMockBrowser({
+            minPixelSize: async () => 7,
+        })
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 })
+
+        await state.setWithZoom(4, DEFAULT_VIEW_DIMENSIONS, browser, dataset)
+
+        expect(state.pixelSize).toBe(7)
+    })
+
+    test('pixelSize is independent of incoming state.pixelSize (the "jump")', async () => {
+        // Demonstrates the divergence vs panWithZoom: setWithZoom RESETS pixelSize to
+        // max(DEFAULT_PIXEL_SIZE, minPixelSize) regardless of current pixelSize, which
+        // is what produces the visible jump when switching from wheel to dropdown zoom.
+        const browser = createMockBrowser({ minPixelSize: async () => 1 })
+        const dataset = createMockDataset()
+
+        const a = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 0.7 })
+        const b = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 50 })
+
+        await a.setWithZoom(4, DEFAULT_VIEW_DIMENSIONS, browser, dataset)
+        await b.setWithZoom(4, DEFAULT_VIEW_DIMENSIONS, browser, dataset)
+
+        expect(a.pixelSize).toBe(1)
+        expect(b.pixelSize).toBe(1) // jump down — current behavior
+    })
+
+    test('preserves the genomic position at the view center across the zoom', async () => {
+        const browser = createMockBrowser({ minPixelSize: async () => 1 })
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 })
+
+        const oldBinSize = dataset.bpResolutions[state.zoom]
+        const xCenterBpBefore = (state.x + DEFAULT_VIEW_DIMENSIONS.width / (2 * state.pixelSize)) * oldBinSize
+        const yCenterBpBefore = (state.y + DEFAULT_VIEW_DIMENSIONS.height / (2 * state.pixelSize)) * oldBinSize
+
+        await state.setWithZoom(4, DEFAULT_VIEW_DIMENSIONS, browser, dataset)
+
+        const newBinSize = dataset.bpResolutions[state.zoom]
+        const xCenterBpAfter = (state.x + DEFAULT_VIEW_DIMENSIONS.width / (2 * state.pixelSize)) * newBinSize
+        const yCenterBpAfter = (state.y + DEFAULT_VIEW_DIMENSIONS.height / (2 * state.pixelSize)) * newBinSize
+
+        expect(xCenterBpAfter).toBeCloseTo(xCenterBpBefore, 6)
+        expect(yCenterBpAfter).toBeCloseTo(yCenterBpBefore, 6)
+    })
+
+    test('refreshes state.locus via configureLocus', async () => {
+        const browser = createMockBrowser({ minPixelSize: async () => 1 })
+        const dataset = createMockDataset()
+        const sentinelLocus = { x: { chr: 'sentinel' }, y: { chr: 'sentinel' } }
+        const state = createState({
+            chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4,
+            locus: sentinelLocus,
+        })
+
+        await state.setWithZoom(4, DEFAULT_VIEW_DIMENSIONS, browser, dataset)
+
+        // Unlike panWithZoom, setWithZoom DOES rebuild the locus from current x/y/binSize.
+        expect(state.locus).not.toBe(sentinelLocus)
+        expect(state.locus.x.chr).toBe('chr1')
+        expect(state.locus.y.chr).toBe('chr2')
+    })
+})

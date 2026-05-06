@@ -84,76 +84,30 @@ class State {
     }
 
     /**
-     * Adjust pixel size with validation and clamping.
-     * Centralizes pixel size adjustment logic.
-     * 
-     * @param {number} targetPixelSize - Target pixel size (or undefined if calculating from bpPerPixelTarget)
-     * @param {Object} browser - Browser instance
-     * @param {number} zoom - Zoom index
-     * @param {Object} options - Adjustment options
-     * @param {number} [options.minPixelSize] - Pre-calculated minimum pixel size (if provided, won't call browser.minPixelSize)
-     * @param {number} [options.bpPerPixelTarget] - Base pairs per pixel target (for calculation mode)
-     * @param {number} [options.binSize] - Bin size for calculation (required if bpPerPixelTarget provided)
-     * @param {boolean} [options.useDefaultMin=false] - Whether to use DEFAULT_PIXEL_SIZE as minimum (for setWithZoom pattern)
-     * @returns {Promise<number>} - Adjusted pixel size
+     * Adjust a target pixelSize through the standard floor-and-cap pipeline.
+     * Floor: max(1, targetPixelSize), then floor by minPixelSize (looked up from
+     * browser if not provided). Cap: MAX_PIXEL_SIZE. Optionally apply
+     * DEFAULT_PIXEL_SIZE as the floor (resolution-selector path only).
      */
     async _adjustPixelSize(targetPixelSize, browser, zoom, options = {}) {
-        const { minPixelSize, bpPerPixelTarget, binSize, useDefaultMin = false } = options;
-        
-        let adjustedPixelSize;
+        const { minPixelSize, useDefaultMin = false } = options;
 
-        // If bpPerPixelTarget and binSize are provided, calculate from them
-        if (bpPerPixelTarget !== undefined && binSize !== undefined) {
-            adjustedPixelSize = binSize / bpPerPixelTarget;
-        } else {
-            adjustedPixelSize = targetPixelSize;
-        }
+        let adjustedPixelSize = Math.max(1, targetPixelSize);
 
-        // Clamp to minimum of 1
-        adjustedPixelSize = Math.max(1, adjustedPixelSize);
-
-        // Get minimum pixel size from browser if not provided
         let actualMinPixelSize = minPixelSize;
         if (actualMinPixelSize === undefined && browser) {
             actualMinPixelSize = await browser.minPixelSize(this.chr1, this.chr2, zoom);
         }
 
-        // Apply minimum pixel size constraint
         if (actualMinPixelSize !== undefined) {
-            if (useDefaultMin) {
-                // For setWithZoom pattern: use max of DEFAULT_PIXEL_SIZE and minPixelSize
-                adjustedPixelSize = Math.max(DEFAULT_PIXEL_SIZE, actualMinPixelSize);
-            } else {
-                // For other patterns: use max of current value and minPixelSize
-                adjustedPixelSize = Math.max(adjustedPixelSize, actualMinPixelSize);
-            }
+            adjustedPixelSize = useDefaultMin
+                ? Math.max(DEFAULT_PIXEL_SIZE, actualMinPixelSize)
+                : Math.max(adjustedPixelSize, actualMinPixelSize);
         } else if (useDefaultMin) {
-            // If no minPixelSize but useDefaultMin is true, use DEFAULT_PIXEL_SIZE
             adjustedPixelSize = Math.max(DEFAULT_PIXEL_SIZE, adjustedPixelSize);
         }
 
-        // Clamp to MAX_PIXEL_SIZE
-        adjustedPixelSize = Math.min(MAX_PIXEL_SIZE, adjustedPixelSize);
-
-        return adjustedPixelSize;
-    }
-
-    /**
-     * Finalize state update with validation.
-     * Standardizes post-update validation workflow.
-     * 
-     * @param {Object} browser - Browser instance
-     * @param {Object} dataset - Dataset instance
-     * @param {Object} viewDimensions - View dimensions {width, height}
-     * @param {Object} options - Finalization options
-     * @param {boolean} [options.clampXY=true] - Whether to clamp XY coordinates
-     */
-    _finalizeUpdate(browser, dataset, viewDimensions, options = {}) {
-        const { clampXY = true } = options;
-
-        if (clampXY) {
-            this.clampXY(dataset, viewDimensions);
-        }
+        return Math.min(MAX_PIXEL_SIZE, adjustedPixelSize);
     }
 
     /**
@@ -211,7 +165,9 @@ class State {
         this.y = y;
         this.pixelSize = adjustedPixelSize;
 
-        this._finalizeUpdate(browser, dataset, viewDimensions, { clampXY });
+        if (clampXY) {
+            this.clampXY(dataset, viewDimensions);
+        }
 
         return { chrChanged, resolutionChanged };
     }

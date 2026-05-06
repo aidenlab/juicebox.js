@@ -226,3 +226,85 @@ describe('State.panShift', () => {
         expect(state.normalization).toBe('KR')
     })
 })
+
+describe('State.panWithZoom', () => {
+    test('preserves the genomic position under the anchor pixel (anchor invariant)', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const bpResolutions = browser.getResolutions() // [{binSize, index}, ...]
+
+        // Pre: zoom=3 (binSize=250000), pixelSize=4, x=200, y=200, anchor at view center.
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 })
+
+        const anchorPx = 400, anchorPy = 400
+        const oldBinSize = bpResolutions[state.zoom].binSize
+        const gxBefore = (state.x + anchorPx / state.pixelSize) * oldBinSize
+        const gyBefore = (state.y + anchorPy / state.pixelSize) * oldBinSize
+
+        // Zoom to zoom=4 (binSize=100000) at pixelSize=8.
+        const newZoom = 4
+        const newBinSize = bpResolutions[newZoom].binSize
+        await state.panWithZoom(newZoom, 8, anchorPx, anchorPy, newBinSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS, bpResolutions)
+
+        const gxAfter = (state.x + anchorPx / state.pixelSize) * newBinSize
+        const gyAfter = (state.y + anchorPy / state.pixelSize) * newBinSize
+
+        expect(gxAfter).toBeCloseTo(gxBefore, 6)
+        expect(gyAfter).toBeCloseTo(gyBefore, 6)
+    })
+
+    test('sets zoom and pixelSize to the requested values (after pixelSize adjustment)', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const bpResolutions = browser.getResolutions()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 })
+
+        await state.panWithZoom(4, 8, 400, 400, bpResolutions[4].binSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS, bpResolutions)
+
+        expect(state.zoom).toBe(4)
+        expect(state.pixelSize).toBe(8) // 8 > min (1), 8 < MAX_PIXEL_SIZE (128)
+    })
+
+    test('does NOT call configureLocus — state.locus is untouched', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const bpResolutions = browser.getResolutions()
+        const sentinelLocus = { x: { chr: 'sentinel', start: 1, end: 2 }, y: { chr: 'sentinel', start: 3, end: 4 } }
+        const state = createState({
+            chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4,
+            locus: sentinelLocus,
+        })
+
+        await state.panWithZoom(4, 8, 400, 400, bpResolutions[4].binSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS, bpResolutions)
+
+        // panWithZoom intentionally does not refresh state.locus —
+        // interactionHandler.pinchZoom/wheelZoom call configureLocus separately afterward.
+        expect(state.locus).toBe(sentinelLocus)
+    })
+
+    test('clampXY runs — x cannot go negative even with anchor near origin', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const bpResolutions = browser.getResolutions()
+        // Start near origin so the anchor preservation math would push x negative.
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 0, y: 0, pixelSize: 4 })
+
+        await state.panWithZoom(4, 8, 400, 400, bpResolutions[4].binSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS, bpResolutions)
+
+        expect(state.x).toBeGreaterThanOrEqual(0)
+        expect(state.y).toBeGreaterThanOrEqual(0)
+    })
+
+    test('pixelSize is floored by browser.minPixelSize', async () => {
+        const browser = createMockBrowser({
+            minPixelSize: async () => 5, // floor higher than requested
+        })
+        const dataset = createMockDataset()
+        const bpResolutions = browser.getResolutions()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 })
+
+        await state.panWithZoom(4, 2, 400, 400, bpResolutions[4].binSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS, bpResolutions)
+
+        expect(state.pixelSize).toBe(5)
+    })
+})

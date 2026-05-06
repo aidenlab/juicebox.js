@@ -61,10 +61,13 @@ class LocusGoto {
                 loci = 'All';
             } else {
 
-                const { chr:chrX, start:sX, end:eX } = state.locus.x
+                const viewDimensions = this.browser.contactMatrixView.getViewDimensions()
+                const locus = state.getLocus(this.browser.dataset, viewDimensions)
+
+                const { chr:chrX, start:sX, end:eX } = locus.x
                 const strX = `${chrX}:${prettyPrint(1 + sX)}-${prettyPrint(eX)}`
 
-                const { chr:chrY, start:sY, end:eY } = state.locus.y
+                const { chr:chrY, start:sY, end:eY } = locus.y
                 const strY = `${chrY}:${prettyPrint(1 + sY)}-${prettyPrint(eY)}`
 
                 loci = `${strX} ${strY}`

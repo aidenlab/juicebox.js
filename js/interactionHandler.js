@@ -421,23 +421,12 @@ class InteractionHandler {
     async setChromosomes(xLocus, yLocus) {
         const { index: chr1Index } = this.browser.genome.getChromosome(xLocus.chr);
         const { index: chr2Index } = this.browser.genome.getChromosome(yLocus.chr);
+        const wholeChr = xLocus.wholeChr && yLocus.wholeChr;
 
-        this.browser.state.chr1 = Math.min(chr1Index, chr2Index);
-        this.browser.state.x = 0;
-
-        this.browser.state.chr2 = Math.max(chr1Index, chr2Index);
-        this.browser.state.y = 0;
-
-        if (xLocus.wholeChr && yLocus.wholeChr) {
-            this.browser.state.zoom = await this.browser.minZoom(this.browser.state.chr1, this.browser.state.chr2);
-            const minPS = await this.browser.minPixelSize(this.browser.state.chr1, this.browser.state.chr2, this.browser.state.zoom);
-            this.browser.state.pixelSize = Math.min(100, Math.max(DEFAULT_PIXEL_SIZE, minPS));
-        } else {
-            // Whole Genome
-            this.browser.state.zoom = 0;
-            const minPS = await this.browser.minPixelSize(this.browser.state.chr1, this.browser.state.chr2, this.browser.state.zoom);
-            this.browser.state.pixelSize = Math.max(this.browser.state.pixelSize, minPS);
-        }
+        await this.browser.state.setChromosomesView(
+            chr1Index, chr2Index, wholeChr,
+            this.browser, this.browser.dataset, this.browser.contactMatrixView.getViewDimensions(),
+        );
 
         await this._applyStateChange({
             resolutionChanged: true,

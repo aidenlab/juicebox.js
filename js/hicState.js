@@ -327,6 +327,40 @@ class State {
     }
 
     /**
+     * Set the view to a pair of whole chromosomes (or whole genome). Handles both
+     * branches of the chromosome-selector / setChromosomes path:
+     *
+     * - wholeChr=true: zoom = browser.minZoom(...); pixelSize clamped to
+     *   [DEFAULT_PIXEL_SIZE, 100] around minPixelSize. Used when both axes are full
+     *   chromosomes.
+     * - wholeChr=false: zoom = 0; pixelSize = max(current pixelSize, minPixelSize).
+     *   Used for whole-genome view.
+     *
+     * In both cases x and y are reset to 0.
+     */
+    async setChromosomesView(chr1Index, chr2Index, wholeChr, browser, dataset, viewDimensions) {
+        const newChr1 = Math.min(chr1Index, chr2Index)
+        const newChr2 = Math.max(chr1Index, chr2Index)
+
+        let newZoom, newPixelSize
+        if (wholeChr) {
+            newZoom = await browser.minZoom(newChr1, newChr2)
+            const minPS = await browser.minPixelSize(newChr1, newChr2, newZoom)
+            newPixelSize = Math.min(100, Math.max(DEFAULT_PIXEL_SIZE, minPS))
+        } else {
+            newZoom = 0
+            const minPS = await browser.minPixelSize(newChr1, newChr2, newZoom)
+            newPixelSize = Math.max(this.pixelSize, minPS)
+        }
+
+        return await this.setView(
+            newChr1, newChr2, 0, 0, newZoom, newPixelSize,
+            browser, dataset, viewDimensions,
+            { adjustPixelSize: false, clampXY: true },
+        )
+    }
+
+    /**
      * Translate a screen pixel (centerPX, centerPY) to the new view center, no zoom change.
      * The bin position is shifted so the chosen pixel becomes the center of the view.
      * Used by the setZoom branch of zoomAndCenter (and is generally safe as a "scroll to

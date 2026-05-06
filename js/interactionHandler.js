@@ -202,12 +202,6 @@ class InteractionHandler {
                     bpResolutions
                 );
 
-                // Update the locus after zooming
-                this.browser.state.configureLocus(
-                    this.browser.dataset,
-                    this.browser.contactMatrixView.getViewDimensions()
-                );
-
                 await this._applyStateChange({
                     resolutionChanged,
                     chrChanged: false,
@@ -332,12 +326,6 @@ class InteractionHandler {
                     bpResolutions
                 );
 
-                // Update the locus after zooming
-                this.browser.state.configureLocus(
-                    this.browser.dataset,
-                    this.browser.contactMatrixView.getViewDimensions()
-                );
-
                 await this._applyStateChange({
                     resolutionChanged,
                     chrChanged: false,
@@ -408,7 +396,6 @@ class InteractionHandler {
                 this.browser.state.y += shiftRatio * (height / this.browser.state.pixelSize);
 
                 this.browser.state.clampXY(this.browser.dataset, this.browser.contactMatrixView.getViewDimensions());
-                this.browser.state.configureLocus(this.browser.dataset, { width, height });
 
                 await this._applyStateChange({
                     resolutionChanged: false,

@@ -151,17 +151,12 @@ class State {
      * @param {Object} viewDimensions - View dimensions {width, height}
      * @param {Object} options - Finalization options
      * @param {boolean} [options.clampXY=true] - Whether to clamp XY coordinates
-     * @param {boolean} [options.configureLocus=false] - Whether to configure locus
      */
     _finalizeUpdate(browser, dataset, viewDimensions, options = {}) {
-        const { clampXY = true, configureLocus = false } = options;
+        const { clampXY = true } = options;
 
         if (clampXY) {
             this.clampXY(dataset, viewDimensions);
-        }
-
-        if (configureLocus) {
-            this.configureLocus(dataset, viewDimensions);
         }
     }
 
@@ -192,7 +187,7 @@ class State {
         this.zoom = zoom
         this.pixelSize = pixelSize
 
-        this._finalizeUpdate(browser, dataset, viewDimensions, { clampXY: true, configureLocus: false })
+        this._finalizeUpdate(browser, dataset, viewDimensions, { clampXY: true })
 
     }
 
@@ -201,7 +196,7 @@ class State {
         this.x += (dx / this.pixelSize)
         this.y += (dy / this.pixelSize)
 
-        this._finalizeUpdate(browser, dataset, viewDimensions, { clampXY: true, configureLocus: true })
+        this._finalizeUpdate(browser, dataset, viewDimensions, { clampXY: true })
 
     }
 
@@ -231,7 +226,7 @@ class State {
         this.x = Math.max(0, xCenterNew - width / (2 * this.pixelSize))
         this.y = Math.max(0, yCenterNew - height / (2 * this.pixelSize))
 
-        this._finalizeUpdate(browser, dataset, viewDimensions, { clampXY: true, configureLocus: true })
+        this._finalizeUpdate(browser, dataset, viewDimensions, { clampXY: true })
 
         return resolutionChanged
     }
@@ -332,10 +327,8 @@ class State {
         this.y = yBinNew
         this.pixelSize = pixelSizeNew
 
-        // Finalize with both clampXY and configureLocus (fixes missing clampXY)
-        this._finalizeUpdate(browser, dataset, browser.contactMatrixView.getViewDimensions(), { 
-            clampXY: true, 
-            configureLocus: true 
+        this._finalizeUpdate(browser, dataset, browser.contactMatrixView.getViewDimensions(), {
+            clampXY: true
         })
 
         return { zoomChanged, chrChanged }

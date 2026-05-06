@@ -192,8 +192,6 @@ class StateManager {
             this.activeDataset
         );
 
-        // Note: configureLocus is now handled by sync's _finalizeUpdate
-
         return { zoomChanged, chrChanged };
     }
 

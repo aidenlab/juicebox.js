@@ -52,20 +52,20 @@ class SweepZoom {
 
         this.rulerSweeperElement.style.display = 'none';
 
-        const { x, y, locus, zoom, pixelSize } = this.browser.state;
-
-        // bp-per-bin
-        const bpResolution = this.browser.dataset.bpResolutions[zoom];
+        const state = this.browser.state;
+        const { chromosomes, bpResolutions } = this.browser.dataset;
+        const bpResolution = bpResolutions[state.zoom];
 
         // bp = ((bin + pixel/pixel-per-bin) / bp-per-bin)
-        const xBP = (x + (xPixel / pixelSize)) * bpResolution
-        const yBP = (y + (yPixel / pixelSize)) * bpResolution
+        const xBP = (state.x + (xPixel / state.pixelSize)) * bpResolution
+        const yBP = (state.y + (yPixel / state.pixelSize)) * bpResolution
+        const  widthBP = ( width / state.pixelSize) * bpResolution;
+        const heightBP = (height / state.pixelSize) * bpResolution;
 
-        const  widthBP = ( width / pixelSize) * bpResolution;
-        const heightBP = (height / pixelSize) * bpResolution;
-
-        await this.browser.goto(locus.x.chr, Math.round(xBP), Math.round(xBP + widthBP), locus.y.chr, Math.round(yBP), Math.round(yBP + heightBP));
-
+        await this.browser.goto(
+            chromosomes[state.chr1].name, Math.round(xBP), Math.round(xBP + widthBP),
+            chromosomes[state.chr2].name, Math.round(yBP), Math.round(yBP + heightBP),
+        );
     }
 }
 

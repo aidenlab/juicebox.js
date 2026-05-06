@@ -299,11 +299,6 @@ class State {
         this.x = newXBin
         this.y = newYBin
         this.pixelSize = pixelSize
-        this.locus =
-            {
-                x: { chr: chr1Name, start: bpX, end: bpXMax },
-                y: { chr: chr2Name, start: bpY, end: bpYMax }
-            };
 
         return { chrChanged, resolutionChanged }
     }

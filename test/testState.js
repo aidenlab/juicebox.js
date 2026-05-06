@@ -170,18 +170,21 @@ describe('State.updateWithLoci', () => {
         expect(result).toEqual({ chrChanged: true, resolutionChanged: true })
     })
 
-    test('sets state.locus directly from input bp values (not derived via configureLocus)', async () => {
+    test('post-updateWithLoci getLocus reflects requested chromosomes and start positions', async () => {
         const browser = createMockBrowser({ findMatchingZoomIndex: () => 4 })
+        const dataset = createMockDataset()
         const state = createState()
 
         await state.updateWithLoci('chr1', 1_000, 9_000, 'chr2', 2_000, 18_000, browser, 800, 800)
 
-        // The literal input values are stored, NOT recomputed via bin/pixelSize math.
-        // This is the "two sources of truth" the refactor will eventually unify.
-        expect(state.locus).toEqual({
-            x: { chr: 'chr1', start: 1_000, end: 9_000 },
-            y: { chr: 'chr2', start: 2_000, end: 18_000 },
-        })
+        const locus = state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+        expect(locus.x.chr).toBe('chr1')
+        expect(locus.y.chr).toBe('chr2')
+        // Start round-trips exactly: state.x = bpX/binSize, then getLocus.start = round(state.x * binSize) = bpX.
+        expect(locus.x.start).toBe(1_000)
+        expect(locus.y.start).toBe(2_000)
+        // End is NOT generally equal to the requested bpXMax — it reflects the actual visible range
+        // (binSize * width / pixelSize), which is the honest answer.
     })
 
     test('resolutionLocked=true: zoom is preserved', async () => {

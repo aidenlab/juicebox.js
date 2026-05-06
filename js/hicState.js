@@ -303,45 +303,24 @@ class State {
         };
     }
 
-    async updateWithLoci(chr1Name, bpX, bpXMax, chr2Name, bpY, bpYMax, browser, width, height){
-
+    async updateWithLoci(chr1Name, bpX, bpXMax, chr2Name, bpY, bpYMax, browser, width, height) {
         const bpResolutions = browser.getResolutions()
-
-        // bp/pixel
         const bpPerPixelTarget = Math.max((bpXMax - bpX) / width, (bpYMax - bpY) / height)
-        let zoomNew
-        if (true === browser.resolutionLocked) {
-            zoomNew = this.zoom
-        } else {
-            zoomNew = browser.findMatchingZoomIndex(bpPerPixelTarget, bpResolutions)
-        }
+        const zoomNew = (true === browser.resolutionLocked)
+            ? this.zoom
+            : browser.findMatchingZoomIndex(bpPerPixelTarget, bpResolutions)
+        const { binSize: binSizeNew } = bpResolutions[zoomNew]
 
-        const resolutionChanged = this._detectResolutionChange(zoomNew)
+        const { index: chr1Index } = browser.genome.getChromosome(chr1Name)
+        const { index: chr2Index } = browser.genome.getChromosome(chr2Name)
 
-        const { binSize:binSizeNew } = bpResolutions[zoomNew]
-        
-        // Adjust pixel size from bpPerPixelTarget
-        const pixelSize = await this._adjustPixelSize(undefined, browser, zoomNew, {
-            bpPerPixelTarget,
-            binSize: binSizeNew
-        })
-
-        const newXBin = bpX / binSizeNew
-        const newYBin = bpY / binSizeNew
-
-        const { index:chr1Index } = browser.genome.getChromosome( chr1Name )
-        const { index:chr2Index } = browser.genome.getChromosome( chr2Name )
-
-        const chrChanged = this._detectChromosomeChange(chr1Index, chr2Index)
-
-        this.chr1 = chr1Index
-        this.chr2 = chr2Index
-        this.zoom = zoomNew
-        this.x = newXBin
-        this.y = newYBin
-        this.pixelSize = pixelSize
-
-        return { chrChanged, resolutionChanged }
+        return await this.setView(
+            chr1Index, chr2Index,
+            bpX / binSizeNew, bpY / binSizeNew,
+            zoomNew, binSizeNew / bpPerPixelTarget,
+            browser, browser.dataset, { width, height },
+            { clampXY: false },
+        )
     }
 
     async sync(targetState, browser, genome, dataset){

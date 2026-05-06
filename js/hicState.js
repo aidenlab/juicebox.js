@@ -326,41 +326,24 @@ class State {
         )
     }
 
-    async sync(targetState, browser, genome, dataset){
-
+    async sync(targetState, browser, genome, dataset) {
         const chr1 = genome.getChromosome(targetState.chr1Name)
         const chr2 = genome.getChromosome(targetState.chr2Name)
 
-        const bpPerPixelTarget = targetState.binSize/targetState.pixelSize
-
+        const bpPerPixelTarget = targetState.binSize / targetState.pixelSize
         const zoomNew = browser.findMatchingZoomIndex(bpPerPixelTarget, dataset.bpResolutions)
-        const binSizeNew = dataset.bpResolutions[ zoomNew ]
-        
-        // Adjust pixel size from bpPerPixelTarget
-        const pixelSizeNew = await this._adjustPixelSize(undefined, browser, zoomNew, {
-            bpPerPixelTarget,
-            binSize: binSizeNew
-        })
+        const binSizeNew = dataset.bpResolutions[zoomNew]
 
-        const xBinNew = targetState.binX * (targetState.binSize/binSizeNew)
-        const yBinNew = targetState.binY * (targetState.binSize/binSizeNew)
+        const xBinNew = targetState.binX * (targetState.binSize / binSizeNew)
+        const yBinNew = targetState.binY * (targetState.binSize / binSizeNew)
+        const targetPixelSize = binSizeNew / bpPerPixelTarget
 
-        const zoomChanged = this._detectResolutionChange(zoomNew)
-        const chrChanged = this._detectChromosomeChange(chr1.index, chr2.index)
-
-        this.chr1 = chr1.index
-        this.chr2 = chr2.index
-        this.zoom = zoomNew
-        this.x = xBinNew
-        this.y = yBinNew
-        this.pixelSize = pixelSizeNew
-
-        this._finalizeUpdate(browser, dataset, browser.contactMatrixView.getViewDimensions(), {
-            clampXY: true
-        })
-
-        return { zoomChanged, chrChanged }
-
+        const { chrChanged, resolutionChanged } = await this.setView(
+            chr1.index, chr2.index, xBinNew, yBinNew, zoomNew, targetPixelSize,
+            browser, dataset, browser.contactMatrixView.getViewDimensions(),
+        )
+        // sync's contract uses "zoomChanged" rather than "resolutionChanged"; same concept.
+        return { zoomChanged: resolutionChanged, chrChanged }
     }
 
     stringify() {

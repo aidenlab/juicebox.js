@@ -12,6 +12,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './'),
+      'igv-utils': resolve(__dirname, './node_modules/igv-utils/src/index.js'),
+      'igv-ui': resolve(__dirname, './node_modules/igv-ui/dist/igv-ui.js'),
     },
   },
 });

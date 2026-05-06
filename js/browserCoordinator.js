@@ -451,13 +451,11 @@ class BrowserCoordinator {
      * Note: Component updates (like chromosome selector) happen automatically when the
      * dataset loads via onMapLoaded(), so we don't need to update them here. This method
      * primarily exists to notify external callbacks (e.g., Spacewalk integration) so they
-     * can coordinate locus setting before configureLocus() runs.
-     * 
+     * can coordinate locus setting after a genome change.
+     *
      * @param {string} genomeId - The ID of the new genome (e.g., "hg38", "mm10")
      */
     onGenomeChange(genomeId) {
-        // Notify external callbacks (e.g., Spacewalk integration)
-        // This allows external code to set locus before configureLocus() derives a default
         this.externalCallbacks.onGenomeChange.forEach(callback => {
             try {
                 callback({ genomeId });

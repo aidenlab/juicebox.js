@@ -148,6 +148,37 @@ describe('State.getLocus — pure projection', () => {
     })
 })
 
+describe('State.clone — independence', () => {
+    test('mutating canonical fields on the clone does not affect the original', () => {
+        const a = createState({ chr1: 1, chr2: 2, zoom: 3, x: 100, y: 200, pixelSize: 4, normalization: 'KR' })
+        const b = a.clone()
+
+        b.chr1 = 99
+        b.chr2 = 99
+        b.zoom = 99
+        b.x = 999
+        b.y = 999
+        b.pixelSize = 99
+        b.normalization = 'VC'
+
+        expect(a.chr1).toBe(1)
+        expect(a.chr2).toBe(2)
+        expect(a.zoom).toBe(3)
+        expect(a.x).toBe(100)
+        expect(a.y).toBe(200)
+        expect(a.pixelSize).toBe(4)
+        expect(a.normalization).toBe('KR')
+    })
+
+    test('clone is a State instance', () => {
+        const a = createState()
+        const b = a.clone()
+
+        expect(b).toBeInstanceOf(State)
+        expect(b).not.toBe(a)
+    })
+})
+
 describe('State.updateWithLoci', () => {
     test('sets chr indices, zoom, x/y, pixelSize from BP loci', async () => {
         const browser = createMockBrowser({

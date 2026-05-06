@@ -335,6 +335,11 @@ class State {
         }
     }
 
+    /**
+     * Shallow clone is intentional and correct: State holds only scalar fields
+     * (chr1, chr2, zoom, x, y, pixelSize, normalization) since locus was made
+     * a pure projection. Object.assign produces an independent clone.
+     */
     clone() {
         return Object.assign(new State(), this);
     }

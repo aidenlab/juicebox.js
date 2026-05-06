@@ -77,41 +77,26 @@ class StateManager {
 
     /**
      * Set the active state with validation and adjustment.
-     * This method handles:
-     * - Cloning the state to avoid mutations
-     * - Adjusting pixel size based on minimum requirements
-     * - Configuring locus if not present
-     * 
-     * @param {State} state - The state to set
-     * @returns {Promise<{chrChanged: boolean, resolutionChanged: boolean}>} - Change flags
+     * Clones the source state, applies a minPixelSize floor.
+     * Locus is no longer cached — consumers derive it via state.getLocus().
      */
     async setState(state) {
-        const chrChanged = !this.activeState || 
-            this.activeState.chr1 !== state.chr1 || 
+        const chrChanged = !this.activeState ||
+            this.activeState.chr1 !== state.chr1 ||
             this.activeState.chr2 !== state.chr2;
 
         this.activeState = state.clone();
 
-        // Possibly adjust pixel size
         const minPS = await this.browser.minPixelSize(
-            this.activeState.chr1, 
-            this.activeState.chr2, 
+            this.activeState.chr1,
+            this.activeState.chr2,
             this.activeState.zoom
         );
         this.activeState.pixelSize = Math.max(state.pixelSize, minPS);
 
-        // Derive locus if none is present in source state
-        if (undefined === state.locus) {
-            const viewDimensions = this.browser.contactMatrixView.getViewDimensions();
-            this.activeState.configureLocus(
-                this.activeDataset, 
-                viewDimensions
-            );
-        }
-
-        return { 
-            chrChanged, 
-            resolutionChanged: true 
+        return {
+            chrChanged,
+            resolutionChanged: true
         };
     }
 

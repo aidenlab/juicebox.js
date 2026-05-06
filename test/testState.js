@@ -535,6 +535,7 @@ function createInteractionBrowser(overrides = {}) {
         ...base,
         dataset,
         state: overrides.state ?? createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 }),
+        minZoom: overrides.minZoom ?? (async () => 2),
         update: async () => {},
         notifyLocusChange: () => {},
     }
@@ -622,5 +623,119 @@ describe('InteractionHandler.zoomAndCenter — inline-mutation path', () => {
         expect(browser.state.locus).not.toBe(sentinel)
         expect(browser.state.locus.x.chr).toBe('chr1')
         expect(browser.state.locus.y.chr).toBe('chr2')
+    })
+})
+
+describe('InteractionHandler.setChromosomes — inline-mutation path', () => {
+    test('sorts chr1 <= chr2 even when input order is reversed', async () => {
+        const browser = createInteractionBrowser({
+            state: createState({ chr1: 99, chr2: 99 }),
+        })
+        const handler = new InteractionHandler(browser)
+
+        // Pass chr3 first, chr1 second — should end up chr1=1, chr2=3.
+        await handler.setChromosomes(
+            { chr: 'chr3', start: 0, end: 100, wholeChr: true },
+            { chr: 'chr1', start: 0, end: 100, wholeChr: true },
+        )
+
+        expect(browser.state.chr1).toBe(1)
+        expect(browser.state.chr2).toBe(3)
+    })
+
+    test('resets x and y to 0', async () => {
+        const browser = createInteractionBrowser({
+            state: createState({ chr1: 1, chr2: 2, x: 999, y: 888 }),
+        })
+        const handler = new InteractionHandler(browser)
+
+        await handler.setChromosomes(
+            { chr: 'chr1', start: 0, end: 100, wholeChr: true },
+            { chr: 'chr2', start: 0, end: 100, wholeChr: true },
+        )
+
+        expect(browser.state.x).toBe(0)
+        expect(browser.state.y).toBe(0)
+    })
+
+    test('writes state.locus directly from input (the writer Part A will remove)', async () => {
+        const browser = createInteractionBrowser({
+            state: createState({ locus: { x: { chr: 'sentinel' }, y: { chr: 'sentinel' } } }),
+        })
+        const handler = new InteractionHandler(browser)
+
+        await handler.setChromosomes(
+            { chr: 'chr1', start: 1_000, end: 9_000, wholeChr: false },
+            { chr: 'chr2', start: 2_000, end: 18_000, wholeChr: false },
+        )
+
+        // Literal input values stored — same "two sources of truth" pattern as updateWithLoci.
+        expect(browser.state.locus).toEqual({
+            x: { chr: 'chr1', start: 1_000, end: 9_000 },
+            y: { chr: 'chr2', start: 2_000, end: 18_000 },
+        })
+    })
+
+    test('wholeChr branch: zoom = minZoom, pixelSize = clamp(minPS, [DEFAULT_PIXEL_SIZE, 100])', async () => {
+        const browser = createInteractionBrowser({
+            minZoom: async () => 1,
+            minPixelSize: async () => 0.3, // below DEFAULT_PIXEL_SIZE
+            state: createState({ chr1: 1, chr2: 2, zoom: 5, pixelSize: 4 }),
+        })
+        const handler = new InteractionHandler(browser)
+
+        await handler.setChromosomes(
+            { chr: 'chr1', start: 0, end: 100, wholeChr: true },
+            { chr: 'chr2', start: 0, end: 100, wholeChr: true },
+        )
+
+        expect(browser.state.zoom).toBe(1)
+        expect(browser.state.pixelSize).toBe(1) // floored at DEFAULT_PIXEL_SIZE
+    })
+
+    test('wholeChr branch: pixelSize is capped at 100 even if minPS is higher', async () => {
+        const browser = createInteractionBrowser({
+            minZoom: async () => 1,
+            minPixelSize: async () => 200, // above 100 cap
+        })
+        const handler = new InteractionHandler(browser)
+
+        await handler.setChromosomes(
+            { chr: 'chr1', start: 0, end: 100, wholeChr: true },
+            { chr: 'chr2', start: 0, end: 100, wholeChr: true },
+        )
+
+        expect(browser.state.pixelSize).toBe(100)
+    })
+
+    test('non-wholeChr branch: zoom = 0, pixelSize = max(current, minPS)', async () => {
+        const browser = createInteractionBrowser({
+            minPixelSize: async () => 3,
+            state: createState({ chr1: 1, chr2: 2, zoom: 5, pixelSize: 7 }),
+        })
+        const handler = new InteractionHandler(browser)
+
+        await handler.setChromosomes(
+            { chr: 'chr1', start: 1000, end: 9000, wholeChr: false },
+            { chr: 'chr2', start: 1000, end: 9000, wholeChr: false },
+        )
+
+        expect(browser.state.zoom).toBe(0)
+        expect(browser.state.pixelSize).toBe(7) // current 7 > minPS 3, kept
+    })
+
+    test('non-wholeChr branch: pixelSize floored by minPS when minPS > current', async () => {
+        const browser = createInteractionBrowser({
+            minPixelSize: async () => 9,
+            state: createState({ chr1: 1, chr2: 2, pixelSize: 4 }),
+        })
+        const handler = new InteractionHandler(browser)
+
+        await handler.setChromosomes(
+            { chr: 'chr1', start: 1000, end: 9000, wholeChr: false },
+            { chr: 'chr2', start: 1000, end: 9000, wholeChr: false },
+        )
+
+        expect(browser.state.pixelSize).toBe(9)
     })
 })

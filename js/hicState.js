@@ -28,6 +28,27 @@
 
 import {DEFAULT_PIXEL_SIZE, MAX_PIXEL_SIZE} from "./hicBrowser.js"
 
+/**
+ * State holds the canonical six fields that fully specify the view:
+ *   chr1, chr2, x (bins), y (bins), zoom (resolution index), pixelSize
+ * plus normalization. These are the source of truth.
+ *
+ * BP coordinates ("locus") are NOT stored — they are a projection of canonical
+ * state through view dimensions. Read via state.getLocus(dataset, viewDimensions),
+ * which always reflects what is actually on screen.
+ *
+ * All mutations flow through one chokepoint: state.setView(...). The legacy
+ * mutation methods (updateWithLoci, panShift, panWithZoom, setWithZoom, sync) and
+ * the inline-mutation paths formerly in interactionHandler (zoomBy, recenterByPixel,
+ * setChromosomesView) are translators that convert their domain-specific inputs
+ * into canonical args and delegate to setView. setView owns clamping, pixelSize
+ * adjustment, and change detection.
+ *
+ * Invariants:
+ * - No code outside this file should mutate state fields directly. Everything is
+ *   a translator-then-setView chain.
+ * - locus reads always go through getLocus(); state.locus does not exist.
+ */
 class State {
 
     constructor(chr1, chr2, zoom, x, y, pixelSize, normalization) {

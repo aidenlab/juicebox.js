@@ -463,11 +463,6 @@ class InteractionHandler {
         this.browser.state.chr2 = Math.max(chr1Index, chr2Index);
         this.browser.state.y = 0;
 
-        this.browser.state.locus = {
-            x: { chr: xLocus.chr, start: xLocus.start, end: xLocus.end },
-            y: { chr: yLocus.chr, start: yLocus.start, end: yLocus.end }
-        };
-
         if (xLocus.wholeChr && yLocus.wholeChr) {
             this.browser.state.zoom = await this.browser.minZoom(this.browser.state.chr1, this.browser.state.chr2);
             const minPS = await this.browser.minPixelSize(this.browser.state.chr1, this.browser.state.chr2, this.browser.state.zoom);

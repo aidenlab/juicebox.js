@@ -708,9 +708,9 @@ describe('InteractionHandler.setChromosomes — inline-mutation path', () => {
         expect(browser.state.y).toBe(0)
     })
 
-    test('writes state.locus directly from input (the writer Part A will remove)', async () => {
+    test('post-setChromosomes getLocus reflects the chosen chromosomes', async () => {
         const browser = createInteractionBrowser({
-            state: createState({ locus: { x: { chr: 'sentinel' }, y: { chr: 'sentinel' } } }),
+            state: createState({ chr1: 0, chr2: 0 }),
         })
         const handler = new InteractionHandler(browser)
 
@@ -719,11 +719,14 @@ describe('InteractionHandler.setChromosomes — inline-mutation path', () => {
             { chr: 'chr2', start: 2_000, end: 18_000, wholeChr: false },
         )
 
-        // Literal input values stored — same "two sources of truth" pattern as updateWithLoci.
-        expect(browser.state.locus).toEqual({
-            x: { chr: 'chr1', start: 1_000, end: 9_000 },
-            y: { chr: 'chr2', start: 2_000, end: 18_000 },
-        })
+        // After Part A, setChromosomes only sets canonical fields (chr1, chr2, x=0, y=0,
+        // zoom, pixelSize). Locus is derived on read.
+        const locus = browser.state.getLocus(browser.dataset, DEFAULT_VIEW_DIMENSIONS)
+        expect(locus.x.chr).toBe('chr1')
+        expect(locus.y.chr).toBe('chr2')
+        // x/y were reset to 0, so start at chromosome origin.
+        expect(locus.x.start).toBe(0)
+        expect(locus.y.start).toBe(0)
     })
 
     test('wholeChr branch: zoom = minZoom, pixelSize = clamp(minPS, [DEFAULT_PIXEL_SIZE, 100])', async () => {

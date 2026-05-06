@@ -255,34 +255,32 @@ class State {
         )
     }
 
-    async setWithZoom(zoom, viewDimensions, browser, dataset){
-
-        const {width, height} = viewDimensions
-
-        // bin = bin + pixel * bin/pixel = bin
-        const xCenter = this.x + (width/2) / this.pixelSize
-        const yCenter = this.y + (height/2) / this.pixelSize
+    async setWithZoom(zoom, viewDimensions, browser, dataset) {
+        // The resolution-selector path. Translator computes the view-center-preserving
+        // x/y under the new (post-floor) pixelSize and delegates. useDefaultMin: true is
+        // the only setting that preserves the DEFAULT_PIXEL_SIZE floor — the visible
+        // "jump" vs wheel zoom that #411 codifies as resolution-selector-only.
+        const { width, height } = viewDimensions
+        const xCenter = this.x + (width / 2) / this.pixelSize
+        const yCenter = this.y + (height / 2) / this.pixelSize
 
         const binSize = dataset.bpResolutions[this.zoom]
         const binSizeNew = dataset.bpResolutions[zoom]
-
         const scaleFactor = binSize / binSizeNew
-
         const xCenterNew = xCenter * scaleFactor
         const yCenterNew = yCenter * scaleFactor
 
-        const resolutionChanged = this._detectResolutionChange(zoom)
-
-        // Adjust pixel size with DEFAULT_PIXEL_SIZE minimum
         const minPixelSize = await browser.minPixelSize(this.chr1, this.chr2, zoom)
-        this.pixelSize = await this._adjustPixelSize(undefined, browser, zoom, { minPixelSize, useDefaultMin: true })
+        const newPixelSize = await this._adjustPixelSize(undefined, browser, zoom, { minPixelSize, useDefaultMin: true })
 
-        this.zoom = zoom
-        this.x = Math.max(0, xCenterNew - width / (2 * this.pixelSize))
-        this.y = Math.max(0, yCenterNew - height / (2 * this.pixelSize))
+        const newX = Math.max(0, xCenterNew - width / (2 * newPixelSize))
+        const newY = Math.max(0, yCenterNew - height / (2 * newPixelSize))
 
-        this._finalizeUpdate(browser, dataset, viewDimensions, { clampXY: true })
-
+        const { resolutionChanged } = await this.setView(
+            this.chr1, this.chr2, newX, newY, zoom, newPixelSize,
+            browser, dataset, viewDimensions,
+            { adjustPixelSize: false, clampXY: true },
+        )
         return resolutionChanged
     }
 

@@ -185,10 +185,14 @@ class State {
      * @param {number}  [options.minPixelSize] - Override browser.minPixelSize lookup
      *                                            (caller has already computed it).
      * @param {boolean} [options.clampXY=true] - Whether to clamp x/y to chromosome bounds.
+     * @param {boolean} [options.adjustPixelSize=true] - Run pixelSize through
+     *                                                    _adjustPixelSize. Pan paths set
+     *                                                    this false: panning never alters
+     *                                                    pixelSize, including by floor.
      * @returns {Promise<{chrChanged: boolean, resolutionChanged: boolean}>}
      */
     async setView(chr1, chr2, x, y, zoom, pixelSize, browser, dataset, viewDimensions, options = {}) {
-        const { useDefaultMin = false, minPixelSize, clampXY = true } = options;
+        const { useDefaultMin = false, minPixelSize, clampXY = true, adjustPixelSize = true } = options;
 
         const chrChanged = this._detectChromosomeChange(chr1, chr2);
         const resolutionChanged = this._detectResolutionChange(zoom);
@@ -196,7 +200,9 @@ class State {
         // Adjust pixelSize BEFORE mutating chr1/chr2 — preserves the existing convention
         // that browser.minPixelSize is consulted with the pre-mutation chr1/chr2 (and the
         // post-mutation zoom).
-        const adjustedPixelSize = await this._adjustPixelSize(pixelSize, browser, zoom, { useDefaultMin, minPixelSize });
+        const adjustedPixelSize = adjustPixelSize
+            ? await this._adjustPixelSize(pixelSize, browser, zoom, { useDefaultMin, minPixelSize })
+            : pixelSize;
 
         this.chr1 = chr1;
         this.chr2 = chr2;
@@ -241,13 +247,14 @@ class State {
 
     }
 
-    panShift(dx, dy, browser, dataset, viewDimensions) {
-
-        this.x += (dx / this.pixelSize)
-        this.y += (dy / this.pixelSize)
-
-        this._finalizeUpdate(browser, dataset, viewDimensions, { clampXY: true })
-
+    async panShift(dx, dy, browser, dataset, viewDimensions) {
+        await this.setView(
+            this.chr1, this.chr2,
+            this.x + dx / this.pixelSize, this.y + dy / this.pixelSize,
+            this.zoom, this.pixelSize,
+            browser, dataset, viewDimensions,
+            { adjustPixelSize: false, clampXY: true },
+        )
     }
 
     async setWithZoom(zoom, viewDimensions, browser, dataset){

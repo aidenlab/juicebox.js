@@ -133,10 +133,10 @@ class InteractionHandler {
             return;
         }
 
-        this.browser.state.panShift(
-            dx, dy, 
-            this.browser, 
-            this.browser.dataset, 
+        await this.browser.state.panShift(
+            dx, dy,
+            this.browser,
+            this.browser.dataset,
             this.browser.contactMatrixView.getViewDimensions()
         );
 

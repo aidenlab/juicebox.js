@@ -228,23 +228,21 @@ class State {
         this.y = Math.min(Math.max(0, this.y), maxY);
     }
 
-    async panWithZoom(zoom, pixelSize, anchorPx, anchorPy, binSize, browser, dataset, viewDimensions, bpResolutions){
-
-        // Adjust pixel size with minimum constraint
-        pixelSize = await this._adjustPixelSize(pixelSize, browser, zoom)
-
-        // Genomic anchor  -- this position should remain at anchorPx, anchorPy after state change
+    async panWithZoom(zoom, pixelSize, anchorPx, anchorPy, binSize, browser, dataset, viewDimensions, bpResolutions) {
+        // The translator owns anchor-preservation math because it depends on the adjusted
+        // pixelSize: the new x/y must be computed against the post-adjust pixelSize so the
+        // genomic position at (anchorPx, anchorPy) is invariant across the call.
+        const adjustedPixelSize = await this._adjustPixelSize(pixelSize, browser, zoom)
         const gx = (this.x + anchorPx / this.pixelSize) * bpResolutions[this.zoom].binSize
         const gy = (this.y + anchorPy / this.pixelSize) * bpResolutions[this.zoom].binSize
+        const newX = gx / binSize - anchorPx / adjustedPixelSize
+        const newY = gy / binSize - anchorPy / adjustedPixelSize
 
-        this.x = gx / binSize - anchorPx / pixelSize
-        this.y = gy / binSize - anchorPy / pixelSize
-
-        this.zoom = zoom
-        this.pixelSize = pixelSize
-
-        this._finalizeUpdate(browser, dataset, viewDimensions, { clampXY: true })
-
+        return await this.setView(
+            this.chr1, this.chr2, newX, newY, zoom, adjustedPixelSize,
+            browser, dataset, viewDimensions,
+            { adjustPixelSize: false, clampXY: true },
+        )
     }
 
     async panShift(dx, dy, browser, dataset, viewDimensions) {

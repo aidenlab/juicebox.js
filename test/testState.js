@@ -88,3 +88,73 @@ describe('State characterization tests — scaffolding', () => {
         expect(dataset.bpResolutions.length).toBe(DEFAULT_BIN_SIZES.length)
     })
 })
+
+describe('State.updateWithLoci', () => {
+    test('sets chr indices, zoom, x/y, pixelSize from BP loci', async () => {
+        const browser = createMockBrowser({
+            findMatchingZoomIndex: () => 4, // pin zoom selection
+        })
+        const state = createState({ chr1: 1, chr2: 1, zoom: 3, x: 0, y: 0, pixelSize: 2 })
+
+        // chr1 region: 0–8,000,000bp on chr1 (index 1); chr2 region: same on chr2 (index 2)
+        const result = await state.updateWithLoci('chr1', 0, 8_000_000, 'chr2', 0, 8_000_000, browser, 800, 800)
+
+        expect(state.chr1).toBe(1)
+        expect(state.chr2).toBe(2)
+        expect(state.zoom).toBe(4)
+        // binSize at zoom=4 is 100000; x = bpX / binSize = 0
+        expect(state.x).toBe(0)
+        expect(state.y).toBe(0)
+        // bpPerPixelTarget = 8_000_000 / 800 = 10_000; pixelSize = binSize / bpPerPixelTarget = 100000 / 10000 = 10
+        expect(state.pixelSize).toBe(10)
+        expect(result).toEqual({ chrChanged: true, resolutionChanged: true })
+    })
+
+    test('sets state.locus directly from input bp values (not derived via configureLocus)', async () => {
+        const browser = createMockBrowser({ findMatchingZoomIndex: () => 4 })
+        const state = createState()
+
+        await state.updateWithLoci('chr1', 1_000, 9_000, 'chr2', 2_000, 18_000, browser, 800, 800)
+
+        // The literal input values are stored, NOT recomputed via bin/pixelSize math.
+        // This is the "two sources of truth" the refactor will eventually unify.
+        expect(state.locus).toEqual({
+            x: { chr: 'chr1', start: 1_000, end: 9_000 },
+            y: { chr: 'chr2', start: 2_000, end: 18_000 },
+        })
+    })
+
+    test('resolutionLocked=true: zoom is preserved', async () => {
+        const browser = createMockBrowser({
+            resolutionLocked: true,
+            findMatchingZoomIndex: () => 99, // would-be zoom; should be ignored
+        })
+        const state = createState({ zoom: 5 })
+
+        const result = await state.updateWithLoci('chr1', 0, 8_000_000, 'chr2', 0, 8_000_000, browser, 800, 800)
+
+        expect(state.zoom).toBe(5)
+        expect(result.resolutionChanged).toBe(false)
+    })
+
+    test('chrChanged=false when chromosomes do not change', async () => {
+        const browser = createMockBrowser({ findMatchingZoomIndex: () => 4 })
+        const state = createState({ chr1: 1, chr2: 2, zoom: 4 })
+
+        const result = await state.updateWithLoci('chr1', 0, 1_000_000, 'chr2', 0, 1_000_000, browser, 800, 800)
+
+        expect(result.chrChanged).toBe(false)
+    })
+
+    test('pixelSize is clamped to >= 1 by _adjustPixelSize', async () => {
+        // bpPerPixelTarget large => binSize / bpPerPixelTarget would be < 1
+        // Clamp to 1 should engage. minPixelSize default returns 1, so result is 1.
+        const browser = createMockBrowser({ findMatchingZoomIndex: () => 4 })
+        const state = createState()
+
+        // bpPerPixelTarget = 80_000_000 / 800 = 100_000; pixelSize = 100000/100000 = 1
+        await state.updateWithLoci('chr1', 0, 80_000_000, 'chr2', 0, 80_000_000, browser, 800, 800)
+
+        expect(state.pixelSize).toBe(1)
+    })
+})

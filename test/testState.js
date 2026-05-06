@@ -39,9 +39,16 @@ export function createMockBrowser(overrides = {}) {
         resolutionLocked: overrides.resolutionLocked ?? false,
         minPixelSize: overrides.minPixelSize ?? (async () => 1),
         getResolutions: overrides.getResolutions ?? (() => resolutions),
-        findMatchingZoomIndex: overrides.findMatchingZoomIndex ?? ((bpPerPixelTarget, res) => {
-            for (let i = res.length - 1; i >= 0; i--) {
-                if (res[i].binSize <= bpPerPixelTarget) return i
+        // Mirrors the real interactionHandler.findMatchingZoomIndex, which accepts
+        // both shapes: an array of {binSize, index} objects (browser.getResolutions())
+        // and a flat array of numbers (dataset.bpResolutions). State.sync passes the
+        // latter, the others pass the former.
+        findMatchingZoomIndex: overrides.findMatchingZoomIndex ?? ((targetResolution, res) => {
+            const isObject = res.length > 0 && res[0].index !== undefined
+            for (let z = res.length - 1; z > 0; z--) {
+                const binSize = isObject ? res[z].binSize : res[z]
+                const index = isObject ? res[z].index : z
+                if (binSize >= targetResolution) return index
             }
             return 0
         }),
@@ -401,5 +408,106 @@ describe('State.setWithZoom', () => {
         expect(state.locus).not.toBe(sentinelLocus)
         expect(state.locus.x.chr).toBe('chr1')
         expect(state.locus.y.chr).toBe('chr2')
+    })
+})
+
+describe('State.sync', () => {
+    test('converts binX/binY between source and target binSizes', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 0, y: 0, pixelSize: 4 })
+
+        // Source: binSize=100000, pixelSize=2 -> bpPerPixelTarget = 50000.
+        // Mock findMatchingZoomIndex on flat-number array picks zoom=5 (binSize=50000).
+        // Target binSize=50000, so binX scales by 100000/50000 = 2x.
+        const targetState = {
+            chr1Name: 'chr1', chr2Name: 'chr2',
+            binSize: 100000, pixelSize: 2,
+            binX: 1000, binY: 500,
+        }
+
+        const result = await state.sync(targetState, browser, browser.genome, dataset)
+
+        expect(state.zoom).toBe(5)
+        expect(state.x).toBe(2000) // 1000 * (100000/50000)
+        expect(state.y).toBe(1000) // 500 * 2
+        expect(state.pixelSize).toBe(1) // 50000 / 50000 = 1
+        expect(result).toEqual({ zoomChanged: true, chrChanged: false })
+    })
+
+    test('looks up chr1/chr2 indices from genome by name', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 1 })
+
+        const targetState = {
+            chr1Name: 'chr2', chr2Name: 'chr3',
+            binSize: 100000, pixelSize: 2,
+            binX: 0, binY: 0,
+        }
+
+        const result = await state.sync(targetState, browser, browser.genome, dataset)
+
+        expect(state.chr1).toBe(2)
+        expect(state.chr2).toBe(3)
+        expect(result.chrChanged).toBe(true)
+    })
+
+    test('runs clampXY (regression guard for the missing-clampXY fix)', async () => {
+        // Code comment in hicState.js notes: "Finalize with both clampXY and configureLocus
+        // (fixes missing clampXY)". Lock that in.
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2 })
+
+        // Provide binX way past the chromosome — clampXY must clip it to maxX.
+        const targetState = {
+            chr1Name: 'chr1', chr2Name: 'chr2',
+            binSize: 100000, pixelSize: 2,
+            binX: 999_999_999, binY: 999_999_999,
+        }
+
+        await state.sync(targetState, browser, browser.genome, dataset)
+
+        // chr1 size=250M, zoom=5 -> binSize=50000 -> chr.size/binSize=5000
+        // width=800, pixelSize=1 -> width/pixelSize=800; maxX = 4200
+        expect(state.x).toBe(4200)
+        // chr2 size=240M -> 4800-800 = 4000
+        expect(state.y).toBe(4000)
+    })
+
+    test('runs configureLocus — state.locus is refreshed', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const sentinel = { x: { chr: 'sentinel' }, y: { chr: 'sentinel' } }
+        const state = createState({ chr1: 1, chr2: 1, locus: sentinel })
+
+        const targetState = {
+            chr1Name: 'chr1', chr2Name: 'chr2',
+            binSize: 100000, pixelSize: 2,
+            binX: 100, binY: 100,
+        }
+
+        await state.sync(targetState, browser, browser.genome, dataset)
+
+        expect(state.locus).not.toBe(sentinel)
+        expect(state.locus.x.chr).toBe('chr1')
+        expect(state.locus.y.chr).toBe('chr2')
+    })
+
+    test('reports zoomChanged=false / chrChanged=false when neither changes', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 5, x: 100, y: 100, pixelSize: 1 })
+
+        const targetState = {
+            chr1Name: 'chr1', chr2Name: 'chr2',
+            binSize: 100000, pixelSize: 2,
+            binX: 100, binY: 100,
+        }
+
+        const result = await state.sync(targetState, browser, browser.genome, dataset)
+
+        expect(result).toEqual({ zoomChanged: false, chrChanged: false })
     })
 })

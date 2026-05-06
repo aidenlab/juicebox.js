@@ -97,6 +97,58 @@ describe('State characterization tests — scaffolding', () => {
     })
 })
 
+describe('State.getLocus — pure projection', () => {
+    test('returns BP locus derived from canonical state', () => {
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 100, y: 50, pixelSize: 2 })
+
+        const locus = state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        // bpPerBin = bpResolutions[3] = 250000
+        // startBP1 = 100 * 250000 = 25_000_000
+        // endBP1 = min(chr1.size=250M, round(800/2 * 250000) + 25M) = min(250M, 100M + 25M) = 125M
+        expect(locus.x).toEqual({ chr: 'chr1', start: 25_000_000, end: 125_000_000 })
+        // startBP2 = 50 * 250000 = 12_500_000
+        // endBP2 = min(chr2.size=240M, 100M + 12.5M) = 112_500_000
+        expect(locus.y).toEqual({ chr: 'chr2', start: 12_500_000, end: 112_500_000 })
+    })
+
+    test('clamps end at chromosome size', () => {
+        const dataset = createMockDataset()
+        // x large enough that visible-end exceeds chr1.size
+        const state = createState({ chr1: 1, chr2: 2, zoom: 0, x: 1000, y: 0, pixelSize: 1 })
+
+        const locus = state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        // bpPerBin at zoom=0 = 2_500_000; startBP1 = 1000 * 2.5M = 2.5B; clamped to chr1.size 250M
+        expect(locus.x.end).toBe(dataset.chromosomes[1].size)
+    })
+
+    test('does not mutate this — pure function', () => {
+        const dataset = createMockDataset()
+        const sentinel = { x: { chr: 'sentinel' }, y: { chr: 'sentinel' } }
+        const state = createState({ chr1: 1, chr2: 2, locus: sentinel })
+
+        const result = state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        // state.locus must be untouched.
+        expect(state.locus).toBe(sentinel)
+        // Returned object is fresh, not state.locus.
+        expect(result).not.toBe(sentinel)
+    })
+
+    test('matches configureLocus output exactly (locks in equivalence during migration)', () => {
+        const dataset = createMockDataset()
+        const a = createState({ chr1: 1, chr2: 2, zoom: 4, x: 250, y: 175, pixelSize: 3 })
+        const b = createState({ chr1: 1, chr2: 2, zoom: 4, x: 250, y: 175, pixelSize: 3 })
+
+        const fromGet = a.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+        b.configureLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        expect(fromGet).toEqual(b.locus)
+    })
+})
+
 describe('State.updateWithLoci', () => {
     test('sets chr indices, zoom, x/y, pixelSize from BP loci', async () => {
         const browser = createMockBrowser({

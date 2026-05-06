@@ -236,23 +236,30 @@ class State {
         return resolutionChanged
     }
 
-    configureLocus(dataset, viewDimensions){
-
+    /**
+     * Pure projection of canonical state into a BP locus, given dataset and view geometry.
+     * Returns {x: {chr, start, end}, y: {chr, start, end}}. Does not mutate this.
+     *
+     * This is the only honest way to expose "where am I in BP coordinates" — it always
+     * reflects what is actually on screen, derived from chr1/chr2/x/y/zoom/pixelSize.
+     */
+    getLocus(dataset, viewDimensions) {
         const bpPerBin = dataset.bpResolutions[this.zoom];
-
         const startBP1 = Math.round(this.x * bpPerBin);
         const startBP2 = Math.round(this.y * bpPerBin);
-
         const chr1 = dataset.chromosomes[this.chr1];
         const chr2 = dataset.chromosomes[this.chr2];
         const pixelsPerBin = this.pixelSize;
         const endBP1 = Math.min(chr1.size, Math.round(((viewDimensions.width / pixelsPerBin) * bpPerBin)) + startBP1);
         const endBP2 = Math.min(chr2.size, Math.round(((viewDimensions.height / pixelsPerBin) * bpPerBin)) + startBP2);
+        return {
+            x: { chr: chr1.name, start: startBP1, end: endBP1 },
+            y: { chr: chr2.name, start: startBP2, end: endBP2 },
+        };
+    }
 
-        const x = { chr:chr1.name, start:startBP1, end:endBP1 }
-        const y = { chr:chr2.name, start:startBP2, end:endBP2 }
-
-        this.locus = { x, y }
+    configureLocus(dataset, viewDimensions){
+        this.locus = this.getLocus(dataset, viewDimensions);
     }
 
     async updateWithLoci(chr1Name, bpX, bpXMax, chr2Name, bpY, bpYMax, browser, width, height){

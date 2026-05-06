@@ -148,6 +148,119 @@ describe('State.getLocus — pure projection', () => {
     })
 })
 
+describe('State.setView — canonical chokepoint', () => {
+    test('sets all canonical fields', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 0, chr2: 0, zoom: 0, x: 0, y: 0, pixelSize: 1 })
+
+        await state.setView(1, 2, 50, 75, 4, 6, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        expect(state.chr1).toBe(1)
+        expect(state.chr2).toBe(2)
+        expect(state.x).toBe(50)
+        expect(state.y).toBe(75)
+        expect(state.zoom).toBe(4)
+        expect(state.pixelSize).toBe(6)
+    })
+
+    test('returns chrChanged and resolutionChanged relative to pre-mutation state', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 0, y: 0, pixelSize: 1 })
+
+        const same = await state.setView(1, 2, 0, 0, 3, 1, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+        expect(same).toEqual({ chrChanged: false, resolutionChanged: false })
+
+        const chrOnly = await state.setView(1, 3, 0, 0, 3, 1, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+        expect(chrOnly).toEqual({ chrChanged: true, resolutionChanged: false })
+
+        const zoomOnly = await state.setView(1, 3, 0, 0, 5, 1, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+        expect(zoomOnly).toEqual({ chrChanged: false, resolutionChanged: true })
+    })
+
+    test('pixelSize floored by browser.minPixelSize', async () => {
+        const browser = createMockBrowser({ minPixelSize: async () => 5 })
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2 })
+
+        await state.setView(1, 2, 0, 0, 3, 2, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        expect(state.pixelSize).toBe(5)
+    })
+
+    test('useDefaultMin: applies DEFAULT_PIXEL_SIZE floor (resolution-selector behavior)', async () => {
+        const browser = createMockBrowser({ minPixelSize: async () => 0.5 })
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2 })
+
+        await state.setView(1, 2, 0, 0, 3, undefined, browser, dataset, DEFAULT_VIEW_DIMENSIONS, {
+            useDefaultMin: true,
+        })
+
+        expect(state.pixelSize).toBe(1) // DEFAULT_PIXEL_SIZE
+    })
+
+    test('minPixelSize option overrides browser.minPixelSize lookup', async () => {
+        const calls = []
+        const browser = createMockBrowser({
+            minPixelSize: async (...args) => { calls.push(args); return 99 },
+        })
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2 })
+
+        await state.setView(1, 2, 0, 0, 3, 2, browser, dataset, DEFAULT_VIEW_DIMENSIONS, {
+            minPixelSize: 4,
+        })
+
+        // browser.minPixelSize was not consulted; the explicit option won.
+        expect(calls.length).toBe(0)
+        expect(state.pixelSize).toBe(4)
+    })
+
+    test('clampXY=true (default) clamps x/y to chromosome bounds', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2 })
+
+        // Pass huge x/y; setView clamps via _finalizeUpdate.
+        await state.setView(1, 2, 999_999, 999_999, 3, 1, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        // zoom=3 -> binSize=250000; chr1=250M -> 1000 bins; width=800, pixelSize=1 -> maxX=200
+        expect(state.x).toBe(200)
+        // chr2=240M -> 960; maxY = 960 - 800 = 160
+        expect(state.y).toBe(160)
+    })
+
+    test('clampXY=false skips the clamp', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2 })
+
+        await state.setView(1, 2, 999_999, 999_999, 3, 1, browser, dataset, DEFAULT_VIEW_DIMENSIONS, {
+            clampXY: false,
+        })
+
+        expect(state.x).toBe(999_999)
+        expect(state.y).toBe(999_999)
+    })
+
+    test('change flags reflect pre-mutation state, not post', async () => {
+        // Regression guard: if change detection ran AFTER mutation, every call would
+        // report no change.
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3 })
+
+        const result = await state.setView(2, 3, 0, 0, 5, 1, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        expect(result).toEqual({ chrChanged: true, resolutionChanged: true })
+        // Post-mutation: state is now (2, 3, zoom 5).
+        expect(state.chr1).toBe(2)
+        expect(state.zoom).toBe(5)
+    })
+})
+
 describe('State.clone — independence', () => {
     test('mutating canonical fields on the clone does not affect the original', () => {
         const a = createState({ chr1: 1, chr2: 2, zoom: 3, x: 100, y: 200, pixelSize: 4, normalization: 'KR' })

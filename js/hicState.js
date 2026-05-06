@@ -326,6 +326,58 @@ class State {
         )
     }
 
+    /**
+     * Translate a screen pixel (centerPX, centerPY) to the new view center, no zoom change.
+     * The bin position is shifted so the chosen pixel becomes the center of the view.
+     * Used by the setZoom branch of zoomAndCenter (and is generally safe as a "scroll to
+     * click" primitive).
+     */
+    async recenterByPixel(centerPX, centerPY, browser, dataset, viewDimensions) {
+        const { width, height } = viewDimensions
+        const dx = centerPX === undefined ? 0 : centerPX - width / 2
+        const dy = centerPY === undefined ? 0 : centerPY - height / 2
+        return await this.setView(
+            this.chr1, this.chr2,
+            this.x + dx / this.pixelSize, this.y + dy / this.pixelSize,
+            this.zoom, this.pixelSize,
+            browser, dataset, viewDimensions,
+            { adjustPixelSize: false, clampXY: true },
+        )
+    }
+
+    /**
+     * Zoom by a step (direction: +1 in, -1 out) anchored at a screen pixel.
+     * Used by the resolution-locked / zoom-boundary branch of zoomAndCenter, where the
+     * resolution index cannot change so the zoom is achieved by doubling/halving pixelSize
+     * instead. Performs the recenter and the pixelSize change in one atomic mutation.
+     */
+    async zoomBy(direction, centerPX, centerPY, browser, dataset, viewDimensions) {
+        const { width, height } = viewDimensions
+        const dx = centerPX === undefined ? 0 : centerPX - width / 2
+        const dy = centerPY === undefined ? 0 : centerPY - height / 2
+
+        // Step 1: recenter under the OLD pixelSize (so dx/dy in pixels translates correctly).
+        let newX = this.x + dx / this.pixelSize
+        let newY = this.y + dy / this.pixelSize
+
+        const minPS = await browser.minPixelSize(this.chr1, this.chr2, this.zoom)
+        const newPixelSize = Math.max(
+            Math.min(MAX_PIXEL_SIZE, this.pixelSize * (direction > 0 ? 2 : 0.5)),
+            minPS,
+        )
+
+        // Step 2: pixelSize-change shift uses the NEW pixelSize for the second leg.
+        const shiftRatio = (newPixelSize - this.pixelSize) / newPixelSize
+        newX += shiftRatio * (width / newPixelSize)
+        newY += shiftRatio * (height / newPixelSize)
+
+        return await this.setView(
+            this.chr1, this.chr2, newX, newY, this.zoom, newPixelSize,
+            browser, dataset, viewDimensions,
+            { adjustPixelSize: false, clampXY: true },
+        )
+    }
+
     async sync(targetState, browser, genome, dataset) {
         const chr1 = genome.getChromosome(targetState.chr1Name)
         const chr2 = genome.getChromosome(targetState.chr2Name)

@@ -364,44 +364,22 @@ class InteractionHandler {
             const yLocus = { chr: chrY.name, start: 0, end: chrY.size, wholeChr: true };
             await this.setChromosomes(xLocus, yLocus);
         } else {
-            const { width, height } = this.browser.contactMatrixView.getViewDimensions();
-
-            const dx = centerPX === undefined ? 0 : centerPX - width / 2;
-            this.browser.state.x += (dx / this.browser.state.pixelSize);
-
-            const dy = centerPY === undefined ? 0 : centerPY - height / 2;
-            this.browser.state.y += (dy / this.browser.state.pixelSize);
-
+            const viewDimensions = this.browser.contactMatrixView.getViewDimensions();
             const resolutions = this.browser.getResolutions();
             const directionPositive = direction > 0 && this.browser.state.zoom === resolutions[resolutions.length - 1].index;
             const directionNegative = direction < 0 && this.browser.state.zoom === resolutions[0].index;
-            
+
             if (this.browser.resolutionLocked || directionPositive || directionNegative) {
-                const minPS = await this.browser.minPixelSize(
-                    this.browser.state.chr1, 
-                    this.browser.state.chr2, 
-                    this.browser.state.zoom
-                );
-
-                const newPixelSize = Math.max(
-                    Math.min(MAX_PIXEL_SIZE, this.browser.state.pixelSize * (direction > 0 ? 2 : 0.5)), 
-                    minPS
-                );
-
-                const shiftRatio = (newPixelSize - this.browser.state.pixelSize) / newPixelSize;
-
-                this.browser.state.pixelSize = newPixelSize;
-
-                this.browser.state.x += shiftRatio * (width / this.browser.state.pixelSize);
-                this.browser.state.y += shiftRatio * (height / this.browser.state.pixelSize);
-
-                this.browser.state.clampXY(this.browser.dataset, this.browser.contactMatrixView.getViewDimensions());
-
+                // Locked or at a zoom boundary: zoom by doubling/halving pixelSize anchored at click point.
+                await this.browser.state.zoomBy(direction, centerPX, centerPY, this.browser, this.browser.dataset, viewDimensions);
                 await this._applyStateChange({
                     resolutionChanged: false,
                     chrChanged: false
                 });
             } else {
+                // Free to change resolution: recenter on click point, then step the zoom level.
+                await this.browser.state.recenterByPixel(centerPX, centerPY, this.browser, this.browser.dataset, viewDimensions);
+
                 let i;
                 for (i = 0; i < resolutions.length; i++) {
                     if (this.browser.state.zoom === resolutions[i].index) break;

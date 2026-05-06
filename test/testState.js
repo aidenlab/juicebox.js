@@ -257,7 +257,7 @@ describe('State.panShift', () => {
         expect(state.y).toBe(560)
     })
 
-    test('rebuilds state.locus via configureLocus from new x/y', async () => {
+    test('post-pan getLocus reflects new x/y in BP coordinates', async () => {
         const browser = createMockBrowser()
         const dataset = createMockDataset()
         const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 100, y: 100, pixelSize: 2 })
@@ -266,8 +266,9 @@ describe('State.panShift', () => {
 
         // x=110 after pan; bpPerBin=250000; startBP1 = 110*250000 = 27_500_000
         // endBP1 = min(250M, round(800/2 * 250000) + 27.5M) = min(250M, 100M + 27.5M) = 127_500_000
-        expect(state.locus.x).toEqual({ chr: 'chr1', start: 27_500_000, end: 127_500_000 })
-        expect(state.locus.y.chr).toBe('chr2')
+        const locus = state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+        expect(locus.x).toEqual({ chr: 'chr1', start: 27_500_000, end: 127_500_000 })
+        expect(locus.y.chr).toBe('chr2')
     })
 
     test('does not change chr1, chr2, zoom, pixelSize, or normalization', async () => {
@@ -325,21 +326,22 @@ describe('State.panWithZoom', () => {
         expect(state.pixelSize).toBe(8) // 8 > min (1), 8 < MAX_PIXEL_SIZE (128)
     })
 
-    test('does NOT call configureLocus — state.locus is untouched', async () => {
+    test('post-zoom getLocus reflects new zoom and x/y (locus is always live via getLocus)', async () => {
         const browser = createMockBrowser()
         const dataset = createMockDataset()
         const bpResolutions = browser.getResolutions()
-        const sentinelLocus = { x: { chr: 'sentinel', start: 1, end: 2 }, y: { chr: 'sentinel', start: 3, end: 4 } }
-        const state = createState({
-            chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4,
-            locus: sentinelLocus,
-        })
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 })
 
         await state.panWithZoom(4, 8, 400, 400, bpResolutions[4].binSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS, bpResolutions)
 
-        // panWithZoom intentionally does not refresh state.locus —
-        // interactionHandler.pinchZoom/wheelZoom call configureLocus separately afterward.
-        expect(state.locus).toBe(sentinelLocus)
+        // Under the field-based design panWithZoom left state.locus stale until
+        // interactionHandler called configureLocus separately. With getLocus the
+        // BP locus is always live — derived from canonical state on demand.
+        const locus = state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+        expect(locus.x.chr).toBe('chr1')
+        expect(locus.y.chr).toBe('chr2')
+        // bpPerBin at zoom 4 is 100000; locus reflects post-zoom state.
+        expect(locus.x.start).toBe(Math.round(state.x * 100000))
     })
 
     test('clampXY runs — x cannot go negative even with anchor near origin', async () => {
@@ -446,21 +448,16 @@ describe('State.setWithZoom', () => {
         expect(yCenterBpAfter).toBeCloseTo(yCenterBpBefore, 6)
     })
 
-    test('refreshes state.locus via configureLocus', async () => {
+    test('post-zoom getLocus reflects new zoom level', async () => {
         const browser = createMockBrowser({ minPixelSize: async () => 1 })
         const dataset = createMockDataset()
-        const sentinelLocus = { x: { chr: 'sentinel' }, y: { chr: 'sentinel' } }
-        const state = createState({
-            chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4,
-            locus: sentinelLocus,
-        })
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 })
 
         await state.setWithZoom(4, DEFAULT_VIEW_DIMENSIONS, browser, dataset)
 
-        // Unlike panWithZoom, setWithZoom DOES rebuild the locus from current x/y/binSize.
-        expect(state.locus).not.toBe(sentinelLocus)
-        expect(state.locus.x.chr).toBe('chr1')
-        expect(state.locus.y.chr).toBe('chr2')
+        const locus = state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+        expect(locus.x.chr).toBe('chr1')
+        expect(locus.y.chr).toBe('chr2')
     })
 })
 
@@ -529,11 +526,10 @@ describe('State.sync', () => {
         expect(state.y).toBe(4000)
     })
 
-    test('runs configureLocus — state.locus is refreshed', async () => {
+    test('post-sync getLocus reflects new chromosomes and bin position', async () => {
         const browser = createMockBrowser()
         const dataset = createMockDataset()
-        const sentinel = { x: { chr: 'sentinel' }, y: { chr: 'sentinel' } }
-        const state = createState({ chr1: 1, chr2: 1, locus: sentinel })
+        const state = createState({ chr1: 1, chr2: 1 })
 
         const targetState = {
             chr1Name: 'chr1', chr2Name: 'chr2',
@@ -543,9 +539,9 @@ describe('State.sync', () => {
 
         await state.sync(targetState, browser, browser.genome, dataset)
 
-        expect(state.locus).not.toBe(sentinel)
-        expect(state.locus.x.chr).toBe('chr1')
-        expect(state.locus.y.chr).toBe('chr2')
+        const locus = state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+        expect(locus.x.chr).toBe('chr1')
+        expect(locus.y.chr).toBe('chr2')
     })
 
     test('reports zoomChanged=false / chrChanged=false when neither changes', async () => {
@@ -662,19 +658,18 @@ describe('InteractionHandler.zoomAndCenter — inline-mutation path', () => {
         expect(browser.state.pixelSize).toBe(3)
     })
 
-    test('configureLocus runs — state.locus is rebuilt from new x/y', async () => {
-        const sentinel = { x: { chr: 'sentinel' }, y: { chr: 'sentinel' } }
+    test('post-zoom getLocus reflects new x/y', async () => {
         const browser = createInteractionBrowser({
             resolutionLocked: true,
-            state: createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4, locus: sentinel }),
+            state: createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 }),
         })
         const handler = new InteractionHandler(browser)
 
         await handler.zoomAndCenter(1, 400, 400)
 
-        expect(browser.state.locus).not.toBe(sentinel)
-        expect(browser.state.locus.x.chr).toBe('chr1')
-        expect(browser.state.locus.y.chr).toBe('chr2')
+        const locus = browser.state.getLocus(browser.dataset, DEFAULT_VIEW_DIMENSIONS)
+        expect(locus.x.chr).toBe('chr1')
+        expect(locus.y.chr).toBe('chr2')
     })
 })
 

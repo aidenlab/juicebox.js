@@ -158,3 +158,71 @@ describe('State.updateWithLoci', () => {
         expect(state.pixelSize).toBe(1)
     })
 })
+
+describe('State.panShift', () => {
+    test('advances x and y by dx/pixelSize, dy/pixelSize', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 100, y: 50, pixelSize: 2 })
+
+        state.panShift(20, -10, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        // x: 100 + 20/2 = 110; y: 50 + (-10)/2 = 45 (still inside clamp range)
+        expect(state.x).toBe(110)
+        expect(state.y).toBe(45)
+    })
+
+    test('clamps x to 0 when dx goes negative past origin', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ x: 5, y: 5, pixelSize: 1 })
+
+        state.panShift(-1000, 0, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        expect(state.x).toBe(0)
+    })
+
+    test('clamps x/y to maxX/maxY when dx/dy push past chromosome end', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        // zoom=3 -> binSize=250000; chr1 size=250M -> chr1.size/binSize = 1000
+        // width=800, pixelSize=2 -> width/pixelSize = 400
+        // maxX = 1000 - 400 = 600
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 100, y: 100, pixelSize: 2 })
+
+        state.panShift(100_000, 100_000, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        expect(state.x).toBe(600)
+        // chr2 size=240M, chr2.size/binSize = 960; maxY = 960 - 400 = 560
+        expect(state.y).toBe(560)
+    })
+
+    test('rebuilds state.locus via configureLocus from new x/y', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 100, y: 100, pixelSize: 2 })
+
+        state.panShift(20, 20, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        // x=110 after pan; bpPerBin=250000; startBP1 = 110*250000 = 27_500_000
+        // endBP1 = min(250M, round(800/2 * 250000) + 27.5M) = min(250M, 100M + 27.5M) = 127_500_000
+        expect(state.locus.x).toEqual({ chr: 'chr1', start: 27_500_000, end: 127_500_000 })
+        expect(state.locus.y.chr).toBe('chr2')
+    })
+
+    test('does not change chr1, chr2, zoom, pixelSize, or normalization', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({
+            chr1: 1, chr2: 2, zoom: 3, x: 100, y: 100, pixelSize: 2, normalization: 'KR'
+        })
+
+        state.panShift(50, 50, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        expect(state.chr1).toBe(1)
+        expect(state.chr2).toBe(2)
+        expect(state.zoom).toBe(3)
+        expect(state.pixelSize).toBe(2)
+        expect(state.normalization).toBe('KR')
+    })
+})

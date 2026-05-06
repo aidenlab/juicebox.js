@@ -76,7 +76,6 @@ export function createState(opts = {}) {
     return new State(
         opts.chr1 ?? 1,
         opts.chr2 ?? 1,
-        opts.locus,
         opts.zoom ?? 3,
         opts.x ?? 100,
         opts.y ?? 100,
@@ -124,28 +123,28 @@ describe('State.getLocus — pure projection', () => {
         expect(locus.x.end).toBe(dataset.chromosomes[1].size)
     })
 
-    test('does not mutate this — pure function', () => {
+    test('does not mutate canonical state — pure function', () => {
         const dataset = createMockDataset()
-        const sentinel = { x: { chr: 'sentinel' }, y: { chr: 'sentinel' } }
-        const state = createState({ chr1: 1, chr2: 2, locus: sentinel })
+        const state = createState({ chr1: 1, chr2: 2, zoom: 4, x: 250, y: 175, pixelSize: 3 })
+        const before = { chr1: state.chr1, chr2: state.chr2, zoom: state.zoom, x: state.x, y: state.y, pixelSize: state.pixelSize }
 
-        const result = state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+        state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
 
-        // state.locus must be untouched.
-        expect(state.locus).toBe(sentinel)
-        // Returned object is fresh, not state.locus.
-        expect(result).not.toBe(sentinel)
+        expect({ chr1: state.chr1, chr2: state.chr2, zoom: state.zoom, x: state.x, y: state.y, pixelSize: state.pixelSize })
+            .toEqual(before)
+        // No locus field on State — it has been removed.
+        expect('locus' in state).toBe(false)
     })
 
-    test('matches configureLocus output exactly (locks in equivalence during migration)', () => {
+    test('returns a fresh object on each call', () => {
         const dataset = createMockDataset()
-        const a = createState({ chr1: 1, chr2: 2, zoom: 4, x: 250, y: 175, pixelSize: 3 })
-        const b = createState({ chr1: 1, chr2: 2, zoom: 4, x: 250, y: 175, pixelSize: 3 })
+        const state = createState({ chr1: 1, chr2: 2 })
 
-        const fromGet = a.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
-        b.configureLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+        const a = state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+        const b = state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
 
-        expect(fromGet).toEqual(b.locus)
+        expect(a).not.toBe(b)
+        expect(a).toEqual(b)
     })
 })
 

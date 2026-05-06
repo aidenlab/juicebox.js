@@ -149,9 +149,6 @@ class NotificationCoordinator {
         this._updateResolutionSelectorForMapLoad();
         this._updateColorScaleWidgetForMapLoad();
         this._updateControlMapWidgetForMapLoad();
-
-        // Note: locusGoto is notified via notifyLocusChange() which is called from setState()
-        // after the locus is properly configured. Don't notify here as state.locus might not exist yet.
     }
 
     /**

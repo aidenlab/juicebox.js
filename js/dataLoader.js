@@ -120,7 +120,6 @@ class DataLoader {
                     state = State.default(config);
                 }
 
-                // Set active dataset before setState so configureLocus can access bpResolutions
                 this.browser.setActiveDataset(dataset, state);
                 await this.browser.setState(state);
             } else if (config.synchState && this.browser.canBeSynched(config.synchState)) {
@@ -132,7 +131,6 @@ class DataLoader {
                 }
             } else {
                 state = State.default(config);
-                // Set active dataset before setState so configureLocus can access bpResolutions
                 this.browser.setActiveDataset(dataset, state);
                 await this.browser.setState(state);
             }

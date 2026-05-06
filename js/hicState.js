@@ -30,7 +30,7 @@ import {DEFAULT_PIXEL_SIZE, MAX_PIXEL_SIZE} from "./hicBrowser.js"
 
 class State {
 
-    constructor(chr1, chr2, locus, zoom, x, y, pixelSize, normalization) {
+    constructor(chr1, chr2, zoom, x, y, pixelSize, normalization) {
         if (chr1 <= chr2) {
             this.chr1 = chr1;
             this['x'] = x;
@@ -49,12 +49,10 @@ class State {
         this.zoom = zoom;
 
         if (undefined === normalization) {
-            // console.warn("Normalization is undefined. Will use NONE");
             normalization = 'NONE';
         }
         this.normalization = normalization;
 
-        // Validate and convert pixelSize to a number
         if (typeof pixelSize === 'string') {
             const parsed = parseFloat(pixelSize);
             pixelSize = isNaN(parsed) ? 1 : parsed;
@@ -62,8 +60,6 @@ class State {
             pixelSize = 1;
         }
         this.pixelSize = pixelSize;
-
-        this.locus = locus
     }
 
     /**
@@ -235,7 +231,7 @@ class State {
      * Pure projection of canonical state into a BP locus, given dataset and view geometry.
      * Returns {x: {chr, start, end}, y: {chr, start, end}}. Does not mutate this.
      *
-     * This is the only honest way to expose "where am I in BP coordinates" — it always
+     * This is the only place "where am I in BP coordinates" is computed — it always
      * reflects what is actually on screen, derived from chr1/chr2/x/y/zoom/pixelSize.
      */
     getLocus(dataset, viewDimensions) {
@@ -251,10 +247,6 @@ class State {
             x: { chr: chr1.name, start: startBP1, end: endBP1 },
             y: { chr: chr2.name, start: startBP2, end: endBP2 },
         };
-    }
-
-    configureLocus(dataset, viewDimensions){
-        this.locus = this.getLocus(dataset, viewDimensions);
     }
 
     async updateWithLoci(chr1Name, bpX, bpXMax, chr2Name, bpY, bpYMax, browser, width, height){
@@ -369,7 +361,6 @@ class State {
             return new State(
                 parseInt(tokens[0]),    // chr1
                 parseInt(tokens[1]),    // chr2
-                undefined, // locus
                 parseFloat(tokens[2]), // zoom
                 parseFloat(tokens[3]), // x
                 parseFloat(tokens[4]), // y
@@ -380,7 +371,6 @@ class State {
             return new State(
                 parseInt(tokens[0]),    // chr1
                 parseInt(tokens[1]),    // chr2
-                undefined, // locus
                 parseFloat(tokens[2]), // zoom
                 parseFloat(tokens[3]), // x
                 parseFloat(tokens[4]), // y
@@ -390,32 +380,27 @@ class State {
         }
     }
 
-    // Method 1: Convert the State object to a JSON object
     toJSON() {
-        const json =
-            {
-                chr1: this.chr1,
-                chr2: this.chr2,
-                zoom: this.zoom,
-                x: this.x,
-                y: this.y,
-                pixelSize: this.pixelSize,
-                normalization: this.normalization || 'NONE'
-            }
-
-        if (this.locus) {
-            json.locus = this.locus
+        return {
+            chr1: this.chr1,
+            chr2: this.chr2,
+            zoom: this.zoom,
+            x: this.x,
+            y: this.y,
+            pixelSize: this.pixelSize,
+            normalization: this.normalization || 'NONE',
         }
-
-        return json
     }
 
-    // Method 2: Parse a JSON object and create an instance of the State class
+    /**
+     * Parse a JSON object into a State instance.
+     * A `locus` field on the input is read-and-ignored for backward compatibility
+     * with old session payloads — locus is derived on demand via getLocus().
+     */
     static fromJSON(json) {
         return new State(
             json.chr1,
             json.chr2,
-            json.locus,
             json.zoom,
             json.x,
             json.y,
@@ -425,8 +410,7 @@ class State {
     }
 
     static default(configOrUndefined) {
-        const state = new State(0, 0, undefined, 0, 0, 1, "NONE")
-        return state
+        return new State(0, 0, 0, 0, 1, "NONE")
     }
 
 }

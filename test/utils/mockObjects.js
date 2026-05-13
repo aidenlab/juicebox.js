@@ -6,7 +6,6 @@
 import {File} from "./File.js"
 import {XMLHttpRequestMock} from "./XMLHttpRequestMock.js"
 import {Document, DOMImplementation} from "./Document.js"
-import {DOMParser} from "./DOMParser.js"
 import atob from 'atob'
 import btoa from 'btoa'
 
@@ -33,8 +32,6 @@ Object.defineProperty(global, 'navigator', {
     writable: true,
     configurable: true
 })
-
-global.DOMParser = DOMParser
 
 global.atob = atob
 

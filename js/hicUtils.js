@@ -62,7 +62,7 @@ function getExtension(url) {
         return undefined
     }
 
-    let path = (FileUtils.isFile(url) || url.google_url) ? url.name : url
+    let path = FileUtils.isFile(url) ? url.name : url
     let filename = path.toLowerCase()
 
     //Strip parameters -- handle local files later

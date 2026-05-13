@@ -49,10 +49,8 @@
   },
   "devDependencies": {
     "@vitest/ui": "^4.0.7",
-    "@xmldom/xmldom": "^0.7.5",
     "atob": "^2.1.2",
     "btoa": "^1.2.1",
-    "google-utils": "github:igvteam/google-utils#v1.0.2",
     "hic-straw": "github:aidenlab/hic-straw#v2.2.0",
     "igv": "^2.15.5",
     "igv-ui": "github:igvteam/igv-ui#v1.5.0",

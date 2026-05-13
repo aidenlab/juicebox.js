@@ -28,10 +28,6 @@
 
 import {isFile} from "./fileUtils.js"
 import Straw from 'hic-straw'
-import * as GoogleUtils from "google-utils/src/googleUtils.js"
-import * as GoogleDrive from "google-utils/src/googleDrive.js"
-
-import IGVRemoteFile from "./igvRemoteFile.js"
 
 const knownGenomes = {
 
@@ -281,15 +277,6 @@ class HiCDataset extends Dataset {
         if (isFile(config.url)) {
             config.blob = config.url
             delete config.url
-        } else {
-            // If this is a google url, add api KEY
-            if (GoogleUtils.isGoogleURL(config.url)) {
-                if (GoogleUtils.isGoogleDriveURL(config.url)) {
-                    config.url = GoogleDrive.getDriveDownloadURL(config.url)
-                }
-                const copy = Object.assign({}, config);
-                config.file = new IGVRemoteFile(copy);
-            }
         }
 
         const dataset = new HiCDataset(config)

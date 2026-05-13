@@ -132,6 +132,15 @@ class Genome {
         return this.genomeLength;
     }
 
+    // Required for igv.js v3+ — returns an object whose values are alternative
+    // chromosome names. igv iterates Object.values and tries each as a lookup
+    // key (keys 'start' and 'end' are reserved/skipped).
+    async getAliasRecord(chr) {
+        const official = this.getChromosomeName(chr);
+        const alt = chr.startsWith("chr") ? chr.substring(3) : "chr" + chr;
+        return { chr, official, alt };
+    }
+
     // Required for igv.js
     addFeaturesToDB(featureList, config) {
 

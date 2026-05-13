@@ -346,10 +346,6 @@ class DataLoader {
                     config.type = config.format = 'sequence';
                 }
 
-                if (!config.format) {
-                    config.format = igv.TrackUtils.inferFileFormat(fileName);
-                }
-
                 if (config.type === 'annotation') {
                     config.displayMode = 'COLLAPSED';
                     if (config.color === DEFAULT_ANNOTATION_COLOR) {
@@ -364,7 +360,9 @@ class DataLoader {
                 const { trackHeight } = getLayoutDimensions();
                 config.height = trackHeight;
 
-                if (config.format === undefined || ['bedpe', 'interact'].includes(config.format)) {
+                const is2D = ['bedpe', 'interact'].includes(config.format)
+                    || ['bedpe', 'interact'].includes(extension);
+                if (is2D) {
                     promises2D.push(Track2D.loadTrack2D(config, this.browser.genome));
                 } else {
                     const track = await igv.createTrack(config, this.browser);

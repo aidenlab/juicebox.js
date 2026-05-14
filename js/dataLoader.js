@@ -346,10 +346,6 @@ class DataLoader {
                     config.type = config.format = 'sequence';
                 }
 
-                if (!config.format) {
-                    config.format = igv.TrackUtils.inferFileFormat(fileName);
-                }
-
                 if (config.type === 'annotation') {
                     config.displayMode = 'COLLAPSED';
                     if (config.color === DEFAULT_ANNOTATION_COLOR) {
@@ -364,7 +360,16 @@ class DataLoader {
                 const { trackHeight } = getLayoutDimensions();
                 config.height = trackHeight;
 
-                if (config.format === undefined || ['bedpe', 'interact'].includes(config.format)) {
+                // 2D tracks: bedpe/interact by format or extension, or a juicebox
+                // loops/peaks list (.txt) for which igv.js can't infer a 1D format.
+                // Note: hicUtils.getExtension() strips .txt as an aux extension, so
+                // test the raw filename rather than `extension` for the .txt case.
+                const lowerName = fileName.toLowerCase();
+                const is2D = ['bedpe', 'interact'].includes(config.format)
+                    || ['bedpe', 'interact'].includes(extension)
+                    || (config.format === undefined
+                        && (lowerName.endsWith('.txt') || lowerName.endsWith('.txt.gz')));
+                if (is2D) {
                     promises2D.push(Track2D.loadTrack2D(config, this.browser.genome));
                 } else {
                     const track = await igv.createTrack(config, this.browser);

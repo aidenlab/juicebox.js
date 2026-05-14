@@ -58,6 +58,19 @@ class HICBrowser {
         this.tracks2D = [];
         this.normVectorFiles = [];
 
+        // Stub for igv@3 compatibility — FeatureTrack rendering reads
+        // browser.qtlSelections.hasPhenotype(). Juicebox doesn't do QTL.
+        this.qtlSelections = { hasPhenotype: () => false, isEmpty: () => true };
+
+        // Stub for igv@3 compatibility — SequenceTrack reads browser.nucleotideColors[base].
+        this.nucleotideColors = {
+            "A": "rgb(  0, 200,   0)", "a": "rgb(  0, 200,   0)",
+            "C": "rgb(  0,   0, 200)", "c": "rgb(  0,   0, 200)",
+            "T": "rgb(255,   0,   0)", "t": "rgb(255,   0,   0)",
+            "G": "rgb(209, 113,   5)", "g": "rgb(209, 113,   5)",
+            "N": "rgb( 80,  80,  80)", "n": "rgb( 80,  80,  80)",
+        };
+
         this.synchable = config.synchable !== false;
         this.synchedBrowsers = new Set();
 

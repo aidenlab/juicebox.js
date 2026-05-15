@@ -51,7 +51,7 @@
     "@vitest/ui": "^4.0.7",
     "atob": "^2.1.2",
     "btoa": "^1.2.1",
-    "hic-straw": "github:aidenlab/hic-straw#v2.2.0",
+    "hic-straw": "github:aidenlab/hic-straw#v3.0.1",
     "igv": "^3.8.0",
     "igv-ui": "github:igvteam/igv-ui#v1.5.9",
     "igv-utils": "github:igvteam/igv-utils#v1.7.1",

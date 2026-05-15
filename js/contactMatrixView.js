@@ -548,9 +548,14 @@ class ContactMatrixView {
                 const region2 = {chr: zd.chr2.name, start: y0bp, end: y0bp + yWidthInBp}
                 const records = await ds.getContactRecords(normalization, region1, region2, zd.zoom.unit, zd.zoom.binSize, true)
 
-                let s = computePercentile(records, 95)
+                // Live maps emit ensemble contact frequencies bounded in (0, 1];
+                // the .hic heuristics (95th percentile, ×4 for whole-genome) overshoot
+                // that ceiling and leave the +/- threshold buttons with no usable range.
+                const p = ds.isLive ? 75 : 95
+                let s = computePercentile(records, p)
                 if (!isNaN(s)) {  // Can return NaN if all blocks are empty
-                    if (0 === zd.chr1.index) s *= 4   // Heuristic for whole genome view
+                    if (!ds.isLive && 0 === zd.chr1.index) s *= 4   // Heuristic for whole genome view
+                    if (ds.isLive) s = Math.min(s, 1)               // Clamp to frequency ceiling
                     this.colorScale = new ColorScale(this.colorScale)
                     this.colorScale.setThreshold(s)
                     this.computeColorScale = false

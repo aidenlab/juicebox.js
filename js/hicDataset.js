@@ -222,7 +222,8 @@ class HiCDataset extends Dataset {
     constructor(config) {
         super(config);
         this.straw = new Straw(config)
-        this.datasetType = 'hic';
+        this.isLive = Boolean(config.liveContactMap);
+        this.datasetType = this.isLive ? 'live' : 'hic';
     }
 
     async init() {

@@ -74,7 +74,7 @@ export default defineConfig({
     versionPlugin(),
     viteStaticCopy({
       targets: [
-        { src: 'css/img', dest: 'css/' },
+        { src: 'css/img/*', dest: 'css/img', rename: { stripBase: true } },
       ],
     }),
     suppressSourceMapWarnings(),

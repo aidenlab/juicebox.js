@@ -31,7 +31,7 @@ import HICEvent from './hicEvent.js'
 import * as hicUtils from './hicUtils.js'
 import {getLocus} from "./genomicUtils.js"
 import {getOffset} from "./utils.js"
-import {tileKey, colorScaleKey, tileGrid, resolveDisplayMode} from "./imageTileCore.js"
+import {tileKey, colorScaleKey, tileGrid, resolveDisplayMode, autoThreshold} from "./imageTileCore.js"
 
 const DRAG_THRESHOLD = 2
 const DOUBLE_TAP_DIST_THRESHOLD = 20
@@ -518,14 +518,8 @@ class ContactMatrixView {
                 const region2 = {chr: zd.chr2.name, start: y0bp, end: y0bp + yWidthInBp}
                 const records = await ds.getContactRecords(normalization, region1, region2, zd.zoom.unit, zd.zoom.binSize, true)
 
-                // Live maps emit ensemble contact frequencies bounded in (0, 1];
-                // the .hic heuristics (95th percentile, ×4 for whole-genome) overshoot
-                // that ceiling and leave the +/- threshold buttons with no usable range.
-                const p = ds.isLive ? 75 : 95
-                let s = computePercentile(records, p)
-                if (!isNaN(s)) {  // Can return NaN if all blocks are empty
-                    if (!ds.isLive && 0 === zd.chr1.index) s *= 4   // Heuristic for whole genome view
-                    if (ds.isLive) s = Math.min(s, 1)               // Clamp to frequency ceiling
+                const s = autoThreshold(records, {isLive: ds.isLive, isWholeGenome: 0 === zd.chr1.index})
+                if (undefined !== s) {
                     this.colorScale = new ColorScale(this.colorScale)
                     this.colorScale.setThreshold(s)
                     this.computeColorScale = false
@@ -1062,17 +1056,6 @@ function getMatrices(chr1, chr2) {
         }
     }
     return Promise.all(promises)
-}
-
-function computePercentile(records, p) {
-    const counts = records.map(r => r.counts)
-    counts.sort(function (a, b) {
-        return a - b
-    })
-    const idx = Math.floor((p / 100) * records.length)
-    return counts[idx]
-
-    // return HICMath.percentile(array, p);
 }
 
 export default ContactMatrixView

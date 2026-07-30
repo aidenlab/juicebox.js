@@ -161,4 +161,47 @@ function resolveDisplayMode(dataset, controlDataset, zoom, displayMode) {
     return {ds, dsControl, zoom, controlZoom}
 }
 
-export { tileKey, colorScaleKey, tileGrid, bZoomIndex, resolveDisplayMode }
+/**
+ * The p-th percentile of contact counts.
+ *
+ * Returns undefined when there are no records -- the index lands past the end
+ * of the sorted array. Callers must treat that as "no threshold available"
+ * rather than zero.
+ */
+function computePercentile(records, p) {
+    const counts = records.map(r => r.counts)
+    counts.sort(function (a, b) {
+        return a - b
+    })
+    const idx = Math.floor((p / 100) * records.length)
+    return counts[idx]
+}
+
+/**
+ * Threshold for the automatically-computed color scale.
+ *
+ * Two families of map need different treatment:
+ *
+ * - .hic maps carry raw contact counts with a long tail, so the 95th percentile
+ *   is used, scaled x4 at whole-genome view where averaging across chromosomes
+ *   depresses the percentile.
+ * - Live maps emit ensemble contact frequencies bounded in (0, 1]. The .hic
+ *   heuristics overshoot that ceiling and leave the +/- threshold buttons with
+ *   no usable range, so a lower percentile is used and the result is clamped.
+ *
+ * @param records contact records
+ * @param {{isLive: boolean, isWholeGenome: boolean}} options
+ * @returns {number|undefined} undefined when no threshold can be computed
+ */
+function autoThreshold(records, {isLive, isWholeGenome}) {
+
+    const s = computePercentile(records, isLive ? 75 : 95)
+
+    if (isNaN(s)) return undefined      // no records, or all blocks empty
+
+    if (isLive) return Math.min(s, 1)   // clamp to the frequency ceiling
+
+    return isWholeGenome ? s * 4 : s
+}
+
+export { tileKey, colorScaleKey, tileGrid, bZoomIndex, resolveDisplayMode, computePercentile, autoThreshold }

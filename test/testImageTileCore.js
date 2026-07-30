@@ -1,5 +1,13 @@
 import {describe, it, expect} from 'vitest'
-import {tileKey, colorScaleKey, tileGrid, bZoomIndex, resolveDisplayMode} from '../js/imageTileCore.js'
+import {
+    tileKey,
+    colorScaleKey,
+    tileGrid,
+    bZoomIndex,
+    resolveDisplayMode,
+    computePercentile,
+    autoThreshold
+} from '../js/imageTileCore.js'
 
 /**
  * Characterization tests for the pure core of the image tile source.
@@ -212,5 +220,76 @@ describe('resolveDisplayMode', () => {
 
     it('an unrecognised display mode falls through to primary-only', () => {
         expect(resolveDisplayMode(a, b, 2, 'nonsense')).toEqual({ds: a, dsControl: null, zoom: 2, controlZoom: undefined})
+    })
+})
+
+const recordsWithCounts = (counts) => counts.map(c => ({counts: c}))
+
+describe('computePercentile', () => {
+
+    it('returns the value at the p-th percentile of sorted counts', () => {
+        const records = recordsWithCounts([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        expect(computePercentile(records, 50)).toBe(6)
+    })
+
+    it('sorts numerically, not lexicographically', () => {
+        // A default Array.sort would order these as 10, 100, 9, 90.
+        const records = recordsWithCounts([100, 9, 90, 10])
+        expect(computePercentile(records, 0)).toBe(9)
+    })
+
+    it('is independent of input order', () => {
+        const ascending = recordsWithCounts([1, 2, 3, 4])
+        const shuffled = recordsWithCounts([3, 1, 4, 2])
+        expect(computePercentile(shuffled, 50)).toBe(computePercentile(ascending, 50))
+    })
+
+    it('returns undefined for no records', () => {
+        expect(computePercentile([], 95)).toBeUndefined()
+    })
+
+    it('returns undefined at the 100th percentile -- the index lands past the end', () => {
+        expect(computePercentile(recordsWithCounts([1, 2, 3]), 100)).toBeUndefined()
+    })
+})
+
+describe('autoThreshold', () => {
+
+    // 100 records with counts 1..100. The 95th percentile lands on 96,
+    // the 75th on 76.
+    const hicRecords = recordsWithCounts(Array.from({length: 100}, (_, i) => i + 1))
+
+    it('uses the 95th percentile for .hic maps', () => {
+        expect(autoThreshold(hicRecords, {isLive: false, isWholeGenome: false})).toBe(96)
+    })
+
+    it('scales x4 at whole-genome view for .hic maps', () => {
+        expect(autoThreshold(hicRecords, {isLive: false, isWholeGenome: true})).toBe(384)
+    })
+
+    it('uses the 75th percentile for live maps', () => {
+        const frequencies = recordsWithCounts(Array.from({length: 100}, (_, i) => (i + 1) / 1000))
+        expect(autoThreshold(frequencies, {isLive: true, isWholeGenome: false})).toBeCloseTo(0.076)
+    })
+
+    it('clamps live maps to the frequency ceiling of 1', () => {
+        const frequencies = recordsWithCounts([0.5, 0.9, 1, 1, 1, 1])
+        expect(autoThreshold(frequencies, {isLive: true, isWholeGenome: false})).toBe(1)
+    })
+
+    it('does not apply the whole-genome x4 to live maps -- it would overshoot the ceiling', () => {
+        const frequencies = recordsWithCounts(Array.from({length: 100}, (_, i) => (i + 1) / 1000))
+        expect(autoThreshold(frequencies, {isLive: true, isWholeGenome: true}))
+            .toBe(autoThreshold(frequencies, {isLive: true, isWholeGenome: false}))
+    })
+
+    it('returns undefined when all blocks are empty', () => {
+        expect(autoThreshold([], {isLive: false, isWholeGenome: false})).toBeUndefined()
+        expect(autoThreshold([], {isLive: true, isWholeGenome: true})).toBeUndefined()
+    })
+
+    it('never returns a whole-genome scaled value from an empty set', () => {
+        // Guards against the x4 being applied to undefined and yielding NaN.
+        expect(autoThreshold([], {isLive: false, isWholeGenome: true})).toBeUndefined()
     })
 })

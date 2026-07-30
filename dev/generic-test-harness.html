@@ -62,6 +62,31 @@
             ]
         };
 
+    // A/B compare gate. The diploid pair from the same bucket -- both reachable,
+    // both hg38, and verified to carry identical resolution lists, so the zoom
+    // index translation between primary and control is the identity and AOB/BOA
+    // cannot throw at any zoom.
+    //
+    // This exercises the wiring: control dataset selection, the second
+    // getContactRecords call, and ratio scoring. It does NOT exercise the
+    // interesting branch of the translation, where the two maps carry different
+    // resolutions -- that path is covered by unit tests in
+    // test/testImageTileCore.js, and no verified-reachable mismatched pair is
+    // known.
+    //
+    // Switch displayMode to 'BOA' to check the swapped-role path. 'AMB' throws:
+    // diffColorScale has been unimplemented since 2018, see issue #426.
+    const config_ab_compare =
+        {
+            "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/r.hic",
+            "name": "r.hic",
+            "nvi": "43762184328,25419",
+            "controlUrl": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/a.hic",
+            "controlName": "a.hic",
+            "controlNvi": "43835341324,25419",
+            "displayMode": "AOB"
+        };
+
     const config_erez_bug =
         {
             "browsers": [
@@ -269,6 +294,11 @@
             "selectedGene": "egfr"
         };
 
+    // Two configs in this file currently load. Swap the second argument:
+    //   config_smoke      -- one map plus a 2D annotation track
+    //   config_ab_compare -- A/B ratio compare (AOB), the only working A/B gate
+    // Everything else here points at hosts that reject browsers; see the note
+    // at the top of this script.
     juicebox.init(document.getElementById("app-container"), config_smoke)
         .then(browser => {
 

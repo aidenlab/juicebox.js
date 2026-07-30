@@ -25,6 +25,7 @@
  * @author Jim Robinson
  */
 
+import {Alert} from 'igv-ui'
 import {IGVColor} from 'igv-utils'
 import ColorScale from './colorScale.js'
 import HICEvent from './hicEvent.js'

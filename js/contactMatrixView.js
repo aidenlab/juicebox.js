@@ -31,6 +31,7 @@ import HICEvent from './hicEvent.js'
 import * as hicUtils from './hicUtils.js'
 import {getLocus} from "./genomicUtils.js"
 import {getOffset} from "./utils.js"
+import {tileKey, colorScaleKey} from "./imageTileCore.js"
 
 const DRAG_THRESHOLD = 2
 const DOUBLE_TAP_DIST_THRESHOLD = 20
@@ -285,7 +286,7 @@ class ContactMatrixView {
      */
     async getImageTile(ds, dsControl, zd, zdControl, row, column, state) {
 
-        const key = `${zd.chr1.name}_${zd.chr2.name}_${zd.zoom.binSize}_${zd.zoom.unit}_${row}_${column}_${state.normalization}_${this.displayMode}`
+        const key = tileKey(zd, row, column, state.normalization, this.displayMode)
 
         if (this.imageTileCache.hasOwnProperty(key)) {
             return this.imageTileCache[key]
@@ -1045,14 +1046,6 @@ class ContactMatrixView {
 }
 
 ContactMatrixView.defaultBackgroundColor = {r: 255, g: 255, b: 255}
-
-function colorScaleKey(state, displayMode) {
-    // Safety check: ensure state exists before accessing its properties
-    if (!state) {
-        return "unknown_" + displayMode;
-    }
-    return "" + state.chr1 + "_" + state.chr2 + "_" + state.zoom + "_" + state.normalization + "_" + displayMode
-}
 
 /**
  * Returns a promise for an image tile

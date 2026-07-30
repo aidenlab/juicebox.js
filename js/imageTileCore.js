@@ -98,4 +98,67 @@ function tileGrid(state, viewDimensions, tileDimension) {
     }
 }
 
-export { tileKey, colorScaleKey, tileGrid }
+/**
+ * Translate a zoom index on the primary map to the equivalent index on the
+ * control map.
+ *
+ * The two maps are matched by resolution, not by index -- a control map may
+ * carry a different set of bin sizes, so index N on A is not index N on B.
+ *
+ * @throws if the zoom index is not present on the primary map, or the resulting
+ *         bin size is not present on the control map
+ */
+function bZoomIndex(dataset, controlDataset, zoom) {
+
+    const binSize = dataset.getBinSizeForZoomIndex(zoom)
+    if (!binSize) throw new Error(`Invalid zoom (resolution) index: ${zoom}`)
+
+    const bZoom = controlDataset.getZoomIndexForBinSize(binSize)
+    if (bZoom < 0) throw new Error(`Invalid binSize for "B" map: ${binSize}`)
+
+    return bZoom
+}
+
+/**
+ * Which dataset is rendered, which is the control, and at what zoom index each.
+ *
+ * Display modes:
+ *   A    -- primary only
+ *   B    -- control only, rendered as if it were primary
+ *   AOB  -- A over B, ratio
+ *   AMB  -- A minus B, difference
+ *   BOA  -- B over A, ratio with the roles swapped
+ *
+ * Only the modes that read the control map translate the zoom index; A leaves
+ * everything at the incoming values.
+ *
+ * @returns {{ds: *, dsControl: *, zoom: number, controlZoom: number|undefined}}
+ */
+function resolveDisplayMode(dataset, controlDataset, zoom, displayMode) {
+
+    let ds = dataset
+    let dsControl = null
+    let controlZoom
+
+    switch (displayMode) {
+        case 'B':
+            zoom = bZoomIndex(dataset, controlDataset, zoom)
+            ds = controlDataset
+            break
+        case 'AOB':
+        case 'AMB':
+            controlZoom = bZoomIndex(dataset, controlDataset, zoom)
+            dsControl = controlDataset
+            break
+        case 'BOA':
+            controlZoom = zoom
+            zoom = bZoomIndex(dataset, controlDataset, zoom)
+            ds = controlDataset
+            dsControl = dataset
+            break
+    }
+
+    return {ds, dsControl, zoom, controlZoom}
+}
+
+export { tileKey, colorScaleKey, tileGrid, bZoomIndex, resolveDisplayMode }

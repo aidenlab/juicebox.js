@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest'
-import {tileKey, colorScaleKey, tileGrid} from '../js/imageTileCore.js'
+import {tileKey, colorScaleKey, tileGrid, bZoomIndex, resolveDisplayMode} from '../js/imageTileCore.js'
 
 /**
  * Characterization tests for the pure core of the image tile source.
@@ -133,5 +133,84 @@ describe('tileGrid', () => {
         const grid = tileGrid({x: 0, y: 0, pixelSize: 1}, {width: 2000, height: 1400}, TILE)
         expect(grid.col2 - grid.col1).toBe(2)
         expect(grid.row2 - grid.row1).toBe(2)
+    })
+})
+
+/**
+ * Datasets stand in for HiCDataset. Only the two resolution-lookup methods are
+ * exercised, and both are pure lookups over a bin-size array.
+ */
+const datasetWith = (resolutions) => ({
+    bpResolutions: resolutions,
+    getBinSizeForZoomIndex: (index) => resolutions[index],
+    getZoomIndexForBinSize: (binSize) => resolutions.indexOf(binSize)
+})
+
+describe('bZoomIndex', () => {
+
+    it('matches maps by resolution, not by index', () => {
+        const a = datasetWith([1000000, 500000, 100000])
+        const b = datasetWith([500000, 100000])
+        // index 2 on A is 100kb, which is index 1 on B
+        expect(bZoomIndex(a, b, 2)).toBe(1)
+    })
+
+    it('is the identity when both maps carry the same resolutions', () => {
+        const res = [1000000, 500000, 100000]
+        expect(bZoomIndex(datasetWith(res), datasetWith(res), 1)).toBe(1)
+    })
+
+    it('throws when the zoom index is absent from the primary map', () => {
+        const a = datasetWith([1000000])
+        const b = datasetWith([1000000])
+        expect(() => bZoomIndex(a, b, 5)).toThrow(/Invalid zoom \(resolution\) index: 5/)
+    })
+
+    it('throws when the resolution is absent from the control map', () => {
+        const a = datasetWith([1000000, 25000])
+        const b = datasetWith([1000000])
+        expect(() => bZoomIndex(a, b, 1)).toThrow(/Invalid binSize for "B" map: 25000/)
+    })
+})
+
+describe('resolveDisplayMode', () => {
+
+    const a = datasetWith([1000000, 500000, 100000])
+    const b = datasetWith([500000, 100000])
+
+    it('A renders the primary map alone and translates nothing', () => {
+        expect(resolveDisplayMode(a, b, 2, 'A')).toEqual({ds: a, dsControl: null, zoom: 2, controlZoom: undefined})
+    })
+
+    it('A leaves the zoom index untouched even with no control map loaded', () => {
+        expect(resolveDisplayMode(a, null, 2, 'A')).toEqual({ds: a, dsControl: null, zoom: 2, controlZoom: undefined})
+    })
+
+    it('B renders the control map as if it were primary, at the translated index', () => {
+        expect(resolveDisplayMode(a, b, 2, 'B')).toEqual({ds: b, dsControl: null, zoom: 1, controlZoom: undefined})
+    })
+
+    it('AOB keeps A primary and translates only the control zoom', () => {
+        expect(resolveDisplayMode(a, b, 2, 'AOB')).toEqual({ds: a, dsControl: b, zoom: 2, controlZoom: 1})
+    })
+
+    it('AMB resolves identically to AOB -- they differ only in how scores combine', () => {
+        expect(resolveDisplayMode(a, b, 2, 'AMB')).toEqual(resolveDisplayMode(a, b, 2, 'AOB'))
+    })
+
+    it('BOA swaps the roles: B is primary at the translated index, A is control at the original', () => {
+        expect(resolveDisplayMode(a, b, 2, 'BOA')).toEqual({ds: b, dsControl: a, zoom: 1, controlZoom: 2})
+    })
+
+    it('BOA control zoom is the incoming index, not the translated one', () => {
+        // Guards the ordering: translating zoom before capturing controlZoom
+        // would leave both at the B index.
+        const {zoom, controlZoom} = resolveDisplayMode(a, b, 2, 'BOA')
+        expect(controlZoom).toBe(2)
+        expect(zoom).toBe(1)
+    })
+
+    it('an unrecognised display mode falls through to primary-only', () => {
+        expect(resolveDisplayMode(a, b, 2, 'nonsense')).toEqual({ds: a, dsControl: null, zoom: 2, controlZoom: undefined})
     })
 })

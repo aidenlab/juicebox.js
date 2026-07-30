@@ -31,7 +31,7 @@ import HICEvent from './hicEvent.js'
 import * as hicUtils from './hicUtils.js'
 import {getLocus} from "./genomicUtils.js"
 import {getOffset} from "./utils.js"
-import {tileKey, colorScaleKey, tileGrid} from "./imageTileCore.js"
+import {tileKey, colorScaleKey, tileGrid, resolveDisplayMode} from "./imageTileCore.js"
 
 const DRAG_THRESHOLD = 2
 const DOUBLE_TAP_DIST_THRESHOLD = 20
@@ -197,26 +197,10 @@ class ContactMatrixView {
         }
 
         const { state, dataset, controlDataset } = this.browser;
-        let ds = dataset, dsControl = null, zdControl = null;
-        let zoom = state.zoom, controlZoom;
+        let zdControl = null;
 
-        switch (this.displayMode) {
-            case 'B':
-                zoom = getBZoomIndex(state.zoom);
-                ds = controlDataset;
-                break;
-            case 'AOB':
-            case 'AMB':
-                controlZoom = getBZoomIndex(state.zoom);
-                dsControl = controlDataset;
-                break;
-            case 'BOA':
-                zoom = getBZoomIndex(state.zoom);
-                controlZoom = state.zoom;
-                ds = controlDataset;
-                dsControl = dataset;
-                break;
-        }
+        const {ds, dsControl, zoom, controlZoom} =
+            resolveDisplayMode(dataset, controlDataset, state.zoom, this.displayMode);
 
         const matrix = await ds.getMatrix(state.chr1, state.chr2);
         const zd = matrix.getZoomDataByIndex(zoom, "BP");
@@ -255,16 +239,6 @@ class ContactMatrixView {
             w: viewportWidth * zd.zoom.binSize / state.pixelSize,
             h: viewportHeight * zd.zoom.binSize / state.pixelSize
         };
-
-        function getBZoomIndex(zoom) {
-            const binSize = dataset.getBinSizeForZoomIndex(zoom);
-            if (!binSize) throw new Error(`Invalid zoom (resolution) index: ${zoom}`);
-
-            const bZoom = controlDataset.getZoomIndexForBinSize(binSize);
-            if (bZoom < 0) throw new Error(`Invalid binSize for "B" map: ${binSize}`);
-
-            return bZoom;
-        }
     }
 
     /**

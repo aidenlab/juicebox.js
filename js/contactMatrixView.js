@@ -31,7 +31,7 @@ import HICEvent from './hicEvent.js'
 import * as hicUtils from './hicUtils.js'
 import {getLocus} from "./genomicUtils.js"
 import {getOffset} from "./utils.js"
-import {tileKey, colorScaleKey} from "./imageTileCore.js"
+import {tileKey, colorScaleKey, tileGrid} from "./imageTileCore.js"
 
 const DRAG_THRESHOLD = 2
 const DOUBLE_TAP_DIST_THRESHOLD = 20
@@ -226,13 +226,8 @@ class ContactMatrixView {
             zdControl = matrixControl.getZoomDataByIndex(controlZoom, "BP");
         }
 
-        const pixelSizeInt = Math.max(1, Math.floor(state.pixelSize));
-        const widthInBins = viewportWidth / pixelSizeInt;
-        const heightInBins = viewportHeight / pixelSizeInt;
-        const blockCol1 = Math.floor(state.x / imageTileDimension);
-        const blockCol2 = Math.floor((state.x + widthInBins) / imageTileDimension);
-        const blockRow1 = Math.floor(state.y / imageTileDimension);
-        const blockRow2 = Math.floor((state.y + heightInBins) / imageTileDimension);
+        const {row1: blockRow1, row2: blockRow2, col1: blockCol1, col2: blockCol2} =
+            tileGrid(state, {width: viewportWidth, height: viewportHeight}, imageTileDimension);
 
         if (state.normalization !== "NONE") {
             if (!ds.hasNormalizationVector(state.normalization, zd.chr1.name, zd.zoom.unit, zd.zoom.binSize)) {

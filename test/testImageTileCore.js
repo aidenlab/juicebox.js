@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest'
-import {tileKey, colorScaleKey} from '../js/imageTileCore.js'
+import {tileKey, colorScaleKey, tileGrid} from '../js/imageTileCore.js'
 
 /**
  * Characterization tests for the pure core of the image tile source.
@@ -81,5 +81,57 @@ describe('colorScaleKey', () => {
 
     it('does not collide the startup fallback across display modes', () => {
         expect(colorScaleKey(undefined, 'A')).not.toBe(colorScaleKey(undefined, 'B'))
+    })
+})
+
+describe('tileGrid', () => {
+
+    const TILE = 685
+    const view = {width: 685, height: 685}
+
+    it('returns the single origin tile for a view at the origin', () => {
+        expect(tileGrid({x: 0, y: 0, pixelSize: 1}, view, TILE))
+            .toEqual({row1: 0, row2: 1, col1: 0, col2: 1})
+    })
+
+    it('is inclusive on both ends -- a view ending exactly on a boundary includes that tile', () => {
+        // 685 bins wide starting at bin 0 reaches bin 685, which is tile 1.
+        const {col1, col2} = tileGrid({x: 0, y: 0, pixelSize: 1}, view, TILE)
+        expect(col1).toBe(0)
+        expect(col2).toBe(1)
+    })
+
+    it('covers a single tile when the view sits strictly inside one', () => {
+        expect(tileGrid({x: 10, y: 10, pixelSize: 2}, {width: 400, height: 400}, TILE))
+            .toEqual({row1: 0, row2: 0, col1: 0, col2: 0})
+    })
+
+    it('advances the range as the view pans across a tile boundary', () => {
+        const before = tileGrid({x: 600, y: 0, pixelSize: 4}, {width: 200, height: 200}, TILE)
+        const after = tileGrid({x: 700, y: 0, pixelSize: 4}, {width: 200, height: 200}, TILE)
+        expect(before.col1).toBe(0)
+        expect(after.col1).toBe(1)
+    })
+
+    it('floors fractional pixelSize when deriving bin extent', () => {
+        // pixelSize 1.9 floors to 1, so the view spans 685 bins, not 360.
+        expect(tileGrid({x: 0, y: 0, pixelSize: 1.9}, view, TILE).col2).toBe(1)
+    })
+
+    it('floors pixelSize at 1 so sub-pixel resolutions do not divide by zero', () => {
+        const grid = tileGrid({x: 0, y: 0, pixelSize: 0.25}, view, TILE)
+        expect(Number.isFinite(grid.col2)).toBe(true)
+        expect(grid.col2).toBe(1)
+    })
+
+    it('derives rows from y and columns from x independently', () => {
+        expect(tileGrid({x: 0, y: 2000, pixelSize: 4}, {width: 100, height: 100}, TILE))
+            .toEqual({row1: 2, row2: 2, col1: 0, col2: 0})
+    })
+
+    it('spans multiple tiles for a large viewport at pixelSize 1', () => {
+        const grid = tileGrid({x: 0, y: 0, pixelSize: 1}, {width: 2000, height: 1400}, TILE)
+        expect(grid.col2 - grid.col1).toBe(2)
+        expect(grid.row2 - grid.row1).toBe(2)
     })
 })

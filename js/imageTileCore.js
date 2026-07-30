@@ -69,4 +69,33 @@ function colorScaleKey(state, displayMode) {
     return "" + state.chr1 + "_" + state.chr2 + "_" + state.zoom + "_" + state.normalization + "_" + displayMode
 }
 
-export { tileKey, colorScaleKey }
+/**
+ * The inclusive range of image tiles covering the current view.
+ *
+ * Bin extent is derived from an integer pixel size -- the fractional pixelSize
+ * carried in canonical state is floored (and floored at 1) before dividing, so
+ * the covered range never collapses to zero at sub-pixel resolutions.
+ *
+ * The range is inclusive on both ends: a view whose right edge falls exactly on
+ * a tile boundary still includes that boundary tile.
+ *
+ * @param state canonical state -- reads x, y, pixelSize
+ * @param {{width: number, height: number}} viewDimensions
+ * @param {number} tileDimension tile edge length in bins
+ * @returns {{row1: number, row2: number, col1: number, col2: number}}
+ */
+function tileGrid(state, viewDimensions, tileDimension) {
+
+    const pixelSizeInt = Math.max(1, Math.floor(state.pixelSize))
+    const widthInBins = viewDimensions.width / pixelSizeInt
+    const heightInBins = viewDimensions.height / pixelSizeInt
+
+    return {
+        col1: Math.floor(state.x / tileDimension),
+        col2: Math.floor((state.x + widthInBins) / tileDimension),
+        row1: Math.floor(state.y / tileDimension),
+        row2: Math.floor((state.y + heightInBins) / tileDimension)
+    }
+}
+
+export { tileKey, colorScaleKey, tileGrid }

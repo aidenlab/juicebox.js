@@ -183,10 +183,18 @@ class ImageTileSource {
 
         await this.#ensureColorScale(ds, zd, {row1, row2, col1, col2}, normalization, state, displayMode)
 
+        // Retain at least two screenfuls, so switching between the A and B maps
+        // finds both cached and so no pass can evict a tile it still needs. The
+        // configured limit is a floor, not a ceiling: a 1000x1000 viewport can
+        // span 9 tiles and a 1920x1080 one 12, against a default limit of 8.
+        // A configured limit of 0 disables caching outright, and stays disabled.
+        const tilesInView = (row2 - row1 + 1) * (col2 - col1 + 1)
+        const retain = 0 === this.cacheLimit ? 0 : Math.max(this.cacheLimit, tilesInView * 2)
+
         for (let row = row1; row <= row2; row++) {
             for (let column = col1; column <= col2; column++) {
                 yield await this.#tileAt(
-                    {ds, dsControl, zd, zdControl, normalization, displayMode},
+                    {ds, dsControl, zd, zdControl, normalization, displayMode, retain},
                     row,
                     column
                 )
@@ -272,7 +280,7 @@ class ImageTileSource {
         }
     }
 
-    async #tileAt({ds, dsControl, zd, zdControl, normalization, displayMode}, row, column) {
+    async #tileAt({ds, dsControl, zd, zdControl, normalization, displayMode, retain}, row, column) {
 
         const key = tileKey(zd, row, column, normalization, displayMode)
         const binSize = zd.zoom.binSize
@@ -327,12 +335,12 @@ class ImageTileSource {
 
             const tile = {row, column, blockBinCount: this.tileDimension, binSize, image}
 
-            if (this.cacheLimit > 0) {
-                if (this.cacheKeys.length > this.cacheLimit) {
-                    delete this.cache[this.cacheKeys[0]]
-                    this.cacheKeys.shift()
-                }
+            if (retain > 0) {
                 this.cache[key] = tile
+                this.cacheKeys.push(key)
+                while (this.cacheKeys.length > retain) {
+                    delete this.cache[this.cacheKeys.shift()]
+                }
             }
 
             return tile

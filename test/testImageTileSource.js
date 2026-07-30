@@ -225,6 +225,84 @@ describe('ImageTileSource caching', () => {
         expect(tileFetches(ds)).toBe(8)
     })
 
+    it('evicts the oldest tile once the retained count is exceeded', async () => {
+        const ds = dataset({records: [record(0, 0, 5)]})
+        // One tile per pass, retaining two.
+        const source = makeSource({cacheLimit: 2})
+        const oneTile = {width: 1, height: 1}
+
+        for (const x of [0, TILE, TILE * 2]) {
+            await collect(source.tilesFor(request({
+                dataset: ds, state: state({x}), viewDimensions: oneTile
+            })))
+        }
+
+        expect(source.cacheKeys.length).toBe(2)
+        expect(Object.keys(source.cache).length).toBe(2)
+    })
+
+    it('keeps cache and cacheKeys in step', async () => {
+        // The original eviction shifted cacheKeys but never pushed to it, so the
+        // two structures diverged and the cache grew without bound.
+        const ds = dataset({records: [record(0, 0, 5)]})
+        const source = makeSource({cacheLimit: 2})
+        const oneTile = {width: 1, height: 1}
+
+        for (const x of [0, TILE, TILE * 2, TILE * 3]) {
+            await collect(source.tilesFor(request({
+                dataset: ds, state: state({x}), viewDimensions: oneTile
+            })))
+        }
+
+        expect(source.cacheKeys.length).toBe(Object.keys(source.cache).length)
+        expect(source.cacheKeys.every(k => k in source.cache)).toBe(true)
+    })
+
+    it('never evicts a tile the current view still needs', async () => {
+        // Regression guard. A 1000x1000 viewport can span 9 tiles and a
+        // 1920x1080 one 12, against a default limit of 8 -- honouring the limit
+        // literally would evict tiles mid-pass and refetch them every repaint.
+        const ds = dataset({records: [record(0, 0, 5)]})
+        const source = makeSource({cacheLimit: 2})
+        const fourTiles = {width: TILE, height: TILE}   // 2x2 grid
+
+        await collect(source.tilesFor(request({dataset: ds, viewDimensions: fourTiles})))
+        const afterFirst = tileFetches(ds)
+        await collect(source.tilesFor(request({dataset: ds, viewDimensions: fourTiles})))
+
+        expect(afterFirst).toBe(4)
+        expect(tileFetches(ds)).toBe(4)      // second pass entirely cached
+    })
+
+    it('caches nothing when the limit is zero', async () => {
+        const ds = dataset({records: [record(0, 0, 5)]})
+        const source = makeSource({cacheLimit: 0})
+
+        await collect(source.tilesFor(request({dataset: ds})))
+        await collect(source.tilesFor(request({dataset: ds})))
+
+        expect(source.cacheKeys.length).toBe(0)
+        expect(tileFetches(ds)).toBe(8)      // every pass refetches
+    })
+
+    it('retains two screenfuls, so A/B cycling stays cached', async () => {
+        const primary = dataset({records: [record(0, 0, 5)]})
+        const control = dataset({records: [record(0, 0, 9)]})
+        const source = makeSource({cacheLimit: 2})
+        const fourTiles = {width: TILE, height: TILE}
+
+        const pass = (displayMode) => collect(source.tilesFor(request({
+            dataset: primary, controlDataset: control, displayMode, viewDimensions: fourTiles
+        })))
+
+        await pass('A')
+        await pass('B')
+        const afterCycle = primary.calls.length + control.calls.length
+        await pass('A')                      // back to A -- should be cached
+
+        expect(primary.calls.length + control.calls.length).toBe(afterCycle)
+    })
+
     it('does not key tiles by pan position -- panning within a tile reuses it', async () => {
         const ds = dataset({records: [record(0, 0, 5)]})
         const source = makeSource()

@@ -23,6 +23,70 @@
     import juicebox from '../js/index.js';
     // import juicebox from "https://cdn.jsdelivr.net/gh/igvteam/juicebox.js@juicebox-llm-project/dist/juicebox.esm.js";
 
+    // ------------------------------------------------------------------
+    // FIXTURE ROT -- read before picking a config below.
+    //
+    // All seven of the historical configs in this file are unreachable from a
+    // browser. They point at encodeproject.org (405) or the hicfiles /
+    // s3.amazonaws.com/hicfiles / dnazoo buckets (403). Both gate on
+    // User-Agent, and User-Agent is a forbidden header name in the Fetch spec,
+    // so hic-straw's headers['User-Agent'] = 'IGV' is silently dropped by the
+    // browser. curl and Node succeed; the browser cannot. See aidenlab/
+    // hic-straw#46. The symptom is a bare Error from readHeaderAndFooter with
+    // no message, because statusText is empty on HTTP/2 (hic-straw#47).
+    //
+    // The configs are left in place -- they document real scenarios and become
+    // usable again if the fixtures are rehosted. Verified reachable today:
+    // the wasabisys buckets, dropbox, hgdownload.soe.ucsc.edu, and the
+    // igv.org.genomes / igv.broadinstitute.org buckets.
+    //
+    // config_smoke below is the one that currently loads.
+    // ------------------------------------------------------------------
+
+    // Map and 2D track both verified reachable. The pairing is the one used by
+    // bug-daphne-qin-vanishing-2d-annotation.html, so the genomes match --
+    // every reachable map here is hg38 (chr17 = 83,257,441), while the local
+    // combined_peaks.chr17.txt is hg19 and cannot be paired with them.
+    const config_smoke =
+        {
+            "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/LCL_combined/9_12_23/inter_30.hic",
+            "name": "inter_30.hic",
+            "nvi": "2113712247631,126136",
+            "tracks": [
+                {
+                    "url": "https://www.dropbox.com/scl/fi/mweycro8eyhubrjrhv6oo/fosl1_loops_with_snps_nothresh.bedpe?rlkey=1dv8wbc7c57m9muob7tlxvm89&e=1&st=2c4adj56&dl=0",
+                    "name": "fosl1_loops_with_snps_nothresh.bedpe",
+                    "color": "#00fdff",
+                    "displayMode": "COLLAPSED"
+                }
+            ]
+        };
+
+    // A/B compare gate. The diploid pair from the same bucket -- both reachable,
+    // both hg38, and verified to carry identical resolution lists, so the zoom
+    // index translation between primary and control is the identity and AOB/BOA
+    // cannot throw at any zoom.
+    //
+    // This exercises the wiring: control dataset selection, the second
+    // getContactRecords call, and ratio scoring. It does NOT exercise the
+    // interesting branch of the translation, where the two maps carry different
+    // resolutions -- that path is covered by unit tests in
+    // test/testImageTileCore.js, and no verified-reachable mismatched pair is
+    // known.
+    //
+    // Switch displayMode to 'BOA' to check the swapped-role path. 'AMB' throws:
+    // diffColorScale has been unimplemented since 2018, see issue #426.
+    const config_ab_compare =
+        {
+            "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/r.hic",
+            "name": "r.hic",
+            "nvi": "43762184328,25419",
+            "controlUrl": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/a.hic",
+            "controlName": "a.hic",
+            "controlNvi": "43835341324,25419",
+            "displayMode": "AOB"
+        };
+
     const config_erez_bug =
         {
             "browsers": [
@@ -230,7 +294,12 @@
             "selectedGene": "egfr"
         };
 
-    juicebox.init(document.getElementById("app-container"), config_2d_track)
+    // Two configs in this file currently load. Swap the second argument:
+    //   config_smoke      -- one map plus a 2D annotation track
+    //   config_ab_compare -- A/B ratio compare (AOB), the only working A/B gate
+    // Everything else here points at hosts that reject browsers; see the note
+    // at the top of this script.
+    juicebox.init(document.getElementById("app-container"), config_smoke)
         .then(browser => {
 
             if (Array.isArray(browser)) {

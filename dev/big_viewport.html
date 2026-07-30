@@ -48,25 +48,33 @@
 
     import juicebox from '../js/index.js';
 
+    // NOTE ON HOSTS -- do not repoint this harness at encodeproject.org or
+    // hicfiles.s3.amazonaws.com. Both gate on User-Agent, and User-Agent is a
+    // forbidden header name in the Fetch spec, so the browser silently drops
+    // the "IGV" value hic-straw sets. Those hosts therefore serve 405 / 403 to
+    // any browser, while curl and Node succeed -- which makes the failure look
+    // like a juicebox bug. It is not. Symptom is a bare Error thrown from
+    // hic-straw's readHeaderAndFooter, with no message because statusText is
+    // always empty on HTTP/2.
+    //
+    // Verified reachable from a browser: this wasabisys bucket, and
+    // raw.githubusercontent.com/igvteam/igv-data.
+
     const config = {
         "width": 1000,
         "height": 1000,
-        "url": "https://www.encodeproject.org/files/ENCFF799QGA/@@download/ENCFF799QGA.hic",
-        // "name": "in-situ agar GM12878 MboI experiment",
-        "tracks": [
-            {
-                "url": "https://www.dropbox.com/s/gvfvcvt146rtm5b/GSE63525_GM12878_subcompartments.bed?dl=0",
-                "name": "RH2014"
-            },
-            {
-                "url": "https://www.encodeproject.org/files/ENCFF906RJB/@@download/ENCFF906RJB.bigWig",
-                "name": "GM12878 H3K36me3 ",
-                "min": 0,
-                "max": 3.8794891834259033,
-                "color": "#018448"
-            }
-        ]
+        "url": "https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/r.hic",
+        "name": "GM12878 diploid (r)",
+        "nvi": "43762184328,25419"
     }
+
+    // The previous 1D tracks are gone rather than repointed. The GSE63525
+    // subcompartments BED is hg19 and this map is GRCh38, so keeping it would
+    // have placed features at wrong coordinates -- worse than no track. The
+    // ENCODE bigWig alongside it is unreachable from a browser for the
+    // User-Agent reason above. This harness exercises viewport size and the
+    // image tile grid; the sibling harnesses on this same map carry no 1D
+    // tracks either.
 
     const container = document.getElementById("app-container");
 

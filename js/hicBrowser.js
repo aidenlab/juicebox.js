@@ -179,10 +179,6 @@ class HICBrowser {
                 this.state.normalization = validNormalizations.has(config.normalization) ? config.normalization : 'NONE';
             }
 
-            // No longer need hold/release - notifications happen directly
-            const tmp = this.contactMatrixView.colorScaleThresholdCache;
-            this.contactMatrixView.colorScaleThresholdCache = tmp;
-
             if (config.cycle) {
                 this.ui.getComponent('controlMap').toggleDisplayModeCycle();
             } else {
@@ -894,8 +890,7 @@ class HICBrowser {
     }
 
     repaintMatrix() {
-        this.contactMatrixView.imageTileCache = {}
-        this.contactMatrixView.initialImage = undefined
+        this.contactMatrixView.clearImageCaches()
         this.contactMatrixView.update()
     }
 

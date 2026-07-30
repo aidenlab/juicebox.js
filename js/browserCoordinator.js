@@ -95,8 +95,7 @@ class BrowserCoordinator {
             this.components.contactMatrix.addMouseHandlers(this.components.contactMatrix.viewportElement);
             this.components.contactMatrix.mouseHandlersEnabled = true;
         }
-        this.components.contactMatrix.clearImageCaches();
-        this.components.contactMatrix.colorScaleThresholdCache = {};
+        this.components.contactMatrix.clearImageCaches({thresholds: true});
 
         // 2. Update chromosome selector
         if (this.components.chromosomeSelector) {
@@ -172,8 +171,7 @@ class BrowserCoordinator {
         }
 
         // ContactMatrixView also needs to know about control map
-        this.components.contactMatrix.clearImageCaches();
-        this.components.contactMatrix.colorScaleThresholdCache = {};
+        this.components.contactMatrix.clearImageCaches({thresholds: true});
 
         // Notify external callbacks
         for (const callback of this.externalCallbacks.onControlMapLoaded) {

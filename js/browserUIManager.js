@@ -32,6 +32,8 @@ import ScrollbarWidget from "./scrollbarWidget.js"
 import ColorScale, {defaultColorScaleConfig} from "./colorScale.js"
 import RatioColorScale, {defaultRatioColorScaleConfig} from "./ratioColorScale.js"
 import ContactMatrixView from "./contactMatrixView.js"
+import ImageTileSource from "./imageTileSource.js"
+import {Alert} from "igv-ui"
 import ChromosomeSelector from "./chromosomeSelector.js"
 import AnnotationWidget from "./annotationWidget.js"
 
@@ -85,6 +87,41 @@ class BrowserUIManager {
         this.components.set('colorScale', colorScale);
         this.components.set('ratioColorScale', ratioColorScale);
 
+        const browser = this.browser;
+
+        // diffColorScale is deliberately absent -- AMB has been unimplemented
+        // since 2018 and needs a signed difference scale, not this one. See #426.
+        const imageTileSource = new ImageTileSource({
+            colorScale,
+            ratioColorScale,
+            observer: {
+
+                colorScaleChanged: (scale) => browser.notifyColorScale(scale),
+
+                normalizationUnavailable: (requested, effective) => {
+                    Alert.presentAlert(`Normalization option ${requested} unavailable at this resolution.`);
+                    browser.notifyNormalizationExternalChange(effective);
+                    // The source never writes canonical state, so the correction
+                    // lands here. Still outside the setView chokepoint, as it was
+                    // before -- see the known inconsistency noted in
+                    // docs/state-manipulation.md.
+                    if (browser.state) {
+                        browser.state.normalization = effective;
+                    }
+                },
+
+                // Resolved lazily: contactMatrixView does not exist until the
+                // line below has run.
+                loadingChanged: (isLoading) => {
+                    const view = browser.contactMatrixView;
+                    if (!view) return;
+                    isLoading ? view.startSpinner() : view.stopSpinner();
+                }
+            }
+        });
+
+        this.components.set('imageTileSource', imageTileSource);
+
         // Initialize ContactMatrixView with the components
         const backgroundColor = this.browser.config.backgroundColor || ContactMatrixView.defaultBackgroundColor;
         this.components.set('contactMatrix', new ContactMatrixView(
@@ -92,8 +129,7 @@ class BrowserUIManager {
             this.browser.layoutController.getContactMatrixViewport(),
             sweepZoom,
             scrollbarWidget,
-            colorScale,
-            ratioColorScale,
+            imageTileSource,
             backgroundColor
         ));
     }

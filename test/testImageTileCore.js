@@ -6,7 +6,9 @@ import {
     bZoomIndex,
     resolveDisplayMode,
     computePercentile,
-    autoThreshold
+    autoThreshold,
+    indexControlRecords,
+    paintRecords
 } from '../js/imageTileCore.js'
 
 /**
@@ -291,5 +293,242 @@ describe('autoThreshold', () => {
     it('never returns a whole-genome scaled value from an empty set', () => {
         // Guards against the x4 being applied to undefined and yielding NaN.
         expect(autoThreshold([], {isLive: false, isWholeGenome: true})).toBeUndefined()
+    })
+})
+
+/**
+ * A pixel buffer shaped like ImageData. In production this comes from
+ * getImageData on a tile canvas; here it is a plain object, which is the whole
+ * point of paintRecords taking a buffer rather than a context.
+ */
+const pixelBuffer = (width, height = width) => ({
+    width,
+    height,
+    data: new Uint8ClampedArray(width * height * 4)
+})
+
+const pixelAt = (buf, x, y) => {
+    const i = (x + y * buf.width) * 4
+    return [buf.data[i], buf.data[i + 1], buf.data[i + 2], buf.data[i + 3]]
+}
+
+const BLANK = [0, 0, 0, 0]
+
+const record = (bin1, bin2, counts) => ({
+    bin1,
+    bin2,
+    counts,
+    getKey: () => `${bin1}_${bin2}`
+})
+
+// Encodes the count into the red channel so tests can tell which record
+// painted which pixel.
+const countScale = {getColor: (v) => ({red: v, green: 0, blue: 0, alpha: 255})}
+const constantScale = (red) => ({getColor: () => ({red, green: 0, blue: 0, alpha: 255})})
+
+const basePlan = (overrides = {}) => ({
+    displayMode: 'A',
+    tileDimension: 10,
+    sameChr: false,
+    averageCount: 1,
+    ctrlAverageCount: 1,
+    colorScale: countScale,
+    ratioColorScale: constantScale(50),
+    diffColorScale: constantScale(60),
+    ...overrides
+})
+
+describe('indexControlRecords', () => {
+
+    it('indexes by bin pair for the combining modes', () => {
+        const recs = [record(1, 2, 10), record(3, 4, 20)]
+        for (const mode of ['AOB', 'BOA', 'AMB']) {
+            expect(Object.keys(indexControlRecords(recs, mode))).toEqual(['1_2', '3_4'])
+        }
+    })
+
+    it('returns an empty index for single-map modes, which never consult it', () => {
+        const recs = [record(1, 2, 10)]
+        expect(indexControlRecords(recs, 'A')).toEqual({})
+        expect(indexControlRecords(recs, 'B')).toEqual({})
+    })
+
+    it('does not touch the record list for single-map modes', () => {
+        // cRecords is undefined whenever there is no control zoom data,
+        // so the guard must short-circuit before iterating.
+        expect(() => indexControlRecords(undefined, 'A')).not.toThrow()
+    })
+})
+
+describe('paintRecords', () => {
+
+    describe('single-map modes', () => {
+
+        it('places a record at its bin position relative to the tile origin', () => {
+            const buf = pixelBuffer(10)
+            paintRecords(buf, [record(3, 4, 77)], {}, basePlan(), 0, 0)
+            expect(pixelAt(buf, 3, 4)).toEqual([77, 0, 0, 255])
+        })
+
+        it('subtracts the tile origin so tile (1,1) starts over at pixel 0', () => {
+            const buf = pixelBuffer(10)
+            paintRecords(buf, [record(12, 13, 88)], {}, basePlan(), 1, 1)
+            expect(pixelAt(buf, 2, 3)).toEqual([88, 0, 0, 255])
+        })
+
+        it('colors by raw count in mode A', () => {
+            const buf = pixelBuffer(10)
+            paintRecords(buf, [record(1, 1, 42)], {}, basePlan({displayMode: 'A'}), 0, 0)
+            expect(pixelAt(buf, 1, 1)[0]).toBe(42)
+        })
+
+        it('colors by raw count in mode B as well', () => {
+            const buf = pixelBuffer(10)
+            paintRecords(buf, [record(1, 1, 42)], {}, basePlan({displayMode: 'B'}), 0, 0)
+            expect(pixelAt(buf, 1, 1)[0]).toBe(42)
+        })
+
+        it('returns the number of records painted', () => {
+            const buf = pixelBuffer(10)
+            const painted = paintRecords(buf, [record(1, 1, 1), record(2, 2, 2)], {}, basePlan(), 0, 0)
+            expect(painted).toBe(2)
+        })
+
+        it('leaves untouched pixels transparent', () => {
+            const buf = pixelBuffer(10)
+            paintRecords(buf, [record(3, 4, 77)], {}, basePlan(), 0, 0)
+            expect(pixelAt(buf, 0, 0)).toEqual(BLANK)
+        })
+    })
+
+    describe('diagonal reflection', () => {
+
+        it('reflects across the diagonal on an on-diagonal intra-chromosomal tile', () => {
+            const buf = pixelBuffer(10)
+            paintRecords(buf, [record(2, 5, 33)], {}, basePlan({sameChr: true}), 0, 0)
+            expect(pixelAt(buf, 2, 5)).toEqual([33, 0, 0, 255])
+            expect(pixelAt(buf, 5, 2)).toEqual([33, 0, 0, 255])
+        })
+
+        it('does not reflect on an off-diagonal tile', () => {
+            const buf = pixelBuffer(10)
+            paintRecords(buf, [record(2, 15, 33)], {}, basePlan({sameChr: true}), 1, 0)
+            expect(pixelAt(buf, 2, 5)).toEqual([33, 0, 0, 255])
+            expect(pixelAt(buf, 5, 2)).toEqual(BLANK)
+        })
+
+        it('does not reflect for inter-chromosomal data, where the diagonal is meaningless', () => {
+            const buf = pixelBuffer(10)
+            paintRecords(buf, [record(2, 5, 33)], {}, basePlan({sameChr: false}), 0, 0)
+            expect(pixelAt(buf, 2, 5)).toEqual([33, 0, 0, 255])
+            expect(pixelAt(buf, 5, 2)).toEqual(BLANK)
+        })
+    })
+
+    describe('transpose above the diagonal', () => {
+
+        it('does not transpose below the diagonal', () => {
+            const buf = pixelBuffer(10)
+            paintRecords(buf, [record(3, 12, 55)], {}, basePlan({sameChr: true}), 1, 0)
+            expect(pixelAt(buf, 3, 2)).toEqual([55, 0, 0, 255])
+        })
+
+        it('transposes tiles above the diagonal, mirroring their below-diagonal twin', () => {
+            // Intra-chromosomal data is stored lower-diagonal, so an above-diagonal
+            // query returns the mirrored block: bins arrive in row/column order
+            // rather than column/row. The tile origins swap to match, then x and y
+            // swap back. Net effect is that tile (0,1) mirrors tile (1,0).
+            const below = pixelBuffer(10)
+            const above = pixelBuffer(10)
+
+            paintRecords(below, [record(3, 12, 55)], {}, basePlan({sameChr: true}), 1, 0)
+            paintRecords(above, [record(3, 12, 55)], {}, basePlan({sameChr: true}), 0, 1)
+
+            expect(pixelAt(below, 3, 2)).toEqual([55, 0, 0, 255])
+            expect(pixelAt(above, 2, 3)).toEqual([55, 0, 0, 255])
+            expect(pixelAt(above, 3, 2)).toEqual(BLANK)
+        })
+
+        it('does not transpose inter-chromosomal tiles above the diagonal', () => {
+            // transpose is gated on sameChr; chr1 != chr2 has no symmetry to exploit.
+            const buf = pixelBuffer(10)
+            paintRecords(buf, [record(12, 3, 55)], {}, basePlan({sameChr: false}), 0, 1)
+            expect(pixelAt(buf, 2, 3)).toEqual([55, 0, 0, 255])
+        })
+    })
+
+    describe('AOB / BOA ratio mode', () => {
+
+        const plan = basePlan({
+            displayMode: 'AOB',
+            averageCount: 2,
+            ctrlAverageCount: 4,
+            ratioColorScale: countScale     // surface the score in the red channel
+        })
+
+        it('scores the ratio of normalized counts', () => {
+            const buf = pixelBuffer(10)
+            const controls = indexControlRecords([record(1, 1, 8)], 'AOB')
+            paintRecords(buf, [record(1, 1, 10)], controls, plan, 0, 0)
+            // (10 / 2) / (8 / 4) = 2.5
+            expect(pixelAt(buf, 1, 1)[0]).toBe(2.5 | 0)
+        })
+
+        it('skips records with no matching control record', () => {
+            const buf = pixelBuffer(10)
+            const painted = paintRecords(buf, [record(1, 1, 10)], {}, plan, 0, 0)
+            expect(painted).toBe(0)
+            expect(pixelAt(buf, 1, 1)).toEqual(BLANK)
+        })
+
+        it('paints only the records that do match', () => {
+            const buf = pixelBuffer(10)
+            const controls = indexControlRecords([record(1, 1, 8)], 'AOB')
+            const painted = paintRecords(buf, [record(1, 1, 10), record(2, 2, 10)], controls, plan, 0, 0)
+            expect(painted).toBe(1)
+            expect(pixelAt(buf, 2, 2)).toEqual(BLANK)
+        })
+
+        it('BOA uses the same scoring as AOB', () => {
+            const bufA = pixelBuffer(10)
+            const bufB = pixelBuffer(10)
+            const controls = indexControlRecords([record(1, 1, 8)], 'AOB')
+            paintRecords(bufA, [record(1, 1, 10)], controls, plan, 0, 0)
+            paintRecords(bufB, [record(1, 1, 10)], controls, {...plan, displayMode: 'BOA'}, 0, 0)
+            expect(pixelAt(bufA, 1, 1)).toEqual(pixelAt(bufB, 1, 1))
+        })
+    })
+
+    describe('AMB difference mode', () => {
+
+        const plan = basePlan({
+            displayMode: 'AMB',
+            averageCount: 2,
+            ctrlAverageCount: 4,
+            diffColorScale: countScale
+        })
+
+        it('scores the difference of normalized counts, scaled by the mean average', () => {
+            const buf = pixelBuffer(10)
+            const controls = indexControlRecords([record(1, 1, 8)], 'AMB')
+            paintRecords(buf, [record(1, 1, 10)], controls, plan, 0, 0)
+            // ((2 + 4) / 2) * ((10 / 2) - (8 / 4)) = 3 * 3 = 9
+            expect(pixelAt(buf, 1, 1)[0]).toBe(9)
+        })
+
+        it('skips records with no matching control record', () => {
+            const buf = pixelBuffer(10)
+            expect(paintRecords(buf, [record(1, 1, 10)], {}, plan, 0, 0)).toBe(0)
+        })
+
+        it('produces a different score from AOB for the same inputs', () => {
+            const bufRatio = pixelBuffer(10)
+            const bufDiff = pixelBuffer(10)
+            const controls = indexControlRecords([record(1, 1, 8)], 'AMB')
+            paintRecords(bufRatio, [record(1, 1, 10)], controls,
+                {...plan, displayMode: 'AOB', ratioColorScale: countScale}, 0, 0)
+            paintRecords(bufDiff, [record(1, 1, 10)], controls, plan, 0, 0)
+            expect(pixelAt(bufRatio, 1, 1)).not.toEqual(pixelAt(bufDiff, 1, 1))
+        })
     })
 })

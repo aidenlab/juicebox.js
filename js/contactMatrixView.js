@@ -31,7 +31,15 @@ import HICEvent from './hicEvent.js'
 import * as hicUtils from './hicUtils.js'
 import {getLocus} from "./genomicUtils.js"
 import {getOffset} from "./utils.js"
-import {tileKey, colorScaleKey, tileGrid, resolveDisplayMode, autoThreshold} from "./imageTileCore.js"
+import {
+    tileKey,
+    colorScaleKey,
+    tileGrid,
+    resolveDisplayMode,
+    autoThreshold,
+    indexControlRecords,
+    paintRecords
+} from "./imageTileCore.js"
 
 const DRAG_THRESHOLD = 2
 const DOUBLE_TAP_DIST_THRESHOLD = 20
@@ -282,7 +290,6 @@ class ContactMatrixView {
                 const transpose = sameChr && row < column
                 const averageCount = zd.averageCount
                 const ctrlAverageCount = zdControl ? zdControl.averageCount : 1
-                const averageAcrossMapAndControl = (averageCount + ctrlAverageCount) / 2
 
                 const imageSize = imageTileDimension
                 const image = document.createElement('canvas')
@@ -305,69 +312,21 @@ class ContactMatrixView {
 
                 if (records.length > 0) {
 
-                    const controlRecords = {}
-                    if ('AOB' === this.displayMode || 'BOA' === this.displayMode || 'AMB' === this.displayMode) {
-                        for (let record of cRecords) {
-                            controlRecords[record.getKey()] = record
-                        }
-                    }
+                    const controlRecords = indexControlRecords(cRecords, this.displayMode)
 
-                    let id = ctx.getImageData(0, 0, image.width, image.height)
+                    const id = ctx.getImageData(0, 0, image.width, image.height)
 
-
-                    const x0 = transpose ? row * imageTileDimension : column * imageTileDimension
-                    const y0 = transpose ? column * imageTileDimension : row * imageTileDimension
-                    for (let i = 0; i < records.length; i++) {
-
-                        const rec = records[i]
-                        let x = Math.floor((rec.bin1 - x0))
-                        let y = Math.floor((rec.bin2 - y0))
-
-                        if (transpose) {
-                            const t = y
-                            y = x
-                            x = t
-                        }
-
-                        let rgba
-                        switch (this.displayMode) {
-
-                            case 'AOB':
-                            case 'BOA':
-                                let key = rec.getKey()
-                                let controlRec = controlRecords[key]
-                                if (!controlRec) {
-                                    continue    // Skip
-                                }
-                                let score = (rec.counts / averageCount) / (controlRec.counts / ctrlAverageCount)
-
-                                rgba = this.ratioColorScale.getColor(score)
-
-                                break
-
-                            case 'AMB':
-                                key = rec.getKey()
-                                controlRec = controlRecords[key]
-                                if (!controlRec) {
-                                    continue    // Skip
-                                }
-                                score = averageAcrossMapAndControl * ((rec.counts / averageCount) - (controlRec.counts / ctrlAverageCount))
-
-                                rgba = this.diffColorScale.getColor(score)
-
-                                break
-
-                            default:    // Either 'A' or 'B'
-                                rgba = this.colorScale.getColor(rec.counts)
-                        }
-
-                        // TODO -- verify that this bitblting is faster than fillRect
-                        setPixel(id, x, y, rgba.red, rgba.green, rgba.blue, rgba.alpha)
-                        if (sameChr && row === column) {
-                            setPixel(id, y, x, rgba.red, rgba.green, rgba.blue, rgba.alpha)
-                        }
-
-                    }
+                    // TODO -- verify that this bitblting is faster than fillRect
+                    paintRecords(id, records, controlRecords, {
+                        displayMode: this.displayMode,
+                        tileDimension: imageTileDimension,
+                        sameChr,
+                        averageCount,
+                        ctrlAverageCount,
+                        colorScale: this.colorScale,
+                        ratioColorScale: this.ratioColorScale,
+                        diffColorScale: this.diffColorScale
+                    }, row, column)
 
                     ctx.putImageData(id, 0, 0)
                 }
@@ -465,14 +424,6 @@ class ContactMatrixView {
             }
         }
 
-
-        function setPixel(imageData, x, y, r, g, b, a) {
-            const index = (x + y * imageData.width) * 4
-            imageData.data[index + 0] = r
-            imageData.data[index + 1] = g
-            imageData.data[index + 2] = b
-            imageData.data[index + 3] = a
-        }
 
     }
 

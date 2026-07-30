@@ -204,4 +204,129 @@ function autoThreshold(records, {isLive, isWholeGenome}) {
     return isWholeGenome ? s * 4 : s
 }
 
-export { tileKey, colorScaleKey, tileGrid, bZoomIndex, resolveDisplayMode, computePercentile, autoThreshold }
+function setPixel(buf, x, y, r, g, b, a) {
+    const index = (x + y * buf.width) * 4
+    buf.data[index + 0] = r
+    buf.data[index + 1] = g
+    buf.data[index + 2] = b
+    buf.data[index + 3] = a
+}
+
+/**
+ * Index control-map records by bin pair, for the modes that combine two maps.
+ *
+ * Returns an empty index for the single-map modes, which never consult it.
+ */
+function indexControlRecords(controlRecordList, displayMode) {
+
+    const index = {}
+    if ('AOB' === displayMode || 'BOA' === displayMode || 'AMB' === displayMode) {
+        for (const record of controlRecordList) {
+            index[record.getKey()] = record
+        }
+    }
+    return index
+}
+
+/**
+ * Rasterize contact records into a pixel buffer.
+ *
+ * The buffer is any object shaped like ImageData -- {width, height, data} where
+ * data is a Uint8ClampedArray of RGBA quads. In production it comes from
+ * getImageData on a tile canvas; in tests it is a plain object.
+ *
+ * Intra-chromosomal data is stored in lower-diagonal coordinates by convention.
+ * Two consequences are handled here:
+ *
+ * - Tiles above the diagonal (row < column) are read from their mirrored
+ *   position and transposed on the way in.
+ * - Tiles ON the diagonal are painted twice, reflected, so the upper triangle
+ *   is filled from the same records.
+ *
+ * Records with no matching control record are skipped entirely in the combining
+ * modes -- they leave the buffer untouched rather than painting a zero score.
+ *
+ * @param buf {{width: number, height: number, data: Uint8ClampedArray}}
+ * @param records primary map contact records
+ * @param controlRecords control records indexed by bin pair, from indexControlRecords
+ * @param plan {{displayMode, tileDimension, sameChr, averageCount, ctrlAverageCount,
+ *               colorScale, ratioColorScale, diffColorScale}}
+ * @param {number} row tile row
+ * @param {number} column tile column
+ * @returns {number} how many records were painted, excluding those skipped
+ */
+function paintRecords(buf, records, controlRecords, plan, row, column) {
+
+    const {
+        displayMode, tileDimension, sameChr,
+        averageCount, ctrlAverageCount,
+        colorScale, ratioColorScale, diffColorScale
+    } = plan
+
+    const transpose = sameChr && row < column
+    const onDiagonal = sameChr && row === column
+    const averageAcrossMapAndControl = (averageCount + ctrlAverageCount) / 2
+
+    const x0 = (transpose ? row : column) * tileDimension
+    const y0 = (transpose ? column : row) * tileDimension
+
+    let painted = 0
+
+    for (const rec of records) {
+
+        let x = Math.floor(rec.bin1 - x0)
+        let y = Math.floor(rec.bin2 - y0)
+
+        if (transpose) {
+            const t = y
+            y = x
+            x = t
+        }
+
+        let rgba
+
+        switch (displayMode) {
+
+            case 'AOB':
+            case 'BOA': {
+                const controlRec = controlRecords[rec.getKey()]
+                if (!controlRec) continue    // Skip
+                const score = (rec.counts / averageCount) / (controlRec.counts / ctrlAverageCount)
+                rgba = ratioColorScale.getColor(score)
+                break
+            }
+
+            case 'AMB': {
+                const controlRec = controlRecords[rec.getKey()]
+                if (!controlRec) continue    // Skip
+                const score = averageAcrossMapAndControl * ((rec.counts / averageCount) - (controlRec.counts / ctrlAverageCount))
+                rgba = diffColorScale.getColor(score)
+                break
+            }
+
+            default:    // Either 'A' or 'B'
+                rgba = colorScale.getColor(rec.counts)
+        }
+
+        setPixel(buf, x, y, rgba.red, rgba.green, rgba.blue, rgba.alpha)
+        if (onDiagonal) {
+            setPixel(buf, y, x, rgba.red, rgba.green, rgba.blue, rgba.alpha)
+        }
+
+        painted++
+    }
+
+    return painted
+}
+
+export {
+    tileKey,
+    colorScaleKey,
+    tileGrid,
+    bZoomIndex,
+    resolveDisplayMode,
+    computePercentile,
+    autoThreshold,
+    indexControlRecords,
+    paintRecords
+}

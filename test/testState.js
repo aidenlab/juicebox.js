@@ -717,12 +717,16 @@ function createInteractionBrowser(overrides = {}) {
         ...createMockDataset(),
         isWholeGenome: () => false,
     }
+    // zoomInCalls records the arguments of every zoomIn() call so tests can assert
+    // that callers pass none — zoomIn takes no parameters (issue #431).
+    const zoomInCalls = []
     const base = createMockBrowser({
         ...overrides,
         contactMatrixView: {
             getViewDimensions: () => DEFAULT_VIEW_DIMENSIONS,
             clearImageCaches: () => {},
-            zoomIn: async () => {},
+            zoomIn: async (...args) => { zoomInCalls.push(args) },
+            zoomInCalls,
         },
     })
     return {
@@ -732,6 +736,8 @@ function createInteractionBrowser(overrides = {}) {
         minZoom: overrides.minZoom ?? (async () => 2),
         update: async () => {},
         notifyLocusChange: () => {},
+        startSpinner: () => {},
+        stopSpinner: () => {},
     }
 }
 
@@ -816,6 +822,41 @@ describe('InteractionHandler.zoomAndCenter — inline-mutation path', () => {
         const locus = browser.state.getLocus(browser.dataset, DEFAULT_VIEW_DIMENSIONS)
         expect(locus.x.chr).toBe('chr1')
         expect(locus.y.chr).toBe('chr2')
+    })
+})
+
+describe('InteractionHandler — zoomIn is called with no arguments', () => {
+    test('setZoom at the same resolution runs the smooth zoomIn animation with zero arguments', async () => {
+        const browser = createInteractionBrowser({
+            state: createState({ chr1: 1, chr2: 2, zoom: 4, x: 100, y: 100, pixelSize: 1 }),
+        })
+        const handler = new InteractionHandler(browser)
+
+        // Same zoom index -> resolutionChanged=false -> the zoomIn branch is taken.
+        await handler.setZoom(4)
+
+        expect(browser.contactMatrixView.zoomInCalls).toEqual([[]])
+    })
+
+    test('wheel zoom passes no anchor/scale arguments through to zoomIn', async () => {
+        // resolutionLocked keeps resolutionChanged=false, so the animation branch is taken.
+        // This is the call site that used to pass (anchorPx, anchorPy, scaleFactor).
+        const browser = createInteractionBrowser({ resolutionLocked: true })
+        const handler = new InteractionHandler(browser)
+
+        await handler.handleWheelZoom(600, 300, 1.1)
+
+        expect(browser.contactMatrixView.zoomInCalls).toEqual([[]])
+    })
+
+    test('setZoom across resolutions skips the animation entirely', async () => {
+        const browser = createInteractionBrowser()
+        const handler = new InteractionHandler(browser)
+
+        // state.zoom is 3 -> resolutionChanged=true -> no smooth zoom.
+        await handler.setZoom(4)
+
+        expect(browser.contactMatrixView.zoomInCalls).toEqual([])
     })
 })
 

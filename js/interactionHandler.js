@@ -66,7 +66,7 @@ class InteractionHandler {
      * @param {boolean} options.chrChanged - Whether chromosome changed
      * @param {boolean} [options.dragging] - Whether currently dragging (optional)
      * @param {boolean} [options.clearCaches] - Whether to clear image caches (optional)
-     * @param {Object} [options.zoomIn] - Zoom in options {anchorPx?, anchorPy?, scaleFactor?} (optional)
+     * @param {boolean} [options.zoomIn] - Whether to run the smooth zoomIn animation (optional)
      * @returns {Promise<void>}
      */
     async _applyStateChange(options) {
@@ -80,11 +80,7 @@ class InteractionHandler {
         // Resolution changes require loading new data tiles, so smooth zoom doesn't work correctly
         // and causes visual "pops" due to binSize unit mismatches
         if (zoomIn && !resolutionChanged) {
-            if (zoomIn.anchorPx !== undefined && zoomIn.anchorPy !== undefined && zoomIn.scaleFactor !== undefined) {
-                await this.browser.contactMatrixView.zoomIn(zoomIn.anchorPx, zoomIn.anchorPy, zoomIn.scaleFactor);
-            } else {
-                await this.browser.contactMatrixView.zoomIn();
-            }
+            await this.browser.contactMatrixView.zoomIn();
         }
 
         const eventData = {
@@ -205,11 +201,7 @@ class InteractionHandler {
                 await this._applyStateChange({
                     resolutionChanged,
                     chrChanged: false,
-                    zoomIn: {
-                        anchorPx,
-                        anchorPy,
-                        scaleFactor: 1 / scaleFactor
-                    }
+                    zoomIn: true
                 });
             }
         } finally {
@@ -329,11 +321,7 @@ class InteractionHandler {
                 await this._applyStateChange({
                     resolutionChanged,
                     chrChanged: false,
-                    zoomIn: {
-                        anchorPx,
-                        anchorPy,
-                        scaleFactor: 1 / scaleFactor
-                    }
+                    zoomIn: true
                 });
             }
         } finally {
@@ -408,7 +396,7 @@ class InteractionHandler {
         await this._applyStateChange({
             resolutionChanged,
             chrChanged: false,
-            zoomIn: {}
+            zoomIn: true
         });
     }
 

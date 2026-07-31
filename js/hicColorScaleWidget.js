@@ -79,16 +79,9 @@ class ColorScaleWidget {
         const plusIcon = createIconButton('fa-plus', 'positive threshold', () => this.highColorscaleInput.value = updateThreshold(browser, 2.0));
         this.container.appendChild(plusIcon);
 
-        browser.eventBus.subscribe("ColorScale", (event) => {
-            this.updateForColorScale(event.data);
-        });
-
-        browser.eventBus.subscribe("DisplayMode", (event) => {
-            this.updateForColorScale(scaleForDisplayMode(browser, event.data));
-        });
-
-        // Note: MapLoad subscription removed - now handled by BrowserCoordinator
-        // Color scale widget is updated via coordinator.onMapLoaded()
+        // This widget has no eventBus subscriptions. BrowserCoordinator drives
+        // every update, calling updateForColorScale directly from onColorScale
+        // and onDisplayMode, and updateMapBackgroundColor from onMapLoaded.
     }
 
     /**
@@ -128,15 +121,6 @@ class ColorScaleWidget {
             paintSwatch(this.plusButton, colorScale);
         }
     }
-}
-
-/**
- * The color scale the given display mode renders with. The mode is passed
- * explicitly rather than left to default: this fires while the mode change is
- * being announced, before the view has committed to it.
- */
-function scaleForDisplayMode(browser, mode) {
-    return browser.contactMatrixView?.getColorScale(mode);
 }
 
 function paintSwatch(swatch, { r, g, b }) {

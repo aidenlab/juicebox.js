@@ -26,18 +26,15 @@ import RatioColorScale from './ratioColorScale.js'
 import DiffColorScale from './diffColorScale.js'
 
 /**
- * The two-sided scales, by the tag their stringify emits.
+ * The signed scales, by the tag their stringify emits.
  */
-const twoSidedScales = {
-    [RatioColorScale.prefix]: RatioColorScale,
-    [DiffColorScale.prefix]: DiffColorScale
-}
+const signedScales = [RatioColorScale, DiffColorScale]
 
 /**
  * Inverse of ColorScale#stringify, for color scales carried in sessions and
  * URLs.
  *
- * A leading tag selects a two-sided scale -- "R:" for the ratio scale used by
+ * A leading tag selects a signed scale -- "R:" for the ratio scale used by
  * AOB / BOA, "D:" for the difference scale used by AMB. Anything else is a
  * plain single-sided scale.
  *
@@ -50,11 +47,11 @@ const twoSidedScales = {
  */
 function parseColorScale(string) {
 
-    const twoSided = twoSidedScales[string.charAt(0)]
+    const signed = signedScales.find(scale => string.startsWith(scale.tag))
 
-    if (twoSided && ':' === string.charAt(1)) {
-        const [threshold, positive, negative] = string.substring(2).split(":")
-        const scale = new twoSided(Number.parseFloat(threshold))
+    if (signed) {
+        const [threshold, positive, negative] = string.substring(signed.tag.length).split(":")
+        const scale = new signed(Number.parseFloat(threshold))
         scale.positiveScale = parseSingle(positive)
         scale.negativeScale = parseSingle(negative)
         return scale

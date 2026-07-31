@@ -300,18 +300,7 @@ class HICBrowser {
     }
 
     getColorScale() {
-
-        if (!this.contactMatrixView) return undefined
-
-        switch (this.getDisplayMode()) {
-            case 'AOB':
-            case 'BOA':
-                return this.contactMatrixView.ratioColorScale
-            case 'AMB':
-                return this.contactMatrixView.diffColorScale
-            default:
-                return this.contactMatrixView.colorScale
-        }
+        return this.contactMatrixView?.getColorScale()
     }
 
     setColorScaleThreshold(threshold) {

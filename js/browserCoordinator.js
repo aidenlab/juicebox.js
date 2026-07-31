@@ -251,7 +251,7 @@ class BrowserCoordinator {
     onDisplayMode(mode) {
         if (this.components.colorScaleWidget) {
             this.components.colorScaleWidget.updateForColorScale(
-                this.browser.contactMatrixView.imageTileSource.getColorScale(mode)
+                this.browser.contactMatrixView.getColorScale(mode)
             );
         }
 

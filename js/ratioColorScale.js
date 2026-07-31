@@ -33,7 +33,7 @@ const defaultRatioColorScaleConfig = {threshold: 5, positive: {r: 255, g: 0, b: 
  */
 class RatioColorScale extends SignedColorScale {
 
-    static prefix = 'R'
+    static tag = 'R:'
 
     constructor(threshold = defaultRatioColorScaleConfig.threshold) {
         super(threshold, defaultRatioColorScaleConfig)

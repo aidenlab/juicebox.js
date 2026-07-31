@@ -24,8 +24,8 @@
 import ColorScale from './colorScale.js'
 
 /**
- * A color scale with two sides: one color for scores above the neutral point,
- * another for scores below it, with alpha carrying the magnitude.
+ * A signed color scale: one color for scores above the neutral point, another
+ * for scores below it, with alpha carrying the magnitude either side.
  *
  * The comparison display modes both need this shape but disagree about what
  * "below neutral" means, so subclasses supply a `transform` that maps a score
@@ -43,9 +43,11 @@ import ColorScale from './colorScale.js'
 class SignedColorScale {
 
     /**
-     * Subclasses set this to the tag `parseColorScale` dispatches on.
+     * Subclasses set this to the tag `stringify` emits and `parseColorScale`
+     * dispatches on. Colons separate a stringified scale's fields, so the tag
+     * carries its own.
      */
-    static prefix = ''
+    static tag = ''
 
     /**
      * @param threshold in the units of the score, before `transform`
@@ -104,7 +106,7 @@ class SignedColorScale {
     }
 
     stringify() {
-        return `${this.constructor.prefix}:${this.threshold}:${this.positiveScale.stringify()}:${this.negativeScale.stringify()}`
+        return `${this.constructor.tag}${this.threshold}:${this.positiveScale.stringify()}:${this.negativeScale.stringify()}`
     }
 }
 

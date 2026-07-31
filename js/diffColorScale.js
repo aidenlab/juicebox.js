@@ -39,7 +39,7 @@ const defaultDiffColorScaleConfig = {threshold: 100, positive: {r: 255, g: 0, b:
  */
 class DiffColorScale extends SignedColorScale {
 
-    static prefix = 'D'
+    static tag = 'D:'
 
     constructor(threshold = defaultDiffColorScaleConfig.threshold) {
         super(threshold, defaultDiffColorScaleConfig)

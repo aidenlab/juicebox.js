@@ -111,8 +111,13 @@ class ContactMatrixView {
         await this.update()
     }
 
-    getColorScale() {
-        return this.imageTileSource.getColorScale(this.displayMode)
+    /**
+     * The color scale a display mode renders with, defaulting to the mode on
+     * screen. Callers announcing a mode change pass the incoming mode, which is
+     * not yet the one this view has committed to.
+     */
+    getColorScale(displayMode = this.displayMode) {
+        return this.imageTileSource.getColorScale(displayMode)
     }
 
     async setDisplayMode(mode) {

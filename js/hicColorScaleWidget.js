@@ -131,12 +131,12 @@ class ColorScaleWidget {
 }
 
 /**
- * The color scale the given display mode renders with. Asked of the tile
- * source rather than the browser, which reads the mode it has already
- * committed to -- not necessarily the one being announced.
+ * The color scale the given display mode renders with. The mode is passed
+ * explicitly rather than left to default: this fires while the mode change is
+ * being announced, before the view has committed to it.
  */
 function scaleForDisplayMode(browser, mode) {
-    return browser.contactMatrixView?.imageTileSource.getColorScale(mode);
+    return browser.contactMatrixView?.getColorScale(mode);
 }
 
 function paintSwatch(swatch, { r, g, b }) {

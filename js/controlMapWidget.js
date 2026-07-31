@@ -92,6 +92,26 @@ class ControlMapWidget {
     }
 }
 
+/**
+ * The display modes the control map widget offers, and how each behaves under
+ * the A/B toggle.
+ *
+ * `other` is where the toggle button goes from here, and it also drives the
+ * auto-cycle: a mode whose `other` is itself would cycle forever without
+ * moving. A-B has no counterpart the way A/B has B/A -- B-A is not a display
+ * mode -- so it toggles back to the primary map.
+ *
+ * `leads` names the map the mode reads first, which picks the arrow shown on
+ * the toggle button.
+ */
+const displayModeOptions = {
+    'A': {title: 'A', value: 'A', other: 'B', leads: 'A'},
+    'B': {title: 'B', value: 'B', other: 'A', leads: 'B'},
+    'AOB': {title: 'A/B', value: 'AOB', other: 'BOA', leads: 'A'},
+    'BOA': {title: 'B/A', value: 'BOA', other: 'AOB', leads: 'B'},
+    'AMB': {title: 'A-B', value: 'AMB', other: 'A', leads: 'A'}
+}
+
 class ControlMapHash {
 
     constructor(browser, select, toggle, cycle, imgA, imgB) {
@@ -106,15 +126,12 @@ class ControlMapHash {
         this.imgB = imgB;
         this.toggle.appendChild(this.imgB);
 
-        this.hash = {
-            'A': { title: 'A', value: 'A', other: 'B', hidden: this.imgB, shown: this.imgA },
-            'B': { title: 'B', value: 'B', other: 'A', hidden: this.imgA, shown: this.imgB },
-            'AOB': { title: 'A/B', value: 'AOB', other: 'BOA', hidden: this.imgB, shown: this.imgA },
-            'BOA': { title: 'B/A', value: 'BOA', other: 'AOB', hidden: this.imgA, shown: this.imgB },
-            // A-B has no counterpart to toggle to -- B-A is not a display mode --
-            // so the A/B toggle button holds it in place.
-            'AMB': { title: 'A-B', value: 'AMB', other: 'AMB', hidden: this.imgB, shown: this.imgA }
-        };
+        this.hash = Object.fromEntries(Object.entries(displayModeOptions).map(([mode, option]) => [
+            mode,
+            'A' === option.leads
+                ? {...option, hidden: this.imgB, shown: this.imgA}
+                : {...option, hidden: this.imgA, shown: this.imgB}
+        ]));
 
         this.select.addEventListener('change', (e) => {
             this.disableDisplayModeCycle();
@@ -223,5 +240,7 @@ function cycleSolid() {
     svg.innerHTML = '<svg>...</svg>'; // Simplified for brevity
     return svg;
 }
+
+export {displayModeOptions};
 
 export default ControlMapWidget;

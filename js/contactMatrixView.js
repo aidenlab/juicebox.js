@@ -645,7 +645,7 @@ class ContactMatrixView {
         this.ctx.save()
         this.ctx.lineWidth = 2
 
-        const renderFeatures = (xS, xE, yS, yE) => {
+        const strokeFeatureRect = ({ xS, xE, yS, yE }) => {
 
             if (xE < xStartBP || xS > xEndBP || yE < yStartBP || yS > yEndBP) {
                 // trivially reject
@@ -659,23 +659,10 @@ class ContactMatrixView {
 
         }
 
-        const renderLowerFeatures = (track2D, features) => {
-            for (const { chr1, x1:xS, x2:xE, y1:yS, y2:yE, color } of features) {
-
-                const flip = chr1Name !== chr1
-
-                this.ctx.strokeStyle = track2D.color || color
-                renderFeatures(xS, xE, yS, yE)
-            }
-        }
-
-        const renderUpperFeatures = (track2D, features) => {
-            for (const { chr1, x1:yS, x2:yE, y1:xS, y2:xE, color } of features) {
-
-                const flip = chr1Name !== chr1
-
-                this.ctx.strokeStyle = track2D.color || color
-                renderFeatures(xS, xE, yS, yE)
+        const renderFeatures = (track2D, features, mirrored) => {
+            for (const feature of features) {
+                this.ctx.strokeStyle = track2D.color || feature.color
+                strokeFeatureRect(resolveFeatureAxes(feature, chr1Name, mirrored))
             }
         }
 
@@ -685,19 +672,12 @@ class ContactMatrixView {
                 continue
             }
 
-            const features = track2D.getFeatures(zoomData.chr1.name, zoomData.chr1.name)
+            const features = track2D.getFeatures(chr1Name, chr2Name)
 
             if (features) {
-
-                if ('COLLAPSED' === track2D.displayMode || undefined === track2D.displayMode) {
-                    renderLowerFeatures(track2D, features)
-                    renderUpperFeatures(track2D, features)
-                } else if ('lower' === track2D.displayMode) {
-                    renderLowerFeatures(track2D, features)
-                } else if ('upper' === track2D.displayMode) {
-                    renderUpperFeatures(track2D, features)
+                for (const mirrored of featureDrawPasses(track2D.displayMode, sameChr)) {
+                    renderFeatures(track2D, features, mirrored)
                 }
-
             }
 
 
@@ -744,6 +724,60 @@ function inProgressTile(imageSize) {
     return image
 }
 
+/**
+ * Resolve which of a 2D feature's coordinate pairs belongs on which axis.
+ *
+ * A feature is filed under a canonical chromosome key, so the order it stores
+ * (`chr1`, `chr2`) may be reversed relative to the axes of the zoom data being
+ * drawn. When it is, the feature's x range describes the y axis and vice versa.
+ *
+ * `mirrored` requests the reflected draw used for the upper triangle. The two
+ * swaps compose: applying both cancels out.
+ *
+ * @param {Object} feature - A 2D feature: {chr1, x1, x2, y1, y2}
+ * @param {string} chr1Name - Name of the chromosome on the x axis
+ * @param {boolean} mirrored - Reflect across the diagonal
+ * @returns {{xS: number, xE: number, yS: number, yE: number}} BP extents per axis
+ */
+function resolveFeatureAxes({ chr1, x1, x2, y1, y2 }, chr1Name, mirrored) {
+    const reversed = chr1Name !== chr1
+    return reversed !== mirrored
+        ? { xS: y1, xE: y2, yS: x1, yE: x2 }
+        : { xS: x1, xE: x2, yS: y1, yE: y2 }
+}
+
+/**
+ * The draw passes a 2D track needs for the current view, as `mirrored` flags to
+ * feed resolveFeatureAxes. An empty list means the track draws nothing.
+ *
+ * The mode is the 2D track's own setting ('COLLAPSED' | 'lower' | 'upper' |
+ * undefined), not the browser display mode in CONTEXT.md. An unrecognized mode
+ * draws nothing, as it did before this function existed.
+ *
+ * An inter-chromosomal view has no diagonal to reflect across, so it draws a
+ * single un-mirrored pass whatever the mode asks for; a mirrored pass would put
+ * a phantom copy of every feature at transposed coordinates.
+ *
+ * @param {string|undefined} track2DDisplayMode - The 2D track's display mode
+ * @param {boolean} sameChr - Whether both axes show the same chromosome
+ * @returns {boolean[]} One `mirrored` flag per pass
+ */
+function featureDrawPasses(track2DDisplayMode, sameChr) {
+
+    let passes
+    if ('COLLAPSED' === track2DDisplayMode || undefined === track2DDisplayMode) {
+        passes = [ false, true ]
+    } else if ('lower' === track2DDisplayMode) {
+        passes = [ false ]
+    } else if ('upper' === track2DDisplayMode) {
+        passes = [ true ]
+    } else {
+        passes = []
+    }
+
+    return sameChr || 0 === passes.length ? passes : [ false ]
+}
+
 function getMatrices(chr1, chr2) {
 
     var promises = []
@@ -758,4 +792,5 @@ function getMatrices(chr1, chr2) {
     return Promise.all(promises)
 }
 
+export { resolveFeatureAxes, featureDrawPasses }
 export default ContactMatrixView

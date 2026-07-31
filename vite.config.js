@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite';
-import { resolve } from 'path';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { versionPlugin } from './vite-plugin-version.js';
 
@@ -81,7 +80,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': resolve(__dirname, './'),
+      '@': import.meta.dirname,
     },
   },
   // Custom logger to suppress source map warnings for third-party dependencies

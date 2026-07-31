@@ -49,12 +49,9 @@ class ControlMapWidget {
 
         this.controlMapHash = new ControlMapHash(browser, this.select, toggleContainer, cycleContainer, toggleArrowsUp(), toggleArrowsDown());
 
-        // Note: MapLoad and ControlMapLoad subscriptions removed - now handled by BrowserCoordinator
-        // Control map widget is updated via coordinator.onMapLoaded() and coordinator.onControlMapLoaded()
-
-        browser.eventBus.subscribe("DisplayMode", (event) => {
-            this.controlMapHash.updateOptions(event.data);
-        });
+        // This widget has no eventBus subscriptions. BrowserCoordinator drives
+        // every update, calling updateDisplayMode directly from onDisplayMode
+        // and onControlMapLoaded, and show/hide from onMapLoaded.
     }
 
     toggleDisplayMode() {

@@ -26,9 +26,9 @@
  */
 import { IGVColor, StringUtils } from 'igv-utils';
 import { DOMUtils, ColorPicker } from 'igv-ui';
-import RatioColorScale, { defaultRatioColorScaleConfig } from './ratioColorScale.js';
+import { defaultRatioColorScaleConfig } from './ratioColorScale.js';
+import SignedColorScale from './signedColorScale.js';
 import ContactMatrixView from "./contactMatrixView.js";
-import ColorScale from "./colorScale.js";
 import {parseRgbString} from "./utils.js"
 
 class ColorScaleWidget {
@@ -80,25 +80,11 @@ class ColorScaleWidget {
         this.container.appendChild(plusIcon);
 
         browser.eventBus.subscribe("ColorScale", (event) => {
-            if (event.data instanceof ColorScale) {
-                this.highColorscaleInput.value = event.data.threshold;
-                paintSwatch(this.plusButton, event.data);
-            } else if (event.data instanceof RatioColorScale) {
-                this.highColorscaleInput.value = event.data.threshold;
-                paintSwatch(this.minusButton, event.data.negativeScale);
-                paintSwatch(this.plusButton, event.data.positiveScale);
-            }
+            this.updateForColorScale(event.data);
         });
 
         browser.eventBus.subscribe("DisplayMode", (event) => {
-            if (event.data === "AOB" || event.data === "BOA") {
-                this.minusButton.style.display = 'block';
-                paintSwatch(this.minusButton, browser.contactMatrixView.ratioColorScale.negativeScale);
-                paintSwatch(this.plusButton, browser.contactMatrixView.ratioColorScale.positiveScale);
-            } else {
-                this.minusButton.style.display = 'none';
-                paintSwatch(this.plusButton, browser.contactMatrixView.colorScale);
-            }
+            this.updateForColorScale(scaleForDisplayMode(browser, event.data));
         });
 
         // Note: MapLoad subscription removed - now handled by BrowserCoordinator
@@ -116,48 +102,41 @@ class ColorScaleWidget {
     }
 
     /**
-     * Update the widget for display mode changes.
-     * Shows/hides the minus button and updates swatches based on mode.
-     * @param {string} mode - Display mode ("AOB", "BOA", "A", or "B")
-     * @param {RatioColorScale} ratioColorScale - Ratio color scale for AOB/BOA modes
-     * @param {ColorScale} colorScale - Standard color scale for A/B modes
+     * Show the given color scale: its threshold in the input, its colors in the
+     * swatches.
+     *
+     * A signed scale -- the ratios, and the A-B difference -- reveals the minus
+     * swatch, since both halves of it are in play. Both a color scale change
+     * and a display mode change come through here; a display mode change is
+     * simply a different scale becoming the one on screen.
+     *
+     * @param {ColorScale|SignedColorScale} colorScale
      */
-    updateForDisplayMode(mode, ratioColorScale, colorScale) {
-        if (!this.minusButton || !this.plusButton) {
+    updateForColorScale(colorScale) {
+        if (!this.highColorscaleInput || !this.plusButton || !this.minusButton || !colorScale) {
             return;
         }
 
-        if (mode === "AOB" || mode === "BOA") {
+        this.highColorscaleInput.value = colorScale.threshold;
+
+        if (colorScale instanceof SignedColorScale) {
             this.minusButton.style.display = 'block';
-            paintSwatch(this.minusButton, ratioColorScale.negativeScale);
-            paintSwatch(this.plusButton, ratioColorScale.positiveScale);
+            paintSwatch(this.minusButton, colorScale.negativeScale);
+            paintSwatch(this.plusButton, colorScale.positiveScale);
         } else {
             this.minusButton.style.display = 'none';
             paintSwatch(this.plusButton, colorScale);
         }
     }
+}
 
-    /**
-     * Update the widget for color scale changes.
-     * Handles both standard ColorScale and RatioColorScale instances.
-     * @param {ColorScale|RatioColorScale} colorScale - The color scale to display
-     */
-    updateForColorScale(colorScale) {
-        if (!this.highColorscaleInput || !this.plusButton) {
-            return;
-        }
-
-        if (colorScale instanceof ColorScale) {
-            this.highColorscaleInput.value = colorScale.threshold;
-            paintSwatch(this.plusButton, colorScale);
-        } else if (colorScale instanceof RatioColorScale) {
-            this.highColorscaleInput.value = colorScale.threshold;
-            if (this.minusButton) {
-                paintSwatch(this.minusButton, colorScale.negativeScale);
-            }
-            paintSwatch(this.plusButton, colorScale.positiveScale);
-        }
-    }
+/**
+ * The color scale the given display mode renders with. Asked of the tile
+ * source rather than the browser, which reads the mode it has already
+ * committed to -- not necessarily the one being announced.
+ */
+function scaleForDisplayMode(browser, mode) {
+    return browser.contactMatrixView?.imageTileSource.getColorScale(mode);
 }
 
 function paintSwatch(swatch, { r, g, b }) {

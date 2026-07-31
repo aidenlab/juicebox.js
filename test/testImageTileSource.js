@@ -403,6 +403,18 @@ describe('ImageTileSource automatic color scale', () => {
         expect(observer.seen.scales).toEqual([])
     })
 
+    it('leaves the difference mode alone -- a count threshold does not describe a difference', async () => {
+        const observer = recordingObserver()
+        const control = dataset({records: manyRecords})
+        const ds = dataset({records: manyRecords})
+
+        await collect(makeSource({observer, diffColorScale: scale(2)}).tilesFor(
+            request({dataset: ds, controlDataset: control, displayMode: 'AMB'})))
+
+        expect(ds.calls.filter(c => c.forScale).length).toBe(0)
+        expect(observer.seen.scales).toEqual([])
+    })
+
     it('applies the live-map heuristic when the dataset is live', async () => {
         const observer = recordingObserver()
         const frequencies = Array.from({length: 100}, (_, i) => record(0, 0, (i + 1) / 1000))
@@ -482,6 +494,25 @@ describe('ImageTileSource display modes', () => {
 
         expect(primary.calls.length).toBeGreaterThan(0)
         expect(control.calls.length).toBeGreaterThan(0)
+    })
+
+    it('fetches from both maps in AMB', async () => {
+        const primary = dataset({records: [record(0, 0, 5)]})
+        const control = dataset({records: [record(0, 0, 9)]})
+
+        await collect(makeSource({diffColorScale: scale(2)}).tilesFor(
+            request({dataset: primary, controlDataset: control, displayMode: 'AMB'})))
+
+        expect(primary.calls.length).toBeGreaterThan(0)
+        expect(control.calls.length).toBeGreaterThan(0)
+    })
+
+    it('selects a scale per display mode', () => {
+        const diffColorScale = scale(2)
+        const source = makeSource({diffColorScale})
+        expect(source.getColorScale('AMB')).toBe(diffColorScale)
+        expect(source.getColorScale('AOB')).not.toBe(diffColorScale)
+        expect(source.getColorScale('A')).not.toBe(diffColorScale)
     })
 
     it('keys tiles by display mode', async () => {

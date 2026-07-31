@@ -21,7 +21,7 @@
  *
  */
 import State from './hicState.js';
-import ColorScale from "./colorScale.js"
+import {parseColorScale} from "./colorScaleParser.js"
 import {Globals} from "./globals.js";
 import {StringUtils, BGZip} from 'igv-utils'
 import {isFile} from './fileUtils.js'
@@ -215,7 +215,7 @@ function decodeQuery(query, uriDecode) {
     }
     if (colorScale) {
         colorScale = paramDecode(colorScale, uriDecode);
-        config.colorScale = ColorScale.parse(colorScale);
+        config.colorScale = parseColorScale(colorScale);
     }
 
     if (displayMode) {

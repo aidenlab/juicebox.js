@@ -110,7 +110,10 @@ class ControlMapHash {
             'A': { title: 'A', value: 'A', other: 'B', hidden: this.imgB, shown: this.imgA },
             'B': { title: 'B', value: 'B', other: 'A', hidden: this.imgA, shown: this.imgB },
             'AOB': { title: 'A/B', value: 'AOB', other: 'BOA', hidden: this.imgB, shown: this.imgA },
-            'BOA': { title: 'B/A', value: 'BOA', other: 'AOB', hidden: this.imgA, shown: this.imgB }
+            'BOA': { title: 'B/A', value: 'BOA', other: 'AOB', hidden: this.imgA, shown: this.imgB },
+            // A-B has no counterpart to toggle to -- B-A is not a display mode --
+            // so the A/B toggle button holds it in place.
+            'AMB': { title: 'A-B', value: 'AMB', other: 'AMB', hidden: this.imgB, shown: this.imgA }
         };
 
         this.select.addEventListener('change', (e) => {

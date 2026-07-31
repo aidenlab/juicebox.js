@@ -30,7 +30,8 @@ import {getNavbarContainer} from "./layoutController.js"
 import SweepZoom from "./sweepZoom.js"
 import ScrollbarWidget from "./scrollbarWidget.js"
 import ColorScale, {defaultColorScaleConfig} from "./colorScale.js"
-import RatioColorScale, {defaultRatioColorScaleConfig} from "./ratioColorScale.js"
+import RatioColorScale from "./ratioColorScale.js"
+import DiffColorScale from "./diffColorScale.js"
 import ContactMatrixView from "./contactMatrixView.js"
 import ImageTileSource from "./imageTileSource.js"
 import {Alert} from "igv-ui"
@@ -78,22 +79,22 @@ class BrowserUIManager {
         );
 
         const colorScale = new ColorScale(defaultColorScaleConfig);
-        const ratioColorScale = new RatioColorScale(defaultRatioColorScaleConfig.threshold);
-        ratioColorScale.setColorComponents(defaultRatioColorScaleConfig.negative, '-');
-        ratioColorScale.setColorComponents(defaultRatioColorScaleConfig.positive, '+');
+        // Each signed scale carries its own default threshold and colors.
+        const ratioColorScale = new RatioColorScale();
+        const diffColorScale = new DiffColorScale();
 
         this.components.set('sweepZoom', sweepZoom);
         this.components.set('scrollbar', scrollbarWidget);
         this.components.set('colorScale', colorScale);
         this.components.set('ratioColorScale', ratioColorScale);
+        this.components.set('diffColorScale', diffColorScale);
 
         const browser = this.browser;
 
-        // diffColorScale is deliberately absent -- AMB has been unimplemented
-        // since 2018 and needs a signed difference scale, not this one. See #426.
         const imageTileSource = new ImageTileSource({
             colorScale,
             ratioColorScale,
+            diffColorScale,
             observer: {
 
                 colorScaleChanged: (scale) => browser.notifyColorScale(scale),

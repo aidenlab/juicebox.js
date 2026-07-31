@@ -22,7 +22,6 @@
  */
 
 import {IGVMath} from "igv-utils"
-import RatioColorScale from "./ratioColorScale.js";
 
 const defaultColorScaleConfig = {threshold: 2000, r: 255, g: 0, b: 0}
 
@@ -87,34 +86,6 @@ class ColorScale {
         return "" + this.threshold + ',' + this.r + ',' + this.g + ',' + this.b;
     }
 
-    static parse(string) {
-
-        var pnstr, ratioCS;
-
-        if (string.startsWith("R:")) {
-            pnstr = string.substring(2).split(":");
-            ratioCS = new RatioColorScale(Number.parseFloat(pnstr[0]));
-            ratioCS.positiveScale = foo(pnstr[1]);
-            ratioCS.negativeScale = foo(pnstr[2]);
-            return ratioCS;
-        } else {
-            return foo(string);
-        }
-
-        function foo(str) {
-            var cs, tokens;
-
-            tokens = str.split(",");
-
-            cs = {
-                threshold: tokens[0],
-                r: tokens[1],
-                g: tokens[2],
-                b: tokens[3]
-            };
-            return new ColorScale(cs);
-        }
-    }
 }
 
 export {defaultColorScaleConfig}

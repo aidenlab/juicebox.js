@@ -53,6 +53,14 @@ tiles. When either could be meant, say which.
 difference). The combining modes require matching resolutions on both maps, so
 the primary map's zoom index is translated to the control map's equivalent.
 
+**Color scale** — maps a score to a pixel color, with the score's magnitude
+carried in alpha against a fixed hue. Single-sided (`ColorScale`) for the modes
+that plot counts; *signed* (`SignedColorScale`) for the comparison modes, which
+need one color above the neutral point and another below — `RatioColorScale`
+for the ratios, where neutral is 1, and `DiffColorScale` for `AMB`, where it is
+zero. A single-sided scale's threshold is derived from the data; a signed
+scale's is user-driven.
+
 **Zoom data** — a resolution-specific view of a matrix, carrying bin size, unit
 and per-map average counts. Obtained from a matrix by zoom index.
 

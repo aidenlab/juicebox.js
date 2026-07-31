@@ -10,6 +10,7 @@ import {
     indexControlRecords,
     paintRecords
 } from '../js/imageTileCore.js'
+import DiffColorScale, {defaultDiffColorScaleConfig} from '../js/diffColorScale.js'
 
 /**
  * Characterization tests for the pure core of the image tile source.
@@ -519,6 +520,30 @@ describe('paintRecords', () => {
         it('skips records with no matching control record', () => {
             const buf = pixelBuffer(10)
             expect(paintRecords(buf, [record(1, 1, 10)], {}, plan, 0, 0)).toBe(0)
+        })
+
+        // The failure this mode was fixed for: a difference goes negative
+        // wherever B exceeds A, and a scale that logs the score turns those
+        // pixels into NaN alpha -- fully transparent, silently dropping half
+        // the map. See issue #426.
+        it('paints both directions of the difference opaquely with the real scale', () => {
+            const diffPlan = basePlan({
+                displayMode: 'AMB',
+                diffColorScale: new DiffColorScale(defaultDiffColorScaleConfig.threshold)
+            })
+
+            const buf = pixelBuffer(10)
+            const controls = indexControlRecords([record(1, 1, 2), record(2, 2, 60)], 'AMB')
+            paintRecords(buf, [record(1, 1, 60), record(2, 2, 2)], controls, diffPlan, 0, 0)
+
+            const [, , aExceedsBlue, aExceedsAlpha] = pixelAt(buf, 1, 1)
+            const [, , bExceedsBlue, bExceedsAlpha] = pixelAt(buf, 2, 2)
+
+            expect(aExceedsAlpha).toBeGreaterThan(0)
+            expect(bExceedsAlpha).toBeGreaterThan(0)
+            expect(aExceedsAlpha).toBe(bExceedsAlpha)     // equal magnitudes, opposite signs
+            expect(aExceedsBlue).toBe(0)                  // A > B takes the positive color
+            expect(bExceedsBlue).toBe(255)                // B > A takes the negative color
         })
 
         it('produces a different score from AOB for the same inputs', () => {

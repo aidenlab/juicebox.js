@@ -67,9 +67,7 @@ class ImageTileSource {
     /**
      * @param colorScale scale for the single-map display modes
      * @param ratioColorScale scale for AOB / BOA
-     * @param diffColorScale scale for AMB. Currently undefined -- AMB has been
-     *        unimplemented since 2018, see issue #426. Passed through so the
-     *        behavior is unchanged rather than silently repaired here.
+     * @param diffColorScale signed scale for AMB
      * @param createTile factory for a raster surface. Defaults to a canvas;
      *        tests inject a stub, since the test environment has no canvas.
      * @param observer receives colorScaleChanged, normalizationUnavailable and
@@ -223,13 +221,15 @@ class ImageTileSource {
     /**
      * Compute and apply the automatic color scale threshold, if needed.
      *
-     * Ratio modes are left alone -- their scale is user-driven, not derived
-     * from the data. Otherwise the threshold is memoized per chromosome pair,
-     * zoom and normalization, so panning within a resolution does not refetch.
+     * The comparison modes are left alone -- their scales are user-driven, not
+     * derived from the data, and the threshold computed here measures raw
+     * counts on the primary map, which is not what any of them plot. Otherwise
+     * the threshold is memoized per chromosome pair, zoom and normalization, so
+     * panning within a resolution does not refetch.
      */
     async #ensureColorScale(ds, zd, grid, normalization, state, displayMode) {
 
-        if ('AOB' === displayMode || 'BOA' === displayMode) {
+        if ('AOB' === displayMode || 'BOA' === displayMode || 'AMB' === displayMode) {
             return
         }
 

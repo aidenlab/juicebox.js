@@ -246,14 +246,12 @@ class BrowserCoordinator {
     /**
      * Orchestrate component updates when display mode changes.
      * 
-     * @param {string} mode - The display mode ("A", "B", "AOB", "BOA")
+     * @param {string} mode - The display mode ("A", "B", "AOB", "BOA", "AMB")
      */
     onDisplayMode(mode) {
         if (this.components.colorScaleWidget) {
-            this.components.colorScaleWidget.updateForDisplayMode(
-                mode,
-                this.browser.contactMatrixView.ratioColorScale,
-                this.browser.contactMatrixView.colorScale
+            this.components.colorScaleWidget.updateForColorScale(
+                this.browser.contactMatrixView.imageTileSource.getColorScale(mode)
             );
         }
 

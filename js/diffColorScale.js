@@ -23,27 +23,29 @@
 
 import SignedColorScale from './signedColorScale.js'
 
-const defaultRatioColorScaleConfig = {threshold: 5, positive: {r: 255, g: 0, b: 0}, negative: {r: 0, g: 0, b: 255}}
+/**
+ * The threshold is a difference in normalized contact counts, so it has no
+ * natural value the way a ratio's does -- 100 is the historical default and a
+ * starting point, adjustable from the +/- buttons in the color scale widget.
+ */
+const defaultDiffColorScaleConfig = {threshold: 100, positive: {r: 255, g: 0, b: 0}, negative: {r: 0, g: 0, b: 255}}
 
 /**
- * Color scale for the AOB / BOA display modes.
+ * Color scale for the AMB (A minus B) display mode.
  *
- * Ratio scores are positive and centered on 1, so the log puts them on a signed
- * axis: below 1 takes the negative side, above 1 the positive.
+ * AMB scores are signed differences of normalized counts: negative wherever the
+ * control map exceeds the primary. The sign picks the side and |score| drives
+ * alpha linearly, so equal departures in either direction read equally strong.
  */
-class RatioColorScale extends SignedColorScale {
+class DiffColorScale extends SignedColorScale {
 
-    static prefix = 'R'
+    static prefix = 'D'
 
-    constructor(threshold = defaultRatioColorScaleConfig.threshold) {
-        super(threshold, defaultRatioColorScaleConfig)
-    }
-
-    transform(value) {
-        return Math.log(value)
+    constructor(threshold = defaultDiffColorScaleConfig.threshold) {
+        super(threshold, defaultDiffColorScaleConfig)
     }
 }
 
-export {defaultRatioColorScaleConfig}
+export {defaultDiffColorScaleConfig}
 
-export default RatioColorScale
+export default DiffColorScale

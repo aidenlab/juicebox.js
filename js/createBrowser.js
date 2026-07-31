@@ -4,7 +4,7 @@
 
 import { StringUtils } from 'igv-utils';
 import HICBrowser from './hicBrowser.js';
-import ColorScale from './colorScale.js';
+import {parseColorScale} from './colorScaleParser.js';
 import ContactMatrixView from "./contactMatrixView.js";
 import HICEvent from "./hicEvent.js";
 import EventBus from "./eventBus.js";
@@ -17,7 +17,7 @@ let currentBrowser;
 async function createBrowser(hicContainer, config, callback) {
     setDefaults(config);
 
-    if (StringUtils.isString(config.colorScale)) config.colorScale = ColorScale.parse(config.colorScale);
+    if (StringUtils.isString(config.colorScale)) config.colorScale = parseColorScale(config.colorScale);
     if (StringUtils.isString(config.backgroundColor)) config.backgroundColor = ContactMatrixView.parseBackgroundColor(config.backgroundColor);
 
     const browser = new HICBrowser(hicContainer, config);
@@ -45,7 +45,7 @@ async function createBrowserList(hicContainer, session) {
         setDefaults(config)
 
         if (StringUtils.isString(config.colorScale)) {
-            config.colorScale = ColorScale.parse(config.colorScale);
+            config.colorScale = parseColorScale(config.colorScale);
         }
         if (StringUtils.isString(config.backgroundColor)) {
             config.backgroundColor = ContactMatrixView.parseBackgroundColor(config.backgroundColor);

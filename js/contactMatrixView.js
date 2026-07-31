@@ -259,7 +259,7 @@ class ContactMatrixView {
             if (newGenomicExtent.w > this.genomicExtent.w) return;
 
             const sx = ((newGenomicExtent.x - this.genomicExtent.x) / this.genomicExtent.w) * viewportWidth;
-            const sy = ((newGenomicExtent.y - this.genomicExtent.y) / this.genomicExtent.w) * viewportHeight;
+            const sy = ((newGenomicExtent.y - this.genomicExtent.y) / this.genomicExtent.h) * viewportHeight;
             const sWidth = (newGenomicExtent.w / this.genomicExtent.w) * viewportWidth;
             const sHeight = (newGenomicExtent.h / this.genomicExtent.h) * viewportHeight;
             const img = this.canvasElement;

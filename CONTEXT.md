@@ -76,6 +76,31 @@ focus of this library.
 **Track pair** — one 1D track rendered on both axes, as a pair of renderers
 sharing a track (`js/trackPair.js`).
 
+## Data access
+
+**Bot challenge** — a data host answering an automated request with a CAPTCHA
+page instead of the file. The known case is AWS WAF in front of
+`www.encodeproject.org`, which serves `X-Amzn-Waf-Action: captcha` under a
+misleading `405` status to any request whose `Origin` is not on ENCODE's
+allowlist. Say *bot challenge*, not "the 405" — the status code is a lie.
+
+**Origin allowlist** — the data provider's list of domains permitted to fetch
+without a bot challenge. ENCODE's, on ENCODE's infrastructure; not editable from
+here. `aidenlab.org` and `igv.org` are on it, which is why both production host
+apps work and localhost does not. It keys on the `Origin` header — the domain of
+the page making the request — and has nothing to do with where anything is
+hosted.
+
+**URL mapper** — the function juicebox hands to hic-straw as `config.mapUrl` to
+rewrite a `.hic` URL before it is fetched. Registered once by the host app via
+`setUrlMapper`; unset in production. The library cannot detect dev mode itself,
+because consumers get a production-baked `dist`. See `docs/adr/0001`.
+
+**Dev proxy** — the `apply: 'serve'` Vite plugin under `dev-proxy/` that fetches
+challenged hosts server-side with an allowlisted `Origin` and returns the
+redirect to the browser. Development only, `.hic` reads only, host-scoped. A
+workaround with an expiry condition, not architecture. See `docs/adr/0001`.
+
 ## Architecture vocabulary
 
 Refactoring work in this repo uses the deep-module vocabulary: **module**,

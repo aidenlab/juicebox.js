@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { versionPlugin } from './vite-plugin-version.js';
+import { devProxy } from './dev-proxy/plugin.js';
 
 // Plugin to suppress source map warnings for third-party dependencies
 // These warnings occur because igv-ui and igv reference CSS source maps that don't exist
@@ -71,6 +72,9 @@ export default defineConfig({
   },
   plugins: [
     versionPlugin(),
+    // Dev only (apply: 'serve'). Pairs with hic.setUrlMapper(devMapUrl) on the pages that load
+    // maps from a host that serves a bot challenge. See docs/adr/0001-dev-proxy-for-waf-protected-hosts.md.
+    devProxy(),
     viteStaticCopy({
       targets: [
         { src: 'css/img/*', dest: 'css/img', rename: { stripBase: true } },

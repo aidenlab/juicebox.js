@@ -19,9 +19,10 @@ Server: awselb/2.0
 Content-Type: text/html          (a challenge page, not the .hic file)
 ```
 
-Reproduction — same request throughout, varying only `Origin`. Browser-like
-headers (`User-Agent`, `Sec-Fetch-*`) are required; plain curl is not challenged,
-which is what made this hard to see:
+Reproduction — same request throughout, varying only `Origin`. A browser-like
+`User-Agent` is required to see the challenge at all; plain curl is not
+challenged, which is what made this hard to find (but see the 2026-08-02
+amendment below — the proxy must **not** send one):
 
 | `Origin` | Result |
 |---|---|
@@ -159,6 +160,36 @@ being a lie.
 - The allowlist of proxied hosts must be maintained. The next host that starts
   challenging is a fresh mystery until someone adds it — mitigated by the
   legible error, which names the cause.
+
+## Amendment, 2026-08-02 — the proxy sends an honest User-Agent
+
+Implementing this (issue #440) turned up a measurement that contradicts the
+header advice above. Sending an allowlisted `Origin` **and** a spoofed Chrome
+`User-Agent` gets `502 Bad Gateway` from `awselb/2.0`. Reproduced with both curl
+and Node `fetch`, against `ENCFF718AWL.hic`:
+
+| `Origin` | `User-Agent` | Result |
+|---|---|---|
+| `https://aidenlab.org` | *(absent)* | 307 → file served |
+| `https://aidenlab.org` | `juicebox.js-dev-proxy (+…)` | 307 → file served |
+| `https://aidenlab.org` | `Mozilla/5.0 … Firefox/127.0` | 307 → file served |
+| `https://aidenlab.org` | `Mozilla/5.0 … Chrome/126.0.0.0 …` | **502** |
+| `https://aidenlab.org` | Chrome + `sec-ch-ua` hints | **502** |
+| *(absent)* or `http://localhost:3000` | `Mozilla/5.0 … Chrome/126.0.0.0 …` | 405 + `X-Amzn-Waf-Action: captcha` |
+
+So `Origin` alone decides the bot challenge, and the browser-like headers are not
+load-bearing — they only made the challenge *visible* during diagnosis, because
+the challenge fires on a browser `User-Agent` from a non-allowlisted origin.
+Impersonating a specific browser version is the one thing that actively breaks.
+
+The proxy therefore identifies itself as `juicebox.js-dev-proxy`. It keeps the
+`Sec-Fetch-*` trio, which is what the browser's own cross-origin fetch would send
+and is verified harmless. This also sits better with the reasoning about `Origin`
+above: assert only your own identity.
+
+Why the 502 rather than a challenge is a guess — most likely a WAF rule on a
+Chrome `User-Agent` unaccompanied by the rest of a real Chrome fingerprint. It is
+ENCODE's rule to change, so pin nothing to it beyond "do not impersonate".
 
 ## Reversal
 

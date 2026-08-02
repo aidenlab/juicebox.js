@@ -1,0 +1,206 @@
+<html>
+<head>
+    <meta charSet="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>issue #440 — dev proxy for WAF-protected hosts</title>
+
+    <style>
+        body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 24px; max-width: 980px; }
+        h1 { font-size: 20px; margin: 0 0 4px; }
+        h2 { font-size: 15px; margin: 0 0 8px; }
+        .sub { color: #666; margin: 0 0 24px; }
+        .probe { border: 1px solid #ddd; border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+        .probe > p { margin: 0 0 12px; color: #555; }
+        button { font: inherit; padding: 6px 14px; cursor: pointer; }
+        pre { background: #f6f6f6; padding: 12px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap;
+              word-break: break-all; margin: 12px 0 0; font-size: 12px; }
+        .verdict { font-weight: 600; padding: 2px 8px; border-radius: 3px; }
+        .pass { background: #d7f7d7; color: #14601a; }
+        .fail { background: #ffdcdc; color: #8a1414; }
+        .pending { background: #eee; color: #666; }
+        code { background: #f0f0f0; padding: 1px 4px; border-radius: 3px; }
+        #browser-container { margin-top: 12px; }
+    </style>
+</head>
+
+<body>
+
+<h1>issue #440 — dev proxy for WAF-protected hosts</h1>
+<p class="sub">
+    Checks the acceptance items that cannot be unit tests, because a bot challenge keys on
+    <code>Origin</code> and only a browser at <code>localhost</code> sends the failing one. This page
+    calls <code>hic.setUrlMapper(devMapUrl)</code> on load — the one line a host app adds in
+    development. See <code>docs/adr/0001-dev-proxy-for-waf-protected-hosts.md</code>.
+</p>
+
+<!-- ------------------------------------------------------------------ -->
+<div class="probe">
+    <h2>1. The rewrite is host-scoped — <span id="verdict-1" class="verdict pending">not run</span></h2>
+    <p>
+        No network. Confirms the registered mapper routes ENCODE through
+        <code>/__hic-proxy/</code> and leaves every other host in the session-file set fetching
+        directly, so a real CORS or permissions problem still surfaces here as it would in
+        production.
+    </p>
+    <button id="run-1">Run</button>
+    <pre id="out-1">—</pre>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<div class="probe">
+    <h2>2. The proxy returns the redirect — <span id="verdict-2" class="verdict pending">not run</span></h2>
+    <p>
+        Fetches one byte range through the proxy with <code>redirect: 'manual'</code>, so the
+        redirect is visible rather than followed. Passes when the proxy answers <code>307</code> with
+        a <code>Location</code> pointing at a different host: the map bytes come from S3 straight to
+        the browser, never through Node.
+    </p>
+    <button id="run-2">Run</button>
+    <pre id="out-2">—</pre>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<div class="probe">
+    <h2>3. An ENCODE map loads from localhost — <span id="verdict-3" class="verdict pending">not run</span></h2>
+    <p>
+        The acceptance criterion. The same URL that fails with a bot challenge on <code>master</code>
+        loads through <code>hic.createBrowser</code>. Watch the network panel: the
+        <code>/__hic-proxy/</code> request is the redirect only; every range request that follows
+        goes directly to S3 as <code>206 Partial Content</code>.
+    </p>
+    <button id="run-3">Run</button>
+    <pre id="out-3">—</pre>
+    <div id="browser-container"></div>
+</div>
+
+<script type="module">
+
+    import hic from '../js/index.js'
+    import { devMapUrl, PROXY_PREFIX } from '../dev-proxy/map-url.js'
+
+    // The one line a host app adds. In a host app it is guarded by import.meta.env.DEV; this page
+    // only ever runs under the dev server.
+    hic.setUrlMapper(devMapUrl)
+
+    // Blocked from any non-allowlisted Origin, localhost included.
+    const ENCODE_URL = 'https://www.encodeproject.org/files/ENCFF718AWL/@@download/ENCFF718AWL.hic'
+
+    const setVerdict = (n, pass, label) => {
+        const el = document.getElementById(`verdict-${n}`)
+        el.className = `verdict ${pass ? 'pass' : 'fail'}`
+        el.textContent = label || (pass ? 'PASS' : 'FAIL')
+    }
+
+    const report = (n, lines) => document.getElementById(`out-${n}`).textContent = lines.join('\n')
+
+    // ------------------------------------------------------------------
+    // 1. Only the challenged host is rewritten
+    // ------------------------------------------------------------------
+    document.getElementById('run-1').onclick = () => {
+
+        const direct = [
+            'https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/x.hic',
+            'https://ftp.ncbi.nlm.nih.gov/geo/samples/x.hic',
+            'https://s3.us-east-1.wasabisys.com/x.hic',
+            'https://s3.amazonaws.com/hicfiles/x.hic',
+        ]
+
+        const encodeMapped = devMapUrl(ENCODE_URL)
+        const encodeProxied = encodeMapped === `${PROXY_PREFIX}${ENCODE_URL}`
+        const untouched = direct.filter(url => devMapUrl(url) === url)
+        const pass = encodeProxied && untouched.length === direct.length
+
+        setVerdict(1, pass)
+        report(1, [
+            `encodeproject.org   ${encodeMapped}`,
+            '',
+            ...direct.map(url => `${devMapUrl(url) === url ? 'direct  ' : 'PROXIED '}${url}`),
+            '',
+            pass
+                ? 'PASS — ENCODE is routed, everything else is untouched.'
+                : encodeProxied
+                    ? 'FAIL — a host that should fetch directly was rewritten. Check CHALLENGED_HOSTS in dev-proxy/map-url.js.'
+                    : 'FAIL — the ENCODE URL was not rewritten.',
+        ])
+    }
+
+    // ------------------------------------------------------------------
+    // 2. The proxy hands the redirect back rather than following it
+    // ------------------------------------------------------------------
+    document.getElementById('run-2').onclick = async () => {
+        report(2, ['fetching…'])
+
+        try {
+            const response = await fetch(devMapUrl(ENCODE_URL), {
+                headers: {Range: 'bytes=0-99'},
+                redirect: 'manual'
+            })
+
+            // redirect: 'manual' yields an opaqueredirect response, which hides status and
+            // headers. Ask the dev server for the same thing with the redirect exposed instead.
+            const probe = await fetch(devMapUrl(ENCODE_URL), {headers: {Range: 'bytes=0-99'}})
+            const followedTo = probe.url
+            const differentHost = Boolean(followedTo) && new URL(followedTo).host !== 'www.encodeproject.org'
+            const partial = probe.status === 206
+            const pass = response.type === 'opaqueredirect' && differentHost && partial
+
+            setVerdict(2, pass)
+            report(2, [
+                `manual fetch type    ${response.type}`,
+                '',
+                'following the redirect:',
+                `final url            ${followedTo || '(absent)'}`,
+                `status               ${probe.status}`,
+                `content-range        ${probe.headers.get('content-range') || '(absent)'}`,
+                '',
+                pass
+                    ? 'PASS — the proxy answered with a redirect and the bytes came from another host.'
+                    : response.type !== 'opaqueredirect'
+                        ? 'FAIL — the proxy did not answer with a redirect. It may be following the 307 server-side, which would put the map bytes through Node.'
+                        : !differentHost
+                            ? 'FAIL — the redirect stayed on encodeproject.org.'
+                            : `FAIL — expected 206 Partial Content, got ${probe.status}. The Range header did not survive the redirect.`,
+            ])
+        } catch (e) {
+            setVerdict(2, false)
+            report(2, [`${e.message}`, '', 'Is the dev server running with devProxy() in vite.config.js?'])
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 3. The acceptance criterion: the map loads
+    // ------------------------------------------------------------------
+    document.getElementById('run-3').onclick = async () => {
+        report(3, ['loading…'])
+        const container = document.getElementById('browser-container')
+        container.innerHTML = ''
+
+        try {
+            const browser = await hic.createBrowser(container, {url: ENCODE_URL, name: 'ENCFF718AWL.hic'})
+            setVerdict(3, true)
+            report(3, [
+                `genome        ${browser.dataset.genomeId}`,
+                `chromosomes   ${browser.dataset.chromosomes.length}`,
+                `resolutions   ${browser.dataset.bpResolutions.length}`,
+                '',
+                'PASS — an ENCODE-hosted .hic loaded from localhost.',
+            ])
+        } catch (e) {
+            setVerdict(3, false)
+            report(3, [
+                `message   ${e.message || '(empty)'}`,
+                `code      ${e.code === undefined ? '(absent)' : e.code}`,
+                `url       ${e.url || '(absent)'}`,
+                `waf       ${e.headers?.get('x-amzn-waf-action') || '(absent)'}`,
+                '',
+                e.headers?.get('x-amzn-waf-action') === 'captcha'
+                    ? 'FAIL — still challenged. The proxy Origin is not on the allowlist, or the read did not go through the mapper.'
+                    : 'FAIL — see the message above.',
+            ])
+        }
+    }
+
+</script>
+
+</body>
+</html>

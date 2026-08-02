@@ -159,6 +159,31 @@ This opens a dashboard at `http://localhost:3000` with links to all available pa
 
 Note: The Vite dev server is required because the source files use bare npm import specifiers and SCSS, which browsers cannot resolve from a plain static file server.
 
+## Loading maps from hosts that serve a bot challenge
+
+Some data hosts — `www.encodeproject.org` today — put AWS WAF in front of their files and answer any origin not on their allowlist with a CAPTCHA page, under a misleading `405`. `localhost` is never allowlisted, so those maps cannot be loaded in development without help.
+
+`dev-proxy/` is a **development-only** workaround: a Vite plugin that fetches the file from Node with an allowlisted `Origin` and hands the resulting redirect back to the browser, plus the client-side rule that decides which hosts get routed that way. It is already wired into this repo's dev server — see `dev/encode-dev-proxy.html`. In a host application:
+
+```js
+// vite.config.js
+import { devProxy } from 'juicebox.js/dev-proxy/plugin'
+
+export default defineConfig({ plugins: [devProxy()] })
+```
+
+```js
+// app startup
+import hic from 'juicebox.js'
+import { devMapUrl } from 'juicebox.js/dev-proxy/map-url'
+
+if (import.meta.env.DEV) hic.setUrlMapper(devMapUrl)
+```
+
+`devProxy()` takes an `origin` option (default `https://aidenlab.org`) — the `Origin` the proxy claims. Set it to a domain you actually control.
+
+`apply: 'serve'` means the plugin can never enter a production build, and `setUrlMapper` is unset by default: a host app that never calls it behaves exactly as before. Only `.hic` reads through hic-straw are covered. See `docs/adr/0001-dev-proxy-for-waf-protected-hosts.md`.
+
 This creates a dist folder with the following files
 
 * juicebox.js - ES5 compatible file.  A script include will define the "juicebox" global.

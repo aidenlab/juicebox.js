@@ -27,6 +27,7 @@
  */
 
 import {isFile} from "./fileUtils.js"
+import {getUrlMapper} from "./urlMapper.js"
 import Straw from 'hic-straw'
 
 const knownGenomes = {
@@ -221,7 +222,11 @@ class HiCDataset extends Dataset {
 
     constructor(config) {
         super(config);
-        this.straw = new Straw(config)
+
+        // A mapper registered via setUrlMapper applies to every read unless this caller supplied
+        // one of its own. See js/urlMapper.js.
+        const mapUrl = config.mapUrl || getUrlMapper()
+        this.straw = new Straw(mapUrl ? {...config, mapUrl} : config)
         this.isLive = Boolean(config.liveContactMap);
         this.datasetType = this.isLive ? 'live' : 'hic';
     }

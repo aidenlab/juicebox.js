@@ -28,6 +28,7 @@ import {version} from "./version.js";
 import {compressedSession, restoreSession, toJSON} from "./session.js";
 import {init} from "./init.js"
 import EventBus from "./eventBus.js"
+import {setUrlMapper} from "./urlMapper.js"
 
 export default {
     version,
@@ -40,5 +41,6 @@ export default {
     setCurrentBrowser,
     getAllBrowsers,
     igvxhr,
-    EventBus
+    EventBus,
+    setUrlMapper
 }

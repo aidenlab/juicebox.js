@@ -1,0 +1,240 @@
+<html>
+<head>
+    <meta charSet="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>hic-straw #49 — transport extension points</title>
+
+    <style>
+        body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 24px; max-width: 980px; }
+        h1 { font-size: 20px; margin: 0 0 4px; }
+        h2 { font-size: 15px; margin: 0 0 8px; }
+        .sub { color: #666; margin: 0 0 24px; }
+        .probe { border: 1px solid #ddd; border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+        .probe > p { margin: 0 0 12px; color: #555; }
+        button { font: inherit; padding: 6px 14px; cursor: pointer; }
+        pre { background: #f6f6f6; padding: 12px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap;
+              word-break: break-all; margin: 12px 0 0; font-size: 12px; }
+        .verdict { font-weight: 600; padding: 2px 8px; border-radius: 3px; }
+        .pass { background: #d7f7d7; color: #14601a; }
+        .fail { background: #ffdcdc; color: #8a1414; }
+        .pending { background: #eee; color: #666; }
+        code { background: #f0f0f0; padding: 1px 4px; border-radius: 3px; }
+    </style>
+</head>
+
+<body>
+
+<h1>hic-straw #49 — transport extension points</h1>
+<p class="sub">
+    Verifies the acceptance items that cannot be unit tests: a bot challenge keys on
+    <code>Origin</code>, which node never sends, so these must run in a browser at
+    <code>localhost</code>. Requires hic-straw &ge; 4.0.0, which <code>package.json</code> is
+    pinned to.
+</p>
+
+<!-- ------------------------------------------------------------------ -->
+<div class="probe">
+    <h2>1. Response detail — <span id="verdict-1" class="verdict pending">not run</span></h2>
+    <p>
+        Reads a blocked ENCODE URL through <code>Straw</code> and inspects the thrown error.
+        Passes when <code>err.headers.get('x-amzn-waf-action')</code> is <code>captcha</code> —
+        the signal that used to die inside hic-straw. Also confirms <code>err.message</code> is
+        non-empty, which <code>statusText</code> alone is not over HTTP/2.
+    </p>
+    <button id="run-1">Run</button>
+    <pre id="out-1">—</pre>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<div class="probe">
+    <h2>2. mapUrl composition — <span id="verdict-2" class="verdict pending">not run</span></h2>
+    <p>
+        Supplies a consumer <code>mapUrl</code> against a Dropbox URL that does not exist, and reads
+        the physical URL back off <code>err.url</code>. Passes when the failed fetch shows
+        <em>both</em> rewrites in the right order: hic-straw's default Dropbox rule applied first
+        (<code>www.dropbox.com</code> &rarr; <code>dl.dropboxusercontent.com</code>), then the
+        consumer rule on top. A consumer supplying <code>mapUrl</code> must not silently switch off
+        the default rules.
+    </p>
+    <button id="run-2">Run</button>
+    <pre id="out-2">—</pre>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<div class="probe">
+    <h2>3. Through juicebox.js — <span id="verdict-3" class="verdict pending">not run</span></h2>
+    <p>
+        The same blocked URL through <code>hic.createBrowser</code>, i.e. the path a real
+        application takes. Passes on three counts: the response detail survives the trip up through
+        juicebox.js (<code>err.headers</code> is still readable here); the alert dialog is actually
+        on screen; and its text names the bot challenge instead of the misleading <code>405</code>.
+        That last one is the whole point of issue #441 — see
+        <code>docs/adr/0001-dev-proxy-for-waf-protected-hosts.md</code>, "Making the failure
+        legible".
+    </p>
+    <button id="run-3">Run</button>
+    <div id="browser-container" style="display: none;"></div>
+    <pre id="out-3">—</pre>
+</div>
+
+<script type="module">
+
+    import Straw from 'hic-straw'
+    import hic from '../js/index.js'
+
+    // Blocked from any non-allowlisted Origin, localhost included. See
+    // docs/adr/0001-dev-proxy-for-waf-protected-hosts.md for the Origin matrix.
+    const BLOCKED_ENCODE_URL = 'https://www.encodeproject.org/files/ENCFF718AWL/@@download/ENCFF718AWL.hic'
+
+    const setVerdict = (n, pass, label) => {
+        const el = document.getElementById(`verdict-${n}`)
+        el.className = `verdict ${pass ? 'pass' : 'fail'}`
+        el.textContent = label || (pass ? 'PASS' : 'FAIL')
+    }
+
+    const report = (n, lines) => document.getElementById(`out-${n}`).textContent = lines.join('\n')
+
+    const describeError = e => [
+        `message   ${e.message || '(empty)'}`,
+        `code      ${e.code === undefined ? '(absent)' : e.code}`,
+        `url       ${e.url || '(absent)'}`,
+        `headers   ${e.headers ? '(Headers instance)' : '(absent — failure preceded the response)'}`,
+    ]
+
+    // ------------------------------------------------------------------
+    // 1. Response detail: does the WAF header reach the consumer?
+    // ------------------------------------------------------------------
+    document.getElementById('run-1').onclick = async () => {
+        report(1, ['reading…'])
+        try {
+            await new Straw({url: BLOCKED_ENCODE_URL}).getMetaData()
+            setVerdict(1, false, 'INCONCLUSIVE')
+            report(1, [
+                'The read SUCCEEDED, so no bot challenge was served.',
+                '',
+                'This origin is allowlisted, or ENCODE has changed its WAF rules.',
+                'The probe cannot say anything about err.headers without a challenge.',
+                `origin    ${window.location.origin}`,
+            ])
+        } catch (e) {
+            const wafAction = e.headers ? e.headers.get('x-amzn-waf-action') : undefined
+            const pass = wafAction === 'captcha' && Boolean(e.message)
+            setVerdict(1, pass)
+            report(1, [
+                ...describeError(e),
+                '',
+                `x-amzn-waf-action        ${wafAction || '(absent)'}`,
+                `content-type             ${e.headers ? e.headers.get('content-type') || '(absent)' : '(absent)'}`,
+                '',
+                pass
+                    ? 'PASS — the captcha signal survived hic-straw and is readable here.'
+                    : wafAction
+                        ? 'FAIL — header present but err.message is empty; the HTTP/2 statusText fix regressed.'
+                        : [
+                            'FAIL — no x-amzn-waf-action on the error.',
+                            'Either the failure was not a bot challenge (check the status above),',
+                            'or err.headers did not survive. A cross-origin read can only see this',
+                            'header because the challenge response sets Access-Control-Expose-Headers.',
+                        ].join('\n'),
+            ])
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 2. mapUrl composes on top of the defaults, in that order
+    // ------------------------------------------------------------------
+    document.getElementById('run-2').onclick = async () => {
+        report(2, ['reading…'])
+
+        const logical = 'https://www.dropbox.com/scl/fi/issue-49-probe/does-not-exist.hic'
+        const consumerMapUrl = url => `${url}?issue-49-consumer-rule=applied`
+
+        try {
+            await new Straw({url: logical, mapUrl: consumerMapUrl}).getMetaData()
+            setVerdict(2, false, 'INCONCLUSIVE')
+            report(2, ['The read SUCCEEDED. This probe needs a URL that 404s to read err.url back.'])
+        } catch (e) {
+            const physical = e.url || ''
+            const defaultRuleApplied = physical.includes('//dl.dropboxusercontent.com')
+            const consumerRuleApplied = physical.includes('issue-49-consumer-rule=applied')
+            const pass = defaultRuleApplied && consumerRuleApplied
+
+            setVerdict(2, pass)
+            report(2, [
+                `logical url    ${logical}`,
+                `physical url   ${physical || '(absent — the failure preceded the response)'}`,
+                '',
+                `default Dropbox rule applied    ${defaultRuleApplied ? 'yes' : 'NO'}`,
+                `consumer rule applied           ${consumerRuleApplied ? 'yes' : 'NO'}`,
+                '',
+                pass
+                    ? 'PASS — normalize-then-route. The consumer rule saw the host the bytes come from.'
+                    : defaultRuleApplied
+                        ? 'FAIL — the consumer mapUrl was not applied.'
+                        : 'FAIL — supplying mapUrl switched off the default rules. That is the regression this composition ordering exists to prevent.',
+                '',
+                ...describeError(e),
+            ])
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 3. The same failure through the application path
+    // ------------------------------------------------------------------
+    document.getElementById('run-3').onclick = async () => {
+        report(3, ['loading…'])
+        const container = document.getElementById('browser-container')
+        container.style.display = 'block'
+        container.innerHTML = ''
+
+        // igv-ui reuses one dialog for the life of the page. Clear any left over from an earlier
+        // run so the assertions below can only read what this run produced.
+        const stale = document.querySelector('.igv-ui-alert-dialog-container')
+        if (stale) {
+            stale.style.display = 'none'
+            stale.querySelector('.igv-ui-alert-dialog-body-copy').textContent = ''
+        }
+
+        try {
+            await hic.createBrowser(container, {url: BLOCKED_ENCODE_URL, name: 'ENCFF718AWL.hic'})
+            setVerdict(3, false, 'LOADED')
+            report(3, ['The map LOADED. No bot challenge from this origin — see probe 1.'])
+        } catch (e) {
+            const wafAction = e.headers ? e.headers.get('x-amzn-waf-action') : undefined
+
+            // presentError runs synchronously inside loadHicFile's catch, before the rethrow that
+            // lands here, so the dialog is already up. igv-ui hides it with display: none.
+            const dialog = document.querySelector('.igv-ui-alert-dialog-container')
+            const alertText = document.querySelector('.igv-ui-alert-dialog-body-copy')?.textContent || ''
+            const shown = Boolean(dialog) && getComputedStyle(dialog).display !== 'none'
+            const legible = alertText.includes('bot protection') && !alertText.includes('405')
+
+            const pass = wafAction === 'captcha' && shown && legible
+            setVerdict(3, pass)
+            report(3, [
+                'What juicebox.js surfaces to the application:',
+                '',
+                ...describeError(e),
+                '',
+                `x-amzn-waf-action   ${wafAction || '(absent at this layer)'}`,
+                '',
+                'What juicebox.js surfaces to the user:',
+                '',
+                `dialog on screen    ${shown ? 'yes' : 'NO'}`,
+                `dialog text         ${alertText || '(empty)'}`,
+                '',
+                pass
+                    ? 'PASS — the challenge is reported in plain language, not as a 405.'
+                    : !wafAction
+                        ? 'FAIL — the error reaching the application carries no headers. Check whether the failing read is the one probe 1 exercises, or whether an intermediate catch rethrew a plain Error.'
+                        : !shown
+                            ? 'FAIL — headers survived but no alert was presented. Check that loadHicFile\'s catch still calls presentError.'
+                            : 'FAIL — an alert was presented, but it does not name the bot challenge. Check isBotChallenge in js/utils.js.',
+            ])
+        }
+    }
+
+</script>
+
+</body>
+</html>

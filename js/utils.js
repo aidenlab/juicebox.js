@@ -69,7 +69,32 @@ function hitTestBbox(bboxes, value) {
     return undefined;
 }
 
+/**
+ * A bot challenge arrives under a misleading 405; the tell is the x-amzn-waf-action header, which
+ * hic-straw hangs off the thrown error. See docs/adr/0001-dev-proxy-for-waf-protected-hosts.md.
+ *
+ * @param {Error} error - the error a load failed with
+ * @returns {boolean} - true if a bot challenge, rather than the request itself, caused the failure
+ */
+function isBotChallenge(error) {
+    // Not every thrower attaches headers: network errors, aborts and local file reads have none,
+    // and only a fetch Response supplies the case-insensitive Headers.get() this relies on.
+    return typeof error.headers?.get === 'function' && error.headers.get('x-amzn-waf-action') === 'captcha';
+}
+
+const botChallengeMessage =
+    "the data provider's bot protection blocked this request. " +
+    "The domain of the page making the request — this one — is most likely not on the " +
+    "provider's allowlist. " +
+    "See https://github.com/aidenlab/juicebox.js/issues/441";
+
 function presentError(prefix, error) {
+
+    if (isBotChallenge(error)) {
+        Alert.presentAlert(`${prefix}: ${botChallengeMessage}`);
+        return;
+    }
+
     const httpMessages =
         {
             401: "Access unauthorized",
@@ -77,8 +102,11 @@ function presentError(prefix, error) {
             404: "Not found"
         };
 
-    const msg = httpMessages[error.message] || error.message;
+    // hic-straw and igv both throw Error(statusText) with the numeric status on error.code, so
+    // that is the only reliable key. Codes arrive as either numbers or strings; object keys
+    // normalize both. See issue #442.
+    const msg = Object.hasOwn(httpMessages, error.code) ? httpMessages[error.code] : error.message;
     Alert.presentAlert(`${prefix}: ${msg}`);
 }
 
-export { createDOMFromHTMLString, getOffset, parseRgbString, prettyPrint, extractName, presentError, hitTestBbox }
+export { createDOMFromHTMLString, getOffset, parseRgbString, prettyPrint, extractName, presentError, isBotChallenge, hitTestBbox }

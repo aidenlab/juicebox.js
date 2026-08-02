@@ -11,10 +11,13 @@
     },
     "./dist/juicebox.esm.js": "./dist/juicebox.esm.js",
     "./dist/juicebox.min.js": "./dist/juicebox.min.js",
-    "./dist/css/juicebox.css": "./dist/css/juicebox.css"
+    "./dist/css/juicebox.css": "./dist/css/juicebox.css",
+    "./dev-proxy/plugin": "./dev-proxy/plugin.js",
+    "./dev-proxy/map-url": "./dev-proxy/map-url.js"
   },
   "files": [
-    "dist/**"
+    "dist/**",
+    "dev-proxy/**"
   ],
   "author": {
     "name": "Jim Robinson"

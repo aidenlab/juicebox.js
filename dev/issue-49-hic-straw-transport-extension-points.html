@@ -26,11 +26,10 @@
 
 <h1>hic-straw #49 — transport extension points</h1>
 <p class="sub">
-    Verifies the acceptance item that cannot be a unit test: a bot challenge keys on
-    <code>Origin</code>, which node never sends, so this must run in a browser at
-    <code>localhost</code>. Requires hic-straw &ge; 4.0.0 — <code>package.json</code> is pinned to
-    <code>github:aidenlab/hic-straw#master</code> on this branch and must be repinned to
-    <code>#v4.0.0</code> once that tag is cut.
+    Verifies the acceptance items that cannot be unit tests: a bot challenge keys on
+    <code>Origin</code>, which node never sends, so these must run in a browser at
+    <code>localhost</code>. Requires hic-straw &ge; 4.0.0, which <code>package.json</code> is
+    pinned to.
 </p>
 
 <!-- ------------------------------------------------------------------ -->
@@ -66,11 +65,12 @@
     <h2>3. Through juicebox.js — <span id="verdict-3" class="verdict pending">not run</span></h2>
     <p>
         The same blocked URL through <code>hic.createBrowser</code>, i.e. the path a real
-        application takes. Shows what juicebox.js surfaces to a user today. This probe is
-        <em>informational</em>: juicebox.js has no interpretation layer yet — that is the dev-proxy
-        work in this repo's <code>docs/adr/0001-dev-proxy-for-waf-protected-hosts.md</code>. What it
-        establishes is that the response detail survives the trip up through juicebox.js and is
-        available to build that layer on.
+        application takes. Passes on three counts: the response detail survives the trip up through
+        juicebox.js (<code>err.headers</code> is still readable here); the alert dialog is actually
+        on screen; and its text names the bot challenge instead of the misleading <code>405</code>.
+        That last one is the whole point of issue #441 — see
+        <code>docs/adr/0001-dev-proxy-for-waf-protected-hosts.md</code>, "Making the failure
+        legible".
     </p>
     <button id="run-3">Run</button>
     <div id="browser-container" style="display: none;"></div>
@@ -187,14 +187,30 @@
         container.style.display = 'block'
         container.innerHTML = ''
 
+        // igv-ui reuses one dialog for the life of the page. Clear any left over from an earlier
+        // run so the assertions below can only read what this run produced.
+        const stale = document.querySelector('.igv-ui-alert-dialog-container')
+        if (stale) {
+            stale.style.display = 'none'
+            stale.querySelector('.igv-ui-alert-dialog-body-copy').textContent = ''
+        }
+
         try {
             await hic.createBrowser(container, {url: BLOCKED_ENCODE_URL, name: 'ENCFF718AWL.hic'})
             setVerdict(3, false, 'LOADED')
             report(3, ['The map LOADED. No bot challenge from this origin — see probe 1.'])
         } catch (e) {
-            // Informational: juicebox.js does not interpret the challenge yet.
             const wafAction = e.headers ? e.headers.get('x-amzn-waf-action') : undefined
-            setVerdict(3, Boolean(e.message), Boolean(e.message) ? 'SURFACED' : 'EMPTY')
+
+            // presentError runs synchronously inside loadHicFile's catch, before the rethrow that
+            // lands here, so the dialog is already up. igv-ui hides it with display: none.
+            const dialog = document.querySelector('.igv-ui-alert-dialog-container')
+            const alertText = document.querySelector('.igv-ui-alert-dialog-body-copy')?.textContent || ''
+            const shown = Boolean(dialog) && getComputedStyle(dialog).display !== 'none'
+            const legible = alertText.includes('bot protection') && !alertText.includes('405')
+
+            const pass = wafAction === 'captcha' && shown && legible
+            setVerdict(3, pass)
             report(3, [
                 'What juicebox.js surfaces to the application:',
                 '',
@@ -202,9 +218,18 @@
                 '',
                 `x-amzn-waf-action   ${wafAction || '(absent at this layer)'}`,
                 '',
-                wafAction
-                    ? 'The response detail survives up through juicebox.js — an interpretation layer can be built on it.'
-                    : 'The error reaching the application carries no headers. Check whether the failing read is the one probe 1 exercises, or whether an intermediate catch rethrew a plain Error.',
+                'What juicebox.js surfaces to the user:',
+                '',
+                `dialog on screen    ${shown ? 'yes' : 'NO'}`,
+                `dialog text         ${alertText || '(empty)'}`,
+                '',
+                pass
+                    ? 'PASS — the challenge is reported in plain language, not as a 405.'
+                    : !wafAction
+                        ? 'FAIL — the error reaching the application carries no headers. Check whether the failing read is the one probe 1 exercises, or whether an intermediate catch rethrew a plain Error.'
+                        : !shown
+                            ? 'FAIL — headers survived but no alert was presented. Check that loadHicFile\'s catch still calls presentError.'
+                            : 'FAIL — an alert was presented, but it does not name the bot challenge. Check isBotChallenge in js/utils.js.',
             ])
         }
     }

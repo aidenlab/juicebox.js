@@ -77,7 +77,10 @@ function presentError(prefix, error) {
             404: "Not found"
         };
 
-    const msg = httpMessages[error.message] || error.message;
+    // hic-straw and igv both throw Error(statusText) with the numeric status on error.code, so
+    // that is the only reliable key. Codes arrive as either numbers or strings; object keys
+    // normalize both. See issue #442.
+    const msg = Object.hasOwn(httpMessages, error.code) ? httpMessages[error.code] : error.message;
     Alert.presentAlert(`${prefix}: ${msg}`);
 }
 

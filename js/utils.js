@@ -109,4 +109,4 @@ function presentError(prefix, error) {
     Alert.presentAlert(`${prefix}: ${msg}`);
 }
 
-export { createDOMFromHTMLString, getOffset, parseRgbString, prettyPrint, extractName, presentError, hitTestBbox }
+export { createDOMFromHTMLString, getOffset, parseRgbString, prettyPrint, extractName, presentError, isBotChallenge, hitTestBbox }

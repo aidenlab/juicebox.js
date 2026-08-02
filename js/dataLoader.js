@@ -26,7 +26,7 @@ import {FileUtils} from 'igv-utils'
 import Dataset, { HiCDataset } from './hicDataset.js'
 import State from './hicState.js'
 import Genome from './genome.js'
-import {extractName, presentError} from "./utils.js"
+import {extractName, presentError, isBotChallenge} from "./utils.js"
 import {isFile} from "./fileUtils.js"
 import {getAllBrowsers, syncBrowsers} from "./createBrowser.js"
 import HICEvent from './hicEvent.js'
@@ -180,6 +180,14 @@ class DataLoader {
             this.browser.contactMapLabel.textContent = "";
             this.browser.contactMapLabel.title = "";
             config.name = name;
+
+            // A bot challenge is the one failure the host app cannot explain to the user, since the
+            // tell is a response header it never sees. Everything else is left to the host, which
+            // may already report the rethrow — see issue #441.
+            if (isBotChallenge(error)) {
+                presentError("Error loading map", error);
+            }
+
             throw error;
         } finally {
             this.browser.stopSpinner();

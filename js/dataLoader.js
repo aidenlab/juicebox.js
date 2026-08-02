@@ -320,6 +320,13 @@ class DataLoader {
                 );
                 return undefined;
             }
+        } catch (error) {
+            // Same reasoning as loadHicFile: report only the failure the host app cannot explain.
+            if (isBotChallenge(error)) {
+                presentError("Error loading control map", error);
+            }
+
+            throw error;
         } finally {
             this.browser.userInteractionShield.style.display = 'none';
             this.browser.stopSpinner();

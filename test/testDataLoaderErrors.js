@@ -81,3 +81,45 @@ describe("loadHicFile error reporting", function () {
     });
 
 });
+
+describe("loadHicControlFile error reporting", function () {
+
+    beforeEach(() => {
+        presented.length = 0;
+        loadDataset.mockReset();
+    });
+
+    test("reports a bot challenge rather than failing silently", async function () {
+        loadDataset.mockRejectedValue(challengeError());
+        const dataLoader = new DataLoader(stubBrowser());
+
+        await expect(dataLoader.loadHicControlFile({ url: "https://www.encodeproject.org/b.hic" }))
+            .rejects.toThrow();
+
+        expect(presented).toHaveLength(1);
+        expect(presented[0]).toContain("bot protection");
+        expect(presented[0]).not.toContain("405");
+    });
+
+    test("still rethrows so the host app can handle the failure", async function () {
+        const error = challengeError();
+        loadDataset.mockRejectedValue(error);
+        const dataLoader = new DataLoader(stubBrowser());
+
+        await expect(dataLoader.loadHicControlFile({ url: "https://www.encodeproject.org/b.hic" }))
+            .rejects.toBe(error);
+    });
+
+    test("leaves ordinary load failures to the host app, unalerted", async function () {
+        const error = Error("Not Found");
+        error.code = 404;
+        loadDataset.mockRejectedValue(error);
+        const dataLoader = new DataLoader(stubBrowser());
+
+        await expect(dataLoader.loadHicControlFile({ url: "https://example.org/missing.hic" }))
+            .rejects.toBe(error);
+
+        expect(presented).toEqual([]);
+    });
+
+});

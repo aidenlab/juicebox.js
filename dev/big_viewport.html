@@ -47,15 +47,25 @@
 <script type="module">
 
     import juicebox from '../js/index.js';
+    import { devMapUrl } from '../dev-proxy/map-url.js'
 
-    // NOTE ON HOSTS -- do not repoint this harness at encodeproject.org or
-    // hicfiles.s3.amazonaws.com. Both gate on User-Agent, and User-Agent is a
-    // forbidden header name in the Fetch spec, so the browser silently drops
-    // the "IGV" value hic-straw sets. Those hosts therefore serve 405 / 403 to
-    // any browser, while curl and Node succeed -- which makes the failure look
-    // like a juicebox bug. It is not. Symptom is a bare Error thrown from
-    // hic-straw's readHeaderAndFooter, with no message because statusText is
-    // always empty on HTTP/2.
+    // Dev-only: routes .hic reads on hosts that answer localhost with a bot challenge
+    // (encodeproject.org today) through the dev server's proxy. In a host app this is
+    // guarded by import.meta.env.DEV; these pages only run under the dev server. See the
+    // README, "Loading maps from hosts that serve a bot challenge".
+    juicebox.setUrlMapper(devMapUrl)
+
+    // NOTE ON HOSTS -- do not repoint this harness at hicfiles.s3.amazonaws.com.
+    // It gates on User-Agent, and User-Agent is a forbidden header name in the
+    // Fetch spec, so the browser silently drops the "IGV" value hic-straw sets.
+    // That host therefore serves 403 to any browser, while curl and Node
+    // succeed -- which makes the failure look like a juicebox bug. It is not.
+    // Symptom is a bare Error thrown from hic-straw's readHeaderAndFooter, with
+    // no message because statusText is always empty on HTTP/2.
+    //
+    // encodeproject.org used to be in the same boat with a 405, for a different
+    // reason (an Origin-keyed bot challenge). The dev proxy registered above
+    // handles it, so an ENCODE .hic is fine here now.
     //
     // Verified reachable from a browser: this wasabisys bucket, and
     // raw.githubusercontent.com/igvteam/igv-data.

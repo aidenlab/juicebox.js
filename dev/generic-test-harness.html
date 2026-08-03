@@ -21,26 +21,42 @@
 <script type="module">
 
     import juicebox from '../js/index.js';
-    // import juicebox from "https://cdn.jsdelivr.net/gh/igvteam/juicebox.js@juicebox-llm-project/dist/juicebox.esm.js";
+    import { devMapUrl } from '../dev-proxy/map-url.js'
+
+    // The one line a host app adds in development, routing .hic reads on hosts that answer
+    // localhost with a bot challenge through the dev server. In a host app it is guarded by
+    // import.meta.env.DEV; this page only ever runs under the dev server. See the README section
+    // "Loading maps from hosts that serve a bot challenge" and
+    // docs/adr/0001-dev-proxy-for-waf-protected-hosts.md.
+    juicebox.setUrlMapper(devMapUrl)
 
     // ------------------------------------------------------------------
     // FIXTURE ROT -- read before picking a config below.
     //
-    // All seven of the historical configs in this file are unreachable from a
-    // browser. They point at encodeproject.org (405) or the hicfiles /
-    // s3.amazonaws.com/hicfiles / dnazoo buckets (403). Both gate on
-    // User-Agent, and User-Agent is a forbidden header name in the Fetch spec,
-    // so hic-straw's headers['User-Agent'] = 'IGV' is silently dropped by the
-    // browser. curl and Node succeed; the browser cannot. See aidenlab/
-    // hic-straw#46. The symptom is a bare Error from readHeaderAndFooter with
-    // no message, because statusText is empty on HTTP/2 (hic-straw#47).
+    // Historically every config in this file was unreachable from a browser.
+    // Two separate gates were at work:
     //
-    // The configs are left in place -- they document real scenarios and become
-    // usable again if the fixtures are rehosted. Verified reachable today:
-    // the wasabisys buckets, dropbox, hgdownload.soe.ucsc.edu, and the
-    // igv.org.genomes / igv.broadinstitute.org buckets.
+    //   encodeproject.org (405) -- AWS WAF answering a non-allowlisted Origin
+    //   with a CAPTCHA page. FIXED for .hic reads by the dev proxy registered
+    //   above: the Vite plugin fetches with an allowlisted Origin from Node and
+    //   hands the redirect back, so the bytes still stream straight to the
+    //   browser from S3.
     //
-    // config_smoke below is the one that currently loads.
+    //   hicfiles / s3.amazonaws.com/hicfiles / dnazoo (403) -- STILL BROKEN.
+    //   These gate on User-Agent, and User-Agent is a forbidden header name in
+    //   the Fetch spec, so hic-straw's headers['User-Agent'] = 'IGV' is
+    //   silently dropped by the browser. curl and Node succeed; the browser
+    //   cannot. See aidenlab/hic-straw#46. The symptom is a bare Error from
+    //   readHeaderAndFooter with no message, because statusText is empty on
+    //   HTTP/2 (hic-straw#47).
+    //
+    // Note the proxy covers only .hic reads through hic-straw. The 2D
+    // annotation .txt tracks on hicfiles are read by igv and are not routed, so
+    // an ENCODE map in a config below loads while its hicfiles tracks do not.
+    //
+    // Also verified reachable today: the wasabisys buckets, dropbox,
+    // hgdownload.soe.ucsc.edu, and the igv.org.genomes /
+    // igv.broadinstitute.org buckets.
     // ------------------------------------------------------------------
 
     // Map and 2D track both verified reachable. The pairing is the one used by
@@ -219,10 +235,10 @@
     const config =
         {
             "backgroundColor": "255,255,255",
-            "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/dilution/combined.hic",
+            // "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/dilution/combined.hic",
 
             // TODO: Debugging map
-            // "url": "https://www.encodeproject.org/files/ENCFF219YOB/@@download/ENCFF219YOB.hic",
+            "url": "https://www.encodeproject.org/files/ENCFF219YOB/@@download/ENCFF219YOB.hic",
 
             "name": "Combined",
             // "state": "17,17,8,12025.0154,12025.0154,640,640,1,NONE",
@@ -294,12 +310,16 @@
             "selectedGene": "egfr"
         };
 
-    // Two configs in this file currently load. Swap the second argument:
-    //   config_smoke      -- one map plus a 2D annotation track
-    //   config_ab_compare -- A/B ratio compare (AOB), the only working A/B gate
-    // Everything else here points at hosts that reject browsers; see the note
-    // at the top of this script.
-    juicebox.init(document.getElementById("app-container"), config_smoke)
+    // Swap the second argument. Loading today:
+    //   config_smoke              -- one map plus a 2D annotation track
+    //   config_ab_compare         -- A/B ratio compare (AOB), the only working A/B gate
+    //   config_locus_state_hacks  -- ENCODE map, via the dev proxy
+    //   config_2d_track,
+    //   config_multiple_browsers  -- ENCODE maps load via the dev proxy; their
+    //                                hicfiles .txt tracks still 403
+    // config_with_tracks and config_a_b_maps point at hicfiles maps, which
+    // reject browsers outright; see the note at the top of this script.
+    juicebox.init(document.getElementById("app-container"), config_with_tracks)
         .then(browser => {
 
             if (Array.isArray(browser)) {

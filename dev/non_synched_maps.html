@@ -48,6 +48,13 @@
 
     import hic from "../js/index.js";
     import {Alert} from "igv-ui"
+    import { devMapUrl } from '../dev-proxy/map-url.js'
+
+    // Dev-only: routes .hic reads on hosts that answer localhost with a bot challenge
+    // (encodeproject.org today) through the dev server's proxy. In a host app this is
+    // guarded by import.meta.env.DEV; these pages only run under the dev server. See the
+    // README, "Loading maps from hosts that serve a bot challenge".
+    hic.setUrlMapper(devMapUrl)
 
     const container = document.getElementById("app-container");
 

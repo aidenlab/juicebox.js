@@ -15,7 +15,7 @@
  * See docs/adr/0001-dev-proxy-for-waf-protected-hosts.md.
  */
 
-import { PROXY_PREFIX, parseHttpUrl, targetFromProxyPath } from './map-url.js'
+import { PROXY_PREFIX, parseHttpUrl, targetFromProxyPath, ruleForHost } from './map-url.js'
 
 /**
  * The Origin the proxy claims. aidenlab.org is this project's own domain and its own entry on
@@ -25,16 +25,21 @@ import { PROXY_PREFIX, parseHttpUrl, targetFromProxyPath } from './map-url.js'
 const DEFAULT_ORIGIN = 'https://aidenlab.org'
 
 /**
- * The proxy identifies itself honestly rather than impersonating a browser.
+ * What every proxied request sends, whichever host it is for.
  *
- * Measured against ENCODE on 2026-08-02, correcting the ADR as written: `Origin` alone decides the
- * challenge, and a spoofed Chrome User-Agent is actively harmful. With an allowlisted Origin, an
- * honest UA, a Firefox UA and no UA at all all return 307; `Chrome/126.0.0.0` returns **502** from
- * awselb, with or without the sec-ch-ua hints. The bot challenge itself fires on a browser UA with
- * a non-allowlisted Origin — which is what made the header set look load-bearing.
+ * The proxy identifies itself honestly rather than impersonating a browser. Measured against
+ * ENCODE on 2026-08-02, correcting the ADR as written: `Origin` alone decides the challenge, and a
+ * spoofed Chrome User-Agent is actively harmful. With an allowlisted Origin, an honest UA, a
+ * Firefox UA and no UA at all all return 307; `Chrome/126.0.0.0` returns **502** from awselb, with
+ * or without the sec-ch-ua hints. The bot challenge itself fires on a browser UA with a
+ * non-allowlisted Origin — which is what made the header set look load-bearing.
  *
  * The Sec-Fetch-* trio is what a browser's own cross-origin fetch would send and is verified
  * harmless; it stays so the proxied request resembles the request being stood in for.
+ *
+ * A host whose gate wants something else overrides it in CHALLENGED_HOSTS, next to the rule that
+ * decides the host is claimed at all. The two known gates want opposite User-Agents, so this can
+ * never be one global set again.
  */
 const REQUEST_HEADERS = {
     'User-Agent': 'juicebox.js-dev-proxy (+https://github.com/aidenlab/juicebox.js)',
@@ -42,6 +47,37 @@ const REQUEST_HEADERS = {
     'Sec-Fetch-Site': 'cross-site',
     'Sec-Fetch-Mode': 'cors',
     'Sec-Fetch-Dest': 'empty'
+}
+
+/**
+ * The rule for a target the client-side mapper never claims. The middleware is generic — targets
+ * arrive from session files and user paste — so an unknown host keeps the behaviour it had before
+ * per-host rules existed: the shared header set, with an Origin claimed.
+ */
+const DEFAULT_RULE = { claimsOrigin: true }
+
+/**
+ * @param {URL} target
+ * @param {string} origin - the Origin the proxy claims, for hosts whose gate keys on one.
+ * @param {object} reqHeaders - the browser's own headers. Only Range is forwarded: its Origin is
+ *        the very thing that gets challenged, and its Host and Cookie belong to the dev server.
+ * @returns {Record<string, string>}
+ */
+function requestHeadersFor(target, origin, reqHeaders) {
+
+    const rule = ruleForHost(target.host) || DEFAULT_RULE
+
+    const headers = { ...REQUEST_HEADERS, ...rule.requestHeaders }
+
+    if (rule.claimsOrigin) {
+        headers.Origin = origin
+    }
+
+    if (reqHeaders?.range) {
+        headers.Range = reqHeaders.range
+    }
+
+    return headers
 }
 
 /**
@@ -70,18 +106,13 @@ function createProxyMiddleware({ origin = DEFAULT_ORIGIN } = {}) {
         }
 
         const target = targetFromProxyPath(req.url)
+        const parsedTarget = parseHttpUrl(target)
 
-        if (!parseHttpUrl(target)) {
+        if (!parsedTarget) {
             return fail(res, 400, `hic dev proxy: not an absolute http(s) URL — ${target}`)
         }
 
-        // Only Range is forwarded from the browser. Everything else is ours: forwarding the
-        // browser's Origin is the very thing that gets challenged, and its Host and Cookie belong
-        // to the dev server, not to the data host.
-        const headers = { ...REQUEST_HEADERS, Origin: origin }
-        if (req.headers?.range) {
-            headers.Range = req.headers.range
-        }
+        const headers = requestHeadersFor(parsedTarget, origin, req.headers)
 
         let response
         try {

@@ -12,6 +12,7 @@ import { PROXY_PREFIX } from "../dev-proxy/map-url.js";
 
 const ENCODE_URL = "https://www.encodeproject.org/files/ENCFF718AWL/@@download/ENCFF718AWL.hic";
 const S3_URL = "https://encode-public.s3.amazonaws.com/2020/x.hic?X-Amz-Signature=abc";
+const HICFILES_URL = "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/dilution/combined.hic";
 
 let fetched;
 
@@ -160,6 +161,62 @@ describe("dev proxy middleware", function () {
             await run(proxyReq(ENCODE_URL));
 
             expect(fetched[0].init.redirect).toBe("manual");
+        });
+
+    });
+
+    // The second gate. These buckets answer 403 to every browser User-Agent and to the proxy's
+    // own honest one; the allowlist is a case-sensitive prefix match, and `IGV` is on it. Measured
+    // 2026-08-03, see issue #451 — `IGV-dev-proxy` passes, so the proxy can satisfy the gate while
+    // still naming itself.
+    describe("a User-Agent-gated host", function () {
+
+        beforeEach(() => stubFetch(new Response("bytes", { status: 206 })));
+
+        test("is sent a User-Agent the allowlist accepts", async function () {
+            await run(proxyReq(HICFILES_URL));
+
+            expect(fetched[0].init.headers['User-Agent']).toMatch(/^IGV/);
+        });
+
+        test("is still told who is really asking", async function () {
+            await run(proxyReq(HICFILES_URL));
+
+            const userAgent = fetched[0].init.headers['User-Agent'];
+            expect(userAgent).toContain("juicebox.js-dev-proxy");
+            expect(userAgent).not.toMatch(/Mozilla|Chrome|Safari|Gecko/);
+        });
+
+        test("is not sent an Origin — this gate does not key on one", async function () {
+            await run(proxyReq(HICFILES_URL));
+
+            expect(fetched[0].init.headers.Origin).toBeUndefined();
+        });
+
+        test("keeps the shared header set", async function () {
+            await run(proxyReq(HICFILES_URL, { range: "bytes=0-99" }));
+
+            const { headers } = fetched[0].init;
+            expect(headers['Sec-Fetch-Site']).toBe("cross-site");
+            expect(headers.Accept).toBe("*/*");
+            expect(headers.Range).toBe("bytes=0-99");
+        });
+
+        test("does not leak its User-Agent to the Origin-challenged host", async function () {
+            await run(proxyReq(ENCODE_URL));
+
+            // ENCODE returns 502 to an allowlisted Origin carrying a spoofed Chrome UA, so its
+            // header set is load-bearing and must stay exactly as it was.
+            expect(fetched[0].init.headers['User-Agent']).not.toMatch(/^IGV/);
+            expect(fetched[0].init.headers.Origin).toBe(DEFAULT_ORIGIN);
+        });
+
+        test("leaves an unclaimed host on the default header set", async function () {
+            await run(proxyReq("https://example.org/x.hic"));
+
+            const { headers } = fetched[0].init;
+            expect(headers['User-Agent']).not.toMatch(/^IGV/);
+            expect(headers.Origin).toBe(DEFAULT_ORIGIN);
         });
 
     });

@@ -18,10 +18,62 @@
  */
 
 /**
- * Hosts that answer a non-allowlisted Origin with a bot challenge. Adding a host here and nothing
- * else is the whole fix for the next one that starts challenging.
+ * The User-Agent the gated buckets accept. Their allowlist is a case-sensitive **prefix** match,
+ * measured 2026-08-03: `IGV`, `IGVX` and `IGV-dev-proxy` are all served, while `igv`, `Juicebox`,
+ * every browser value and an empty User-Agent are refused. The prefix is what the gate reads; the
+ * rest is there so the request still says who is really asking. See issue #451.
  */
-const CHALLENGED_HOSTS = new Set(['www.encodeproject.org'])
+const IGV_PREFIXED_USER_AGENT = 'IGV-juicebox.js-dev-proxy (+https://github.com/aidenlab/juicebox.js)'
+
+/**
+ * What the proxy must do differently for one host.
+ *
+ * @typedef {object} HostRule
+ * @property {boolean} [claimsOrigin] - assert the proxy's configured Origin, for a gate that keys
+ *           on one. The value itself is the plugin's to supply, not this module's.
+ * @property {Record<string, string>} [requestHeaders] - headers that override the shared set.
+ */
+
+/**
+ * Hosts that refuse the request a browser is able to make, and what the proxy must do differently
+ * for each. Adding a host here and nothing else is the whole fix for the next one.
+ *
+ * Two gates are known, and they want opposite things — which is why the header set is a property
+ * of the host rather than one constant for every target:
+ *
+ *   `claimsOrigin`   AWS WAF answering a non-allowlisted `Origin` with a bot challenge. The proxy
+ *                    asserts an allowlisted Origin (the plugin's `origin` option) and identifies
+ *                    itself honestly — a spoofed browser User-Agent here draws a 502.
+ *
+ *   `requestHeaders` a `User-Agent` allowlist. `User-Agent` is a forbidden header name in the
+ *                    Fetch spec, so no browser can satisfy it however the client library asks;
+ *                    Node can. These hosts are not Origin-sensitive, so none is claimed for them.
+ *
+ * Note the asymmetry with the two gates' response shapes, which matters to the middleware: the
+ * Origin-challenged host answers with a redirect to signed storage, so its payload never crosses
+ * Node. These buckets serve the object directly, so for them the dev server really is the data
+ * path. Ranged reads are relayed as they arrive. See docs/adr/0001.
+ */
+const CHALLENGED_HOSTS = {
+    'www.encodeproject.org': { claimsOrigin: true },
+    'hicfiles.s3.amazonaws.com': { requestHeaders: { 'User-Agent': IGV_PREFIXED_USER_AGENT } },
+    'dnazoo.s3.amazonaws.com': { requestHeaders: { 'User-Agent': IGV_PREFIXED_USER_AGENT } }
+}
+
+/**
+ * Host-scoped by design. Path-style addressing of the same gated buckets — `s3.amazonaws.com/
+ * hicfiles/…` — is deliberately left alone: that endpoint serves every bucket without a vhost
+ * name, so claiming it would route strangers' data through the dev server.
+ *
+ * `Object.hasOwn` rather than a plain lookup so that a host named after something on
+ * `Object.prototype` — `constructor`, `toString` — cannot match a rule that was never declared.
+ *
+ * @param {string} host
+ * @returns {HostRule | undefined}
+ */
+function ruleForHost(host) {
+    return Object.hasOwn(CHALLENGED_HOSTS, host) ? CHALLENGED_HOSTS[host] : undefined
+}
 
 /**
  * The middleware's mount point. The target follows it verbatim, so a proxied read is legible in
@@ -76,7 +128,7 @@ function devMapUrl(url) {
 
     const parsed = parseHttpUrl(url)
 
-    return parsed && CHALLENGED_HOSTS.has(parsed.host) ? toProxyPath(url) : url
+    return parsed && ruleForHost(parsed.host) ? toProxyPath(url) : url
 }
 
-export { devMapUrl, parseHttpUrl, toProxyPath, targetFromProxyPath, PROXY_PREFIX }
+export { devMapUrl, parseHttpUrl, toProxyPath, targetFromProxyPath, ruleForHost, PROXY_PREFIX }

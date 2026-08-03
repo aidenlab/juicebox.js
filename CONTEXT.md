@@ -78,11 +78,29 @@ sharing a track (`js/trackPair.js`).
 
 ## Data access
 
+**Gate** — the general term for a data host refusing the request a browser is
+able to make. Two are known, and they refuse for unrelated reasons: the *bot
+challenge* and the *User-Agent allowlist*. Say which gate you mean; a fix for
+one does nothing for the other.
+
 **Bot challenge** — a data host answering an automated request with a CAPTCHA
 page instead of the file. The known case is AWS WAF in front of
 `www.encodeproject.org`, which serves `X-Amzn-Waf-Action: captcha` under a
 misleading `405` status to any request whose `Origin` is not on ENCODE's
 allowlist. Say *bot challenge*, not "the 405" — the status code is a lie.
+
+**User-Agent allowlist** — the other gate: a host serving `403` unless the
+request carries a `User-Agent` it recognises. `hicfiles.s3.amazonaws.com` and
+`dnazoo.s3.amazonaws.com` match a case-sensitive prefix, `IGV` among them. No
+browser can pass it — `User-Agent` is a forbidden header name in the Fetch spec,
+so the value the client libraries set never leaves. Unrelated to CORS, and
+unrelated to bucket permissions; both were ruled out.
+
+**Gated bucket** — a host behind the User-Agent allowlist. Named separately from
+*challenged host* (behind the bot challenge) because the proxy treats them
+differently: a challenged host answers with a redirect the proxy hands back,
+while a gated bucket serves its object directly, making the dev server a real
+data path.
 
 **Origin allowlist** — the data provider's list of domains permitted to fetch
 without a bot challenge. ENCODE's, on ENCODE's infrastructure; not editable from
@@ -96,10 +114,19 @@ rewrite a `.hic` URL before it is fetched. Registered once by the host app via
 `setUrlMapper`; unset in production. The library cannot detect dev mode itself,
 because consumers get a production-baked `dist`. See `docs/adr/0001`.
 
-**Dev proxy** — the `apply: 'serve'` Vite plugin under `dev-proxy/` that fetches
-challenged hosts server-side with an allowlisted `Origin` and returns the
-redirect to the browser. Development only, `.hic` reads only, host-scoped. A
-workaround with an expiry condition, not architecture. See `docs/adr/0001`.
+**Dev proxy** — the `apply: 'serve'` Vite plugin under `dev-proxy/` that refetches
+gated hosts from Node, where the headers a browser cannot set are ours to
+choose. What it sends, and what comes back, depends on the gate: a challenged
+host gets an allowlisted `Origin` and answers with a redirect the proxy hands
+straight back to the browser; a gated bucket gets an `IGV`-prefixed `User-Agent`
+and streams its bytes through the dev server. Development only, `.hic` reads
+only, host-scoped. A workaround with an expiry condition, not architecture. See
+`docs/adr/0001`.
+
+**Claimed host** — a host the dev proxy routes, declared in `CHALLENGED_HOSTS`
+together with the headers its gate wants. Everything else fetches directly, on
+purpose: a genuine CORS or permissions failure has to stay visible in
+development.
 
 ## Architecture vocabulary
 

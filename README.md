@@ -159,11 +159,14 @@ This opens a dashboard at `http://localhost:3000` with links to all available pa
 
 Note: The Vite dev server is required because the source files use bare npm import specifiers and SCSS, which browsers cannot resolve from a plain static file server.
 
-## Loading maps from hosts that serve a bot challenge
+## Loading maps from hosts that refuse a browser
 
-Some data hosts — `www.encodeproject.org` today — put AWS WAF in front of their files and answer any origin not on their allowlist with a CAPTCHA page, under a misleading `405`. `localhost` is never allowlisted, so those maps cannot be loaded in development without help.
+Some data hosts refuse the request a browser is able to make, so their maps cannot be loaded in development without help. Two gates are known:
 
-`dev-proxy/` is a **development-only** workaround: a Vite plugin that fetches the file from Node with an allowlisted `Origin` and hands the resulting redirect back to the browser, plus the client-side rule that decides which hosts get routed that way. It is already wired into this repo's dev server — see `dev/encode-dev-proxy.html`. In a host application:
+- **A bot challenge keyed on `Origin`** — `www.encodeproject.org` puts AWS WAF in front of its files and answers any origin not on its allowlist with a CAPTCHA page, under a misleading `405`. `localhost` is never allowlisted.
+- **A `User-Agent` allowlist** — `hicfiles.s3.amazonaws.com` and `dnazoo.s3.amazonaws.com` serve `403` unless the request carries an allowlisted `User-Agent`. No browser can comply: `User-Agent` is a forbidden header name in the Fetch spec, so the value the client libraries set is dropped before the request leaves.
+
+`dev-proxy/` is a **development-only** workaround: a Vite plugin that refetches the file from Node, where those headers are ours to set, plus the client-side rule that decides which hosts get routed that way. It is already wired into this repo's dev server — see `dev/encode-dev-proxy.html`. In a host application:
 
 ```js
 // vite.config.js
@@ -180,9 +183,13 @@ import { devMapUrl } from 'juicebox.js/dev-proxy/map-url'
 if (import.meta.env.DEV) hic.setUrlMapper(devMapUrl)
 ```
 
-`devProxy()` takes an `origin` option (default `https://aidenlab.org`) — the `Origin` the proxy claims. Set it to a domain you actually control.
+`devProxy()` takes an `origin` option (default `https://aidenlab.org`) — the `Origin` the proxy claims for hosts whose gate keys on one. Set it to a domain you actually control.
 
-`apply: 'serve'` means the plugin can never enter a production build, and `setUrlMapper` is unset by default: a host app that never calls it behaves exactly as before. Only `.hic` reads through hic-straw are covered. See `docs/adr/0001-dev-proxy-for-waf-protected-hosts.md`.
+Which hosts get routed, and what headers each is sent, are declared together in `CHALLENGED_HOSTS` in `dev-proxy/map-url.js`. Adding the next such host is an entry there and nothing else. Every other host keeps fetching directly, so a genuine CORS or permissions problem still surfaces in development exactly as it would in production.
+
+For the `Origin`-challenged host the proxy hands the redirect back and the file streams to the browser from storage directly. The `User-Agent`-gated buckets serve their objects with no redirect to hand back, so for those the dev server relays the bytes.
+
+`apply: 'serve'` means the plugin can never enter a production build, and `setUrlMapper` is unset by default: a host app that never calls it behaves exactly as before. Only `.hic` reads through hic-straw are covered — igv's track loaders are a separate transport, see issue #450. Details and measurements: `docs/adr/0001-dev-proxy-for-waf-protected-hosts.md`.
 
 This creates a dist folder with the following files
 

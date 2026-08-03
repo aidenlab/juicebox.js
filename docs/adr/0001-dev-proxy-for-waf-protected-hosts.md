@@ -191,6 +191,73 @@ Why the 502 rather than a challenge is a guess — most likely a WAF rule on a
 Chrome `User-Agent` unaccompanied by the rest of a real Chrome fingerprint. It is
 ENCODE's rule to change, so pin nothing to it beyond "do not impersonate".
 
+## Amendment, 2026-08-03 — a second gate, and the proxy becomes a data path
+
+Issue #451. Adopting the proxy across `dev/` turned up hosts that refuse a
+browser for an entirely different reason, and accommodating them changes one of
+the properties claimed above.
+
+### The gate
+
+`hicfiles.s3.amazonaws.com` and `dnazoo.s3.amazonaws.com` gate on `User-Agent`.
+It is an allowlist matched **case-sensitively against the start of the string**,
+measured 2026-08-03 against `combined_peaks.txt`, every value probed twice:
+
+| `User-Agent` | Result |
+|---|---|
+| `IGV`, `IGVX`, `IGV/2.19.1`, `IGV-dev-proxy` | 200 |
+| `python-requests`, `python-requests/2.31`, `python-requests/9.9` | 200 |
+| `igv` (lowercase), `IG`, `aIGV`, `python`, `requests` | 403 |
+| `Juicebox`, `juicebox.js-dev-proxy IGV`, `foo`, `x` | 403 |
+| `Mozilla/5.0`, `Mozilla`, `AppleWebKit`, `Safari`, `curl/8.7.1` | 403 |
+| *(absent)* | 403 |
+
+No browser can satisfy this: `User-Agent` is a forbidden header name in the Fetch
+spec, so the `IGV` value hic-straw and igv.js set is silently dropped. curl and
+Node succeed; the browser cannot. Upstream: aidenlab/hic-straw#46.
+
+CORS is **not** a factor here and should not be re-investigated — with an
+`Origin` present these buckets return `Access-Control-Allow-Origin: *` on both
+200 and 206, for `localhost:3000` and `aidenlab.org` alike. This is unrelated to
+#444, which concerns `hicfiles.json` on a different host.
+
+### What changed
+
+Request headers are now a **per-host** property, declared in `CHALLENGED_HOSTS`
+next to the rule that decides a host is claimed at all. This had to stop being
+one global set: the two gates want opposite things, and the `IGV` prefix that
+fixes these buckets would sit alongside an `Origin` the other gate reads. An
+unclaimed host keeps the original header set unchanged.
+
+The proxy sends `IGV-juicebox.js-dev-proxy (+…)`. The prefix is what the gate
+reads; the remainder keeps faith with "assert only your own identity" above —
+the proxy satisfies the allowlist without claiming to *be* IGV, which the
+measurements show is unnecessary.
+
+### The property this costs
+
+**"Only the small redirect request crosses Node; the map bytes do not" is no
+longer true for every host.** It remains true for ENCODE, which answers with a
+`307` to signed S3. These buckets serve the object **directly** — `206`,
+`Content-Range`, no `Location`. There is nothing to redirect to, so for them the
+dev server really is the data path and every ranged read is relayed through it.
+`combined.hic` there is 11.7 GB; a session touches only ranges of it, but all of
+them cross Node.
+
+Accepted knowingly, dev-only, and preferred over the alternative: these are the
+project's own buckets, so the honest fix is to loosen the gate at the host — but
+that needs AWS admin access rather than a commit, and would not help anyone
+running an older juicebox. The relay must therefore never buffer a whole object,
+and must preserve status and `Content-Range` exactly.
+
+### Not claimed
+
+Path-style addressing of the same buckets (`s3.amazonaws.com/hicfiles/…`) is
+left fetching directly. The rule is host-scoped, and that endpoint serves every
+bucket without a vhost name; claiming it would route strangers' data through the
+dev server. A fixture using the path-style form stays unreachable in development
+— repoint it at the vhost form.
+
 ## Reversal
 
 This is a **workaround with an expiry condition**, unlike the hic-straw ADR it

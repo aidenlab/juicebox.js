@@ -109,18 +109,26 @@ apps work and localhost does not. It keys on the `Origin` header — the domain 
 the page making the request — and has nothing to do with where anything is
 hosted.
 
-**URL mapper** — the function juicebox hands to hic-straw as `config.mapUrl` to
-rewrite a `.hic` URL before it is fetched. Registered once by the host app via
-`setUrlMapper`; unset in production. The library cannot detect dev mode itself,
-because consumers get a production-baked `dist`. See `docs/adr/0001`.
+**URL mapper** — the function juicebox applies to a data URL before it is
+fetched: handed to hic-straw as `config.mapUrl` for a `.hic` read, applied at the
+fetch for a 2D annotation, and written into the config for a 1D track, since igv
+reads those through loaders juicebox cannot reach into. Registered once by the
+host app via `setUrlMapper`; unset in production. The library cannot detect dev
+mode itself, because consumers get a production-baked `dist`. See
+`docs/adr/0001`.
+
+**Unmapped URL** — a track config's pre-mapping URL, carried alongside the mapped
+one so `HICBrowser.toJSON` can serialize the original. The 1D rewrite is the only
+one that touches a config, and a session must never name the dev server.
 
 **Dev proxy** — the `apply: 'serve'` Vite plugin under `dev-proxy/` that refetches
 gated hosts from Node, where the headers a browser cannot set are ours to
 choose. What it sends, and what comes back, depends on the gate: a challenged
 host gets an allowlisted `Origin` and answers with a redirect the proxy hands
 straight back to the browser; a gated bucket gets an `IGV`-prefixed `User-Agent`
-and streams its bytes through the dev server. Development only, `.hic` reads
-only, host-scoped. A workaround with an expiry condition, not architecture. See
+and streams its bytes through the dev server. Development only, host-scoped,
+covering `.hic` and track reads. A workaround with an expiry condition, not
+architecture. See
 `docs/adr/0001`.
 
 **Claimed host** — a host the dev proxy routes, declared in `CHALLENGED_HOSTS`

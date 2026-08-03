@@ -39,6 +39,7 @@ import StateManager from "./stateManager.js"
 import InteractionHandler from "./interactionHandler.js"
 import DataLoader from "./dataLoader.js"
 import RenderCoordinator from "./renderCoordinator.js"
+import {unmappedUrl} from "./urlMapper.js"
 
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
@@ -936,9 +937,13 @@ class HICBrowser {
                 const track = trackRenderer.x.track
                 const config = track.config
 
-                if (typeof config.url === "string") {
+                // The original URL, not the one igv was given: with a dev proxy registered those
+                // differ, and a session must never carry a dev-server path. See issue #450.
+                const url = unmappedUrl(config)
 
-                    const t = {url: config.url}
+                if (typeof url === "string") {
+
+                    const t = {url}
 
                     if (config.type) {
                         t.type = config.type

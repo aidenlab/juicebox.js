@@ -189,7 +189,9 @@ Which hosts get routed, and what headers each is sent, are declared together in 
 
 For the `Origin`-challenged host the proxy hands the redirect back and the file streams to the browser from storage directly. The `User-Agent`-gated buckets serve their objects with no redirect to hand back, so for those the dev server relays the bytes.
 
-`apply: 'serve'` means the plugin can never enter a production build, and `setUrlMapper` is unset by default: a host app that never calls it behaves exactly as before. Only `.hic` reads through hic-straw are covered — igv's track loaders are a separate transport, see issue #450. Details and measurements: `docs/adr/0001-dev-proxy-for-waf-protected-hosts.md`.
+`apply: 'serve'` means the plugin can never enter a production build, and `setUrlMapper` is unset by default: a host app that never calls it behaves exactly as before.
+
+The mapper covers `.hic` reads through hic-straw, 2D annotations, and 1D tracks read by igv. A 1D track is the awkward one: igv reads it through its own bundled loaders, which juicebox cannot reach into, so the mapped URL has to go into the config igv is handed. It never escapes from there — `browser.toJSON()` serializes the original, so a session saved in development loads in production. Still uncovered: gene search and session-file reads. Details and measurements: `docs/adr/0001-dev-proxy-for-waf-protected-hosts.md`.
 
 This creates a dist folder with the following files
 

@@ -1,4 +1,5 @@
 import {igvxhr, StringUtils} from 'igv-utils'
+import {mapUrl} from './urlMapper.js'
 
 class Track2D {
 
@@ -39,7 +40,10 @@ class Track2D {
 
     static async loadTrack2D(config, genome) {
 
-        const data = await igvxhr.loadString(config.url, buildOptions(config))
+        // Mapped at the fetch, not on the config: this is a juicebox-owned call site, so the
+        // rewritten URL is used and discarded and `config.url` — the one toJSON serializes —
+        // stays the original. See issue #450.
+        const data = await igvxhr.loadString(mapUrl(config.url), buildOptions(config))
         const features = parseData(data, isBedPE(config), genome)
         return new Track2D(config, features)
     }

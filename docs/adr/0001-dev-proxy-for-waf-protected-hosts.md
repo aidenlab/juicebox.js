@@ -134,6 +134,8 @@ would break juicebox outright, since `.hic` reading is entirely byte-range based
 and igv's own 1D track loaders are different transports with no equivalent seam;
 covering them would need a second mechanism. Out of scope until it actually bites.
 
+*(Superseded by the 2026-08-03 amendment on track reads, below — it bit.)*
+
 ### Making the failure legible — ships to production
 
 `presentError` (`js/utils.js`) already translates HTTP status into human text and
@@ -257,6 +259,60 @@ left fetching directly. The rule is host-scoped, and that endpoint serves every
 bucket without a vhost name; claiming it would route strangers' data through the
 dev server. A fixture using the path-style form stays unreachable in development
 — repoint it at the vhost form.
+
+## Amendment, 2026-08-03 — the mapper reaches track reads
+
+Issue #450. The scope above — `.hic` only — did not survive first contact: an
+ENCODE-hosted map loads while an ENCODE-hosted 1D track from the same session
+does not. The proxy middleware was never the problem; it is host-generic and
+already serves a bigWig correctly. Nothing routed track reads into it.
+
+The two track transports need different treatment, and the difference is the
+whole substance of this amendment.
+
+**2D annotations** are read by juicebox itself, at `Track2D.loadTrack2D`. Our
+call site, so the mapper is applied **at the fetch**: the mapped URL is used and
+discarded, `config.url` stays original, and `toJSON` needs no change at all.
+
+**1D tracks** are handed to `igv.createTrack` and read by igv's own bundled
+`igvxhr`, whose URL rewriting is a module-private function — `igv.esm.js` ships
+three copies of it, so patching the `igv-utils` dependency does not reach them.
+`igv.setCORSProxy` cannot substitute: its retry is gated on `xhr.status === 0`
+or `onerror`, and ENCODE's `405` carries valid CORS headers, so `onload` runs and
+goes straight to the error path. The retry is never reached.
+
+That leaves exactly one lever — **the `url` in the config igv is handed**. So for
+1D tracks the rewrite is config-time, which is the thing the `.hic` path was able
+to avoid.
+
+### The constraint that shapes it
+
+`HICBrowser.toJSON` copies `config.url` verbatim. A config-time rewrite with no
+counterpart would therefore bake `/__hic-proxy/…` into **saved sessions** —
+a session saved in development would not load in production, and would name a
+machine that is not there. Any config-time mapping owes a matching un-map on
+serialization.
+
+`mapTrackConfig` writes the mapped URLs onto a **copy** of the config and carries
+the originals — `url` and `indexURL` both — in `unmappedUrls` alongside; `toJSON`
+reads through `unmappedUrl(config)`. Nothing serializes an index URL today; it is
+stashed anyway, because a rewrite whose original cannot be recovered is the leak
+this exists to prevent and half an invariant is worse than none.
+When no mapper is registered, or the mapper claims neither URL, the very same
+config object is returned — the no-mapper path, which is every production host
+app, is unchanged rather than merely equivalent.
+
+### Not done here
+
+Gene search and session-file loading also read through juicebox's own `igvxhr`
+and would take the same one-line treatment as the 2D path. Neither was implicated,
+so neither was touched.
+
+The honest fix is upstream: a pre-fetch URL mapper in igv.js, composed on top of
+its built-in rewrites, filed as igvteam/igv.js#2088. If that lands, the 1D half
+here collapses into registering the same mapper with igv and deleting the config
+stash and the `toJSON` un-map. The 2D half stays either way — that call site is
+ours.
 
 ## Reversal
 

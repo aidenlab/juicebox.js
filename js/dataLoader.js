@@ -37,6 +37,7 @@ import {getLayoutDimensions} from './layoutController.js'
 import Track2D from './track2D.js'
 
 import {DEFAULT_ANNOTATION_COLOR} from "./urlUtils.js"
+import {mapTrackConfig} from "./urlMapper.js"
 
 /**
  * DataLoader handles all data loading responsibilities for HICBrowser.
@@ -387,7 +388,10 @@ class DataLoader {
                 if (is2D) {
                     promises2D.push(Track2D.loadTrack2D(config, this.browser.genome));
                 } else {
-                    const track = await igv.createTrack(config, this.browser);
+                    // igv reads the track through its own bundled loaders, which juicebox cannot
+                    // reach into — the config's `url` is the only lever. mapTrackConfig carries the
+                    // original alongside so toJSON can serialize it. See issue #450.
+                    const track = await igv.createTrack(mapTrackConfig(config), this.browser);
 
                     if (typeof track.postInit === 'function') {
                         await track.postInit();

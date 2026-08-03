@@ -25,7 +25,7 @@
 
 <body>
 
-<h1>issue #440 — dev proxy for WAF-protected hosts</h1>
+<h1>issues #440, #450 — dev proxy for WAF-protected hosts</h1>
 <p class="sub">
     Checks the acceptance items that cannot be unit tests, because a bot challenge keys on
     <code>Origin</code> and only a browser at <code>localhost</code> sends the failing one. This page
@@ -73,6 +73,20 @@
     <div id="browser-container"></div>
 </div>
 
+<!-- ------------------------------------------------------------------ -->
+<div class="probe">
+    <h2>4. ENCODE-hosted tracks load, and stay out of the session — <span id="verdict-4" class="verdict pending">not run</span></h2>
+    <p>
+        Issue #450's acceptance criteria. Loads a bigWig (1D, read by igv's own loaders) and a
+        <code>.bedpe</code> (2D, read by juicebox) from the same challenged host onto the map from
+        probe 3, then checks <code>browser.toJSON()</code>. Both must render, and neither may
+        contribute a <code>/__hic-proxy/</code> path to the session — a session saved in development
+        has to load in production. Run probe 3 first.
+    </p>
+    <button id="run-4">Run</button>
+    <pre id="out-4">—</pre>
+</div>
+
 <script type="module">
 
     import hic from '../js/index.js'
@@ -84,6 +98,14 @@
 
     // Blocked from any non-allowlisted Origin, localhost included.
     const ENCODE_URL = 'https://www.encodeproject.org/files/ENCFF718AWL/@@download/ENCFF718AWL.hic'
+
+    // Same host, same gate, same assembly (hg19) as the map above. The bigWig goes through igv's
+    // own loaders; the bedpe through juicebox's. Issue #450.
+    const ENCODE_BIGWIG_URL = 'https://www.encodeproject.org/files/ENCFF144KUK/@@download/ENCFF144KUK.bigWig'
+    const ENCODE_BEDPE_URL = 'https://www.encodeproject.org/files/ENCFF303QCX/@@download/ENCFF303QCX.bedpe.gz'
+
+    // Probe 3 makes the browser probe 4 loads tracks onto.
+    let browser
 
     const setVerdict = (n, pass, label) => {
         const el = document.getElementById(`verdict-${n}`)
@@ -176,7 +198,7 @@
         container.innerHTML = ''
 
         try {
-            const browser = await hic.createBrowser(container, {url: ENCODE_URL, name: 'ENCFF718AWL.hic'})
+            browser = await hic.createBrowser(container, {url: ENCODE_URL, name: 'ENCFF718AWL.hic'})
             setVerdict(3, true)
             report(3, [
                 `genome        ${browser.dataset.genomeId}`,
@@ -196,6 +218,68 @@
                 e.headers?.get('x-amzn-waf-action') === 'captcha'
                     ? 'FAIL — still challenged. The proxy Origin is not on the allowlist, or the read did not go through the mapper.'
                     : 'FAIL — see the message above.',
+            ])
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 4. Tracks on the challenged host load, and the session stays clean
+    // ------------------------------------------------------------------
+    document.getElementById('run-4').onclick = async () => {
+
+        if (!browser) {
+            setVerdict(4, false)
+            report(4, ['No browser. Run probe 3 first — probe 4 loads tracks onto that map.'])
+            return
+        }
+
+        report(4, ['loading…'])
+
+        const tracks1DBefore = browser.trackPairs.length
+        const tracks2DBefore = browser.tracks2D.length
+
+        try {
+            await browser.loadTracks([
+                {url: ENCODE_BIGWIG_URL, name: 'ENCFF144KUK.bigWig'},
+                {url: ENCODE_BEDPE_URL, name: 'ENCFF303QCX.bedpe.gz'}
+            ])
+
+            const loaded1D = browser.trackPairs.length > tracks1DBefore
+            const loaded2D = browser.tracks2D.length > tracks2DBefore
+
+            // The constraint that makes this more than a load: toJSON copies config URLs verbatim,
+            // so a config-time rewrite would bake a dev-server path into every saved session.
+            const session = browser.toJSON()
+            const sessionUrls = (session.tracks || []).map(t => t.url)
+            const leaked = sessionUrls.filter(url => typeof url === 'string' && url.includes(PROXY_PREFIX))
+            const bothSerialized = sessionUrls.includes(ENCODE_BIGWIG_URL) && sessionUrls.includes(ENCODE_BEDPE_URL)
+
+            const pass = loaded1D && loaded2D && leaked.length === 0 && bothSerialized
+
+            setVerdict(4, pass)
+            report(4, [
+                `1D tracks     ${tracks1DBefore} -> ${browser.trackPairs.length}`,
+                `2D tracks     ${tracks2DBefore} -> ${browser.tracks2D.length}`,
+                '',
+                'session track urls:',
+                ...sessionUrls.map(url => `  ${url}`),
+                '',
+                pass
+                    ? 'PASS — both tracks loaded through the proxy and the session carries the original urls.'
+                    : !loaded1D
+                        ? 'FAIL — the bigWig did not load. Check the alert and the network panel: the request should be a /__hic-proxy/ path.'
+                        : !loaded2D
+                            ? 'FAIL — the bedpe did not load.'
+                            : leaked.length > 0
+                                ? `FAIL — a proxy path leaked into the session: ${leaked.join(', ')}. A session saved here would not load in production.`
+                                : 'FAIL — a track loaded but did not reach the session at its original url.',
+            ])
+        } catch (e) {
+            setVerdict(4, false)
+            report(4, [
+                `message   ${e.message || '(empty)'}`,
+                `code      ${e.code === undefined ? '(absent)' : e.code}`,
+                `waf       ${e.headers?.get('x-amzn-waf-action') || '(absent)'}`,
             ])
         }
     }

@@ -22,6 +22,13 @@
 
     import juicebox from '../js/index.js';
     // import juicebox from "https://cdn.jsdelivr.net/gh/igvteam/juicebox.js@dat-jquery-cleanse/dist/juicebox.esm.js";
+    import { devMapUrl } from '../dev-proxy/map-url.js'
+
+    // Dev-only: routes .hic reads on hosts that answer localhost with a bot challenge
+    // (encodeproject.org today) through the dev server's proxy. In a host app this is
+    // guarded by import.meta.env.DEV; these pages only run under the dev server. See the
+    // README, "Loading maps from hosts that serve a bot challenge".
+    juicebox.setUrlMapper(devMapUrl)
 
     const config =
         {

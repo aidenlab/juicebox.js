@@ -49,12 +49,16 @@ function mapUrl(url) {
 }
 
 /**
- * The field carrying a track config's pre-mapping URL. igv.js reads a track's URL from its config
+ * The field carrying a track config's pre-mapping URLs. igv.js reads a track's URLs from its config
  * and there is no seam inside its loaders (issue #450), so the only lever juicebox has over an igv
- * read is the `url` it hands over. That rewritten value must never escape into a saved session, so
- * the original travels alongside it and `HiCBrowser.toJSON` serializes that instead.
+ * read is what it hands over. Those rewritten values must never escape into a saved session, so the
+ * originals travel alongside them and `HICBrowser.toJSON` serializes those instead.
+ *
+ * Every URL the mapper rewrites is stashed, `indexURL` included — nothing serializes an `indexURL`
+ * today, but a rewrite whose original cannot be recovered is exactly the leak this field exists to
+ * prevent, and half an invariant is worse than none.
  */
-const UNMAPPED_URL = 'unmappedUrl'
+const UNMAPPED_URLS = 'unmappedUrls'
 
 /**
  * Map the URLs of a track config bound for igv, preserving the originals.
@@ -75,7 +79,7 @@ function mapTrackConfig(config) {
         return config
     }
 
-    const mapped = {...config, url, [UNMAPPED_URL]: config.url}
+    const mapped = {...config, url, [UNMAPPED_URLS]: {url: config.url, indexURL: config.indexURL}}
 
     // Assigned only when there was one to begin with — an `indexURL: undefined` key that the
     // caller never wrote is a change to the config igv sees, however inert it looks.
@@ -91,10 +95,10 @@ function mapTrackConfig(config) {
  * one. Safe on any config, mapped or not.
  *
  * @param {object} config
- * @returns {*} the pre-mapping URL.
+ * @returns {*} the pre-mapping url.
  */
 function unmappedUrl(config) {
-    return Object.hasOwn(config, UNMAPPED_URL) ? config[UNMAPPED_URL] : config.url
+    return Object.hasOwn(config, UNMAPPED_URLS) ? config[UNMAPPED_URLS].url : config.url
 }
 
 export { setUrlMapper, getUrlMapper, mapUrl, mapTrackConfig, unmappedUrl }

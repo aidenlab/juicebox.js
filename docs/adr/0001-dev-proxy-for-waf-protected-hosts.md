@@ -287,14 +287,17 @@ to avoid.
 
 ### The constraint that shapes it
 
-`HiCBrowser.toJSON` copies `config.url` verbatim. A config-time rewrite with no
+`HICBrowser.toJSON` copies `config.url` verbatim. A config-time rewrite with no
 counterpart would therefore bake `/__hic-proxy/…` into **saved sessions** —
 a session saved in development would not load in production, and would name a
 machine that is not there. Any config-time mapping owes a matching un-map on
 serialization.
 
 `mapTrackConfig` writes the mapped URLs onto a **copy** of the config and carries
-the original in `unmappedUrl` alongside; `toJSON` reads through `unmappedUrl`.
+the originals — `url` and `indexURL` both — in `unmappedUrls` alongside; `toJSON`
+reads through `unmappedUrl(config)`. Nothing serializes an index URL today; it is
+stashed anyway, because a rewrite whose original cannot be recovered is the leak
+this exists to prevent and half an invariant is worse than none.
 When no mapper is registered, or the mapper claims neither URL, the very same
 config object is returned — the no-mapper path, which is every production host
 app, is unchanged rather than merely equivalent.

@@ -84,6 +84,10 @@ describe("mapTrackConfig", function () {
         expect(mapped.name).toBe("ENCFF144KUK");
         expect(config.url).toBe(PROXIED);
         expect(config.indexURL).toBe(`${PROXIED}.tbi`);
+
+        // Both originals are recoverable, index included: a rewrite whose original is lost is the
+        // leak the stash exists to prevent, whether or not anything serializes it today.
+        expect(mapped.unmappedUrls).toEqual({ url: PROXIED, indexURL: `${PROXIED}.tbi` });
     });
 
     test("does not invent an indexURL key on a config that had none", function () {
@@ -182,6 +186,20 @@ describe("session serialization", function () {
         const url = "https://example.org/a.bigWig";
 
         expect(sessionTracksFor([{ url, name: "a" }])[0].url).toBe(url);
+    });
+
+    test("round-trips: a session saved with a mapper reloads with none registered", async function () {
+        setUrlMapper(proxyMapper);
+        global.document.querySelector = () => ({ style: {} });
+        global.getComputedStyle = () => ({ getPropertyValue: () => "0" });
+        createTrack.mockReset();
+
+        const saved = sessionTracksFor([await configHandedToIgv({ url: PROXIED, format: "bigwig" })]);
+        setUrlMapper(undefined);
+        createTrack.mockReset();
+
+        // Reloading the saved session in production — no mapper — must fetch the real host.
+        expect((await configHandedToIgv(saved[0])).url).toBe(PROXIED);
     });
 
     test("keeps a mapped 2D track's url original", function () {

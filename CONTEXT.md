@@ -118,8 +118,8 @@ mode itself, because consumers get a production-baked `dist`. See
 `docs/adr/0001`.
 
 **Unmapped URL** — a track config's pre-mapping URL, carried alongside the mapped
-one so `toJSON` can serialize the original. The 1D rewrite is the only one that
-touches a config, and a session must never name the dev server.
+one so `HICBrowser.toJSON` can serialize the original. The 1D rewrite is the only
+one that touches a config, and a session must never name the dev server.
 
 **Dev proxy** — the `apply: 'serve'` Vite plugin under `dev-proxy/` that refetches
 gated hosts from Node, where the headers a browser cannot set are ours to

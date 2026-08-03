@@ -57,9 +57,7 @@ describe("devMapUrl", function () {
             "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/x.hic",
             "https://ftp.ncbi.nlm.nih.gov/geo/samples/x.hic",
             "https://s3.us-east-1.wasabisys.com/x.hic",
-            // Path-style addressing of the same gated bucket. Deliberately not claimed: the rule
-            // is host-scoped, and s3.amazonaws.com is a shared endpoint serving every bucket that
-            // has no vhost name. Claiming it would route strangers' data through the dev server.
+            // Path-style addressing of a gated bucket, deliberately not claimed — see ruleForHost.
             "https://s3.amazonaws.com/hicfiles/x.hic",
             "https://dl.dropboxusercontent.com/s/x.hic",
             "https://encodeproject.org.evil.example/x.hic",

@@ -15,6 +15,8 @@
  * See docs/adr/0001-dev-proxy-for-waf-protected-hosts.md.
  */
 
+import { once } from 'node:events'
+
 import { PROXY_PREFIX, parseHttpUrl, targetFromProxyPath, ruleForHost } from './map-url.js'
 
 /**
@@ -53,6 +55,8 @@ const REQUEST_HEADERS = {
  * The rule for a target the client-side mapper never claims. The middleware is generic — targets
  * arrive from session files and user paste — so an unknown host keeps the behaviour it had before
  * per-host rules existed: the shared header set, with an Origin claimed.
+ *
+ * @type {import('./map-url.js').HostRule}
  */
 const DEFAULT_RULE = { claimsOrigin: true }
 
@@ -136,18 +140,31 @@ function createProxyMiddleware({ origin = DEFAULT_ORIGIN } = {}) {
             return res.end()
         }
 
-        // Anything else is a small payload in practice — a bot challenge page or another error,
-        // since the challenged hosts answer a successful read with a redirect. Buffering keeps the
-        // relay simple and lets Node set an accurate Content-Length.
-        let body
-        try {
-            body = Buffer.from(await response.arrayBuffer())
-        } catch (e) {
-            return fail(res, 502, `hic dev proxy: ${e.message}`)
-        }
+        // Anything else is relayed as it arrives. For the Origin-challenged host this is only ever
+        // a small payload — a bot challenge page or another error — because a successful read
+        // there is the redirect above. The User-Agent-gated buckets have no redirect to hand back,
+        // so this is their data path: an object here runs to gigabytes, and reading one into a
+        // Buffer first would put all of it in the dev server's memory at once.
         relayHeaders(response, res)
         res.statusCode = response.status
-        res.end(body)
+
+        if (!response.body) {
+            return res.end()
+        }
+
+        try {
+            for await (const chunk of response.body) {
+                if (res.write(chunk) === false) {
+                    await once(res, 'drain')
+                }
+            }
+        } catch (e) {
+            // Headers and status are already on the wire, so there is no status left to set. End
+            // the truncated response and let the caller's parse fail rather than hanging it.
+            console.error(`hic dev proxy: ${target} — ${e.message}`)
+        }
+
+        res.end()
     }
 }
 

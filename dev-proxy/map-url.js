@@ -26,6 +26,15 @@
 const IGV_PREFIXED_USER_AGENT = 'IGV-juicebox.js-dev-proxy (+https://github.com/aidenlab/juicebox.js)'
 
 /**
+ * What the proxy must do differently for one host.
+ *
+ * @typedef {object} HostRule
+ * @property {boolean} [claimsOrigin] - assert the proxy's configured Origin, for a gate that keys
+ *           on one. The value itself is the plugin's to supply, not this module's.
+ * @property {Record<string, string>} [requestHeaders] - headers that override the shared set.
+ */
+
+/**
  * Hosts that refuse the request a browser is able to make, and what the proxy must do differently
  * for each. Adding a host here and nothing else is the whole fix for the next one.
  *
@@ -56,8 +65,11 @@ const CHALLENGED_HOSTS = {
  * hicfiles/…` — is deliberately left alone: that endpoint serves every bucket without a vhost
  * name, so claiming it would route strangers' data through the dev server.
  *
+ * `Object.hasOwn` rather than a plain lookup so that a host named after something on
+ * `Object.prototype` — `constructor`, `toString` — cannot match a rule that was never declared.
+ *
  * @param {string} host
- * @returns {{claimsOrigin?: boolean, requestHeaders?: Record<string, string>} | undefined}
+ * @returns {HostRule | undefined}
  */
 function ruleForHost(host) {
     return Object.hasOwn(CHALLENGED_HOSTS, host) ? CHALLENGED_HOSTS[host] : undefined

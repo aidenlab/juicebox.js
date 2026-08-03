@@ -16,17 +16,31 @@ const HICFILES_URL = "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/dilution/c
 
 let fetched;
 
+/**
+ * Stands in for a node ServerResponse. `write` accepts chunks the way the real thing does, so a
+ * relayed body arrives here in the same pieces the middleware wrote it in — which is how the tests
+ * can tell a streamed relay from a buffered one.
+ */
 function fakeRes() {
     return {
         statusCode: undefined,
         headers: {},
-        body: undefined,
+        chunks: [],
         ended: false,
+        get body() {
+            return this.chunks.length > 0 ? Buffer.concat(this.chunks.map(Buffer.from)) : undefined;
+        },
         setHeader(name, value) {
             this.headers[name.toLowerCase()] = value;
         },
+        write(chunk) {
+            this.chunks.push(chunk);
+            return true;
+        },
         end(body) {
-            this.body = body;
+            if (body !== undefined) {
+                this.chunks.push(body);
+            }
             this.ended = true;
         }
     };
@@ -202,16 +216,22 @@ describe("dev proxy middleware", function () {
             expect(headers.Range).toBe("bytes=0-99");
         });
 
-        test("does not leak its User-Agent to the Origin-challenged host", async function () {
+    });
+
+    // One host's rule must never reach another's request: the two gates want opposite things, and
+    // a User-Agent that satisfies the buckets is exactly the kind ENCODE answers 502 to.
+    describe("rules stay scoped to the host they belong to", function () {
+
+        beforeEach(() => stubFetch(new Response("bytes", { status: 206 })));
+
+        test("the Origin-challenged host keeps its own header set", async function () {
             await run(proxyReq(ENCODE_URL));
 
-            // ENCODE returns 502 to an allowlisted Origin carrying a spoofed Chrome UA, so its
-            // header set is load-bearing and must stay exactly as it was.
             expect(fetched[0].init.headers['User-Agent']).not.toMatch(/^IGV/);
             expect(fetched[0].init.headers.Origin).toBe(DEFAULT_ORIGIN);
         });
 
-        test("leaves an unclaimed host on the default header set", async function () {
+        test("an unclaimed host keeps the default header set", async function () {
             await run(proxyReq("https://example.org/x.hic"));
 
             const { headers } = fetched[0].init;
@@ -263,6 +283,28 @@ describe("dev proxy middleware", function () {
             expect(res.statusCode).toBe(206);
             expect(res.headers['content-range']).toBe("bytes 0-8/100");
             expect(Buffer.from(res.body).toString()).toBe("map bytes");
+        });
+
+        // The User-Agent-gated buckets have no redirect to hand back, so this is their data path
+        // and objects on them run to gigabytes. Reading one whole before writing any of it would
+        // put all of it in the dev server's memory — see the 2026-08-03 amendment in ADR 0001.
+        test("relays the body as it arrives rather than buffering it whole", async function () {
+            const chunks = ["first ", "second ", "third"];
+            stubFetch(new Response(new ReadableStream({
+                start(controller) {
+                    for (const chunk of chunks) {
+                        controller.enqueue(new TextEncoder().encode(chunk));
+                    }
+                    controller.close();
+                }
+            }), { status: 206, headers: { 'content-range': 'bytes 0-17/11694074933' } }));
+
+            const { res } = await run(proxyReq(HICFILES_URL, { range: "bytes=0-17" }));
+
+            expect(res.chunks).toHaveLength(chunks.length);
+            expect(res.body.toString()).toBe(chunks.join(""));
+            expect(res.headers['content-range']).toBe("bytes 0-17/11694074933");
+            expect(res.statusCode).toBe(206);
         });
 
         test("relays the bot-challenge headers, so presentError can still read them", async function () {

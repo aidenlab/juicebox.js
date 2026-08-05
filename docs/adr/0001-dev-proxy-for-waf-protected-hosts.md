@@ -37,6 +37,15 @@ Ruled out during diagnosis, do not re-investigate: bucket permissions differing 
 requester; CORS on the data hosts (all return `Access-Control-Allow-Origin: *`);
 preflight failure; a juicebox.js regression.
 
+That CORS finding covers the hosts serving `.hic` bytes, and only those. It does
+not generalise to every host a consumer fetches from: `aidenlab.org`, which
+served juicebox-web's contact-map menu, returned no `Access-Control-Allow-Origin`
+at all — measured 2026-08-05, zone-wide, for every origin and every path, so the
+menu was empty anywhere but production. That was juicebox.js#444, transferred to
+juicebox-web#56 because nothing in this repo referenced the file, and fixed there
+by serving the menu from the app rather than fetching it cross-origin. Check the
+host in front of you rather than assuming this line covers it.
+
 ## Decision
 
 Ship a **dev-only** proxy in this repo, built on the hic-straw extension points,

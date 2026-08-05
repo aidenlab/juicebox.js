@@ -150,6 +150,4 @@ cost nothing. The legible-error change should outlive the reversal.
 ## Related
 
 Issues #440 (proxy), #450 (track reads), #451 (per-host headers), #455 (the
-`Origin` claim and the measurements above). A deployable version of this proxy —
-for embedders who need it in production, not just development — exists unmerged on
-the `issue-455-deployable-proxy` branch.
+`Origin` claim and the measurements above).

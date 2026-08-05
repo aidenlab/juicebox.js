@@ -157,10 +157,11 @@ Note: The Vite dev server is required because the source files use bare npm impo
 
 ## Loading maps from hosts that refuse a browser
 
-Some data hosts refuse the request a browser is able to make, so their maps cannot be loaded in development without help. Two gates are known:
+Some data hosts refuse the request a browser is able to make, so their maps cannot be loaded in development without help. One gate is live today:
 
-- **A bot challenge keyed on `Origin`** — `www.encodeproject.org` puts AWS WAF in front of its files and answers any origin not on its allowlist with a CAPTCHA page, under a misleading `405`. `localhost` is never allowlisted.
 - **A `User-Agent` allowlist** — `hicfiles.s3.amazonaws.com` and `dnazoo.s3.amazonaws.com` serve `403` unless the request carries an allowlisted `User-Agent`. No browser can comply: `User-Agent` is a forbidden header name in the Fetch spec, so the value the client libraries set is dropped before the request leaves.
+
+`www.encodeproject.org` is also routed through the proxy, but as a precaution rather than a live need: as of 2026-08-05 it serves `@@download` reads to any origin, so ENCODE maps and tracks load in development either way. It stays in the table because AWS WAF rules there have been switched on before and the entry costs one line.
 
 `dev-proxy/` is a **development-only** workaround: a Vite plugin that refetches the file from Node, where those headers are ours to set, plus the client-side rule that decides which hosts get routed that way. It is already wired into this repo's dev server — see `dev/encode-dev-proxy.html`. In a host application:
 

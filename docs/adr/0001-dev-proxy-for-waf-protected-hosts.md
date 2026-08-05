@@ -1,7 +1,7 @@
 # ADR-0001 — Dev-time proxy for data hosts that refuse a browser
 
 **Status:** Accepted
-**Last measured:** 2026-08-04
+**Last measured:** 2026-08-05
 **Depends on:** hic-straw `docs/adr/0001-transport-extension-points.md`
 
 This describes the current state. Earlier revisions carried a running history of
@@ -10,28 +10,37 @@ Anything not here is in the git history.
 
 ## Context
 
-Two data hosts refuse the request a browser makes, for different reasons.
-
-**`www.encodeproject.org`** is behind AWS WAF. A request whose `User-Agent` looks
-like a browser is checked against the domains ENCODE has approved — `aidenlab.org`
-and `igv.org` are approved — and anything else gets a CAPTCHA page under a
-misleading `405`, with `X-Amzn-Waf-Action: captcha` in the response headers. A
-background `fetch` cannot solve a CAPTCHA, so the load fails.
-
-**A request that does not claim to be a browser skips that check entirely** and is
-served whatever domain it names. Measured 2026-08-04 with the proxy's own honest
-`User-Agent`: `307` for `aidenlab.org`, for an unrelated domain, for `localhost`,
-and for no `Origin` at all. That exemption is the whole mechanism of the proxy.
-
-**`hicfiles.s3.amazonaws.com` and `dnazoo.s3.amazonaws.com`** serve `403` unless
+**`hicfiles.s3.amazonaws.com` and `dnazoo.s3.amazonaws.com`** refuse the request a
+browser makes. They serve `403` unless
 the `User-Agent` starts with `IGV` — a case-sensitive prefix match, measured
 2026-08-03. `IGV`, `IGVX`, `IGV/2.19.1` and `IGV-dev-proxy` all pass; `igv`,
 `Juicebox`, every browser value and an empty `User-Agent` are refused.
 
-**A browser cannot satisfy either gate**, because it cannot set `User-Agent`.
+**A browser cannot satisfy that gate**, because it cannot set `User-Agent`.
 Measured 2026-08-04: `fetch` and `XMLHttpRequest` both send the browser's own value
-whatever the caller asks for. So there is no client-side fix. The only options are
-an approved domain, or a request made from something that is not a browser.
+whatever the caller asks for. So there is no client-side fix — only a request made
+from something that is not a browser.
+
+**`www.encodeproject.org`** was the second gate, and is no longer one. It sits
+behind AWS WAF, and a rule there once challenged browser-looking requests from
+domains ENCODE had not approved, answering with a CAPTCHA page under a misleading
+`405` and `X-Amzn-Waf-Action: captcha`. That rule is gone. Measured 2026-08-05 on
+`@@download` reads of both `.bigWig` and `.hic` files: `307` to signed S3 —
+followed, `206` — for `Origin: https://aidenlab.org`, for `http://localhost:3000`,
+for a stranger's domain and for no `Origin`, under browser and non-browser
+`User-Agent` alike. No CAPTCHA header, no `405`, from any combination.
+
+ENCODE stays in `CHALLENGED_HOSTS` regardless. The entry is one line, the extra hop
+is dev-only, and a WAF rule that was switched on once can be switched on again;
+routing it costs nothing and means the next time it happens nothing breaks. The
+CAPTCHA branch in `presentError` stays for the same reason.
+
+One measurement is unresolved and not worth resolving: a spoofed Chrome
+`User-Agent` draws `502` from awselb from *every* origin, including an approved
+one, while spoofed Firefox and Safari values are served. Read as the WAF catching a
+UA that contradicts its TLS fingerprint — curl claiming to be Chrome. Confirming
+that would need a real browser at a real non-`localhost` origin. It does not change
+anything here: development against ENCODE works, proxied or direct.
 
 Ruled out during diagnosis, do not re-investigate: bucket permissions differing by
 requester; CORS on the data hosts (all return `Access-Control-Allow-Origin: *`);
@@ -84,17 +93,17 @@ claiming it would route strangers' data through the dev server.
 
 ### What the proxy sends
 
-An honest `User-Agent` naming itself, which is what puts it in ENCODE's exempt
-branch, and `IGV-juicebox.js-dev-proxy (+…)` for the two buckets — the prefix
-satisfies the gate without claiming to *be* IGV.
+An honest `User-Agent` naming itself, and `IGV-juicebox.js-dev-proxy (+…)` for the
+two buckets — the prefix satisfies the gate without claiming to *be* IGV.
 
-**No `Origin` is claimed for any of the three.** It bought nothing, and not
-claiming one means a developer outside aidenlab is not made to assert aidenlab's
-identity from their own machine. `DEFAULT_RULE` still claims one for a host with no
-rule of its own, which is unmeasured territory either way.
+**No `Origin` is claimed for any of the three.** It bought nothing even when
+ENCODE's gate was live, and not claiming one means a developer outside aidenlab is
+not made to assert aidenlab's identity from their own machine. `DEFAULT_RULE` still
+claims one for a host with no rule of its own, which is unmeasured territory either
+way.
 
 Do not impersonate a browser: a spoofed Chrome `User-Agent` draws `502` from awselb
-even from an approved domain.
+from every origin, approved or not.
 
 ### How redirects are handled
 
@@ -136,22 +145,24 @@ third-party embedder's problem, but it stops the failure being a lie.
 - Adoption is two lines per host app, in dev configuration only.
 - Production behaviour is unchanged. **Nothing here makes a deployed app work that
   did not work before** — a third party embedding juicebox.js on their own domain
-  is still blocked, and only ENCODE can fix that.
-- Both production consumers work *only* because they are served from
-  `aidenlab.org`. If either moved domains they would start failing against ENCODE
-  the day they moved. Measured, not predicted: a real browser at an unapproved
-  domain is challenged exactly as a spoofed one is.
+  still cannot read the two buckets, and only an AWS-side change fixes that.
+- ENCODE is no longer part of that story. Since the WAF rule lapsed, a deployed app
+  on any domain reads ENCODE directly; the consumers no longer depend on being
+  served from `aidenlab.org` for it.
 - The list of proxied hosts must be maintained. The next host that starts refusing
   is a fresh mystery until someone adds it — mitigated by the legible error.
 
 ## Reversal
 
-A **workaround with an expiry condition**. If ENCODE exempts the `@@download`
-endpoints or approves the domains in question, **and** the `IGV` prefix requirement
-is lifted on the two buckets — those are this project's own buckets, so that half
-needs AWS access rather than a commit — **delete `dev-proxy/` entirely** along with
-its `exports` entries and both host apps' two lines. Either alone retires only its
-own host from `CHALLENGED_HOSTS`.
+A **workaround with an expiry condition**, and half of it has already expired:
+ENCODE's `@@download` endpoints are open again as of 2026-08-05. That alone does
+not retire anything — ENCODE stays in `CHALLENGED_HOSTS` as a precaution, see
+Context.
+
+The live condition is the `IGV` prefix requirement on the two buckets. Those are
+this project's own buckets, so lifting it needs AWS access rather than a commit.
+When it is lifted, **delete `dev-proxy/` entirely** along with its `exports`
+entries and both host apps' two lines.
 
 `setUrlMapper` and the hic-straw extension points may stay; they are generic and
 cost nothing. The legible-error change should outlive the reversal.

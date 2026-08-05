@@ -38,19 +38,20 @@ const IGV_PREFIXED_USER_AGENT = 'IGV-juicebox.js-dev-proxy (+https://github.com/
  * Hosts that refuse the request a browser is able to make, and what the proxy must do differently
  * for each. Adding a host here and nothing else is the whole fix for the next one.
  *
- * Two gates are known, and they want opposite things — which is why the header set is a property
- * of the host rather than one constant for every target:
+ * The header set is a property of the host rather than one constant for every target, because the
+ * hosts here do not want the same thing:
  *
- *   ENCODE           AWS WAF challenging browser traffic from a domain ENCODE has not approved.
- *                    Nothing to override: a request that does not claim to be a browser skips that
- *                    check and is served whatever domain it names. The shared header set already
- *                    identifies the proxy honestly, which is the whole of what this host needs.
+ *   ENCODE           Routed as a precaution, not for a live gate. Measured 2026-08-05: ENCODE
+ *                    serves `@@download` reads 307 → signed S3 for every origin tried — aidenlab,
+ *                    localhost, a stranger's domain, none — and for browser and non-browser
+ *                    User-Agents alike. No CAPTCHA, no `X-Amzn-Waf-Action`. An earlier AWS WAF
+ *                    rule did challenge unapproved origins; it is gone, and the entry stays only
+ *                    because it has been switched on before and costs one line.
  *
- *                    Measured 2026-08-04: with the honest User-Agent below, ENCODE returns 307 for
- *                    `Origin: https://aidenlab.org`, for a stranger's domain, for localhost and for
- *                    no Origin at all. So `claimsOrigin` is not set here — it bought nothing, and
- *                    not setting it means a developer outside aidenlab is not made to claim
- *                    aidenlab's identity from their own machine.
+ *                    Nothing to override, so the rule is empty. `claimsOrigin` is not set: it
+ *                    bought nothing even when the gate was live, and not setting it means a
+ *                    developer outside aidenlab is not made to claim aidenlab's identity from
+ *                    their own machine.
  *
  *   `claimsOrigin`   assert the plugin's `origin` option. No host needs it today; it remains for
  *                    DEFAULT_RULE and for a gate that reads `Origin` whatever the caller claims.
@@ -59,10 +60,10 @@ const IGV_PREFIXED_USER_AGENT = 'IGV-juicebox.js-dev-proxy (+https://github.com/
  *                    Fetch spec, so no browser can satisfy it however the client library asks;
  *                    Node can. These hosts are not Origin-sensitive, so none is claimed for them.
  *
- * Note the asymmetry with the two gates' response shapes, which matters to the middleware: the
- * Origin-challenged host answers with a redirect to signed storage, so its payload never crosses
- * Node. These buckets serve the object directly, so for them the dev server really is the data
- * path. Ranged reads are relayed as they arrive. See docs/adr/0001.
+ * Note the asymmetry in the hosts' response shapes, which matters to the middleware: ENCODE answers
+ * with a redirect to signed storage, so its payload never crosses Node. These buckets serve the
+ * object directly, so for them the dev server really is the data path. Ranged reads are relayed as
+ * they arrive. See docs/adr/0001.
  */
 const CHALLENGED_HOSTS = {
     'www.encodeproject.org': {},

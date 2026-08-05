@@ -54,9 +54,11 @@
     // annotation .txt tracks on hicfiles are read by igv and are not routed, so
     // an ENCODE map in a config below loads while its hicfiles tracks do not.
     //
-    // Also verified reachable today: the wasabisys buckets, dropbox,
-    // hgdownload.soe.ucsc.edu, and the igv.org.genomes /
-    // igv.broadinstitute.org buckets.
+    // Also verified reachable today: the wasabisys buckets, dropbox, and the
+    // igv.org.genomes / igv.broadinstitute.org buckets. hgdownload.soe.ucsc.edu
+    // is NOT reachable over HTTPS -- it accepts the TCP connection but never
+    // completes the TLS handshake, so a track pointed at it hangs until igv
+    // times out. Use the igv.org.genomes copies instead.
     // ------------------------------------------------------------------
 
     // Map and 2D track both verified reachable. The pairing is the one used by
@@ -260,7 +262,7 @@
             "colorScale": "66.20668236071833,255,0,0",
             "tracks": [
                 {
-                    "url": "https://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/ncbiRefSeq.txt.gz",
+                    "url": "https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.txt.gz",
                     "type": "annotation",
                     "format": "refgene",
                     "name": "Refseq Genes",

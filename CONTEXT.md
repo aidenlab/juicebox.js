@@ -86,14 +86,15 @@ one does nothing for the other.
 **Bot challenge** — a data host answering an automated request with a CAPTCHA
 page instead of the file. The known case is AWS WAF in front of
 `www.encodeproject.org`, which serves `X-Amzn-Waf-Action: captcha` under a
-misleading `405` status to any request whose `Origin` is not on ENCODE's
-allowlist. Say *bot challenge*, not "the 405" — the status code is a lie.
+misleading `405`. It checks requests that *look like a browser* against the
+domains ENCODE has approved; a request that identifies honestly skips the check
+and is served. Say *bot challenge*, not "the 405" — the status code is a lie.
 
-**User-Agent allowlist** — the other gate: a host serving `403` unless the
-request carries a `User-Agent` it recognises. `hicfiles.s3.amazonaws.com` and
+**User-Agent gate** — the other gate: a host serving `403` unless the request
+carries a `User-Agent` it recognises. `hicfiles.s3.amazonaws.com` and
 `dnazoo.s3.amazonaws.com` match a case-sensitive prefix, `IGV` among them. No
-browser can pass it — `User-Agent` is a forbidden header name in the Fetch spec,
-so the value the client libraries set never leaves. Unrelated to CORS, and
+browser passes it: measured 2026-08-04, a browser sends its own `User-Agent`
+whatever the caller asks for, via `fetch` or XHR alike. Unrelated to CORS, and
 unrelated to bucket permissions; both were ruled out.
 
 **Gated bucket** — a host behind the User-Agent allowlist. Named separately from
@@ -102,12 +103,12 @@ differently: a challenged host answers with a redirect the proxy hands back,
 while a gated bucket serves its object directly, making the dev server a real
 data path.
 
-**Origin allowlist** — the data provider's list of domains permitted to fetch
-without a bot challenge. ENCODE's, on ENCODE's infrastructure; not editable from
-here. `aidenlab.org` and `igv.org` are on it, which is why both production host
-apps work and localhost does not. It keys on the `Origin` header — the domain of
-the page making the request — and has nothing to do with where anything is
-hosted.
+**Approved domains** — the sites ENCODE permits to fetch without a bot challenge:
+`aidenlab.org` and `igv.org`. ENCODE's list, on ENCODE's infrastructure, not
+editable from here. It is why both production host apps work and localhost does
+not — and it governs **browser traffic only**, since a request that does not claim
+to be a browser never reaches the check. Avoid the word *allowlist* here: three
+different things in this problem answer to it.
 
 **URL mapper** — the function juicebox applies to a data URL before it is
 fetched: handed to hic-straw as `config.mapUrl` for a `.hic` read, applied at the

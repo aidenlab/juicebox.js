@@ -13,7 +13,7 @@ Requirements:
 
 * Juicebox CSS
 
-    ``` <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/css/juicebox.css">```
+    ``` <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/juicebox.js@3.6.2/dist/css/juicebox.css">```
     
 * Juicebox javascript -- see below
 
@@ -21,13 +21,13 @@ Requirements:
 To import juicebox as an ES6 module
 
 ```javascript
-import juicebox from "https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/juicebox.esm.js";
+import juicebox from "https://cdn.jsdelivr.net/npm/juicebox.js@3.6.2/dist/juicebox.esm.js";
 ``` 
 
 Or as a script include (defines the "juicebox" global)
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/juicebox.js@2.4.8/dist/juicebox.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/juicebox.js@3.6.2/dist/juicebox.min.js"></script>
 ```   
  
 Alternatively you can install with npm  
@@ -55,7 +55,7 @@ Configuration ```config``` object examples follow
 
 ```
    const config = {
-       "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/dilution/combined.hic",    
+       "url": "https://www.encodeproject.org/files/ENCFF718AWL/@@download/ENCFF718AWL.hic",    
    }
 
 ```
@@ -70,8 +70,8 @@ Configuration ```config``` object examples follow
 
 ```
    const config = {
-            "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/dilution/combined.hic",
-            "name": "Combined",
+            "url": "https://www.encodeproject.org/files/ENCFF718AWL/@@download/ENCFF718AWL.hic",
+            "name": "GM12878 in situ combined",
             "locus": "18:28,504,357-29,748,974 18:28,504,357-29,748,974",
             "normalization": "VC_SQRT",
             "backgroundColor": "255,255,255",
@@ -81,7 +81,7 @@ Configuration ```config``` object examples follow
                     "url": "https://www.encodeproject.org/files/ENCFF144KUK/@@download/ENCFF144KUK.bigWig",
                     "type": "wig",
                     "format": "bigwig",
-                    "name": "Homo sapiens GM12878 CTCF "
+                    "name": "Homo sapiens GM12878 CTCF",
                     "color": "green"
                 },
                 {
@@ -91,18 +91,14 @@ Configuration ```config``` object examples follow
                     "name": "Refseq Genes",
                 },
                 {
-                    "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/combined_peaks.txt",
-                    "name": "Rao & Huntley et al. | Cell 2014 | GM12878 combined loops"
-                },
-                {
-                    "url": "https://hicfiles.s3.amazonaws.com/hiseq/hap1/in-situ/combined_peaks.txt",
-                    "name": "Sanborn & Rao et al. | PNAS 2015 | Hap1 loops",
+                    "url": "https://raw.githubusercontent.com/igvteam/igv-data/refs/heads/main/data/test/bedpe/GM12878_loops.bedpe",
+                    "name": "Rao & Huntley et al. | Cell 2014 | GM12878 loops",
                     "color": "#fffa03",
                     "displayMode": "upper"
                 },
                 {
-                    "url": "https://hicfiles.s3.amazonaws.com/external/mumbach/GSE80820_HiChIP_GM_cohesin_peaks.txt",
-                    "name": "Mumbach Rubin Flynn et al. | Nature Methods 2016 | GM12878 cohesin combined loops",
+                    "url": "https://raw.githubusercontent.com/igvteam/igv-data/refs/heads/main/data/test/bedpe/GSM1872886_GM12878_CTCF_PET.bedpe.txt",
+                    "name": "Tang et al. | Cell 2015 | GM12878 CTCF ChIA-PET",
                     "color": "#000000",
                     "displayMode": "lower"
                 }

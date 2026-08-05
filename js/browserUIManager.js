@@ -85,9 +85,6 @@ class BrowserUIManager {
 
         this.components.set('sweepZoom', sweepZoom);
         this.components.set('scrollbar', scrollbarWidget);
-        this.components.set('colorScale', colorScale);
-        this.components.set('ratioColorScale', ratioColorScale);
-        this.components.set('diffColorScale', diffColorScale);
 
         const browser = this.browser;
 

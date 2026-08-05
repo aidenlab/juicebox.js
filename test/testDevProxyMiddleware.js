@@ -120,21 +120,22 @@ describe("dev proxy middleware", function () {
 
         beforeEach(() => stubFetch(redirectResponse(S3_URL)));
 
-        test("claims an allowlisted Origin", async function () {
-            await run(proxyReq(ENCODE_URL));
+        // Only a host with no rule of its own is sent an Origin now — see DEFAULT_RULE.
+        test("claims its own Origin for a host it knows nothing about", async function () {
+            await run(proxyReq("https://example.org/x.hic"));
 
             expect(fetched[0].init.headers.Origin).toBe(DEFAULT_ORIGIN);
             expect(DEFAULT_ORIGIN).toBe("https://aidenlab.org");
         });
 
         test("honours a configured Origin", async function () {
-            await run(proxyReq(ENCODE_URL), { origin: "https://igv.org" });
+            await run(proxyReq("https://example.org/x.hic"), { origin: "https://igv.org" });
 
             expect(fetched[0].init.headers.Origin).toBe("https://igv.org");
         });
 
-        // ENCODE returns 502 to an allowlisted Origin carrying a spoofed Chrome UA — measured
-        // 2026-08-02, see the note on REQUEST_HEADERS. Origin alone decides the challenge.
+        // ENCODE returns 502 to a spoofed Chrome UA even carrying an approved Origin — measured
+        // 2026-08-02, see the note on REQUEST_HEADERS. Identifying honestly is what gets served.
         test("identifies itself honestly rather than impersonating a browser", async function () {
             await run(proxyReq(ENCODE_URL));
 
@@ -166,7 +167,7 @@ describe("dev proxy middleware", function () {
             }));
 
             const { headers } = fetched[0].init;
-            expect(headers.Origin).toBe(DEFAULT_ORIGIN);
+            expect(headers.Origin).not.toBe("http://localhost:3000");
             expect(headers.Host).toBeUndefined();
             expect(headers.Cookie).toBeUndefined();
         });
@@ -224,11 +225,11 @@ describe("dev proxy middleware", function () {
 
         beforeEach(() => stubFetch(new Response("bytes", { status: 206 })));
 
-        test("the Origin-challenged host keeps its own header set", async function () {
+        test("ENCODE keeps its own header set", async function () {
             await run(proxyReq(ENCODE_URL));
 
             expect(fetched[0].init.headers['User-Agent']).not.toMatch(/^IGV/);
-            expect(fetched[0].init.headers.Origin).toBe(DEFAULT_ORIGIN);
+            expect(fetched[0].init.headers.Origin).toBeUndefined();
         });
 
         test("an unclaimed host keeps the default header set", async function () {

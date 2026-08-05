@@ -41,9 +41,19 @@ const IGV_PREFIXED_USER_AGENT = 'IGV-juicebox.js-dev-proxy (+https://github.com/
  * Two gates are known, and they want opposite things — which is why the header set is a property
  * of the host rather than one constant for every target:
  *
- *   `claimsOrigin`   AWS WAF answering a non-allowlisted `Origin` with a bot challenge. The proxy
- *                    asserts an allowlisted Origin (the plugin's `origin` option) and identifies
- *                    itself honestly — a spoofed browser User-Agent here draws a 502.
+ *   ENCODE           AWS WAF challenging browser traffic from a domain ENCODE has not approved.
+ *                    Nothing to override: a request that does not claim to be a browser skips that
+ *                    check and is served whatever domain it names. The shared header set already
+ *                    identifies the proxy honestly, which is the whole of what this host needs.
+ *
+ *                    Measured 2026-08-04: with the honest User-Agent below, ENCODE returns 307 for
+ *                    `Origin: https://aidenlab.org`, for a stranger's domain, for localhost and for
+ *                    no Origin at all. So `claimsOrigin` is not set here — it bought nothing, and
+ *                    not setting it means a developer outside aidenlab is not made to claim
+ *                    aidenlab's identity from their own machine.
+ *
+ *   `claimsOrigin`   assert the plugin's `origin` option. No host needs it today; it remains for
+ *                    DEFAULT_RULE and for a gate that reads `Origin` whatever the caller claims.
  *
  *   `requestHeaders` a `User-Agent` allowlist. `User-Agent` is a forbidden header name in the
  *                    Fetch spec, so no browser can satisfy it however the client library asks;
@@ -55,7 +65,7 @@ const IGV_PREFIXED_USER_AGENT = 'IGV-juicebox.js-dev-proxy (+https://github.com/
  * path. Ranged reads are relayed as they arrive. See docs/adr/0001.
  */
 const CHALLENGED_HOSTS = {
-    'www.encodeproject.org': { claimsOrigin: true },
+    'www.encodeproject.org': {},
     'hicfiles.s3.amazonaws.com': { requestHeaders: { 'User-Agent': IGV_PREFIXED_USER_AGENT } },
     'dnazoo.s3.amazonaws.com': { requestHeaders: { 'User-Agent': IGV_PREFIXED_USER_AGENT } }
 }

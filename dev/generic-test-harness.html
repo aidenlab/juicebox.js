@@ -55,10 +55,18 @@
     // an ENCODE map in a config below loads while its hicfiles tracks do not.
     //
     // Also verified reachable today: the wasabisys buckets, dropbox, and the
-    // igv.org.genomes / igv.broadinstitute.org buckets. hgdownload.soe.ucsc.edu
-    // is NOT reachable over HTTPS -- it accepts the TCP connection but never
-    // completes the TLS handshake, so a track pointed at it hangs until igv
-    // times out. Use the igv.org.genomes copies instead.
+    // igv.org.genomes / igv.broadinstitute.org buckets.
+    //
+    // hgdownload.soe.ucsc.edu once appeared unreachable over HTTPS -- it
+    // accepted the TCP connection but never completed the TLS handshake, so a
+    // track pointed at it hung until igv timed out. That was observed from one
+    // network location, not a property of the host: it returned 200 over HTTPS
+    // when re-probed on 2026-08-05. If it hangs for you, suspect your network
+    // path before changing these URLs -- UCSC is the canonical source for the
+    // refGene tracks and the URLs here should stay pointed at it.
+    //
+    // UCSC serves no tabix index for ncbiRefSeq.txt.gz -- the .tbi is 404 at
+    // both the hg19 and hg38 paths -- so these tracks must not set an indexURL.
     // ------------------------------------------------------------------
 
     // Map and 2D track both verified reachable. The pairing is the one used by
@@ -262,7 +270,7 @@
             "colorScale": "66.20668236071833,255,0,0",
             "tracks": [
                 {
-                    "url": "https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.txt.gz",
+                    "url": "https://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/ncbiRefSeq.txt.gz",
                     "type": "annotation",
                     "format": "refgene",
                     "name": "Refseq Genes",

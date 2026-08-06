@@ -125,9 +125,9 @@ class DataLoader {
                 await this.browser.setState(state);
             } else if (config.synchState && this.browser.canBeSynched(config.synchState)) {
                 await this.browser.syncState(config.synchState);
-                state = this.browser.activeState;
-                // syncState already sets activeDataset, but ensure it's set with current dataset
-                if (this.browser.activeDataset !== dataset) {
+                state = this.browser.state;
+                // syncState already sets the dataset, but ensure it's set with current dataset
+                if (this.browser.dataset !== dataset) {
                     this.browser.setActiveDataset(dataset, state);
                 }
             } else {
@@ -169,8 +169,8 @@ class DataLoader {
             // Find a browser to sync with, if any
             const compatibleBrowsers = getAllBrowsers().filter(
                 b => b !== this.browser &&
-                     b.activeDataset &&
-                     b.activeDataset.isCompatible(this.browser.activeDataset)
+                     b.dataset &&
+                     b.dataset.isCompatible(this.browser.dataset)
             );
             if (compatibleBrowsers.length > 0) {
                 await this.browser.syncState(compatibleBrowsers[0].getSyncState());
@@ -295,10 +295,10 @@ class DataLoader {
 
             controlDataset.name = name;
 
-            if (!this.browser.activeDataset || this.browser.activeDataset.isCompatible(controlDataset)) {
+            if (!this.browser.dataset || this.browser.dataset.isCompatible(controlDataset)) {
                 this.browser.controlDataset = controlDataset;
-                if (this.browser.activeDataset) {
-                    this.browser.contactMapLabel.textContent = "A: " + this.browser.activeDataset.name;
+                if (this.browser.dataset) {
+                    this.browser.contactMapLabel.textContent = "A: " + this.browser.dataset.name;
                 }
                 this.browser.controlMapLabel.textContent = "B: " + controlDataset.name;
                 this.browser.controlMapLabel.title = controlDataset.name;
@@ -437,31 +437,31 @@ class DataLoader {
      * @returns {Promise<Object|undefined>} - The normalization vectors object
      */
     async loadNormalizationFile(url) {
-        if (!this.browser.activeDataset) {
+        if (!this.browser.dataset) {
             return;
         }
 
         // Normalization files are only supported for Hi-C datasets
-        if (!this.browser.activeDataset.hicFile) {
+        if (!this.browser.dataset.hicFile) {
             console.warn("Normalization files are only supported for Hi-C datasets");
             return;
         }
 
         this.browser.coordinator.onNormalizationFileLoad("start");
 
-        const normVectors = await this.browser.activeDataset.hicFile.readNormalizationVectorFile(
+        const normVectors = await this.browser.dataset.hicFile.readNormalizationVectorFile(
             url,
-            this.browser.activeDataset.chromosomes
+            this.browser.dataset.chromosomes
         );
 
         for (let type of normVectors['types']) {
-            if (!this.browser.activeDataset.normalizationTypes) {
-                this.browser.activeDataset.normalizationTypes = [];
+            if (!this.browser.dataset.normalizationTypes) {
+                this.browser.dataset.normalizationTypes = [];
             }
-            if (!this.browser.activeDataset.normalizationTypes.includes(type)) {
-                this.browser.activeDataset.normalizationTypes.push(type);
+            if (!this.browser.dataset.normalizationTypes.includes(type)) {
+                this.browser.dataset.normalizationTypes.push(type);
             }
-            this.browser.coordinator.onNormVectorIndexLoad(this.browser.activeDataset);
+            this.browser.coordinator.onNormVectorIndexLoad(this.browser.dataset);
         }
 
         this.browser.coordinator.onNormalizationFileLoad("stop");

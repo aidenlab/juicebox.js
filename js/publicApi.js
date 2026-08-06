@@ -106,9 +106,19 @@ export const BROWSER_SURFACE = [
     'reset',
     'setCustomCrosshairsHandler',
 
-    // Accessors -- present from construction, populated by a load
+    // Accessors -- present from construction, populated by a load.
+    //
+    // `dataset`/`state` is the canonical vocabulary; `activeDataset` and
+    // `activeState` are aliases for the same two accessors, and no internal
+    // code reads either. `activeDataset` is here because Spacewalk reads it.
+    // `state` and `activeState` have no measured reader in either host -- they
+    // are declared because we have decided to keep them, and this file is where
+    // that decision has to be visible, per "absence is not permission" above.
+    // See #468.
     'dataset',
     'activeDataset',
+    'state',
+    'activeState',
 
     // Constructor-assigned fields
     'id',

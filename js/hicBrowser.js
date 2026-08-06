@@ -261,10 +261,10 @@ class HICBrowser {
 
     async getNormalizationOptions() {
 
-        if (!this.activeDataset) return []
+        if (!this.dataset) return []
 
-        const baseOptions = this.activeDataset.getNormalizationOptions ?
-            await this.activeDataset.getNormalizationOptions() : ['NONE'];
+        const baseOptions = this.dataset.getNormalizationOptions ?
+            await this.dataset.getNormalizationOptions() : ['NONE'];
         if (this.controlDataset) {
             let controlOptions = this.controlDataset.getNormalizationOptions ?
                 await this.controlDataset.getNormalizationOptions() : ['NONE'];
@@ -280,9 +280,9 @@ class HICBrowser {
      * @returns {{index: *, binSize: *}[]|Array}
      */
     getResolutions() {
-        if (!this.activeDataset) return []
+        if (!this.dataset) return []
 
-        const baseResolutions = this.activeDataset.bpResolutions.map(function (resolution, index) {
+        const baseResolutions = this.dataset.bpResolutions.map(function (resolution, index) {
             return {index: index, binSize: resolution}
         })
         if (this.controlDataset) {
@@ -294,7 +294,7 @@ class HICBrowser {
     }
 
     isWholeGenome() {
-        return this.activeDataset && this.activeState && this.activeDataset.isWholeGenome(this.activeState.chr1)
+        return this.dataset && this.state && this.dataset.isWholeGenome(this.state.chr1)
     }
 
     getColorScale() {
@@ -406,48 +406,46 @@ class HICBrowser {
     }
 
     /**
-     * Set the active dataset and state
+     * Set the primary dataset and, optionally, the state to view it with.
+     *
      * @param {Dataset} dataset - The dataset to activate
      * @param {State} state - The state to use with this dataset
      */
-    /**
-     * State management methods delegate to StateManager.
-     * These methods are kept for backward compatibility and to maintain the public API.
-     */
-
     setActiveDataset(dataset, state) {
         this.stateManager.setActiveDataset(dataset, state);
     }
 
     /**
-     * Backward compatibility: getter for dataset property
-     * Returns activeDataset (the primary dataset, not control)
+     * The primary dataset -- the "A" map, as opposed to `controlDataset`.
+     *
+     * `dataset`/`state` is the vocabulary internal code reads; `activeDataset`
+     * and `activeState` below are aliases for it. See #468.
+     *
+     * Both names are load-bearing outside this repo: juicebox-web reads
+     * `dataset` (3 sites) and so does Spacewalk (`juicebox/hicMapState.js`),
+     * while Spacewalk reads `activeDataset` from `juicebox/juiceboxPanel.js`.
+     * Neither name can simply win.
      */
     get dataset() {
         return this.stateManager.getActiveDataset();
     }
 
-    /**
-     * Backward compatibility: setter for dataset property
-     */
     set dataset(value) {
         this.stateManager.setActiveDataset(value, undefined);
     }
 
     /**
-     * Backward compatibility: getter for state property
+     * The current view state -- chromosomes, zoom, bin origin, pixel size.
      */
     get state() {
         return this.stateManager.getActiveState();
     }
 
     /**
-     * Backward compatibility: setter for state property
-     * Note: Direct assignment bypasses validation. Use setState() for proper state management.
+     * Note: direct assignment bypasses validation. Use setState() for proper
+     * state management.
      */
     set state(value) {
-        // Direct assignment - store directly without validation
-        // This is for backward compatibility only
         if (value) {
             this.stateManager.activeState = value;
         } else {
@@ -455,34 +453,23 @@ class HICBrowser {
         }
     }
 
-    /**
-     * Getter for activeDataset (backward compatibility)
-     */
+    /** Alias for `dataset`. Retained for host apps -- Spacewalk reads it (juicebox/juiceboxPanel.js, 4 sites). */
     get activeDataset() {
         return this.stateManager.getActiveDataset();
     }
 
-    /**
-     * Setter for activeDataset (backward compatibility)
-     */
+    /** Alias for `dataset`. Retained for host apps -- Spacewalk reads it (juicebox/juiceboxPanel.js, 4 sites). */
     set activeDataset(value) {
         this.stateManager.setActiveDataset(value, undefined);
     }
 
-    /**
-     * Getter for activeState (backward compatibility)
-     */
+    /** Alias for `state`. Kept as published surface alongside `activeDataset`: no host we can measure reads it, and this repo cannot see the ones it cannot measure. */
     get activeState() {
         return this.stateManager.getActiveState();
     }
 
-    /**
-     * Setter for activeState (backward compatibility)
-     * Note: Direct assignment bypasses validation. Use setState() for proper state management.
-     */
+    /** Alias for `state`; same validation caveat as the `state` setter. */
     set activeState(value) {
-        // Direct assignment - store directly without validation
-        // This is for backward compatibility only
         if (value) {
             this.stateManager.activeState = value;
         } else {
@@ -778,13 +765,13 @@ class HICBrowser {
      */
     async repaint() {
 
-        if (!this.activeDataset || !this.activeState) {
+        if (!this.dataset || !this.state) {
             return; // Can't render without dataset and state
         }
 
         const pseudoEvent = {
             type: "LocusChange",
-            data: { state: this.activeState }
+            data: { state: this.state }
         };
         this.layoutController.xAxisRuler.locusChange(pseudoEvent);
         this.layoutController.yAxisRuler.locusChange(pseudoEvent);
@@ -950,12 +937,12 @@ class HICBrowser {
 
     async minZoom(chr1, chr2) {
 
-        if (!this.activeDataset) {
+        if (!this.dataset) {
             throw new Error("Dataset not available for minZoom calculation");
         }
 
-        const chromosome1 = this.activeDataset.chromosomes[chr1]
-        const chromosome2 = this.activeDataset.chromosomes[chr2]
+        const chromosome1 = this.dataset.chromosomes[chr1]
+        const chromosome2 = this.dataset.chromosomes[chr2]
 
         if (!chromosome1 || !chromosome2) {
             throw new Error(`Invalid chromosome indices: ${chr1}, ${chr2}`);
@@ -964,7 +951,7 @@ class HICBrowser {
         const { width, height } = this.contactMatrixView.getViewDimensions()
         const binSize = Math.max(chromosome1.size / width, chromosome2.size / height)
 
-        const matrix = await this.activeDataset.getMatrix(chr1, chr2)
+        const matrix = await this.dataset.getMatrix(chr1, chr2)
         if (!matrix) {
             throw new Error(`Data not avaiable for chromosomes ${chromosome1.name} - ${chromosome2.name}`)
         }
@@ -973,21 +960,21 @@ class HICBrowser {
 
     async minPixelSize(chr1, chr2, zoomIndex) {
 
-        if (!this.activeDataset) {
+        if (!this.dataset) {
             // If dataset not yet set, return default minimum
             return DEFAULT_PIXEL_SIZE;
         }
 
         // bp
-        if (!this.activeDataset.chromosomes || !this.activeDataset.chromosomes[chr1] || !this.activeDataset.chromosomes[chr2]) {
+        if (!this.dataset.chromosomes || !this.dataset.chromosomes[chr1] || !this.dataset.chromosomes[chr2]) {
             console.warn(`Invalid chromosome indices or chromosomes array not initialized: ${chr1}, ${chr2}`);
             return DEFAULT_PIXEL_SIZE;
         }
 
-        const chr1Length = this.activeDataset.chromosomes[chr1].size
-        const chr2Length = this.activeDataset.chromosomes[chr2].size
+        const chr1Length = this.dataset.chromosomes[chr1].size
+        const chr2Length = this.dataset.chromosomes[chr2].size
 
-        const matrix = await this.activeDataset.getMatrix(chr1, chr2)
+        const matrix = await this.dataset.getMatrix(chr1, chr2)
         if (!matrix) {
             console.warn(`Matrix not available for chromosomes ${chr1}, ${chr2}`);
             return DEFAULT_PIXEL_SIZE;
@@ -999,7 +986,7 @@ class HICBrowser {
             const fallbackZoomData = matrix.getZoomDataByIndex(0, "BP");
             if (!fallbackZoomData || !fallbackZoomData.zoom) {
                 // Last resort: use dataset resolution directly
-                const binSize = this.activeDataset.bpResolutions[zoomIndex] || this.activeDataset.bpResolutions[0] || 1000;
+                const binSize = this.dataset.bpResolutions[zoomIndex] || this.dataset.bpResolutions[0] || 1000;
                 const nBins1 = chr1Length / binSize;
                 const nBins2 = chr2Length / binSize;
                 const { width, height } = this.contactMatrixView.getViewDimensions();

@@ -21,6 +21,8 @@
  */
 
 import {JSDOM} from 'jsdom'
+import {beforeEach, afterEach} from 'vitest'
+import HICBrowser from '../../js/hicBrowser.js'
 
 /**
  * An inert 2D context. Every method is a no-op and every property is writable,
@@ -90,4 +92,27 @@ export function withDOM() {
     }
 
     return {window, container, restore}
+}
+
+/**
+ * Stand up a fresh browser around each test in the calling describe, and tear
+ * the DOM back down afterwards. Returns a holder rather than the browser itself
+ * because the instance does not exist until beforeEach runs.
+ */
+export function withBrowser() {
+
+    const context = {browser: undefined}
+    let fixture
+
+    beforeEach(() => {
+        fixture = withDOM()
+        context.browser = new HICBrowser(fixture.container, {})
+    })
+
+    afterEach(() => {
+        fixture.restore()
+        context.browser = undefined
+    })
+
+    return context
 }

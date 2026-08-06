@@ -1,7 +1,6 @@
-import {describe, it, expect, beforeEach, afterEach} from 'vitest'
+import {describe, it, expect} from 'vitest'
 import juicebox from '../js/index.js'
-import HICBrowser from '../js/hicBrowser.js'
-import {withDOM} from './utils/browserFixture.js'
+import {withBrowser} from './utils/browserFixture.js'
 import {HiCDataset} from '../js/hicDataset.js'
 import EventBus from '../js/eventBus.js'
 import {NAMESPACE_SURFACE, BROWSER_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COORDINATOR_CALLBACKS, EVENTS_POSTED, EVENT_PAYLOAD_SHAPES} from '../js/publicApi.js'
@@ -18,29 +17,6 @@ import {NAMESPACE_SURFACE, BROWSER_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COO
  * The check runs one way: every declared name must exist. A new undeclared
  * member does not fail the build. See issue #470.
  */
-
-/**
- * Stand up a fresh browser around each test in the calling describe, and tear
- * the DOM back down afterwards. Returns a holder rather than the browser itself
- * because the instance does not exist until beforeEach runs.
- */
-function withBrowser() {
-
-    const context = {browser: undefined}
-    let fixture
-
-    beforeEach(() => {
-        fixture = withDOM()
-        context.browser = new HICBrowser(fixture.container, {})
-    })
-
-    afterEach(() => {
-        fixture.restore()
-        context.browser = undefined
-    })
-
-    return context
-}
 
 describe('namespace surface', () => {
 

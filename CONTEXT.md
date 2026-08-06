@@ -14,6 +14,27 @@ without a host app.
 The thing the user is looking at. A browser instance shows one primary contact
 map and optionally a **control map** for comparison.
 
+**Dataset** — the source a contact map is drawn from, and the object the browser
+holds (`js/hicDataset.js`). Two kinds, distinguished by `dataset.isLive`:
+
+- a **`.hic` dataset** reads a static file over the network. This is
+  juicebox.js's primary purpose and the case everything is tuned for.
+- a **live contact map** streams from hic-straw instead of reading a file. Built
+  for Spacewalk, which needed contact maps generated as it runs.
+
+**The disguise** — a live contact map is deliberately made to *look like* a
+`.hic` dataset from juicebox.js's side: same `Dataset`, same rendering path, same
+canonical state. This was an expediency, and it mostly works. Where it does not
+hold, say so explicitly rather than treating live as a variant of file:
+
+- `imageTileCore.autoThreshold` takes the 75th percentile rather than the 95th
+  and clamps to 1 for live maps — a real rendering divergence.
+- `loadLiveContactMap` is its own load path, not a parameter to the file path.
+
+The core of this work lives in **hic-straw**, not here; juicebox.js holds a thin
+adapter. When touching it, expect the seam to span three repos. See the
+live-map note on candidate 10 in `docs/architecture-review.html`.
+
 **Canonical state** — the seven fields on `State` (`js/hicState.js`) that fully
 and unambiguously specify the view: `chr1`, `chr2`, `x`, `y`, `zoom`,
 `pixelSize`, `normalization`. Everything else the user sees is derived from

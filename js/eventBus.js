@@ -52,6 +52,24 @@ class EventBus {
 
     }
 
+    /**
+     * Detach a subscriber. Removes every registration it made for this event
+     * type, and is a no-op if the type or the subscriber is unknown.
+     *
+     * Hosts need this: a handler attached to a browser that is later discarded
+     * has no other way off, and `EventBus.globalBus` outlives every browser on
+     * the page. See #414.
+     */
+    unsubscribe(eventType, object) {
+
+        const subscriberList = this.subscribers[eventType];
+        if (undefined === subscriberList) {
+            return;
+        }
+
+        this.subscribers[eventType] = subscriberList.filter(subscriber => subscriber !== object);
+    }
+
     post(event) {
 
         const eventType = event.type
@@ -59,10 +77,13 @@ class EventBus {
         if (this._hold) {
             this.stack.push(event)
         } else {
+            // Snapshot: a subscriber is entitled to detach itself while being
+            // notified, and iterating the live list would then skip whoever
+            // sits behind it.
             const subscriberList = this.subscribers[eventType];
 
             if (subscriberList) {
-                for (let subscriber of subscriberList) {
+                for (let subscriber of [...subscriberList]) {
 
                     if ("function" === typeof subscriber.receiveEvent) {
                         subscriber.receiveEvent(event);

@@ -136,6 +136,9 @@ describe('event bus', () => {
     it('exposes a per-browser bus that a host can subscribe to', () => {
         expect(typeof context.browser.eventBus.subscribe).toBe('function')
         expect(typeof context.browser.eventBus.post).toBe('function')
+        // Spacewalk subscribes DidHideCrosshairs on this bus and holds the
+        // handler for the browser's lifetime; unsubscribe is how it lets go.
+        expect(typeof context.browser.eventBus.unsubscribe).toBe('function')
     })
 
     it('exposes a global bus', () => {

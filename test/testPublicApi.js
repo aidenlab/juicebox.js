@@ -3,7 +3,8 @@ import juicebox from '../js/index.js'
 import HICBrowser from '../js/hicBrowser.js'
 import {withDOM} from './utils/browserFixture.js'
 import {HiCDataset} from '../js/hicDataset.js'
-import {NAMESPACE_SURFACE, BROWSER_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COORDINATOR_CALLBACKS} from '../js/publicApi.js'
+import EventBus from '../js/eventBus.js'
+import {NAMESPACE_SURFACE, BROWSER_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COORDINATOR_CALLBACKS, EVENTS_POSTED, EVENT_PAYLOAD_SHAPES} from '../js/publicApi.js'
 
 /**
  * Contract tests for the declared public surface.
@@ -153,5 +154,56 @@ describe('coordinator callbacks', () => {
         // callback and outlive the host's own lifecycle.
         const unsubscribe = browser.coordinator.addCallback('onMapLoaded', () => {})
         expect(typeof unsubscribe).toBe('function')
+    })
+})
+
+describe('event bus', () => {
+
+    let fixture
+    let browser
+
+    beforeEach(() => {
+        fixture = withDOM()
+        browser = new HICBrowser(fixture.container, {})
+    })
+
+    afterEach(() => {
+        fixture.restore()
+    })
+
+    // These check the plumbing declared events travel over. Whether each event
+    // is still *posted* is not checked -- see EVENTS_POSTED and #438.
+
+    it('exposes a per-browser bus that a host can subscribe to', () => {
+        expect(typeof browser.eventBus.subscribe).toBe('function')
+        expect(typeof browser.eventBus.post).toBe('function')
+    })
+
+    it('exposes a global bus', () => {
+        expect(EventBus.globalBus).toBeDefined()
+        expect(typeof EventBus.globalBus.subscribe).toBe('function')
+    })
+
+    it('delivers a posted event to a subscriber on the declared bus', () => {
+        for (const {name, bus} of EVENTS_POSTED) {
+            const target = 'global' === bus ? EventBus.globalBus : browser.eventBus
+            let received
+            target.subscribe(name, event => { received = event })
+            target.post({type: name, data: 'payload'})
+            expect(received, `"${name}" did not reach a subscriber on the ${bus} bus`).toBeDefined()
+        }
+    })
+
+    it('names a bus for every declared event', () => {
+        for (const {name, bus} of EVENTS_POSTED) {
+            expect(['global', 'browser'], `"${name}" declares an unknown bus`).toContain(bus)
+        }
+    })
+
+    it('declares a payload shape only for events it also posts', () => {
+        const posted = EVENTS_POSTED.map(entry => entry.name)
+        for (const {event} of EVENT_PAYLOAD_SHAPES) {
+            expect(posted, `"${event}" has a declared payload but is not a declared event`).toContain(event)
+        }
     })
 })

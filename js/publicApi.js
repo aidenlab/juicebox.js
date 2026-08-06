@@ -183,3 +183,51 @@ export const COORDINATOR_CALLBACKS = [
     'onBackgroundColorChange',
     'onForegroundColorChange'
 ]
+
+/**
+ * Events juicebox.js posts, and the bus each travels on.
+ *
+ * The event bus is the sharpest case in the whole contract. Every internal
+ * subscription was migrated to the coordinator, so from inside this repo the
+ * bus looks dead -- and from outside it is load-bearing: five of these have
+ * external subscribers and no internal ones. A review that counted subscribers
+ * by grepping `js/` concluded the per-browser bus had none, which was true of
+ * this repo and false of the product.
+ *
+ * **These names are declared but not enforced.** The test asserts the plumbing
+ * they travel over, not that each is still posted -- proving an event still
+ * fires means driving a real map load and watching the bus, which needs the
+ * probe harness of #438.
+ *
+ * That is a real gap, and it is worth naming precisely: juicebox-web subscribed
+ * to a `MapLoad` event that stopped being posted in December 2025 and nobody
+ * noticed for eight months. Nothing in this file would catch that happening
+ * again. Removing a name here is caught by review; removing the *post* that
+ * feeds it is not.
+ */
+export const EVENTS_POSTED = [
+    {name: 'GenomeChange', bus: 'global'},
+    {name: 'BrowserSelect', bus: 'global'},
+    {name: 'TrackXYPairLoad', bus: 'global'},
+    {name: 'TrackXYPairRemoval', bus: 'global'},
+    {name: 'DidHideCrosshairs', bus: 'browser'},
+    {name: 'DidShowCrosshairs', bus: 'browser'},
+    {name: 'DragStopped', bus: 'browser'}
+]
+
+/**
+ * Event payload shape that a host reads into.
+ *
+ * `TrackXYPairLoad` and `TrackXYPairRemoval` carry the track pair itself.
+ * juicebox-web reads the track and its config format off the payload, then
+ * hands the same object back to `layoutController.removeTrackXYPair`. So the
+ * payload's internals are published shape, not an implementation detail -- a
+ * refactor that changed what a track pair looks like would break a host that
+ * never named the type.
+ *
+ * Declaration only; verifying it means posting a real track load.
+ */
+export const EVENT_PAYLOAD_SHAPES = [
+    {event: 'TrackXYPairLoad', payload: 'the TrackPair itself', readsInto: ['track', 'track.name', 'track.config.format']},
+    {event: 'TrackXYPairRemoval', payload: 'the TrackPair itself', readsInto: ['track', 'track.name', 'track.config.format']}
+]

@@ -662,7 +662,7 @@ flowchart TB
         <!-- ---- 10 ---- -->
         <article id="c10" class="space-y-5">
           <div class="flex items-baseline justify-between gap-4 flex-wrap">
-            <h3 class="font-serif text-2xl">10 · One dataset-load path behind one interface</h3>
+            <h3 class="font-serif text-2xl">10 · One dataset-load path — <em>this is the live-map seam</em></h3>
             <div class="flex gap-2 shrink-0">
               <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-white border border-slate-300 text-slate-600">Open</span>
               <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-amber-100 text-amber-900">Worth exploring</span>
@@ -729,7 +729,19 @@ flowchart TB
           </ul>
           <div class="rounded border border-sky-300 bg-sky-50 px-4 py-3 text-sm text-sky-900 space-y-1">
             <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — three named entry points must survive</div>
-            <div><span class="font-mono">loadHicFile</span> (both apps), <span class="font-mono">loadHicControlFile</span> (juicebox-web) and <span class="font-mono">loadLiveContactMap</span> (Spacewalk) are three distinct public calls with three signatures. Collapsing them onto one internal <span class="font-mono">loadMap(source, role)</span> is fine — the three named methods on <span class="font-mono">HICBrowser</span> are not optional, and their argument shapes are contract. <br><br>Spacewalk passes <span class="font-mono">{liveContactMap, name, locus}</span>; juicebox-web passes <span class="font-mono">{url, name, nvi, ...}</span>.</div>
+            <div><span class="font-mono">loadHicFile</span> (both apps), <span class="font-mono">loadHicControlFile</span> (juicebox-web) and <span class="font-mono">loadLiveContactMap</span> (Spacewalk) are three distinct public calls with three signatures. Collapsing them onto one internal <span class="font-mono">loadMap(source, role)</span> is fine — the three named methods on <span class="font-mono">HICBrowser</span> are not optional, and their argument shapes are contract. <br><br>Spacewalk passes <span class="font-mono">{liveContactMap, name, locus}</span>; juicebox-web passes <span class="font-mono">{url, name, nvi, ...}</span>. All three are declared in <span class="font-mono">js/publicApi.js</span>; removing one fails <span class="font-mono">test/testPublicApi.js</span>.</div>
+          </div>
+
+          <div class="rounded border border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-950 space-y-2">
+            <div class="text-xs uppercase tracking-wider opacity-70">Read this before scoping — what the card's title hides</div>
+            <p>This candidate <strong>is the live contact map seam</strong>, and the seam was built as an expediency: the goal was to make a live map, streamed from hic-straw, look to juicebox.js like a file-based <span class="font-mono">.hic</span> map. The disguise is deliberate and mostly successful — but "one load path" means <em>deciding whether the disguise was the right call</em>, not just deduplicating three method bodies.</p>
+            <p>The debt spans three repos. The core work lives in <span class="font-mono">hic-straw</span> (which is not in the architecture review at all) and in Spacewalk; what reached juicebox.js is a thin adapter. Narrow, but it leaks in exactly three places:</p>
+            <ul class="list-disc list-inside space-y-1">
+              <li><span class="font-mono">js/hicDataset.js</span> — <span class="font-mono">isLive</span> is set from config and <span class="font-mono">datasetType</span> derived from it. Both are consumer contract; Spacewalk branches on <span class="font-mono">dataset.isLive</span>.</li>
+              <li><span class="font-mono">js/imageTileCore.js</span> — <span class="font-mono">autoThreshold</span> takes the 75th percentile instead of the 95th and clamps to 1 for live maps. <strong>A genuine rendering divergence</strong>, not an adapter detail: the disguise does not hold here, and any change to the load path has to keep this branch reachable.</li>
+              <li><span class="font-mono">js/dataLoader.js</span> — <span class="font-mono">loadLiveContactMap</span> as a separate path, with the state ladder duplicated from <span class="font-mono">loadHicFile</span>.</li>
+            </ul>
+            <p>Two live artefacts of the churn, both worth reading first: <strong>#471</strong> (the <span class="font-mono">datasetType</span> vocabulary collision this seam created), and the fact that ADR-0003 cited a dataset flag named <span class="font-mono">isLiveContactMapDataSet</span> that exists in no repo — a rename that left a stale reference in a document written the same week.</p>
           </div>
 
         </article>

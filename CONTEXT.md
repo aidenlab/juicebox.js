@@ -14,6 +14,27 @@ without a host app.
 The thing the user is looking at. A browser instance shows one primary contact
 map and optionally a **control map** for comparison.
 
+**Dataset** — the source a contact map is drawn from, and the object the browser
+holds (`js/hicDataset.js`). Two kinds, distinguished by `dataset.isLive`:
+
+- a **`.hic` dataset** reads a static file over the network. This is
+  juicebox.js's primary purpose and the case everything is tuned for.
+- a **live contact map** streams from hic-straw instead of reading a file. Built
+  for Spacewalk, which needed contact maps generated as it runs.
+
+**The disguise** — a live contact map is deliberately made to *look like* a
+`.hic` dataset from juicebox.js's side: same `Dataset`, same rendering path, same
+canonical state. This was an expediency, and it mostly works. Where it does not
+hold, say so explicitly rather than treating live as a variant of file:
+
+- `imageTileCore.autoThreshold` takes the 75th percentile rather than the 95th
+  and clamps to 1 for live maps — a real rendering divergence.
+- `loadLiveContactMap` is its own load path, not a parameter to the file path.
+
+The core of this work lives in **hic-straw**, not here; juicebox.js holds a thin
+adapter. When touching it, expect the seam to span three repos. See the
+live-map note on candidate 10 in `docs/architecture-review.html`.
+
 **Canonical state** — the seven fields on `State` (`js/hicState.js`) that fully
 and unambiguously specify the view: `chr1`, `chr2`, `x`, `y`, `zoom`,
 `pixelSize`, `normalization`. Everything else the user sees is derived from
@@ -158,6 +179,35 @@ architecture. See
 together with the headers its gate wants. Everything else fetches directly, on
 purpose: a genuine CORS or permissions failure has to stay visible in
 development.
+
+## The public surface
+
+**Public surface** — everything a host app can reach: the names exported from
+`js/index.js`, every member of a browser instance, anything reached through one
+of those members, the coordinator callback names, and the events posted with the
+shape of their payloads. Most of it is *undeclared by construction* —
+`HICBrowser` is not exported, so hosts get instances from `init()` and use them
+directly, and the surface never appears in an export list.
+
+**Manifest** — `js/publicApi.js`, which names that surface as data.
+`test/testPublicApi.js` reads it and fails when a declared name goes missing.
+Nothing imports the manifest at runtime; it exists so there is somewhere to look
+and something that breaks.
+
+The manifest is the source of truth for **what** the surface is. `docs/adr/0003`
+keeps what a list of names cannot carry — *why* the surface is what it is, and
+**which consumer uses what**, which is re-measured at each release. Update both:
+the manifest when the surface changes, the ADR's tables when a consumer does.
+
+**The deletion test is not valid against `js/` alone.** Before removing anything
+reachable from a browser instance or from the namespace, check the manifest.
+"No callers in this repo" is half a finding — four members have *no* internal
+callers at all and exist solely for hosts. A name on the manifest is a
+coordinated release across both consumers, not a deletion.
+
+Absence from the manifest lowers the risk of changing something; it does not zero
+it. juicebox.js is published and embeddable by anyone, so for anything resembling
+a load, a session, a state or a lifecycle call, prefer deprecation over deletion.
 
 ## Architecture vocabulary
 

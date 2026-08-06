@@ -2,7 +2,8 @@ import {describe, it, expect, beforeEach, afterEach} from 'vitest'
 import juicebox from '../js/index.js'
 import HICBrowser from '../js/hicBrowser.js'
 import {withDOM} from './utils/browserFixture.js'
-import {NAMESPACE_SURFACE, BROWSER_SURFACE} from '../js/publicApi.js'
+import {HiCDataset} from '../js/hicDataset.js'
+import {NAMESPACE_SURFACE, BROWSER_SURFACE, POST_LOAD_SURFACE} from '../js/publicApi.js'
 
 /**
  * Contract tests for the declared public surface.
@@ -58,5 +59,31 @@ describe('browser instance surface', () => {
             // until a map loads. Presence is the contract, not the value.
             expect(name in browser, `browser no longer exposes "${name}"`).toBe(true)
         }
+    })
+})
+
+describe('post-load surface', () => {
+
+    it('declares where each member is populated', () => {
+        for (const entry of POST_LOAD_SURFACE) {
+            expect(entry.path).toBeTruthy()
+            expect(entry.populatedBy, `${entry.path} does not say what populates it`).toBeTruthy()
+        }
+    })
+
+    it('keeps genome out of the construction-time surface', () => {
+        // The split is deliberate. genome is assigned by the data loader, so
+        // folding it into BROWSER_SURFACE would fail against a bare instance --
+        // and the tempting fix, dropping it, would make real contract invisible.
+        expect(BROWSER_SURFACE).not.toContain('genome')
+        expect(POST_LOAD_SURFACE.map(entry => entry.path)).toContain('browser.genome')
+    })
+
+    it('exposes isLive on a dataset', () => {
+        // Spacewalk reads this to tell a live contact map from a static .hic.
+        // A dataset constructs without a browser, so unlike genome this one can
+        // be checked rather than only declared.
+        const dataset = new HiCDataset({url: 'https://example.com/nonexistent.hic'})
+        expect('isLive' in dataset).toBe(true)
     })
 })

@@ -119,3 +119,23 @@ export const BROWSER_SURFACE = [
     'layoutController',
     'contactMatrixView'
 ]
+
+/**
+ * Surface that does not exist until a map has loaded.
+ *
+ * These are contract exactly like `BROWSER_SURFACE`, but they cannot be
+ * asserted against a freshly constructed browser: nothing assigns them until a
+ * dataset arrives. `genome`, for instance, is set by the data loader, and
+ * Spacewalk guards on its presence.
+ *
+ * They are declared separately rather than dropped, because the whole failure
+ * this file addresses is that undeclared surface is invisible surface. A member
+ * that is hard to test is not thereby less of a promise.
+ *
+ * Each entry names the path a host reads and where it is populated.
+ */
+export const POST_LOAD_SURFACE = [
+    {path: 'browser.genome', populatedBy: 'dataLoader, on map load'},
+    {path: 'browser.dataset.isLive', populatedBy: 'the Dataset constructor'},
+    {path: 'browser.activeDataset.isLive', populatedBy: 'the Dataset constructor'}
+]

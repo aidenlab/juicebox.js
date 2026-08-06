@@ -171,7 +171,12 @@ directly, and the surface never appears in an export list.
 **Manifest** — `js/publicApi.js`, which names that surface as data.
 `test/testPublicApi.js` reads it and fails when a declared name goes missing.
 Nothing imports the manifest at runtime; it exists so there is somewhere to look
-and something that breaks. It supersedes the tables in `docs/adr/0003`.
+and something that breaks.
+
+The manifest is the source of truth for **what** the surface is. `docs/adr/0003`
+keeps what a list of names cannot carry — *why* the surface is what it is, and
+**which consumer uses what**, which is re-measured at each release. Update both:
+the manifest when the surface changes, the ADR's tables when a consumer does.
 
 **The deletion test is not valid against `js/` alone.** Before removing anything
 reachable from a browser instance or from the namespace, check the manifest.

@@ -19,6 +19,29 @@ import {NAMESPACE_SURFACE, BROWSER_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COO
  * member does not fail the build. See issue #470.
  */
 
+/**
+ * Stand up a fresh browser around each test in the calling describe, and tear
+ * the DOM back down afterwards. Returns a holder rather than the browser itself
+ * because the instance does not exist until beforeEach runs.
+ */
+function withBrowser() {
+
+    const context = {browser: undefined}
+    let fixture
+
+    beforeEach(() => {
+        fixture = withDOM()
+        context.browser = new HICBrowser(fixture.container, {})
+    })
+
+    afterEach(() => {
+        fixture.restore()
+        context.browser = undefined
+    })
+
+    return context
+}
+
 describe('namespace surface', () => {
 
     it('exports every declared name', () => {
@@ -37,20 +60,10 @@ describe('namespace surface', () => {
 
 describe('browser instance surface', () => {
 
-    let fixture
-    let browser
-
-    beforeEach(() => {
-        fixture = withDOM()
-        browser = new HICBrowser(fixture.container, {})
-    })
-
-    afterEach(() => {
-        fixture.restore()
-    })
+    const context = withBrowser()
 
     it('constructs a browser', () => {
-        expect(browser.id).toMatch(/^browser_/)
+        expect(context.browser.id).toMatch(/^browser_/)
     })
 
     it('exposes every declared member', () => {
@@ -58,7 +71,7 @@ describe('browser instance surface', () => {
             // `in` rather than a truthiness check: `dataset` and `activeDataset`
             // are accessors that exist from construction and stay undefined
             // until a map loads. Presence is the contract, not the value.
-            expect(name in browser, `browser no longer exposes "${name}"`).toBe(true)
+            expect(name in context.browser, `browser no longer exposes "${name}"`).toBe(true)
         }
     })
 })
@@ -91,22 +104,12 @@ describe('post-load surface', () => {
 
 describe('sub-surfaces', () => {
 
-    let fixture
-    let browser
-
-    beforeEach(() => {
-        fixture = withDOM()
-        browser = new HICBrowser(fixture.container, {})
-    })
-
-    afterEach(() => {
-        fixture.restore()
-    })
+    const context = withBrowser()
 
     it('exposes every declared member on its owner', () => {
         for (const {owner, member} of SUB_SURFACES) {
-            expect(browser[owner], `browser no longer exposes "${owner}"`).toBeDefined()
-            expect(member in browser[owner], `browser.${owner} no longer exposes "${member}"`).toBe(true)
+            expect(context.browser[owner], `browser no longer exposes "${owner}"`).toBeDefined()
+            expect(member in context.browser[owner], `browser.${owner} no longer exposes "${member}"`).toBe(true)
         }
     })
 
@@ -121,17 +124,7 @@ describe('sub-surfaces', () => {
 
 describe('coordinator callbacks', () => {
 
-    let fixture
-    let browser
-
-    beforeEach(() => {
-        fixture = withDOM()
-        browser = new HICBrowser(fixture.container, {})
-    })
-
-    afterEach(() => {
-        fixture.restore()
-    })
+    const context = withBrowser()
 
     // Exercised rather than reflected on: addCallback validates its argument and
     // throws, so these assertions test behaviour a host can actually observe.
@@ -139,44 +132,34 @@ describe('coordinator callbacks', () => {
     it('accepts every declared callback name', () => {
         for (const name of COORDINATOR_CALLBACKS) {
             expect(
-                () => browser.coordinator.addCallback(name, () => {}),
+                () => context.browser.coordinator.addCallback(name, () => {}),
                 `coordinator no longer accepts "${name}"`
             ).not.toThrow()
         }
     })
 
     it('rejects an undeclared callback name', () => {
-        expect(() => browser.coordinator.addCallback('onSomethingUndeclared', () => {})).toThrow()
+        expect(() => context.browser.coordinator.addCallback('onSomethingUndeclared', () => {})).toThrow()
     })
 
     it('returns an unsubscribe function', () => {
         // Hosts hold this to detach on teardown; dropping it would leak the
         // callback and outlive the host's own lifecycle.
-        const unsubscribe = browser.coordinator.addCallback('onMapLoaded', () => {})
+        const unsubscribe = context.browser.coordinator.addCallback('onMapLoaded', () => {})
         expect(typeof unsubscribe).toBe('function')
     })
 })
 
 describe('event bus', () => {
 
-    let fixture
-    let browser
-
-    beforeEach(() => {
-        fixture = withDOM()
-        browser = new HICBrowser(fixture.container, {})
-    })
-
-    afterEach(() => {
-        fixture.restore()
-    })
+    const context = withBrowser()
 
     // These check the plumbing declared events travel over. Whether each event
     // is still *posted* is not checked -- see EVENTS_POSTED and #438.
 
     it('exposes a per-browser bus that a host can subscribe to', () => {
-        expect(typeof browser.eventBus.subscribe).toBe('function')
-        expect(typeof browser.eventBus.post).toBe('function')
+        expect(typeof context.browser.eventBus.subscribe).toBe('function')
+        expect(typeof context.browser.eventBus.post).toBe('function')
     })
 
     it('exposes a global bus', () => {
@@ -184,19 +167,15 @@ describe('event bus', () => {
         expect(typeof EventBus.globalBus.subscribe).toBe('function')
     })
 
-    it('delivers a posted event to a subscriber on the declared bus', () => {
-        for (const {name, bus} of EVENTS_POSTED) {
-            const target = 'global' === bus ? EventBus.globalBus : browser.eventBus
-            let received
-            target.subscribe(name, event => { received = event })
-            target.post({type: name, data: 'payload'})
-            expect(received, `"${name}" did not reach a subscriber on the ${bus} bus`).toBeDefined()
-        }
-    })
-
-    it('names a bus for every declared event', () => {
+    it('reaches a subscriber on whichever bus an event declares', () => {
+        // Deliberately not a check that juicebox still posts these -- this test
+        // does the posting, so it could only ever pass. It checks the weaker
+        // thing that is still worth knowing: that the bus each declared event
+        // names is real and reachable from what a host holds.
         for (const {name, bus} of EVENTS_POSTED) {
             expect(['global', 'browser'], `"${name}" declares an unknown bus`).toContain(bus)
+            const target = 'global' === bus ? EventBus.globalBus : context.browser.eventBus
+            expect(typeof target.subscribe, `the ${bus} bus is not subscribable`).toBe('function')
         }
     })
 

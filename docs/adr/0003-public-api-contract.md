@@ -107,6 +107,10 @@ These are contract too, and are easy to miss because they are one dot further ou
 - `layoutController.removeTrackXYPair(pair)` — juicebox-web
 - `layoutController.getContactMatrixViewport()` — Spacewalk
 - `contactMatrixView.update()`, `contactMatrixView.ctx` — Spacewalk
+- `contactMatrixView.viewportElement` — Spacewalk sizes its live-map view from
+  it. **Missed by the measurement above** and found while reviewing #470, which
+  is the argument for the manifest in one line: the table was hand-built and
+  incomplete within a week.
 - `coordinator.addCallback(name, fn)` — Spacewalk registers `onMapLoaded`,
   `onBackgroundColorChange` and `onForegroundColorChange`. The coordinator accepts
   **six** names and throws on anything else, so all six are published behaviour;

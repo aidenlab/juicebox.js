@@ -47,9 +47,9 @@
  * lifecycle call, prefer deprecation over deletion even when this file is
  * silent. For genuinely internal machinery, this file is sufficient.
  *
- * Nothing imports this module at runtime. It ships with the library so that
- * consumers and future refactors can read it, and bundlers drop it from
- * consumer builds.
+ * Nothing imports this module at runtime, so it never reaches a consumer
+ * bundle. It is not in `package.json`'s `files` either -- this is repo source,
+ * read here or on GitHub, not something an installed package exposes.
  */
 
 /**
@@ -156,6 +156,10 @@ export const SUB_SURFACES = [
     {owner: 'layoutController', member: 'getContactMatrixViewport'},
     {owner: 'contactMatrixView', member: 'update'},
     {owner: 'contactMatrixView', member: 'ctx'},
+    // Spacewalk sizes its live-map view from this element. Missing from
+    // ADR-0003's measurement and found while reviewing #470 -- which is the
+    // point: a hand-measured table missed it, and a test would not have.
+    {owner: 'contactMatrixView', member: 'viewportElement'},
     {owner: 'coordinator', member: 'addCallback'}
 ]
 

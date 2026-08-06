@@ -56,7 +56,6 @@ class TrackRenderer {
         this.spinnerElement = document.createElement('div');
         this.spinnerElement.className = (this.axis === 'x') ? 'x-track-spinner' : 'y-track-spinner';
         this.viewportElement.appendChild(this.spinnerElement);
-        this.stopSpinner();
     }
 
     dispose() {
@@ -89,14 +88,6 @@ class TrackRenderer {
             this.ctx.drawImage(tile.buffer, this.offsetPixel, 0);
 
         }
-    }
-
-    startSpinner() {
-        this.browser.startSpinner();
-    }
-
-    stopSpinner() {
-        this.browser.stopSpinner();
     }
 
     isLoading() {

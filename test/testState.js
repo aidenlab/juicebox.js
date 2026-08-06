@@ -709,7 +709,7 @@ describe('State.sync', () => {
 
 /**
  * Mock browser shaped for InteractionHandler.zoomAndCenter.
- * Adds: state, dataset (with isWholeGenome), update(), notifyLocusChange(),
+ * Adds: state, dataset (with isWholeGenome), update(), coordinator.onLocusChange(),
  * contactMatrixView with the methods _applyStateChange touches.
  */
 function createInteractionBrowser(overrides = {}) {
@@ -735,7 +735,7 @@ function createInteractionBrowser(overrides = {}) {
         state: overrides.state ?? createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 }),
         minZoom: overrides.minZoom ?? (async () => 2),
         update: async () => {},
-        notifyLocusChange: () => {},
+        coordinator: { onLocusChange: () => {} },
         startSpinner: () => {},
         stopSpinner: () => {},
     }

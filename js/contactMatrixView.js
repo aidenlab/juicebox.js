@@ -321,7 +321,6 @@ class ContactMatrixView {
         if (this.spinnerCount === 0) {
             this.faSpinnerElement.style.display = 'none';
         }
-        this.spinnerCount = Math.max(0, this.spinnerCount); // This should not be necessary
     }
 
     addMouseHandlers(viewportElement) {
@@ -397,7 +396,7 @@ class ContactMatrixView {
                 xy.xNormalized = xy.x / width;
                 xy.yNormalized = xy.y / height;
 
-                this.browser.notifyUpdateContactMapMousePosition(xy);
+                this.browser.coordinator.onUpdateContactMapMousePosition(xy);
 
                 if (this.willShowCrosshairs) {
                     this.browser.updateCrosshairs(xy);

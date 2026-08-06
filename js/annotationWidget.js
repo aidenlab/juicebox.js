@@ -184,7 +184,7 @@ class AnnotationWidget {
 
             if (isTrack2D) {
                 track.color = color;
-                this.browser.notifyTrackState2D(track);
+                this.browser.coordinator.onTrackState2D(track);
             } else {
                 trackRenderer.setColor(color);
             }
@@ -227,7 +227,7 @@ class AnnotationWidget {
             trackList[index] = temp;
 
             if (isTrack2D) {
-                this.browser.notifyTrackState2D(trackList);
+                this.browser.coordinator.onTrackState2D(trackList);
                 this.updateBody(trackList);
             } else {
                 this.browser.updateLayout();
@@ -241,7 +241,7 @@ class AnnotationWidget {
             trackList[index] = temp;
 
             if (isTrack2D) {
-                this.browser.notifyTrackState2D(trackList);
+                this.browser.coordinator.onTrackState2D(trackList);
                 this.updateBody(trackList);
             } else {
                 this.browser.updateLayout();
@@ -263,7 +263,7 @@ class AnnotationWidget {
                 trackList.splice(index, 1);
                 this.browser.contactMatrixView.clearImageCaches();
                 this.browser.contactMatrixView.update();
-                this.browser.notifyTrackLoad2D(trackList);
+                this.browser.coordinator.onTrackLoad2D(trackList);
             } else {
                 this.browser.layoutController.removeTrackXYPair(track.x.track.trackRenderPair);
             }

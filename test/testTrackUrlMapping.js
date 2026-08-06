@@ -45,7 +45,7 @@ function stubBrowser() {
         contactMatrixView: { startSpinner: () => undefined, stopSpinner: () => undefined },
         layoutController: { updateLayoutWithTracks: () => undefined },
         updateLayout: async () => undefined,
-        notifyTrackLoad2D: () => undefined
+        coordinator: { onTrackLoad2D: () => undefined }
     };
 }
 

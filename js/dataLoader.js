@@ -88,7 +88,7 @@ class DataLoader {
             config.name = name;
 
             const hicFileAlert = str => {
-                this.browser.notifyNormalizationExternalChange('NONE');
+                this.browser.coordinator.onNormalizationExternalChange('NONE');
                 Alert.presentAlert(str);
             };
 
@@ -100,7 +100,7 @@ class DataLoader {
 
             if (this.browser.genome.id !== previousGenomeId) {
                 // Use coordinator instead of event bus for explicit, traceable genome change handling
-                this.browser.notifyGenomeChange(this.browser.genome.id);
+                this.browser.coordinator.onGenomeChange(this.browser.genome.id);
                 // Still post to event bus for cross-browser synchronization (if needed)
                 EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
             }
@@ -136,7 +136,7 @@ class DataLoader {
                 await this.browser.setState(state);
             }
 
-            this.browser.notifyMapLoaded(dataset, state, dataset.datasetType);
+            this.browser.coordinator.onMapLoaded(dataset, state, dataset.datasetType);
 
             // Initiate loading of the norm vector index, but don't block if the "nvi" parameter is not available.
             // Let it load in the background
@@ -153,13 +153,13 @@ class DataLoader {
             if (config.nvi && dataset.getNormVectorIndex) {
                 await dataset.getNormVectorIndex(config);
                 if (!config.isControl) {
-                    this.browser.notifyNormVectorIndexLoad(dataset);
+                    this.browser.coordinator.onNormVectorIndexLoad(dataset);
                 }
             } else if (dataset.getNormVectorIndex) {
                 dataset.getNormVectorIndex(config)
                     .then(normVectorIndex => {
                         if (!config.isControl) {
-                            this.browser.notifyNormVectorIndexLoad(dataset);
+                            this.browser.coordinator.onNormVectorIndexLoad(dataset);
                         }
                     });
             }
@@ -234,7 +234,7 @@ class DataLoader {
             this.browser.genome = new Genome(dataset.genomeId, dataset.chromosomes);
 
             if (this.browser.genome.id !== previousGenomeId) {
-                this.browser.notifyGenomeChange(this.browser.genome.id);
+                this.browser.coordinator.onGenomeChange(this.browser.genome.id);
                 EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
             }
 
@@ -254,7 +254,7 @@ class DataLoader {
             const locus = config.locus || `${lcm.chromosomes[1].name}:${lcm.genomicStart}-${lcm.genomicEnd}`;
             await this.browser.parseGotoInput(locus);
 
-            this.browser.notifyMapLoaded(dataset, state, 'livecontactmap');
+            this.browser.coordinator.onMapLoaded(dataset, state, 'livecontactmap');
 
             return dataset;
         } catch (error) {
@@ -287,7 +287,7 @@ class DataLoader {
             config.name = name;
 
             const hicFileAlert = str => {
-                this.browser.notifyNormalizationExternalChange('NONE');
+                this.browser.coordinator.onNormalizationExternalChange('NONE');
                 Alert.presentAlert(str);
             };
 
@@ -307,7 +307,7 @@ class DataLoader {
                 if (controlDataset.getNormVectorIndex) {
                     await controlDataset.getNormVectorIndex(config);
                 }
-                this.browser.notifyControlMapLoaded(this.browser.controlDataset);
+                this.browser.coordinator.onControlMapLoaded(this.browser.controlDataset);
 
                 if (!noUpdates) {
                     await this.browser.update();
@@ -418,7 +418,7 @@ class DataLoader {
                 const tracks2D = await Promise.all(promises2D);
                 if (tracks2D && tracks2D.length > 0) {
                     this.browser.tracks2D = this.browser.tracks2D.concat(tracks2D);
-                    this.browser.notifyTrackLoad2D(this.browser.tracks2D);
+                    this.browser.coordinator.onTrackLoad2D(this.browser.tracks2D);
                 }
             }
 
@@ -447,7 +447,7 @@ class DataLoader {
             return;
         }
 
-        this.browser.notifyNormalizationFileLoad("start");
+        this.browser.coordinator.onNormalizationFileLoad("start");
 
         const normVectors = await this.browser.activeDataset.hicFile.readNormalizationVectorFile(
             url,
@@ -461,10 +461,10 @@ class DataLoader {
             if (!this.browser.activeDataset.normalizationTypes.includes(type)) {
                 this.browser.activeDataset.normalizationTypes.push(type);
             }
-            this.browser.notifyNormVectorIndexLoad(this.browser.activeDataset);
+            this.browser.coordinator.onNormVectorIndexLoad(this.browser.activeDataset);
         }
 
-        this.browser.notifyNormalizationFileLoad("stop");
+        this.browser.coordinator.onNormalizationFileLoad("stop");
 
         return normVectors;
     }

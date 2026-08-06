@@ -43,7 +43,13 @@ class BrowserCoordinator {
      */
     constructor(browser) {
         this.browser = browser;
-        this.components = this._initializeComponents();
+        this.rulers = {
+            x: browser.layoutController.xAxisRuler,
+            y: browser.layoutController.yAxisRuler
+        };
+        // Set by adoptWidgets(). The coordinator is constructed before the widgets
+        // because their observer closures notify it directly -- see createWidgets().
+        this.widgets = undefined;
         this.externalCallbacks = {
             onMapLoaded: [],
             onControlMapLoaded: [],
@@ -55,27 +61,12 @@ class BrowserCoordinator {
     }
 
     /**
-     * Initialize component references explicitly.
-     * This makes it clear which components the coordinator orchestrates.
-     * 
-     * @returns {Object} - Object containing all component references
-     * @private
+     * Take ownership of the widget record returned by createWidgets().
+     *
+     * @param {Object} widgets - the widget record
      */
-    _initializeComponents() {
-        return {
-            contactMatrix: this.browser.contactMatrixView,
-            chromosomeSelector: this.browser.ui.getComponent('chromosomeSelector'),
-            rulers: {
-                x: this.browser.layoutController.xAxisRuler,
-                y: this.browser.layoutController.yAxisRuler
-            },
-            resolutionSelector: this.browser.ui.getComponent('resolutionSelector'),
-            normalizationWidget: this.browser.ui.getComponent('normalization'),
-            colorScaleWidget: this.browser.ui.getComponent('colorScaleWidget'),
-            controlMapWidget: this.browser.ui.getComponent('controlMap'),
-            locusGoto: this.browser.ui.getComponent('locusGoto'),
-            scrollbar: this.browser.ui.getComponent('scrollbar')
-        };
+    adoptWidgets(widgets) {
+        this.widgets = widgets;
     }
 
     /**
@@ -90,63 +81,63 @@ class BrowserCoordinator {
      */
     onMapLoaded(dataset, state, datasetType) {
         // 1. Initialize contact matrix view
-        if (!this.components.contactMatrix.mouseHandlersEnabled) {
-            this.components.contactMatrix.addTouchHandlers(this.components.contactMatrix.viewportElement);
-            this.components.contactMatrix.addMouseHandlers(this.components.contactMatrix.viewportElement);
-            this.components.contactMatrix.mouseHandlersEnabled = true;
+        if (!this.widgets.contactMatrixView.mouseHandlersEnabled) {
+            this.widgets.contactMatrixView.addTouchHandlers(this.widgets.contactMatrixView.viewportElement);
+            this.widgets.contactMatrixView.addMouseHandlers(this.widgets.contactMatrixView.viewportElement);
+            this.widgets.contactMatrixView.mouseHandlersEnabled = true;
         }
-        this.components.contactMatrix.clearImageCaches({thresholds: true});
+        this.widgets.contactMatrixView.clearImageCaches({thresholds: true});
 
         // 2. Update chromosome selector
-        if (this.components.chromosomeSelector) {
-            this.components.chromosomeSelector.respondToDataLoadWithDataset(dataset);
+        if (this.widgets.chromosomeSelector) {
+            this.widgets.chromosomeSelector.respondToDataLoadWithDataset(dataset);
         }
 
         // 3. Update rulers
-        if (this.components.rulers.x) {
-            this.components.rulers.x.wholeGenomeLayout(
-                this.components.rulers.x.axisElement,
-                this.components.rulers.x.wholeGenomeContainerElement,
-                this.components.rulers.x.axis,
+        if (this.rulers.x) {
+            this.rulers.x.wholeGenomeLayout(
+                this.rulers.x.axisElement,
+                this.rulers.x.wholeGenomeContainerElement,
+                this.rulers.x.axis,
                 dataset
             );
-            this.components.rulers.x.update();
+            this.rulers.x.update();
         }
-        if (this.components.rulers.y) {
-            this.components.rulers.y.wholeGenomeLayout(
-                this.components.rulers.y.axisElement,
-                this.components.rulers.y.wholeGenomeContainerElement,
-                this.components.rulers.y.axis,
+        if (this.rulers.y) {
+            this.rulers.y.wholeGenomeLayout(
+                this.rulers.y.axisElement,
+                this.rulers.y.wholeGenomeContainerElement,
+                this.rulers.y.axis,
                 dataset
             );
-            this.components.rulers.y.update();
+            this.rulers.y.update();
         }
 
         // 4. Update normalization widget
-        if (this.components.normalizationWidget) {
-            this.components.normalizationWidget.receiveEvent({
+        if (this.widgets.normalizationWidget) {
+            this.widgets.normalizationWidget.receiveEvent({
                 type: "MapLoad",
                 data: { dataset, state, datasetType }
             });
         }
 
         // 5. Update resolution selector
-        if (this.components.resolutionSelector) {
+        if (this.widgets.resolutionSelector) {
             this.browser.resolutionLocked = false;
-            this.components.resolutionSelector.setResolutionLock(false);
-            this.components.resolutionSelector.updateResolutions(this.browser.state.zoom);
+            this.widgets.resolutionSelector.setResolutionLock(false);
+            this.widgets.resolutionSelector.updateResolutions(this.browser.state.zoom);
         }
 
         // 6. Update color scale widget
-        if (this.components.colorScaleWidget) {
-            this.components.colorScaleWidget.updateMapBackgroundColor(
+        if (this.widgets.colorScaleWidget) {
+            this.widgets.colorScaleWidget.updateMapBackgroundColor(
                 this.browser.contactMatrixView.backgroundColor
             );
         }
 
         // 7. Update control map widget
-        if (this.components.controlMapWidget && !this.browser.controlDataset) {
-            this.components.controlMapWidget.hide();
+        if (this.widgets.controlMapWidget && !this.browser.controlDataset) {
+            this.widgets.controlMapWidget.hide();
         }
 
         // 8. Notify external callbacks
@@ -161,17 +152,17 @@ class BrowserCoordinator {
      * @param {Dataset} controlDataset - The loaded control dataset
      */
     onControlMapLoaded(controlDataset) {
-        if (this.components.controlMapWidget) {
-            this.components.controlMapWidget.updateDisplayMode(this.browser.getDisplayMode());
-            this.components.controlMapWidget.show();
+        if (this.widgets.controlMapWidget) {
+            this.widgets.controlMapWidget.updateDisplayMode(this.browser.getDisplayMode());
+            this.widgets.controlMapWidget.show();
         }
 
-        if (this.components.resolutionSelector) {
-            this.components.resolutionSelector.updateResolutions(this.browser.state.zoom);
+        if (this.widgets.resolutionSelector) {
+            this.widgets.resolutionSelector.updateResolutions(this.browser.state.zoom);
         }
 
         // ContactMatrixView also needs to know about control map
-        this.components.contactMatrix.clearImageCaches({thresholds: true});
+        this.widgets.contactMatrixView.clearImageCaches({thresholds: true});
 
         // Notify external callbacks
         for (const callback of this.externalCallbacks.onControlMapLoaded) {
@@ -192,36 +183,36 @@ class BrowserCoordinator {
         const { state, resolutionChanged, chrChanged } = eventData;
 
         // 1. Update chromosome selector
-        if (this.components.chromosomeSelector) {
-            this.components.chromosomeSelector.respondToLocusChangeWithState(state);
+        if (this.widgets.chromosomeSelector) {
+            this.widgets.chromosomeSelector.respondToLocusChangeWithState(state);
         }
 
         // 2. Update scrollbar widget
-        if (this.components.scrollbar && !this.components.scrollbar.isDragging) {
-            this.components.scrollbar.receiveEvent({
+        if (this.widgets.scrollbar && !this.widgets.scrollbar.isDragging) {
+            this.widgets.scrollbar.receiveEvent({
                 type: "LocusChange",
                 data: { state }
             });
         }
 
         // 3. Update resolution selector
-        if (this.components.resolutionSelector) {
+        if (this.widgets.resolutionSelector) {
             if (resolutionChanged) {
                 this.browser.resolutionLocked = false;
-                this.components.resolutionSelector.setResolutionLock(false);
+                this.widgets.resolutionSelector.setResolutionLock(false);
             }
             if (chrChanged !== false) {
                 const isWholeGenome = this.browser.dataset.isWholeGenome(state.chr1);
-                this.components.resolutionSelector.updateLabelForWholeGenome(isWholeGenome);
-                this.components.resolutionSelector.updateResolutions(state.zoom);
+                this.widgets.resolutionSelector.updateLabelForWholeGenome(isWholeGenome);
+                this.widgets.resolutionSelector.updateResolutions(state.zoom);
             } else {
-                this.components.resolutionSelector.setSelectedResolution(state.zoom);
+                this.widgets.resolutionSelector.setSelectedResolution(state.zoom);
             }
         }
 
         // 4. Update locus goto widget
-        if (this.components.locusGoto) {
-            this.components.locusGoto.receiveEvent({
+        if (this.widgets.locusGoto) {
+            this.widgets.locusGoto.receiveEvent({
                 type: "LocusChange",
                 data: { state }
             });
@@ -239,7 +230,7 @@ class BrowserCoordinator {
      * @param {string} normalization - The normalization type
      */
     onNormalizationChange(normalization) {
-        this.components.contactMatrix.receiveEvent({ type: "NormalizationChange", data: normalization });
+        this.widgets.contactMatrixView.receiveEvent({ type: "NormalizationChange", data: normalization });
         // NormalizationWidget updates via selector change, no direct notification needed
     }
 
@@ -249,14 +240,14 @@ class BrowserCoordinator {
      * @param {string} mode - The display mode ("A", "B", "AOB", "BOA", "AMB")
      */
     onDisplayMode(mode) {
-        if (this.components.colorScaleWidget) {
-            this.components.colorScaleWidget.updateForColorScale(
+        if (this.widgets.colorScaleWidget) {
+            this.widgets.colorScaleWidget.updateForColorScale(
                 this.browser.contactMatrixView.getColorScale(mode)
             );
         }
 
-        if (this.components.controlMapWidget) {
-            this.components.controlMapWidget.updateDisplayMode(mode);
+        if (this.widgets.controlMapWidget) {
+            this.widgets.controlMapWidget.updateDisplayMode(mode);
         }
     }
 
@@ -266,8 +257,8 @@ class BrowserCoordinator {
      * @param {ColorScale|RatioColorScale} colorScale - The color scale instance
      */
     onColorScale(colorScale) {
-        if (this.components.colorScaleWidget) {
-            this.components.colorScaleWidget.updateForColorScale(colorScale);
+        if (this.widgets.colorScaleWidget) {
+            this.widgets.colorScaleWidget.updateForColorScale(colorScale);
         }
     }
 
@@ -277,7 +268,7 @@ class BrowserCoordinator {
      * @param {Array} tracks2D - Array of 2D track instances
      */
     onTrackLoad2D(tracks2D) {
-        this.components.contactMatrix.receiveEvent({ type: "TrackLoad2D", data: tracks2D });
+        this.widgets.contactMatrixView.receiveEvent({ type: "TrackLoad2D", data: tracks2D });
     }
 
     /**
@@ -286,7 +277,7 @@ class BrowserCoordinator {
      * @param {Object|Array} trackData - Track state data
      */
     onTrackState2D(trackData) {
-        this.components.contactMatrix.receiveEvent({ type: "TrackState2D", data: trackData });
+        this.widgets.contactMatrixView.receiveEvent({ type: "TrackState2D", data: trackData });
     }
 
     /**
@@ -295,9 +286,9 @@ class BrowserCoordinator {
      * @param {Dataset} dataset - The dataset with loaded normalization vectors
      */
     onNormVectorIndexLoad(dataset) {
-        if (this.components.normalizationWidget) {
-            this.components.normalizationWidget.updateOptions();
-            this.components.normalizationWidget.stopNotReady();
+        if (this.widgets.normalizationWidget) {
+            this.widgets.normalizationWidget.updateOptions();
+            this.widgets.normalizationWidget.stopNotReady();
         }
     }
 
@@ -307,11 +298,11 @@ class BrowserCoordinator {
      * @param {string} status - Load status ("start" or "stop")
      */
     onNormalizationFileLoad(status) {
-        if (this.components.normalizationWidget) {
+        if (this.widgets.normalizationWidget) {
             if (status === "start") {
-                this.components.normalizationWidget.startNotReady();
+                this.widgets.normalizationWidget.startNotReady();
             } else {
-                this.components.normalizationWidget.stopNotReady();
+                this.widgets.normalizationWidget.stopNotReady();
             }
         }
     }
@@ -325,9 +316,9 @@ class BrowserCoordinator {
      * @param {string} normalization - The normalization type
      */
     onNormalizationExternalChange(normalization) {
-        if (this.components.normalizationWidget) {
+        if (this.widgets.normalizationWidget) {
             // Use programmatic update method to prevent feedback loop
-            this.components.normalizationWidget.setNormalizationProgrammatically(normalization);
+            this.widgets.normalizationWidget.setNormalizationProgrammatically(normalization);
         }
     }
 
@@ -335,7 +326,7 @@ class BrowserCoordinator {
      * Orchestrate component updates when colors change.
      */
     onColorChange() {
-        this.components.contactMatrix.receiveEvent({ type: "ColorChange" });
+        this.widgets.contactMatrixView.receiveEvent({ type: "ColorChange" });
     }
 
     /**
@@ -370,8 +361,8 @@ class BrowserCoordinator {
      */
     onUpdateContactMapMousePosition(xy) {
         // Update ruler highlighting for mouse position
-        this._updateRulerHighlightingForMousePosition(this.components.rulers.x, xy);
-        this._updateRulerHighlightingForMousePosition(this.components.rulers.y, xy);
+        this._updateRulerHighlightingForMousePosition(this.rulers.x, xy);
+        this._updateRulerHighlightingForMousePosition(this.rulers.y, xy);
     }
 
     /**
@@ -428,17 +419,6 @@ class BrowserCoordinator {
     }
 
     /**
-     * Get all registered callbacks for a specific event.
-     * Useful for debugging and introspection.
-     * 
-     * @param {string} event - Event name
-     * @returns {Array<Function>} - Array of callback functions
-     */
-    getCallbacksFor(event) {
-        return this.externalCallbacks[event] || [];
-    }
-
-    /**
      * Orchestrate component updates when the genome changes.
      * 
      * This method is called when a new genome is loaded (e.g., when loading a Hi-C file
@@ -459,16 +439,6 @@ class BrowserCoordinator {
                 console.error('Error in onGenomeChange callback:', error);
             }
         });
-    }
-
-    /**
-     * List all components managed by this coordinator.
-     * Useful for debugging and introspection.
-     * 
-     * @returns {Array<string>} - Array of component names
-     */
-    listComponents() {
-        return Object.keys(this.components);
     }
 }
 

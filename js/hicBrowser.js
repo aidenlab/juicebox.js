@@ -33,12 +33,11 @@ import LayoutController, {setViewportSize} from './layoutController.js'
 import { geneSearch } from './geneSearch.js'
 import {getAllBrowsers} from "./createBrowser.js"
 import {setTrackReorderArrowColors} from "./trackPair.js"
-import BrowserUIManager from "./browserUIManager.js"
+import createWidgets from "./createWidgets.js"
 import BrowserCoordinator from "./browserCoordinator.js"
 import StateManager from "./stateManager.js"
 import InteractionHandler from "./interactionHandler.js"
 import DataLoader from "./dataLoader.js"
-import RenderCoordinator from "./renderCoordinator.js"
 import {unmappedUrl} from "./urlMapper.js"
 
 const DEFAULT_PIXEL_SIZE = 1
@@ -96,14 +95,11 @@ class HICBrowser {
         this.menuElement = this.createMenu(this.rootElement);
         this.menuElement.style.display = 'none';
 
-        // Initialize UI components through BrowserUIManager
-        this.ui = new BrowserUIManager(this);
-
-        // Get the contact matrix view from UI manager
-        this.contactMatrixView = this.ui.getComponent('contactMatrix');
-
-        // Initialize browser coordinator for explicit component orchestration
+        // The coordinator is built first: the widgets' observer closures notify it
+        // directly, so it must exist before createWidgets() runs.
         this.coordinator = new BrowserCoordinator(this);
+        this.coordinator.adoptWidgets(createWidgets(this));
+        this.contactMatrixView = this.coordinator.widgets.contactMatrixView;
 
         // Initialize interaction handler for user interactions
         this.interactions = new InteractionHandler(this);
@@ -111,8 +107,10 @@ class HICBrowser {
         // Initialize data loader for data loading operations
         this.dataLoader = new DataLoader(this);
 
-        // Initialize render coordinator for rendering operations
-        this.renderCoordinator = new RenderCoordinator(this);
+        // Re-entrancy guard for update(). Rapid callers (mouse drag) coalesce into
+        // a single trailing update rather than queuing one per event.
+        this.updating = false;
+        this.pendingUpdate = undefined;
 
         // prevent user interaction during lengthy data loads
         this.userInteractionShield = document.createElement('div');
@@ -124,8 +122,6 @@ class HICBrowser {
     }
 
     async init(config) {
-        this.renderCoordinator.init();
-
         this.contactMatrixView.disableUpdates = true;
 
         try {
@@ -149,7 +145,7 @@ class HICBrowser {
 
             if (config.displayMode) {
                 this.contactMatrixView.displayMode = config.displayMode;
-                this.notifyDisplayMode(config.displayMode);
+                this.coordinator.onDisplayMode(config.displayMode);
             }
 
             if (config.colorScale) {
@@ -157,7 +153,7 @@ class HICBrowser {
                     this.state.normalization = config.normalization;
                 }
                 this.contactMatrixView.setColorScale(config.colorScale);
-                this.notifyColorScale(this.contactMatrixView.getColorScale());
+                this.coordinator.onColorScale(this.contactMatrixView.getColorScale());
             }
 
             const promises = [];
@@ -181,7 +177,7 @@ class HICBrowser {
             }
 
             if (config.cycle) {
-                this.ui.getComponent('controlMap').toggleDisplayModeCycle();
+                this.coordinator.widgets.controlMapWidget.toggleDisplayModeCycle();
             } else {
                 await this.update();
             }
@@ -255,7 +251,7 @@ class HICBrowser {
 
     async setDisplayMode(mode) {
         await this.contactMatrixView.setDisplayMode(mode)
-        this.notifyDisplayMode(mode)
+        this.coordinator.onDisplayMode(mode)
     }
 
     getDisplayMode() {
@@ -359,68 +355,6 @@ class HICBrowser {
         this.layoutController.yTrackGuideElement.style.display = 'none';
     }
 
-    /**
-     * Notification methods delegate to BrowserCoordinator.
-     * These methods are kept for backward compatibility and to maintain the public API.
-     * The coordinator provides explicit, traceable component orchestration.
-     */
-
-    notifyMapLoaded(dataset, state, datasetType) {
-        this.coordinator.onMapLoaded(dataset, state, datasetType);
-    }
-
-    notifyControlMapLoaded(controlDataset) {
-        this.coordinator.onControlMapLoaded(controlDataset);
-    }
-
-    notifyLocusChange(eventData) {
-        this.coordinator.onLocusChange(eventData);
-    }
-
-    notifyNormalizationChange(normalization) {
-        this.coordinator.onNormalizationChange(normalization);
-    }
-
-    notifyDisplayMode(mode) {
-        this.coordinator.onDisplayMode(mode);
-    }
-
-    notifyColorScale(colorScale) {
-        this.coordinator.onColorScale(colorScale);
-    }
-
-    notifyTrackLoad2D(tracks2D) {
-        this.coordinator.onTrackLoad2D(tracks2D);
-    }
-
-    notifyTrackState2D(trackData) {
-        this.coordinator.onTrackState2D(trackData);
-    }
-
-    notifyNormVectorIndexLoad(dataset) {
-        this.coordinator.onNormVectorIndexLoad(dataset);
-    }
-
-    notifyGenomeChange(genomeId) {
-        this.coordinator.onGenomeChange(genomeId);
-    }
-
-    notifyNormalizationFileLoad(status) {
-        this.coordinator.onNormalizationFileLoad(status);
-    }
-
-    notifyNormalizationExternalChange(normalization) {
-        this.coordinator.onNormalizationExternalChange(normalization);
-    }
-
-    notifyColorChange() {
-        this.coordinator.onColorChange();
-    }
-
-    notifyUpdateContactMapMousePosition(xy) {
-        this.coordinator.onUpdateContactMapMousePosition(xy);
-    }
-
     showCrosshairs() {
         this.contactMatrixView.xGuideElement.style.display = 'block';
         this.layoutController.xTrackGuideElement.style.display = 'block';
@@ -468,16 +402,6 @@ class HICBrowser {
 
     async loadNormalizationFile(url) {
         return this.dataLoader.loadNormalizationFile(url);
-    }
-
-    /**
-     * Render the XY pair of tracks.
-     * Delegates to RenderCoordinator.
-     *
-     * @param xy
-     */
-    async renderTrackXY(xy) {
-        return this.renderCoordinator.renderTrackXY(xy);
     }
 
     /**
@@ -792,7 +716,7 @@ class HICBrowser {
             chrChanged
         };
         await this.update();
-        this.notifyLocusChange(eventData);
+        this.coordinator.onLocusChange(eventData);
     }
 
     /**
@@ -833,12 +757,12 @@ class HICBrowser {
             resolutionChanged: zoomChanged,
             chrChanged
         };
-        this.notifyLocusChange(eventData);
+        this.coordinator.onLocusChange(eventData);
     }
 
     setNormalization(normalization) {
         this.stateManager.setNormalization(normalization);
-        this.notifyNormalizationChange(this.stateManager.getNormalization());
+        this.coordinator.onNormalizationChange(this.stateManager.getNormalization());
     }
 
     async shiftPixels(dx, dy) {
@@ -847,10 +771,27 @@ class HICBrowser {
 
     /**
      * Pure rendering method - repaints all visual components.
-     * Delegates to RenderCoordinator.
+     * Reads state directly from browser state, no parameters needed.
+     * This is the core rendering logic, separate from the update coordination
+     * (spinner, re-entrancy, sync) in update().
      */
     async repaint() {
-        return this.renderCoordinator.repaint();
+
+        if (!this.activeDataset || !this.activeState) {
+            return; // Can't render without dataset and state
+        }
+
+        const pseudoEvent = {
+            type: "LocusChange",
+            data: { state: this.activeState }
+        };
+        this.layoutController.xAxisRuler.locusChange(pseudoEvent);
+        this.layoutController.yAxisRuler.locusChange(pseudoEvent);
+
+        // Render all tracks and contact matrix in parallel
+        const promises = this.trackPairs.map(xy => xy.updateViews());
+        promises.push(this.contactMatrixView.update());
+        await Promise.all(promises);
     }
 
     /**
@@ -870,13 +811,38 @@ class HICBrowser {
 
     /**
      * Public API for updating/repainting the browser.
-     * Delegates to RenderCoordinator.
+     *
+     * Handles queuing for rapid calls (e.g. during a mouse drag). A call arriving
+     * while an update is in flight is remembered rather than run, and only the most
+     * recent one runs when the in-flight update finishes. Exactly one spinner
+     * start/stop pair spans the whole run, trailing updates included.
      *
      * @param shouldSync - Whether to synchronize state to other browsers (default: true)
      *                     Set to false when called from syncState() to avoid infinite loops
      */
     async update(shouldSync = true) {
-        return this.renderCoordinator.update(shouldSync);
+
+        if (this.updating) {
+            this.pendingUpdate = { shouldSync };
+            return;
+        }
+
+        this.updating = true;
+        try {
+            this.startSpinner();
+            await this.repaint();
+            if (shouldSync) {
+                this.syncToOtherBrowsers();
+            }
+        } finally {
+            this.updating = false;
+            const queued = this.pendingUpdate;
+            if (queued) {
+                this.pendingUpdate = undefined;
+                await this.update(queued.shouldSync);
+            }
+            this.stopSpinner();
+        }
     }
 
     repaintMatrix() {
@@ -923,7 +889,7 @@ class HICBrowser {
             if (nviString) {
                 jsonOBJ.controlNvi = nviString
             }
-            const controlMapWidget = this.ui.getComponent('controlMap');
+            const controlMapWidget = this.coordinator.widgets.controlMapWidget;
             if (controlMapWidget.getDisplayModeCycle() !== undefined) {
                 jsonOBJ.cycle = true
             }

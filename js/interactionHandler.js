@@ -91,7 +91,7 @@ class InteractionHandler {
         };
 
         await this.browser.update();
-        this.browser.notifyLocusChange(eventData);
+        this.browser.coordinator.onLocusChange(eventData);
     }
 
     /**

@@ -154,7 +154,7 @@ When two or more browsers are linked (multi-panel mode):
 
 | User action in browser A | Effect on browser B |
 |---|---|
-| Any state mutation (any of the above) | `browser.notifyLocusChange` fires → linked browsers receive the event → `browser.syncState(syncState)` → `state.sync(...)` |
+| Any state mutation (any of the above) | `browser.coordinator.onLocusChange` fires → linked browsers receive the event → `browser.syncState(syncState)` → `state.sync(...)` |
 
 The receiving browser's mutation path is `state.sync`, regardless of what the source action was.
 

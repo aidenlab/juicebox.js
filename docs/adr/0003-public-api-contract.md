@@ -71,7 +71,7 @@ it is used roughly as intended.
 | `loadLiveContactMap` | — | ✔ | delegation to `dataLoader` |
 | `parseGotoInput` | — | ✔ (3 sites) | delegation to `interactions` |
 | `reset` | ✔ | — | real method |
-| `dataset` | ✔ (3 sites) | ✔ | accessor; SW also reads `.isLiveContactMapDataSet` |
+| `dataset` | ✔ (3 sites) | ✔ | accessor; SW also reads `.isLive` |
 | `activeDataset` | — | ✔ (4 sites) | accessor; SW also reads `.isLive` |
 | `genome` | — | ✔ | truthiness guard only |
 | `id` | — | ✔ (9 sites) | used to build DOM selectors |
@@ -97,8 +97,12 @@ These are contract too, and are easy to miss because they are one dot further ou
 - `layoutController.removeTrackXYPair(pair)` — juicebox-web
 - `layoutController.getContactMatrixViewport()` — Spacewalk
 - `contactMatrixView.update()`, `contactMatrixView.ctx` — Spacewalk
-- `coordinator.addCallback('onMapLoaded' | 'onBackgroundColorChange' | 'onForegroundColorChange', fn)` — Spacewalk
-- `dataset.isLiveContactMapDataSet`, `activeDataset.isLive` — Spacewalk
+- `coordinator.addCallback(name, fn)` — Spacewalk registers `onMapLoaded`,
+  `onBackgroundColorChange` and `onForegroundColorChange`. The coordinator accepts
+  **six** names and throws on anything else, so all six are published behaviour;
+  `onControlMapLoaded`, `onLocusChange` and `onGenomeChange` are registerable and
+  currently unused.
+- `dataset.isLive`, `activeDataset.isLive` — Spacewalk
 
 **Event payloads are contract too.** juicebox-web's `TrackXYPairLoad` /
 `TrackXYPairRemoval` handlers receive the track pair itself and read

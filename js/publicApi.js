@@ -139,3 +139,22 @@ export const POST_LOAD_SURFACE = [
     {path: 'browser.dataset.isLive', populatedBy: 'the Dataset constructor'},
     {path: 'browser.activeDataset.isLive', populatedBy: 'the Dataset constructor'}
 ]
+
+/**
+ * Contract reached one dot further out, through a member of `BROWSER_SURFACE`.
+ *
+ * These are the easiest part of the surface to miss, because nothing about them
+ * looks public from the browser's own member list: a host that holds
+ * `browser.layoutController` can call anything on it, and two do. Handing back
+ * an internal collaborator publishes the parts of it that get used.
+ *
+ * `owner` is the browser member the host reaches through; `member` is what it
+ * uses on the far side.
+ */
+export const SUB_SURFACES = [
+    {owner: 'layoutController', member: 'removeTrackXYPair'},
+    {owner: 'layoutController', member: 'getContactMatrixViewport'},
+    {owner: 'contactMatrixView', member: 'update'},
+    {owner: 'contactMatrixView', member: 'ctx'},
+    {owner: 'coordinator', member: 'addCallback'}
+]

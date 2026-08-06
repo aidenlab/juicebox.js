@@ -3,7 +3,7 @@ import juicebox from '../js/index.js'
 import HICBrowser from '../js/hicBrowser.js'
 import {withDOM} from './utils/browserFixture.js'
 import {HiCDataset} from '../js/hicDataset.js'
-import {NAMESPACE_SURFACE, BROWSER_SURFACE, POST_LOAD_SURFACE} from '../js/publicApi.js'
+import {NAMESPACE_SURFACE, BROWSER_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES} from '../js/publicApi.js'
 
 /**
  * Contract tests for the declared public surface.
@@ -85,5 +85,35 @@ describe('post-load surface', () => {
         // be checked rather than only declared.
         const dataset = new HiCDataset({url: 'https://example.com/nonexistent.hic'})
         expect('isLive' in dataset).toBe(true)
+    })
+})
+
+describe('sub-surfaces', () => {
+
+    let fixture
+    let browser
+
+    beforeEach(() => {
+        fixture = withDOM()
+        browser = new HICBrowser(fixture.container, {})
+    })
+
+    afterEach(() => {
+        fixture.restore()
+    })
+
+    it('exposes every declared member on its owner', () => {
+        for (const {owner, member} of SUB_SURFACES) {
+            expect(browser[owner], `browser no longer exposes "${owner}"`).toBeDefined()
+            expect(member in browser[owner], `browser.${owner} no longer exposes "${member}"`).toBe(true)
+        }
+    })
+
+    it('declares owners that are themselves declared surface', () => {
+        // A sub-surface reached through an undeclared member would be a promise
+        // resting on nothing.
+        for (const {owner} of SUB_SURFACES) {
+            expect(BROWSER_SURFACE, `"${owner}" is a sub-surface owner but is not declared surface`).toContain(owner)
+        }
     })
 })

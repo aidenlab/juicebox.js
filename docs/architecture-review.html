@@ -28,15 +28,24 @@
       <header class="space-y-6 border-b border-stone-300 pb-8">
         <div>
           <h1 class="font-serif text-4xl tracking-tight">Architecture review — juicebox.js</h1>
-          <p class="text-sm text-slate-500 mt-2 font-mono">master · last updated 31 July 2026 · 11,593 lines across js/</p>
+          <p class="text-sm text-slate-500 mt-2 font-mono">master · last updated 6 August 2026 · consumer lens added to all 11 cards</p>
           <p class="text-sm text-slate-500 mt-1 font-mono">the living refactor backlog — revised as work lands, not regenerated</p>
+        </div>
+
+        <div class="rounded-lg border-2 border-rose-500 bg-rose-50 p-5 space-y-3">
+          <div class="text-xs uppercase tracking-wider text-rose-900">Correction — 6 August 2026 · read first</div>
+          <p class="text-sm text-rose-950"><strong>This review was written without a consumer lens, and that produced wrong verdicts.</strong> juicebox.js is an embeddable component, not an application. It is consumed by <span class="font-mono">juicebox-web</span> and <span class="font-mono">Spacewalk</span> — and, being MIT and published, by embedders we cannot see. <span class="font-mono">HICBrowser</span> is <em>not exported</em> from <span class="font-mono">js/index.js</span>: hosts get instances from <span class="font-mono">init()</span>, so the entire browser-instance surface is public in practice and declared nowhere.</p>
+          <p class="text-sm text-rose-950"><strong>The consequence: the deletion test cannot be answered by grepping <span class="font-mono">js/</span>.</strong> Doing so returns "no callers" for members two shipped apps depend on. Two cards asserted exactly that and were wrong — candidate 2 ("every published event has zero subscribers"; Spacewalk subscribes one) and candidate 3 ("31 members carry zero behaviour"; five are consumer API).</p>
+          <p class="text-sm text-rose-950">It has already cost a real regression: juicebox-web has subscribed to <span class="font-mono">MapLoad</span> since PR #406 shipped in <span class="font-mono">v3.1.0</span> (Dec 2025) removed the publish. Silently dead for eight months.</p>
+          <p class="text-sm text-rose-950">Every card below now carries a <strong>Consumer impact</strong> block, measured against both checkouts at <span class="font-mono">v3.6.2</span>. The surface itself is <a class="underline" href="../adr/0003-public-api-contract.md">ADR-0003</a>. <strong>Read it before scoping any candidate.</strong></p>
         </div>
 
         <div class="rounded-lg border-2 border-emerald-600 bg-emerald-50 p-5 space-y-2">
           <div class="text-xs uppercase tracking-wider text-emerald-900">Progress</div>
+          <p class="text-sm text-emerald-950"><strong>Candidate 3 is done</strong> — <span class="font-mono">99c297b</span> / <span class="font-mono">18ac88b</span> (issue #467). <span class="font-mono">browserUIManager.js</span> and <span class="font-mono">renderCoordinator.js</span> deleted, <span class="font-mono">createWidgets.js</span> added; 14 <span class="font-mono">notify*</span> forwarders gone. Its member-count target was retired, not met — see Consumer impact on that card.</p>
           <p class="text-sm text-emerald-950"><strong>Candidate 1 is done</strong> — merged as <span class="font-mono">ecd44d9</span> (PR #433, issue #428). <span class="font-mono">contactMatrixView.js</span> 1116 → 761 lines; tests 65 → 164, the first rendering coverage in the repo.</p>
           <p class="text-sm text-emerald-950"><strong>Candidate 2 is tracked elsewhere</strong> as issue #414, filed May 2026. Its findings live on that issue.</p>
-          <p class="text-sm text-emerald-950">Nine candidates are open. <a href="#next" class="underline decoration-emerald-700 underline-offset-2">Recommended next task</a>.</p>
+          <p class="text-sm text-emerald-950">Eight candidates are open. <a href="#next" class="underline decoration-emerald-700 underline-offset-2">Recommended next task</a>.</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-x-8 gap-y-3 text-xs uppercase tracking-wider text-slate-500">
@@ -223,7 +232,7 @@
 
           <ul class="text-sm space-y-1 list-disc list-inside marker:text-emerald-600">
             <li>deletion test: ~120 lines vanish with no behaviour change</li>
-            <li><span class="font-mono">HICBrowser</span> has 80 members; <strong>31 carry zero behaviour</strong> — 18 delegations plus 13 <span class="font-mono">notify*</span></li>
+            <li><span class="font-mono">HICBrowser</span> has 80 members; 31 forward without adding behaviour — 18 delegations plus 14 <span class="font-mono">notify*</span>. <strong>Only the <span class="font-mono">notify*</span> half was deletable</strong>: five of the delegations are consumer API. Delivered 80 → 65 (#467)</li>
             <li>stringly-typed lookup becomes field access</li>
             <li>fixes nesting of spinner counts under rapid drag — <span class="font-mono">update()</span> and <span class="font-mono">renderTrackXY()</span> both start one, and the inner <span class="font-mono">finally</span> stops the shared spinner while the outer is still running</li>
             <li>dead on arrival: <span class="font-mono">RenderCoordinator.init()</span> duplicates a constructor line; <span class="font-mono">getCallbacksFor()</span> and <span class="font-mono">listComponents()</span> have no callers</li>
@@ -233,6 +242,11 @@
           <div class="rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             Two calling conventions are live simultaneously and both must keep working through the change: <span class="font-mono">annotationWidget.js:187</span> calls <span class="font-mono">browser.notifyTrackState2D</span>, while <span class="font-mono">hicColorScaleWidget.js:183</span> calls <span class="font-mono">browser.coordinator.onBackgroundColorChange</span> directly.
           </div>
+          <div class="rounded border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 space-y-1">
+            <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — the member count below is not a target</div>
+            <div><strong>The "31 carry zero behaviour" figure counts five members that are consumer API.</strong> <span class="font-mono">loadHicFile</span> (both apps), <span class="font-mono">loadTracks</span> and <span class="font-mono">loadHicControlFile</span> (juicebox-web), <span class="font-mono">loadLiveContactMap</span> and <span class="font-mono">parseGotoInput</span> (Spacewalk). Four of them have <em>no internal callers at all</em> — they exist only for hosts, so deleting them publishes <span class="font-mono">dataLoader</span> and <span class="font-mono">interactions</span> instead of removing a hop. <br><br>The <span class="font-mono">notify*</span> half was safe and is done: neither app called one. Delivered 80 → 65, not 80 → ~49; the target is retired, see #467. Also must survive: <span class="font-mono">reset</span>, <span class="font-mono">config</span>, <span class="font-mono">layoutController</span>, <span class="font-mono">eventBus</span>, <span class="font-mono">coordinator</span> (<a class="underline" href="../adr/0002-keep-browser-coordinator.md">ADR-0002</a>).</div>
+          </div>
+
         </article>
 
         <!-- ---- 4 ---- -->
@@ -329,6 +343,11 @@
           <div class="rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             Four page-scoped singletons ride along and must be scoped with it or deliberately left alone: the <span class="font-mono">--hic-viewport-*</span> CSS custom properties written to <span class="font-mono">document.documentElement</span> (<span class="font-mono">layoutController.js:246</span>), <span class="font-mono">Globals.selectedGene</span>, the <span class="font-mono">Alert</span> singleton re-bound per <span class="font-mono">init()</span>, and <span class="font-mono">inProgressCache</span> in <span class="font-mono">contactMatrixView.js:723</span>. The CSS variables are the hard one — two embeds cannot currently have different viewport sizes, and fixing that is a rendering change, not a lifecycle change.
           </div>
+          <div class="rounded border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 space-y-1">
+            <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — changes a public return type</div>
+            <div><strong>Highest-exposure candidate on the list.</strong> juicebox-web uses every registry export: <span class="font-mono">getCurrentBrowser</span> (10 sites), <span class="font-mono">getAllBrowsers</span>, <span class="font-mono">setCurrentBrowser</span>, <span class="font-mono">createBrowser</span>, <span class="font-mono">init</span>; Spacewalk uses <span class="font-mono">getCurrentBrowser</span>. "An object returned by <span class="font-mono">init()</span>" changes what <span class="font-mono">init</span> resolves to — today a browser or a list of them, which both apps depend on. juicebox-web also reads <span class="font-mono">getCurrentBrowser().config</span> for <span class="font-mono">{width, height}</span>. <br><br>Do it additively: the owner object is new, and the four module-level functions stay, delegating to a default registry. Otherwise this is a major version, not a refactor.</div>
+          </div>
+
         </article>
 
         <!-- ---- 8 ---- -->
@@ -386,6 +405,11 @@
             <li>pairs with candidate 4 — a registry needs something to call</li>
             <li>the unsubscribe gap is also recorded in issue #414</li>
           </ul>
+          <div class="rounded border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 space-y-1">
+            <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — redefines a method juicebox-web calls</div>
+            <div>juicebox-web calls <span class="font-mono">browser.reset()</span> and then, on the very next line, <span class="font-mono">await browser.loadHicFile(config)</span> on the <em>same instance</em> (<span class="font-mono">initializationHelper.js:366-367</span>). <br><br>"<span class="font-mono">reset()</span> becomes dispose-then-construct" breaks that if the browser it holds is invalidated or replaced. Either <span class="font-mono">reset()</span> keeps returning a usable browser of the same identity, or this needs a coordinated change in juicebox-web — decide which before writing code.</div>
+          </div>
+
         </article>
 
         <!-- ---- 9 ---- -->
@@ -466,6 +490,11 @@
             <li>documents the config schema by being it</li>
             <li>pairs naturally with candidate 5 — decode, then normalize</li>
           </ul>
+          <div class="rounded border border-sky-300 bg-sky-50 px-4 py-3 text-sm text-sky-900 space-y-1">
+            <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — the config object is the entry contract</div>
+            <div>The config passed to <span class="font-mono">hic.init(container, config)</span> is the most-used public surface there is: juicebox-web passes a full <span class="font-mono">juiceboxConfig</span>, Spacewalk passes <span class="font-mono">{}</span> and drives everything through <span class="font-mono">restoreSession</span>. A <span class="font-mono">normalizeConfig</span> that tightens validation will reject configs that work today. <br><br>Also: juicebox-web reads <span class="font-mono">browser.config</span> back off the instance, so the <em>resolved</em> config is observable too — normalising it changes what that read returns.</div>
+          </div>
+
         </article>
       </section>
 
@@ -554,6 +583,11 @@
           <div class="rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <span class="font-mono">docs/url.md</span> documents a track pipe-string layout that does not match the parser (3 tokens vs the parser's 4; the param is <span class="font-mono">track</span> in the doc, <span class="font-mono">tracks</span> in the code at <span class="font-mono">urlUtils.js:184</span>). Decide which is authoritative <em>before</em> collapsing the decoders — juicebox-web may generate URLs against either reading. These are public, shareable URLs; a decoder change is a compatibility change.
           </div>
+          <div class="rounded border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 space-y-1">
+            <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — the wire format is a user-facing contract</div>
+            <div><span class="font-mono">restoreSession</span>, <span class="font-mono">compressedSession</span> and <span class="font-mono">toJSON</span> are used by <strong>both</strong> apps. Beyond the call signatures, the encoded session <em>format</em> is public in a stronger sense than any method: users share sessions as URLs, so a link pasted last year must still decode. Round-tripping has to stay compatible in the decode direction even if the encoder changes. <br><br>The report already names this the strongest ADR opportunity, and it is right — but the reason is the external consumer, not the internal duplication. Write the ADR before the refactor, not after.</div>
+          </div>
+
         </article>
 
         <!-- ---- 6 ---- -->
@@ -618,6 +652,11 @@ flowchart TB
           <div class="rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             Extends the discipline recorded in <span class="font-mono">docs/state-manipulation.md</span> (issue #411) rather than contradicting it. That doc's "Bulk replacement" and "Where to look in code" sections would need updating — bulk replacement stops being an exception and becomes a translator.
           </div>
+          <div class="rounded border border-sky-300 bg-sky-50 px-4 py-3 text-sm text-sky-900 space-y-1">
+            <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — accessor names are load-bearing</div>
+            <div><span class="font-mono">browser.dataset</span> (juicebox-web, 3 sites; Spacewalk) and <span class="font-mono">browser.activeDataset</span> (Spacewalk, 4 sites) are read directly by hosts. "The browser holds three plain fields" is fine <em>provided the fields keep these names</em> — the accessors may collapse, the vocabulary may not. Spacewalk also reads <span class="font-mono">dataset.isLiveContactMapDataSet</span> and <span class="font-mono">activeDataset.isLive</span>, so the dataset objects have published shape as well. <br><br>Note this collides with #468, which proposes unifying the <span class="font-mono">activeDataset</span>/<span class="font-mono">dataset</span> vocabulary — both names are in use externally, so neither can simply win.</div>
+          </div>
+
         </article>
 
         <!-- ---- 10 ---- -->
@@ -688,6 +727,11 @@ flowchart TB
             <li>the data module stops writing DOM labels</li>
             <li>the post-load sync block is the race behind #280 — one path makes it orderable</li>
           </ul>
+          <div class="rounded border border-sky-300 bg-sky-50 px-4 py-3 text-sm text-sky-900 space-y-1">
+            <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — three named entry points must survive</div>
+            <div><span class="font-mono">loadHicFile</span> (both apps), <span class="font-mono">loadHicControlFile</span> (juicebox-web) and <span class="font-mono">loadLiveContactMap</span> (Spacewalk) are three distinct public calls with three signatures. Collapsing them onto one internal <span class="font-mono">loadMap(source, role)</span> is fine — the three named methods on <span class="font-mono">HICBrowser</span> are not optional, and their argument shapes are contract. <br><br>Spacewalk passes <span class="font-mono">{liveContactMap, name, locus}</span>; juicebox-web passes <span class="font-mono">{url, name, nvi, ...}</span>.</div>
+          </div>
+
         </article>
       </section>
 
@@ -726,6 +770,11 @@ flowchart TB
             <p><strong>Known gap:</strong> nothing tests the seam between <span class="font-mono">ImageTileSource</span> and <span class="font-mono">ContactMatrixView</span>. The tests cover the source; the view is DOM-bound, so its wiring is verified only by manual <span class="font-mono">dev/</span> harness runs.</p>
             <p><strong>Bugs surfaced and deferred:</strong> #426, #430, #431, #432. #425 was fixed en route and is the root cause of #372, open since 2022.</p>
           </div>
+          <div class="rounded border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700 space-y-1">
+            <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — checked, low</div>
+            <div>Spacewalk calls <span class="font-mono">browser.contactMatrixView.update()</span> (3 sites) and reads <span class="font-mono">.ctx</span> off it directly. Both survived this candidate; they are the reason <span class="font-mono">contactMatrixView</span> must keep that name and keep exposing a canvas context. No namespace impact. See <a class="underline" href="../adr/0003-public-api-contract.md">ADR-0003</a>.</div>
+          </div>
+
         </article>
 
         <!-- ---- 7 ---- -->
@@ -801,6 +850,11 @@ flowchart TB
             <li>would have caught <span class="font-mono">const yLocus = { xLocus }</span> — object-wrapped instead of spread</li>
             <li>extends the <span class="font-mono">setView</span> chokepoint discipline to the last unguarded paths</li>
           </ul>
+          <div class="rounded border border-sky-300 bg-sky-50 px-4 py-3 text-sm text-sky-900 space-y-1">
+            <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — indirect, via two crosshair paths</div>
+            <div>No consumer touches the mouse or touch handlers, so the refactor surface itself is clear. But the gesture code being moved is what fires both crosshair paths Spacewalk depends on: <span class="font-mono">setCustomCrosshairsHandler</span> (registered at <span class="font-mono">juiceboxPanel.js:183</span>) and the <span class="font-mono">DidHideCrosshairs</span> event (<span class="font-mono">contactMatrixView.js:488</span>). Both must still fire, with the same payloads, after the state machines move.</div>
+          </div>
+
         </article>
 
         <!-- ---- 11 ---- -->
@@ -879,6 +933,11 @@ flowchart TB
             <li><span class="font-mono">doAutoscale</span> is pure and unexported — export and test it</li>
             <li>speculative because it touches igv-owned objects; scope with care</li>
           </ul>
+          <div class="rounded border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 space-y-1">
+            <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — the track pair is published shape</div>
+            <div>juicebox-web calls <span class="font-mono">browser.layoutController.removeTrackXYPair(pair)</span>, and gets that <span class="font-mono">pair</span> from the global-bus <span class="font-mono">TrackXYPairLoad</span> / <span class="font-mono">TrackXYPairRemoval</span> payloads — reading <span class="font-mono">data.track.config.format</span> and <span class="font-mono">data.track.name</span> off it and handing the same object back. <br><br>So <span class="font-mono">TrackPair.track</span>, its <span class="font-mono">config.format</span>, and the two event payloads are all contract. "The pair owns the tile cache" is safe; renaming <span class="font-mono">.track</span> or changing what the events carry is not. Spacewalk separately calls <span class="font-mono">layoutController.getContactMatrixViewport()</span>.</div>
+          </div>
+
         </article>
       </section>
 
@@ -935,8 +994,8 @@ flowchart TB
           </div>
 
           <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-            <div><dt class="text-xs uppercase tracking-wider text-slate-500">Problem</dt><dd>On the per-browser bus, every published event has zero subscribers and every subscription has zero publishers — the two sets are disjoint. Meanwhile the coordinator hand-forges event-shaped object literals and calls <span class="font-mono">receiveEvent</span> directly, so <span class="font-mono">receiveEvent</span> is two interfaces wearing one name.</dd></div>
-            <div><dt class="text-xs uppercase tracking-wider text-slate-500">Solution</dt><dd>Delete <span class="font-mono">browser.eventBus</span>, the dead subscriptions and dead publishes; replace each <span class="font-mono">receiveEvent({type,data})</span> call with a named method on the receiving module. Keep <span class="font-mono">EventBus.globalBus</span> — it's exported from <span class="font-mono">js/index.js</span> and Spacewalk/juicebox-web may consume it.</dd></div>
+            <div><dt class="text-xs uppercase tracking-wider text-slate-500">Problem</dt><dd><strong>Inside this repo</strong>, every published event has zero subscribers and every subscription has zero publishers — the two sets are disjoint. <strong>Outside it they are not:</strong> Spacewalk subscribes <span class="font-mono">DidHideCrosshairs</span> on the per-browser bus, and juicebox-web subscribes four events on the global bus. See Consumer impact above. Meanwhile the coordinator hand-forges event-shaped object literals and calls <span class="font-mono">receiveEvent</span> directly, so <span class="font-mono">receiveEvent</span> is two interfaces wearing one name.</dd></div>
+            <div><dt class="text-xs uppercase tracking-wider text-slate-500">Solution</dt><dd>Delete the eight dead internal subscriptions and the two publishes nobody hears (<span class="font-mono">DragStopped</span>, <span class="font-mono">DidShowCrosshairs</span>); replace each <span class="font-mono">receiveEvent({type,data})</span> call with a named method on the receiving module. <strong>Keep the <span class="font-mono">browser.eventBus</span> object itself</strong> and its <span class="font-mono">DidHideCrosshairs</span> publish — Spacewalk subscribes to it. Keep <span class="font-mono">EventBus.globalBus</span> and all four of its events: juicebox-web <em>does</em> consume them, measured.</dd></div>
           </dl>
 
           <ul class="text-sm space-y-1 list-disc list-inside marker:text-emerald-600">
@@ -951,6 +1010,11 @@ flowchart TB
           <div class="rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             Tracked as issue #414 since May 2026 — the review did not discover it, and its findings have been added there. Verify the four <span class="font-mono">globalBus</span> event names against juicebox-web and Spacewalk before touching them: no subscriber exists in this repo and there is no recorded contract.
           </div>
+          <div class="rounded border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 space-y-1">
+            <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — the premise below is wrong</div>
+            <div><strong>The disjointness claim holds only inside this repo.</strong> On the per-browser bus, <span class="font-mono">DidHideCrosshairs</span> is posted by <span class="font-mono">contactMatrixView.js:488</span> and <strong>subscribed by Spacewalk</strong> (<span class="font-mono">juiceboxPanel.js:147</span>). Deleting <span class="font-mono">browser.eventBus</span> breaks it. On the global bus juicebox-web subscribes four events — <span class="font-mono">GenomeChange</span> (2 sites), <span class="font-mono">BrowserSelect</span>, <span class="font-mono">TrackXYPairLoad</span>, <span class="font-mono">TrackXYPairRemoval</span> — so "may consume it" is measured fact, not a hedge. <br><br>What <em>is</em> dead: all eight internal subscriptions (their events are never posted — they moved to the coordinator), plus <span class="font-mono">DragStopped</span> and <span class="font-mono">DidShowCrosshairs</span>, posted with no subscriber anywhere. <br><br>Already broken: juicebox-web subscribes <span class="font-mono">MapLoad</span> on the per-browser bus, which this library stopped posting in PR #406 (v3.1.0, Dec 2025) — dead for eight months, silently. Revised scope on #414. See <a class="underline" href="../adr/0003-public-api-contract.md">ADR-0003</a>.</div>
+          </div>
+
         </article>
       </section>
 
@@ -1008,7 +1072,7 @@ flowchart TB
           <li><strong>The five defects above are not filed.</strong> Per the working convention they should become issues before any refactor touches their code.</li>
           <li><strong>Coverage is four leaf modules.</strong> All 164 tests cover <span class="font-mono">imageTileCore</span>, <span class="font-mono">hicState</span>, <span class="font-mono">imageTileSource</span> and <span class="font-mono">urlUtils</span>. Nothing imports <span class="font-mono">hicBrowser</span>, <span class="font-mono">createBrowser</span>, <span class="font-mono">session</span>, <span class="font-mono">dataLoader</span> or <span class="font-mono">stateManager</span> — so most candidates here are verified only by hand-running <span class="font-mono">dev/</span>. Note <span class="font-mono">test/testSession.js</span> does not test <span class="font-mono">session.js</span>; it exercises <span class="font-mono">urlUtils.extractConfig</span>.</li>
           <li><strong>Verification depends on <span class="font-mono">dev/</span>, which is partly rotted.</strong> 20 of 33 remote fixtures return 403/405 because their hosts gate on <span class="font-mono">User-Agent</span>, which browsers cannot set. Three harnesses were repaired during candidate 1; the rest is issue #429.</li>
-          <li><strong><span class="font-mono">docs/adr/</span> is still empty</strong>, so no candidate contradicts a recorded decision. Candidate 5 is the strongest ADR opportunity: the URL format is a public contract with an external consumer and there is no recorded decision about what is supported.</li>
+          <li><strong><span class="font-mono">docs/adr/</span> now holds three ADRs</strong> — 0001 (dev proxy), 0002 (keep <span class="font-mono">BrowserCoordinator</span>), 0003 (public API contract). <strong>Read 0003 before scoping any candidate</strong>: it is the consumer surface this report was originally written without. Candidate 5 remains the strongest <em>outstanding</em> ADR opportunity: the session/URL format is a contract with users, not just with the two host apps.</li>
         </ul>
       </section>
 

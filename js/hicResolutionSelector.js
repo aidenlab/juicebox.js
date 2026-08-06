@@ -78,33 +78,6 @@ class ResolutionSelector {
         this.resolutionLockElement.classList.add(resolutionLocked ? 'fa-lock' : 'fa-unlock');
     }
 
-    receiveEvent(event) {
-        const browser = this.browser;
-
-        if (event.type === "LocusChange") {
-            if (event.data.resolutionChanged) {
-                browser.resolutionLocked = false;
-                this.setResolutionLock(browser.resolutionLocked);
-            }
-
-            if (event.data.chrChanged !== false) {
-                const isWholeGenome = browser.dataset.isWholeGenome(event.data.state.chr1);
-                this.labelElement.textContent = isWholeGenome ? 'Resolution (mb)' : 'Resolution (kb)';
-                this.updateResolutions(browser.state.zoom);
-            } else {
-                const selectedIndex = browser.state.zoom;
-                Array.from(this.resolutionSelectorElement.options).forEach((option, index) => {
-                    option.selected = index === selectedIndex;
-                });
-            }
-        } else if (event.type === "MapLoad") {
-            browser.resolutionLocked = false;
-            this.setResolutionLock(false);
-            this.updateResolutions(browser.state.zoom);
-        } else if (event.type === "ControlMapLoad") {
-            this.updateResolutions(browser.state.zoom);
-        }
-    }
 
     async updateResolutions(zoomIndex) {
         const browser = this.browser;

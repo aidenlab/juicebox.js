@@ -3,7 +3,7 @@ import juicebox from '../js/index.js'
 import HICBrowser from '../js/hicBrowser.js'
 import {withDOM} from './utils/browserFixture.js'
 import {HiCDataset} from '../js/hicDataset.js'
-import {NAMESPACE_SURFACE, BROWSER_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES} from '../js/publicApi.js'
+import {NAMESPACE_SURFACE, BROWSER_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COORDINATOR_CALLBACKS} from '../js/publicApi.js'
 
 /**
  * Contract tests for the declared public surface.
@@ -115,5 +115,43 @@ describe('sub-surfaces', () => {
         for (const {owner} of SUB_SURFACES) {
             expect(BROWSER_SURFACE, `"${owner}" is a sub-surface owner but is not declared surface`).toContain(owner)
         }
+    })
+})
+
+describe('coordinator callbacks', () => {
+
+    let fixture
+    let browser
+
+    beforeEach(() => {
+        fixture = withDOM()
+        browser = new HICBrowser(fixture.container, {})
+    })
+
+    afterEach(() => {
+        fixture.restore()
+    })
+
+    // Exercised rather than reflected on: addCallback validates its argument and
+    // throws, so these assertions test behaviour a host can actually observe.
+
+    it('accepts every declared callback name', () => {
+        for (const name of COORDINATOR_CALLBACKS) {
+            expect(
+                () => browser.coordinator.addCallback(name, () => {}),
+                `coordinator no longer accepts "${name}"`
+            ).not.toThrow()
+        }
+    })
+
+    it('rejects an undeclared callback name', () => {
+        expect(() => browser.coordinator.addCallback('onSomethingUndeclared', () => {})).toThrow()
+    })
+
+    it('returns an unsubscribe function', () => {
+        // Hosts hold this to detach on teardown; dropping it would leak the
+        // callback and outlive the host's own lifecycle.
+        const unsubscribe = browser.coordinator.addCallback('onMapLoaded', () => {})
+        expect(typeof unsubscribe).toBe('function')
     })
 })

@@ -158,3 +158,28 @@ export const SUB_SURFACES = [
     {owner: 'contactMatrixView', member: 'ctx'},
     {owner: 'coordinator', member: 'addCallback'}
 ]
+
+/**
+ * Event names accepted by `browser.coordinator.addCallback(name, fn)`.
+ *
+ * This is the host extension point -- how an embedder learns about map loads,
+ * locus changes and colour changes without subscribing to the event bus. See
+ * ADR-0002 for why the coordinator is not going away.
+ *
+ * All six are declared, not just the three a known consumer happens to use
+ * today: `addCallback` throws on an unrecognised name, so the set it accepts is
+ * already published behaviour. Narrowing it would break a host that registered
+ * one of the other three, silently and only at runtime.
+ *
+ * The coordinator got here on its own -- it validates against its own declared
+ * list and throws. That is the only self-describing, self-enforcing piece of
+ * the browser contract, and it is the pattern this whole module generalises.
+ */
+export const COORDINATOR_CALLBACKS = [
+    'onMapLoaded',
+    'onControlMapLoaded',
+    'onLocusChange',
+    'onGenomeChange',
+    'onBackgroundColorChange',
+    'onForegroundColorChange'
+]

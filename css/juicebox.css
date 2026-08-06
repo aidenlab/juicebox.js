@@ -1251,6 +1251,7 @@ div[id$=content-container] div[id$=x-scrollbar-container] div[id$=x-axis-scrollb
 
 .hic-whole-genome-chromosome-highlight {
   cursor: pointer;
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .hic-track-menu {

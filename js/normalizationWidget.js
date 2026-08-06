@@ -68,21 +68,6 @@ class NormalizationWidget {
         this.normalizationSelector.style.display = 'block';
     }
 
-    receiveEvent(event) {
-        if ("NormVectorIndexLoad" === event.type) {
-            this.updateOptions();
-            this.stopNotReady();
-        } else if ("NormalizationFileLoad" === event.type) {
-            if (event.data === "start") {
-                this.startNotReady();
-            } else {
-                this.stopNotReady();
-            }
-        } else if ("NormalizationExternalChange" === event.type) {
-            this.setNormalizationProgrammatically(event.data);
-        }
-    }
-
     /**
      * Set the normalization selector value programmatically without triggering change events.
      * This prevents feedback loops when the normalization is changed externally.

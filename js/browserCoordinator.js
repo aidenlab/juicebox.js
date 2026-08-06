@@ -123,13 +123,9 @@ class BrowserCoordinator {
             this.rulers.y.update();
         }
 
-        // 4. Update normalization widget
-        if (this.widgets.normalizationWidget) {
-            this.widgets.normalizationWidget.receiveEvent({
-                type: "MapLoad",
-                data: { dataset, state, datasetType }
-            });
-        }
+        // 4. The normalization widget is updated by onNormVectorIndexLoad,
+        // which the map-load path calls immediately after this. It had a
+        // MapLoad dispatch here that its handler never had a branch for.
 
         // 5. Update resolution selector
         if (this.widgets.resolutionSelector) {
@@ -199,10 +195,7 @@ class BrowserCoordinator {
 
         // 2. Update scrollbar widget
         if (this.widgets.scrollbar && !this.widgets.scrollbar.isDragging) {
-            this.widgets.scrollbar.receiveEvent({
-                type: "LocusChange",
-                data: { state }
-            });
+            this.widgets.scrollbar.updateForState(state);
         }
 
         // 3. Update resolution selector
@@ -222,10 +215,7 @@ class BrowserCoordinator {
 
         // 4. Update locus goto widget
         if (this.widgets.locusGoto) {
-            this.widgets.locusGoto.receiveEvent({
-                type: "LocusChange",
-                data: { state }
-            });
+            this.widgets.locusGoto.updateForState(state);
         }
 
         // 5. Notify external callbacks

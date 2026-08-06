@@ -52,29 +52,34 @@ class LocusGoto {
         // Locus goto widget is updated via coordinator.onLocusChange()
     }
 
-    receiveEvent(event) {
-        if (event.type === "LocusChange") {
-            let loci;
-            const state = event.data.state || this.browser.state;
-            const isWholeGenome = this.browser.dataset.isWholeGenome(state.chr1);
-            if (isWholeGenome) {
-                loci = 'All';
-            } else {
+    /**
+     * Show the loci a view state is looking at.
+     *
+     * @param {State} state - The view state to describe; defaults to the
+     *   browser's current one.
+     */
+    updateForState(state) {
 
-                const viewDimensions = this.browser.contactMatrixView.getViewDimensions()
-                const locus = state.getLocus(this.browser.dataset, viewDimensions)
+        let loci;
+        const viewState = state || this.browser.state;
+        const isWholeGenome = this.browser.dataset.isWholeGenome(viewState.chr1);
+        if (isWholeGenome) {
+            loci = 'All';
+        } else {
 
-                const { chr:chrX, start:sX, end:eX } = locus.x
-                const strX = `${chrX}:${prettyPrint(1 + sX)}-${prettyPrint(eX)}`
+            const viewDimensions = this.browser.contactMatrixView.getViewDimensions()
+            const locus = viewState.getLocus(this.browser.dataset, viewDimensions)
 
-                const { chr:chrY, start:sY, end:eY } = locus.y
-                const strY = `${chrY}:${prettyPrint(1 + sY)}-${prettyPrint(eY)}`
+            const { chr:chrX, start:sX, end:eX } = locus.x
+            const strX = `${chrX}:${prettyPrint(1 + sX)}-${prettyPrint(eX)}`
 
-                loci = `${strX} ${strY}`
+            const { chr:chrY, start:sY, end:eY } = locus.y
+            const strY = `${chrY}:${prettyPrint(1 + sY)}-${prettyPrint(eY)}`
 
-            }
-            this.resolutionSelectorElement.value = loci;
+            loci = `${strX} ${strY}`
+
         }
+        this.resolutionSelectorElement.value = loci;
     }
 }
 

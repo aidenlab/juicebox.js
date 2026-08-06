@@ -71,6 +71,58 @@ describe('coordinator delivery', () => {
         }
     })
 
+    /**
+     * onLocusChange fans out to four widgets, all of which want a real dataset
+     * they do not have here. Stub every arm so each test can assert about one.
+     */
+    function watchLocusChangeFanOut(browser) {
+        const {chromosomeSelector, resolutionSelector, scrollbar, locusGoto} = browser.coordinator.widgets
+        for (const [widget, method] of [
+            [chromosomeSelector, 'respondToLocusChangeWithState'],
+            [resolutionSelector, 'setSelectedResolution']
+        ]) {
+            vi.spyOn(widget, method).mockImplementation(() => {})
+        }
+        return {
+            scrollbar: vi.spyOn(scrollbar, 'updateForState').mockImplementation(() => {}),
+            locusGoto: vi.spyOn(locusGoto, 'updateForState').mockImplementation(() => {})
+        }
+    }
+
+    const locusChange = {
+        state: {chr1: 1, chr2: 1, zoom: 0, pixelSize: 1, x: 0, y: 0},
+        resolutionChanged: false,
+        chrChanged: false
+    }
+
+    it('delivers a locus change to the scrollbar by name', () => {
+        // The coordinator used to reach these two widgets by synthesizing an
+        // event object -- imitating the bus it had replaced. It now calls a
+        // named method, and the widget no longer inspects an event type.
+        const spies = watchLocusChangeFanOut(context.browser)
+
+        context.browser.coordinator.onLocusChange(locusChange)
+
+        expect(spies.scrollbar).toHaveBeenCalledWith(locusChange.state)
+    })
+
+    it('does not move the scrollbar the user is dragging', () => {
+        const spies = watchLocusChangeFanOut(context.browser)
+        context.browser.coordinator.widgets.scrollbar.isDragging = true
+
+        context.browser.coordinator.onLocusChange(locusChange)
+
+        expect(spies.scrollbar).not.toHaveBeenCalled()
+    })
+
+    it('delivers a locus change to the locus goto widget by name', () => {
+        const spies = watchLocusChangeFanOut(context.browser)
+
+        context.browser.coordinator.onLocusChange(locusChange)
+
+        expect(spies.locusGoto).toHaveBeenCalledWith(locusChange.state)
+    })
+
     it('delivers normalization widget updates without the widget subscribing', () => {
         const widget = context.browser.coordinator.widgets.normalizationWidget
         const stopNotReady = vi.spyOn(widget, 'stopNotReady').mockImplementation(() => {})

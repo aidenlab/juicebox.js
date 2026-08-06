@@ -1,11 +1,21 @@
 # ADR-0003 — What juicebox.js's public API actually is
 
-**Status:** Accepted
+**Status:** Superseded in part by `js/publicApi.js` (see *Reversal*)
 **Last measured:** 2026-08-06, against `juicebox.js` HEAD, `juicebox-web` `7538049`, `spacewalk` `2776a3a` (both consumers pinned to `v3.6.2`)
 **Related:** #466 (architecture review tracker), ADR-0002
 
 This ADR exists because `docs/architecture-review.html` was written without it, and
 produced at least one wrong verdict as a result. See *Why this was written*.
+
+> **Read `js/publicApi.js` for the surface itself.** Decision 3 below deferred the
+> question of how to mark the surface in code; #470 answered it, and the manifest
+> is now the source of truth. A contract test checks it, so it cannot silently go
+> stale the way the tables below did — two of their entries were already wrong
+> within a week of being measured.
+>
+> What stays here is what a manifest cannot carry: *why* the surface is what it
+> is, which consumer uses what, and the reasoning about third parties. The tables
+> below are kept as the measurement they were, dated, not as a live index.
 
 ## Context
 
@@ -201,10 +211,20 @@ table is sufficient.
 
 ## Reversal
 
-Supersede this when the intended public surface is marked in code (the proposal
-deliberately deferred in decision 3). At that point the contract is machine-checkable
-and a measured table in a Markdown file is the wrong place for it — the ADR becomes
-history, and the marker becomes the source of truth.
+**This has now happened.** #470 marked the surface in code as `js/publicApi.js`,
+enforced by `test/testPublicApi.js`. Per the plan set out here, the manifest is the
+source of truth and this ADR is history: it keeps the reasoning and the
+consumer-usage evidence, and hands the surface itself over.
 
-Until then, this table goes stale the moment either consumer changes. Re-measure it
-at each release rather than trusting it.
+Decision 3 said no `@public` markers, no explicit facade, no export changes. The
+manifest honours all three — it is a declaration, not a wrapper. `HICBrowser` is
+still not exported, and nothing about how hosts obtain a browser changed.
+
+One gap the marker does not close: the events listed above are declared in the
+manifest but not enforced, because proving an event is still *posted* requires
+driving a real map load. That is the `MapLoad` failure mode, and it stays open
+until #438 gives the probe harness a home.
+
+The tables above still go stale the moment either consumer changes. Re-measure
+them at each release rather than trusting them — and when you do, update the
+manifest, not just the tables.

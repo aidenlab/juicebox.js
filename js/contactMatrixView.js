@@ -216,6 +216,15 @@ class ContactMatrixView {
 
         for await (const tile of tiles) {
 
+            // A pass can outlive the state it started from: reset() clears
+            // browser.state, and a subsequent load installs a different State
+            // object, while tiles are still resolving. Identity is the test —
+            // the chokepoint mutates in place, so pans keep the same object and
+            // placement stays live, while a clear or a bulk replacement swaps
+            // it and this pass has nothing left to place against (#469).
+            const liveState = this.browser.state;
+            if (liveState !== state) return;
+
             if (!cleared) {
                 this.ctx.clearRect(0, 0, viewportWidth, viewportHeight);
                 cleared = true;
@@ -224,9 +233,9 @@ class ContactMatrixView {
             binSize = tile.binSize;
 
             if (tile.inProgress) {
-                this.paintTile({...tile, image: inProgressTile(tile.blockBinCount)});
+                this.paintTile({...tile, image: inProgressTile(tile.blockBinCount)}, liveState);
             } else if (tile.image) {
-                this.paintTile(tile);
+                this.paintTile(tile, liveState);
             }
         }
 
@@ -280,12 +289,14 @@ class ContactMatrixView {
         }
     }
 
-    paintTile({image, row, column, blockBinCount}) {
+    // The caller supplies the state to place against, having checked it is
+    // still the one this pass belongs to.
+    paintTile({image, row, column, blockBinCount}, liveState) {
 
         const x0 = blockBinCount * column
         const y0 = blockBinCount * row
 
-        const {x, y, pixelSize} = this.browser.state
+        const {x, y, pixelSize} = liveState
         //const pixelSizeInt = Math.max(1, Math.floor(pixelSize))
         const offsetX = (x0 - x) * pixelSize
         const offsetY = (y0 - y) * pixelSize

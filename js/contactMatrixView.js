@@ -62,14 +62,6 @@ class ContactMatrixView {
         this.yGuideElement = viewportElement.querySelector("div[id$='-y-guide']");
 
         this.displayMode = 'A';
-
-        // Note: MapLoad and ControlMapLoad subscriptions removed - now handled by BrowserCoordinator
-        // NormalizationChange, TrackLoad2D, TrackState2D, and ColorChange are still posted to eventBus
-        // for cross-browser synchronization, so we keep those subscriptions
-        this.browser.eventBus.subscribe("NormalizationChange", this);
-        this.browser.eventBus.subscribe("TrackLoad2D", this);
-        this.browser.eventBus.subscribe("TrackState2D", this);
-        this.browser.eventBus.subscribe("ColorChange", this);
     }
 
     // The color scales live on the image tile source. These read-through

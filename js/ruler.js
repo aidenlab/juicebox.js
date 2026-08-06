@@ -47,9 +47,6 @@ class Ruler {
 
         this.setAxisTransform(axis);
 
-        // Note: MapLoad subscription removed - now handled by BrowserCoordinator
-        // UpdateContactMapMousePosition is still used for cross-browser sync
-        browser.eventBus.subscribe("UpdateContactMapMousePosition", this);
     }
 
     wholeGenomeLayout(axisElement, wholeGenomeContainerElement, axisName, dataset) {
@@ -181,26 +178,6 @@ class Ruler {
     unhighlightWholeChromosome() {
         for (const child of this.wholeGenomeContainerElement.children) {
             child.classList.remove('hic-whole-genome-chromosome-highlight');
-        }
-    }
-
-    receiveEvent(event) {
-        let offset, element;
-
-        if (event.type === 'MapLoad') {
-            // Handle both old format (event.data is dataset) and new format (event.data.dataset)
-            const dataset = event.data.dataset || event.data;
-            this.wholeGenomeLayout(this.axisElement, this.wholeGenomeContainerElement, this.axis, dataset);
-            this.update();
-        } else if (event.type === 'UpdateContactMapMousePosition') {
-            if (this.bboxes) {
-                this.unhighlightWholeChromosome();
-                offset = this.axis === 'x' ? event.data.x : event.data.y;
-                element = hitTest(this.bboxes, offset);
-                if (element) {
-                    element.classList.add('hic-whole-genome-chromosome-highlight');
-                }
-            }
         }
     }
 
@@ -416,20 +393,6 @@ function bbox(axis, childElement, firstChildElement) {
         : childElement.offsetHeight;
 
     return { element: childElement, a: delta, b: delta + size };
-}
-
-function hitTest(bboxes, value) {
-
-    let hitElement = undefined;
-
-    for (const bbox of bboxes) {
-        if (value >= bbox.a && value <= bbox.b) {
-            hitElement = bbox.element;
-            break;
-        }
-    }
-
-    return hitElement;
 }
 
 function TickSpacing(majorTick, majorUnit, unitMultiplier) {

@@ -1,4 +1,7 @@
 import {describe, it, expect} from 'vitest'
+import fs from 'fs'
+import path from 'path'
+import {fileURLToPath} from 'url'
 import EventBus from '../js/eventBus.js'
 import HICEvent from '../js/hicEvent.js'
 
@@ -99,5 +102,39 @@ describe('unsubscribe', () => {
         bus.post(HICEvent('DragStopped'))
 
         expect(seen).toEqual(['first', 'second'])
+    })
+})
+
+describe('internal subscribers', () => {
+
+    // The bus is for hosts. Internally, the coordinator is the routing
+    // abstraction -- it calls its collaborators directly. Eight subscriptions
+    // survived the coordinator migration as a second, silent route for events
+    // nothing posted any more; this keeps a ninth from growing back. A host
+    // subscribing from outside this directory is unaffected.
+    const jsDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../js')
+
+    function sourceFiles(directory) {
+        return fs.readdirSync(directory, {withFileTypes: true}).flatMap(entry => {
+            const entryPath = path.join(directory, entry.name)
+            if (entry.isDirectory()) return sourceFiles(entryPath)
+            return entry.isFile() && entry.name.endsWith('.js') ? [entryPath] : []
+        })
+    }
+
+    it('routes through the coordinator, not the bus', () => {
+
+        const offenders = []
+
+        for (const filePath of sourceFiles(jsDirectory)) {
+            const lines = fs.readFileSync(filePath, 'utf8').split('\n')
+            lines.forEach((line, index) => {
+                if (/\.subscribe\(/.test(line)) {
+                    offenders.push(`${path.relative(jsDirectory, filePath)}:${index + 1}`)
+                }
+            })
+        }
+
+        expect(offenders, `these subscribe internally instead of using the coordinator: ${offenders.join(', ')}`).toEqual([])
     })
 })

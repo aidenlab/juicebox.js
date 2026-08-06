@@ -56,12 +56,6 @@ class NormalizationWidget {
         this.container.appendChild(this.spinner);
         this.spinner.style.display = 'none';
 
-        // Note: MapLoad subscription removed - now handled by BrowserCoordinator
-        // NormVectorIndexLoad, NormalizationFileLoad, and NormalizationExternalChange 
-        // are still posted to eventBus for cross-browser synchronization
-        this.browser.eventBus.subscribe("NormVectorIndexLoad", this);
-        this.browser.eventBus.subscribe("NormalizationFileLoad", this);
-        this.browser.eventBus.subscribe("NormalizationExternalChange", this);
     }
 
     startNotReady() {

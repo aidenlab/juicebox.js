@@ -98,8 +98,9 @@ class HICBrowser {
         // The coordinator is built first: the widgets' observer closures notify it
         // directly, so it must exist before createWidgets() runs.
         this.coordinator = new BrowserCoordinator(this);
-        this.coordinator.adoptWidgets(createWidgets(this));
-        this.contactMatrixView = this.coordinator.widgets.contactMatrixView;
+        const widgets = createWidgets(this);
+        this.coordinator.adoptWidgets(widgets);
+        this.contactMatrixView = widgets.contactMatrixView;
 
         // Initialize interaction handler for user interactions
         this.interactions = new InteractionHandler(this);
@@ -814,8 +815,12 @@ class HICBrowser {
      *
      * Handles queuing for rapid calls (e.g. during a mouse drag). A call arriving
      * while an update is in flight is remembered rather than run, and only the most
-     * recent one runs when the in-flight update finishes. Exactly one spinner
-     * start/stop pair spans the whole run, trailing updates included.
+     * recent one runs when the in-flight update finishes.
+     *
+     * One spinner start/stop pair per call, and nothing inside repaint() starts
+     * another. A trailing update is awaited inside the finally, before the outer
+     * stop, so its pair nests within the outer one and the shared count never
+     * reaches zero mid-drag -- the spinner goes up once and comes down once.
      *
      * @param shouldSync - Whether to synchronize state to other browsers (default: true)
      *                     Set to false when called from syncState() to avoid infinite loops

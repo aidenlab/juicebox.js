@@ -47,9 +47,11 @@ class BrowserCoordinator {
             x: browser.layoutController.xAxisRuler,
             y: browser.layoutController.yAxisRuler
         };
-        // Set by adoptWidgets(). The coordinator is constructed before the widgets
-        // because their observer closures notify it directly -- see createWidgets().
+        // Both set by adoptWidgets(). The coordinator is constructed before the
+        // widgets because their observer closures notify it directly -- see
+        // createWidgets().
         this.widgets = undefined;
+        this.contactMatrixView = undefined;
         this.externalCallbacks = {
             onMapLoaded: [],
             onControlMapLoaded: [],
@@ -61,11 +63,19 @@ class BrowserCoordinator {
     }
 
     /**
-     * Take ownership of the widget record returned by createWidgets().
+     * Take ownership of the record returned by createWidgets().
      *
-     * @param {Object} widgets - the widget record
+     * The coordinator fans out to widgets, rulers and the contact matrix view, and
+     * CONTEXT.md keeps those three apart -- so the contact matrix view is held on
+     * its own rather than filed under `widgets`. The record also carries the sweep-
+     * zoom gesture helper and the image tile source, which are none of the three:
+     * the contact matrix view owns them and the coordinator never touches them.
+     *
+     * @param {Object} record - the record returned by createWidgets()
      */
-    adoptWidgets(widgets) {
+    adoptWidgets(record) {
+        const { contactMatrixView, sweepZoom, imageTileSource, ...widgets } = record;
+        this.contactMatrixView = contactMatrixView;
         this.widgets = widgets;
     }
 
@@ -81,12 +91,12 @@ class BrowserCoordinator {
      */
     onMapLoaded(dataset, state, datasetType) {
         // 1. Initialize contact matrix view
-        if (!this.widgets.contactMatrixView.mouseHandlersEnabled) {
-            this.widgets.contactMatrixView.addTouchHandlers(this.widgets.contactMatrixView.viewportElement);
-            this.widgets.contactMatrixView.addMouseHandlers(this.widgets.contactMatrixView.viewportElement);
-            this.widgets.contactMatrixView.mouseHandlersEnabled = true;
+        if (!this.contactMatrixView.mouseHandlersEnabled) {
+            this.contactMatrixView.addTouchHandlers(this.contactMatrixView.viewportElement);
+            this.contactMatrixView.addMouseHandlers(this.contactMatrixView.viewportElement);
+            this.contactMatrixView.mouseHandlersEnabled = true;
         }
-        this.widgets.contactMatrixView.clearImageCaches({thresholds: true});
+        this.contactMatrixView.clearImageCaches({thresholds: true});
 
         // 2. Update chromosome selector
         if (this.widgets.chromosomeSelector) {
@@ -162,7 +172,7 @@ class BrowserCoordinator {
         }
 
         // ContactMatrixView also needs to know about control map
-        this.widgets.contactMatrixView.clearImageCaches({thresholds: true});
+        this.contactMatrixView.clearImageCaches({thresholds: true});
 
         // Notify external callbacks
         for (const callback of this.externalCallbacks.onControlMapLoaded) {
@@ -230,7 +240,7 @@ class BrowserCoordinator {
      * @param {string} normalization - The normalization type
      */
     onNormalizationChange(normalization) {
-        this.widgets.contactMatrixView.receiveEvent({ type: "NormalizationChange", data: normalization });
+        this.contactMatrixView.receiveEvent({ type: "NormalizationChange", data: normalization });
         // NormalizationWidget updates via selector change, no direct notification needed
     }
 
@@ -268,7 +278,7 @@ class BrowserCoordinator {
      * @param {Array} tracks2D - Array of 2D track instances
      */
     onTrackLoad2D(tracks2D) {
-        this.widgets.contactMatrixView.receiveEvent({ type: "TrackLoad2D", data: tracks2D });
+        this.contactMatrixView.receiveEvent({ type: "TrackLoad2D", data: tracks2D });
     }
 
     /**
@@ -277,7 +287,7 @@ class BrowserCoordinator {
      * @param {Object|Array} trackData - Track state data
      */
     onTrackState2D(trackData) {
-        this.widgets.contactMatrixView.receiveEvent({ type: "TrackState2D", data: trackData });
+        this.contactMatrixView.receiveEvent({ type: "TrackState2D", data: trackData });
     }
 
     /**
@@ -326,7 +336,7 @@ class BrowserCoordinator {
      * Orchestrate component updates when colors change.
      */
     onColorChange() {
-        this.widgets.contactMatrixView.receiveEvent({ type: "ColorChange" });
+        this.contactMatrixView.receiveEvent({ type: "ColorChange" });
     }
 
     /**

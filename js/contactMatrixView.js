@@ -320,6 +320,13 @@ class ContactMatrixView {
         this.spinnerCount--;
         if (this.spinnerCount === 0) {
             this.faSpinnerElement.style.display = 'none';
+        } else if (this.spinnerCount < 0) {
+            // An unpaired stop. This used to be clamped away silently, which left
+            // the imbalance to be rediscovered; say so instead, and hide the
+            // spinner so the symptom is a console error rather than a stuck UI.
+            console.error(`ContactMatrixView: unpaired stopSpinner, count is ${this.spinnerCount}`);
+            this.spinnerCount = 0;
+            this.faSpinnerElement.style.display = 'none';
         }
     }
 

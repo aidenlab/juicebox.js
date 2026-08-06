@@ -108,8 +108,8 @@ function createWidgets(browser) {
                 }
             },
 
-            // Resolved lazily: contactMatrixView does not exist until the
-            // line below has run.
+            // Resolved lazily: the browser does not hold its contact matrix view
+            // until this function has returned.
             loadingChanged: (isLoading) => {
                 const view = browser.contactMatrixView;
                 if (!view) return;

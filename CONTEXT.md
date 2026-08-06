@@ -36,6 +36,28 @@ for the chokepoint. `panShift`, `updateWithLoci`, `setWithZoom` and friends.
 URL restore replace the whole `State` object rather than mutating it, because at
 restore time there is nothing to translate relative to.
 
+## Browser wiring
+
+**Widget** — a UI control surrounding the contact map: the locus box, resolution
+selector, normalization and colour-scale controls, control-map selector,
+chromosome selector, annotation button, scrollbars. A widget reads the browser
+and issues commands to it; it is told when to refresh rather than watching for
+changes itself.
+
+**Coordinator** — the single fan-out point that tells widgets, rulers and the
+contact matrix view to refresh when something they display has changed
+(`js/browserCoordinator.js`). It is also the **host extension point**: a host app
+registers with `coordinator.addCallback(name, fn)` to learn about map loads,
+locus changes and colour changes. Deleting it would push its fan-out back into
+`HICBrowser` and is not on the table — see `docs/adr/0002`.
+
+**Update** vs **repaint** — not synonyms. A **repaint** redraws everything from
+current state: rulers, track pairs, contact matrix, once, with no coordination.
+An **update** wraps a repaint in the things that must happen around it —
+collapsing rapid calls (a drag issues far more than can be drawn) and
+synchronizing peer browsers afterwards. Widgets and gestures ask for an
+*update*; only the update path should call *repaint* directly.
+
 ## Rendering
 
 **Image tile** — a square raster of the contact map at a given zoom, row and

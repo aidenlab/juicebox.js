@@ -25,7 +25,6 @@ class ScrollbarWidget {
 
     constructor(browser, xAxisScrollbarContainerElement, yAxisScrollbarContainerElement) {
         this.browser = browser;
-        this.isDragging = false;
 
         // x-axis
         this.xAxisScrollbarContainerElement = xAxisScrollbarContainerElement;
@@ -39,16 +38,15 @@ class ScrollbarWidget {
         this.yLabelElement = this.yAxisScrollbarElement.querySelector('.scrollbar-label-rotation-in-place');
         this.yLabelElement.textContent = '';
 
-        // Note: LocusChange subscription removed - now handled by BrowserCoordinator
-        // Scrollbar widget is updated via coordinator.onLocusChange()
     }
 
     /**
      * Size and place both scrollbar thumbs for a view state.
      *
-     * The thumbs are indicators, not controls -- this widget attaches no event
-     * handlers, and `isDragging` is set false at construction and never set
-     * true. The coordinator's guard on it is therefore always open. See #414.
+     * The thumbs are indicators, not controls: this widget attaches no event
+     * handlers. Drag handlers were removed in Jan 2020 (91c3664) and left an
+     * inert `isDragging` behind, which the coordinator went on guarding
+     * against for six years. See #414.
      *
      * @param {State} state - The view state to render
      */

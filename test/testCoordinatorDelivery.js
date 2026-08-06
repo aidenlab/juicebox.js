@@ -106,15 +106,6 @@ describe('coordinator delivery', () => {
         expect(spies.scrollbar).toHaveBeenCalledWith(locusChange.state)
     })
 
-    it('does not move the scrollbar the user is dragging', () => {
-        const spies = watchLocusChangeFanOut(context.browser)
-        context.browser.coordinator.widgets.scrollbar.isDragging = true
-
-        context.browser.coordinator.onLocusChange(locusChange)
-
-        expect(spies.scrollbar).not.toHaveBeenCalled()
-    })
-
     it('delivers a locus change to the locus goto widget by name', () => {
         const spies = watchLocusChangeFanOut(context.browser)
 

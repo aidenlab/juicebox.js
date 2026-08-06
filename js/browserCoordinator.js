@@ -194,7 +194,7 @@ class BrowserCoordinator {
         }
 
         // 2. Update scrollbar widget
-        if (this.widgets.scrollbar && !this.widgets.scrollbar.isDragging) {
+        if (this.widgets.scrollbar) {
             this.widgets.scrollbar.updateForState(state);
         }
 

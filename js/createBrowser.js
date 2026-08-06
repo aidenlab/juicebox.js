@@ -77,7 +77,6 @@ function deleteAllBrowsers() {
         b.rootElement.remove();
     }
     allBrowsers = [];
-    setCurrentBrowser(undefined);
 }
 
 function setCurrentBrowser(browser) {
@@ -99,14 +98,6 @@ function deleteBrowser(browser) {
     browser.unsyncSelf();
     browser.rootElement.remove();
     allBrowsers = allBrowsers.filter(b => b !== browser);
-
-    // Otherwise module scope keeps the deleted browser -- and its detached DOM
-    // subtree -- alive for the lifetime of the page, and getCurrentBrowser()
-    // hands a host a browser that is no longer on it. See #414.
-    if (browser === currentBrowser) {
-        setCurrentBrowser(undefined);
-    }
-
     if (allBrowsers.length <= 1) {
         allBrowsers.forEach(b => b.browserPanelDeleteButton.style.display = 'none');
     }

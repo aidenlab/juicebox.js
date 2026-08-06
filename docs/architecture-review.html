@@ -42,10 +42,10 @@
 
         <div class="rounded-lg border-2 border-emerald-600 bg-emerald-50 p-5 space-y-2">
           <div class="text-xs uppercase tracking-wider text-emerald-900">Progress</div>
-          <p class="text-sm text-emerald-950"><strong>Candidate 3 is done</strong> — <span class="font-mono">99c297b</span> / <span class="font-mono">18ac88b</span> (issue #467). <span class="font-mono">browserUIManager.js</span> and <span class="font-mono">renderCoordinator.js</span> deleted, <span class="font-mono">createWidgets.js</span> added; 14 <span class="font-mono">notify*</span> forwarders gone. Its member-count target was retired, not met — see Consumer impact on that card.</p>
+          <p class="text-sm text-emerald-950"><strong>Candidate 2 is done</strong> — <span class="font-mono">66e68ec..3528717</span> (issue #414). The bus was <em>not</em> deleted, which is this card's title: Spacewalk subscribes on the per-browser one. Both buses survive as pure consumer surface with no internal traffic; the eight dead subscriptions, three unreachable <span class="font-mono">receiveEvent</span> methods and the forged event literals are gone, and <span class="font-mono">EventBus</span> finally has an <span class="font-mono">unsubscribe</span>.</p>
+          <p class="text-sm text-emerald-950"><strong>Candidate 3 is done</strong> — <span class="font-mono">99c297b</span> / <span class="font-mono">18ac88b</span> (issue #467) and <span class="font-mono">d535e64</span> (issue #468). <span class="font-mono">browserUIManager.js</span> and <span class="font-mono">renderCoordinator.js</span> deleted, <span class="font-mono">createWidgets.js</span> added; 14 <span class="font-mono">notify*</span> forwarders gone; the <span class="font-mono">dataset</span>/<span class="font-mono">state</span> vocabulary made canonical with the older names kept as host-facing aliases. Its member-count target was retired, not met — see Consumer impact on that card.</p>
           <p class="text-sm text-emerald-950"><strong>Candidate 1 is done</strong> — merged as <span class="font-mono">ecd44d9</span> (PR #433, issue #428). <span class="font-mono">contactMatrixView.js</span> 1116 → 761 lines; tests 65 → 164, the first rendering coverage in the repo.</p>
-          <p class="text-sm text-emerald-950"><strong>Candidate 2 is tracked elsewhere</strong> as issue #414, filed May 2026. Its findings live on that issue.</p>
-          <p class="text-sm text-emerald-950">Eight candidates are open. <a href="#next" class="underline decoration-emerald-700 underline-offset-2">Recommended next task</a>.</p>
+          <p class="text-sm text-emerald-950">Seven candidates are open, none of them filed yet. <a href="#next" class="underline decoration-emerald-700 underline-offset-2">Recommended next task</a>.</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-x-8 gap-y-3 text-xs uppercase tracking-wider text-slate-500">
@@ -57,10 +57,10 @@
         </div>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-          <div class="rounded border-2 border-emerald-600 bg-emerald-50 py-3"><div class="font-serif text-2xl text-emerald-900">1</div><div class="text-xs uppercase tracking-wider text-emerald-800">landed</div></div>
-          <div class="rounded border border-stone-200 bg-white py-3"><div class="font-serif text-2xl">1</div><div class="text-xs uppercase tracking-wider text-slate-500">tracked</div></div>
-          <div class="rounded border border-stone-200 bg-white py-3"><div class="font-serif text-2xl">9</div><div class="text-xs uppercase tracking-wider text-slate-500">open</div></div>
-          <div class="rounded border border-stone-200 bg-white py-3"><div class="font-serif text-2xl">164</div><div class="text-xs uppercase tracking-wider text-slate-500">tests, 4 modules</div></div>
+          <div class="rounded border-2 border-emerald-600 bg-emerald-50 py-3"><div class="font-serif text-2xl text-emerald-900">3</div><div class="text-xs uppercase tracking-wider text-emerald-800">landed</div></div>
+          <div class="rounded border border-stone-200 bg-white py-3"><div class="font-serif text-2xl">0</div><div class="text-xs uppercase tracking-wider text-slate-500">tracked</div></div>
+          <div class="rounded border border-stone-200 bg-white py-3"><div class="font-serif text-2xl">7</div><div class="text-xs uppercase tracking-wider text-slate-500">open, unfiled</div></div>
+          <div class="rounded border border-stone-200 bg-white py-3"><div class="font-serif text-2xl">337</div><div class="text-xs uppercase tracking-wider text-slate-500">tests, 22 files</div></div>
         </div>
 
         <nav class="text-sm">
@@ -188,7 +188,7 @@
           <div class="flex items-baseline justify-between gap-4 flex-wrap">
             <h3 class="font-serif text-2xl">3 · Collapse the pass-through modules around HICBrowser</h3>
             <div class="flex gap-2 shrink-0">
-              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-amber-500 text-white">Next</span>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-emerald-600 text-white">Landed &middot; #467, #468</span>
               <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-emerald-100 text-emerald-900">Strong</span>
               <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-slate-200 text-slate-700">deletion test</span>
             </div>
@@ -208,7 +208,7 @@
                 <div class="h-9 border-l-4 border-red-400 bg-red-50 px-3 flex items-center text-xs font-mono">browser.ui.getComponent('x') <span class="ml-auto text-slate-400">Map lookup</span></div>
                 <div class="h-9 border-l-4 border-red-400 bg-red-50 px-3 flex items-center text-xs font-mono">widget <span class="ml-auto text-slate-400">work happens</span></div>
               </div>
-              <p class="text-xs text-slate-500 pt-2">Also: <span class="font-mono">activeDataset/activeState</span> and <span class="font-mono">dataset/state</span> are two accessor vocabularies used inside one render pass.</p>
+              <p class="text-xs text-slate-500 pt-2">Also: <span class="font-mono">activeDataset/activeState</span> and <span class="font-mono">dataset/state</span> were two accessor vocabularies used inside one render pass — resolved in #468, canonical <span class="font-mono">dataset</span>/<span class="font-mono">state</span> with the others kept as host-facing aliases.</p>
             </div>
             <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-2">
               <div class="text-xs uppercase tracking-wider text-slate-500 mb-3">After — two bands</div>
@@ -241,6 +241,13 @@
 
           <div class="rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             Two calling conventions are live simultaneously and both must keep working through the change: <span class="font-mono">annotationWidget.js:187</span> calls <span class="font-mono">browser.notifyTrackState2D</span>, while <span class="font-mono">hicColorScaleWidget.js:183</span> calls <span class="font-mono">browser.coordinator.onBackgroundColorChange</span> directly.
+          </div>
+          <div class="rounded-lg border-2 border-emerald-600 bg-emerald-50 p-5 space-y-3 text-sm text-emerald-950">
+            <div class="text-xs uppercase tracking-wider text-emerald-900">Outcome — landed <span class="font-mono">99c297b</span> / <span class="font-mono">18ac88b</span> (#467), <span class="font-mono">d535e64</span> (#468)</div>
+            <p><strong>#467, the subtraction.</strong> <span class="font-mono">browserUIManager.js</span> and <span class="font-mono">renderCoordinator.js</span> deleted, <span class="font-mono">createWidgets.js</span> added, 14 <span class="font-mono">notify*</span> forwarders gone. 80 members → 65, not the ~49 the card projected: the member-count target was retired rather than met, because five of the counted delegations turned out to be consumer API.</p>
+            <p><strong>#468, the accessor vocabulary</strong> — split out so #467 stayed readable as a pure deletion. <span class="font-mono">dataset</span>/<span class="font-mono">state</span> is now what every internal call site reads. <span class="font-mono">activeDataset</span>/<span class="font-mono">activeState</span> survive as aliases carrying a JSDoc line naming the consumer, which is what stops a future cleanup pass deleting an accessor that looks unused from in here. Not marked <span class="font-mono">@deprecated</span>: that implies a removal nobody has scheduled.</p>
+            <p><strong>What #468 did not predict:</strong> its own consumer citations were stale on arrival. It named Spacewalk's <span class="font-mono">sessionServices.js</span> as reading <span class="font-mono">browser.dataset</span>; by the time it was implemented, that read had moved to <span class="font-mono">juicebox/hicMapState.js</span>. The habit of citing file and line is right and the citations rot anyway — filed as <strong>#474</strong>.</p>
+            <p><span class="font-mono">test/testAccessorVocabulary.js</span> keeps the vocabulary from growing back: it fails on any internal read of an alias, exempting lines rather than files so the accessor definitions pass and a stray <span class="font-mono">browser.activeDataset</span> anywhere does not.</p>
           </div>
           <div class="rounded border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 space-y-1">
             <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — the member count below is not a target</div>
@@ -654,7 +661,7 @@ flowchart TB
           </div>
           <div class="rounded border border-sky-300 bg-sky-50 px-4 py-3 text-sm text-sky-900 space-y-1">
             <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — accessor names are load-bearing</div>
-            <div><span class="font-mono">browser.dataset</span> (juicebox-web, 3 sites; Spacewalk) and <span class="font-mono">browser.activeDataset</span> (Spacewalk, 4 sites) are read directly by hosts. "The browser holds three plain fields" is fine <em>provided the fields keep these names</em> — the accessors may collapse, the vocabulary may not. Spacewalk also reads <span class="font-mono">dataset.isLiveContactMapDataSet</span> and <span class="font-mono">activeDataset.isLive</span>, so the dataset objects have published shape as well. <br><br>Note this collides with #468, which proposes unifying the <span class="font-mono">activeDataset</span>/<span class="font-mono">dataset</span> vocabulary — both names are in use externally, so neither can simply win.</div>
+            <div><span class="font-mono">browser.dataset</span> (juicebox-web, 3 sites; Spacewalk) and <span class="font-mono">browser.activeDataset</span> (Spacewalk, 4 sites) are read directly by hosts. "The browser holds three plain fields" is fine <em>provided the fields keep these names</em> — the accessors may collapse, the vocabulary may not. Spacewalk also reads <span class="font-mono">dataset.isLiveContactMapDataSet</span> and <span class="font-mono">activeDataset.isLive</span>, so the dataset objects have published shape as well. <br><br>#468 settled this: neither name could simply win, so <span class="font-mono">dataset</span>/<span class="font-mono">state</span> became canonical internally and <span class="font-mono">activeDataset</span>/<span class="font-mono">activeState</span> stayed as aliases. Both vocabularies remain reachable from a host; only the internal reads collapsed.</div>
           </div>
 
         </article>
@@ -962,7 +969,7 @@ flowchart TB
           <div class="flex items-baseline justify-between gap-4 flex-wrap">
             <h3 class="font-serif text-2xl">2 · Delete the event bus; keep the coordinator</h3>
             <div class="flex gap-2 shrink-0">
-              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-sky-600 text-white">Tracked &middot; #414</span>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-emerald-600 text-white">Landed &middot; #414</span>
               <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-emerald-100 text-emerald-900">Strong</span>
               <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-slate-200 text-slate-700">deletion test</span>
             </div>
@@ -1019,8 +1026,19 @@ flowchart TB
             <li>the missing-unsubscribe half of this overlaps candidate 8</li>
           </ul>
 
-          <div class="rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Tracked as issue #414 since May 2026 — the review did not discover it, and its findings have been added there. Verify the four <span class="font-mono">globalBus</span> event names against juicebox-web and Spacewalk before touching them: no subscriber exists in this repo and there is no recorded contract.
+          <div class="rounded-lg border-2 border-emerald-600 bg-emerald-50 p-5 space-y-3 text-sm text-emerald-950">
+            <div class="text-xs uppercase tracking-wider text-emerald-900">Outcome — landed <span class="font-mono">66e68ec..3528717</span> (#414)</div>
+            <p><strong>The title of this card is wrong, and the work is what proved it.</strong> The event bus was not deleted and cannot be: Spacewalk subscribes <span class="font-mono">DidHideCrosshairs</span> on the <em>per-browser</em> bus, so even that object survives. What went was the repo's own use of it — all eight internal subscriptions — leaving both buses in place as pure consumer surface with no internal traffic at all.</p>
+            <p>Also landed: <span class="font-mono">EventBus.unsubscribe</span>, which the class never had (<span class="font-mono">post</span> now iterates a snapshot so a subscriber can detach itself mid-notification); <span class="font-mono">ruler</span>, <span class="font-mono">hicResolutionSelector</span> and <span class="font-mono">normalizationWidget</span> <span class="font-mono">receiveEvent</span> methods deleted as unreachable; the coordinator's forged <span class="font-mono">receiveEvent({type,data})</span> literals replaced by <span class="font-mono">updateForState(state)</span> on the scrollbar and locus-goto widgets; <span class="font-mono">HICEvent.propogate</span> (sic) dropped, written since 2018 and read by nobody in three repos.</p>
+            <p><strong>Four things the card did not predict:</strong></p>
+            <ul class="list-disc list-inside space-y-1">
+              <li><span class="font-mono">DragStopped</span> and <span class="font-mono">DidShowCrosshairs</span> were <strong>kept</strong>, against this card and against #414's own acceptance criteria. They have no subscriber in any of the three repos — but they are declared in <span class="font-mono">js/publicApi.js</span>, and the argument that retired the member-count target on candidate 3 applies unchanged: the consumers we can measure are not the population.</li>
+              <li>The card's <span class="font-mono">EventBus.hold/release</span> line was not followed. They have no callers here, but <span class="font-mono">EventBus</span> is exported from <span class="font-mono">js/index.js</span>, so they are methods on a published class.</li>
+              <li>The <em>"missing unsubscribe overlaps candidate 8"</em> line rests on a leak that does not exist. <span class="font-mono">#414</span> described widget references pinned in <span class="font-mono">eventBus.subscribers</span> for the page's life; the bus is per browser, so it is collected with the browser. The real retention is a module-scoped <span class="font-mono">currentBrowser</span> that <span class="font-mono">deleteBrowser</span> never clears — filed as <strong>#475</strong>, and it belongs to candidate 4, not 8.</li>
+              <li><span class="font-mono">ScrollbarWidget.isDragging</span> was inert — drag handlers went in Jan 2020 and the coordinator guarded against a drag that could not happen for six years. Flag and guard both gone.</li>
+            </ul>
+            <p><strong>Enforcement, not just deletion:</strong> <span class="font-mono">test/testEventBus.js</span> now fails on any <span class="font-mono">.subscribe(</span> under <span class="font-mono">js/</span>, and <span class="font-mono">test/testCoordinatorDelivery.js</span> pins each surviving delivery path — written and green <em>before</em> the deletions, so it characterizes the route that stays rather than describing it afterwards.</p>
+            <p><strong>Found while smoke-testing:</strong> the whole-genome chromosome highlight had been invisible since <span class="font-mono">de369ee</span> (April 2021) commented out its <span class="font-mono">background-color</span>, leaving <span class="font-mono">cursor: pointer</span> as the class's only effect. Both highlight paths were applying a class that no longer painted. Restored in <span class="font-mono">4bce00f</span>.</p>
           </div>
           <div class="rounded border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 space-y-1">
             <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — the premise below is wrong</div>
@@ -1035,12 +1053,12 @@ flowchart TB
         <h2 class="font-serif text-3xl border-b border-stone-300 pb-3">Next task</h2>
         <div class="rounded-lg border-2 border-slate-900 deep text-slate-100 p-6 space-y-4">
           <div class="flex items-baseline justify-between gap-4 flex-wrap">
-            <a href="#c3" class="font-serif text-2xl text-white underline decoration-amber-400 decoration-2 underline-offset-4">3 · Collapse the pass-through modules around HICBrowser</a>
+            <a href="#c4" class="font-serif text-2xl text-white underline decoration-amber-400 decoration-2 underline-offset-4">4 · Give the browser registry an owner</a>
             <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-amber-400 text-amber-950">start here</span>
           </div>
-          <p class="text-sm text-slate-300">It is the remaining pure subtraction. <span class="font-mono">BrowserUIManager</span> is a stringly-typed <span class="font-mono">Map</span> with one method and five never-retrieved entries; <span class="font-mono">RenderCoordinator</span>'s body is entirely <span class="font-mono">this.browser.*</span>; 31 of <span class="font-mono">HICBrowser</span>'s 80 members exist only to forward. The deletion test answers "complexity vanishes," not "complexity moves." Roughly 120 lines with no behaviour change.</p>
-          <p class="text-sm text-slate-300">Candidate 1 removed two of its obstacles already: <span class="font-mono">hicBrowser.repaintMatrix</span> no longer reaches into another module's cache, and the <span class="font-mono">tmp = x; x = tmp</span> no-op in <span class="font-mono">init</span> is gone.</p>
-          <p class="text-sm text-slate-300">Then <a href="#c4" class="underline decoration-slate-500 underline-offset-2">4</a>. It closes issue <strong>#384</strong> — the module-level <span class="font-mono">allBrowsers</span> array at <span class="font-mono">createBrowser.js:14</span> means the second <span class="font-mono">init()</span> on a page removes the first browser's DOM — and it unblocks everything else here: <strong>no test in this repo constructs a browser</strong>, because that global makes test N leak into test N+1. Doing 3 first shrinks the surface 4 has to re-point.</p>
+          <p class="text-sm text-slate-300">Candidates 1, 2 and 3 are done, and 3 shrank the surface this one has to re-point. It closes issue <strong>#384</strong> — the module-level <span class="font-mono">allBrowsers</span> array at <span class="font-mono">createBrowser.js:14</span> means the second <span class="font-mono">init()</span> on a page removes the first browser's DOM — and it unblocks everything else here.</p>
+          <p class="text-sm text-slate-300">The card's strongest argument has weakened in one specific way: <strong>"no test in this repo constructs a browser"</strong> is no longer true. <span class="font-mono">test/utils/browserFixture.js</span> stands one up on JSDOM with a stubbed 2D context, and four suites use it. The module-level globals still make test N leak into test N+1, which is why the fixture restores them by hand — but the leverage is now "delete the workaround," not "make testing possible at all."</p>
+          <p class="text-sm text-slate-300">It also has a bug waiting on it: <strong>#475</strong>, <span class="font-mono">deleteBrowser</span> never clearing module-scoped <span class="font-mono">currentBrowser</span>, so deleting the selected browser leaks it and <span class="font-mono">getCurrentBrowser()</span> can hand a host a browser that is no longer on the page. Found during candidate 2 and deliberately left for whoever owns the registry.</p>
           <p class="text-sm text-slate-400">After that: <a href="#c8" class="underline decoration-slate-500 underline-offset-2">8</a> (teardown — the registry needs something to call), then <a href="#c5" class="underline decoration-slate-500 underline-offset-2">5</a> and <a href="#c9" class="underline decoration-slate-500 underline-offset-2">9</a> together, since decode-then-normalize is one pipeline. <a href="#c7" class="underline decoration-slate-500 underline-offset-2">7</a> is the largest remaining deepening — ~300 lines of gesture closures with no test surface.</p>
         </div>
       </section>
@@ -1089,7 +1107,7 @@ flowchart TB
       </section>
 
       <footer class="text-xs text-slate-400 pt-8 border-t border-stone-200">
-        Generated from reads of js/ at 6035e34 (30 July, render path) and 7d9fd11 (31 July, lifecycle &amp; session), merged into this single document 31 July 2026. Status updated after candidate 1 merged as ecd44d9. File references were verified against the working tree at review time; the defects listed were verified individually against source. Latent defects noted in the cards were surfaced incidentally and are not themselves the recommendation.
+        Generated from reads of js/ at 6035e34 (30 July, render path) and 7d9fd11 (31 July, lifecycle &amp; session), merged into this single document 31 July 2026. Status last updated 6 August 2026, after candidates 1, 2 and 3 landed (through 4bce00f). The cards are the review as written; the green Outcome boxes are what the work actually found, including where a card was wrong. File references were verified against the working tree at review time; the defects listed were verified individually against source. Latent defects noted in the cards were surfaced incidentally and are not themselves the recommendation.
       </footer>
 
     </main>

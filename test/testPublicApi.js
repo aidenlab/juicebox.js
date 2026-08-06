@@ -1,5 +1,7 @@
-import {describe, it, expect} from 'vitest'
+import {describe, it, expect, beforeEach, afterEach} from 'vitest'
 import juicebox from '../js/index.js'
+import HICBrowser from '../js/hicBrowser.js'
+import {withDOM} from './utils/browserFixture.js'
 import {NAMESPACE_SURFACE} from '../js/publicApi.js'
 
 /**
@@ -28,5 +30,24 @@ describe('namespace surface', () => {
         // already healthy, so the reverse check costs nothing here -- unlike the
         // browser instance, where it would mean classifying every member.
         expect(Object.keys(juicebox).sort()).toEqual([...NAMESPACE_SURFACE].sort())
+    })
+})
+
+describe('browser instance surface', () => {
+
+    let fixture
+    let browser
+
+    beforeEach(() => {
+        fixture = withDOM()
+        browser = new HICBrowser(fixture.container, {})
+    })
+
+    afterEach(() => {
+        fixture.restore()
+    })
+
+    it('constructs a browser', () => {
+        expect(browser.id).toMatch(/^browser_/)
     })
 })

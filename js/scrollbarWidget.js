@@ -46,8 +46,9 @@ class ScrollbarWidget {
     /**
      * Size and place both scrollbar thumbs for a view state.
      *
-     * The caller decides whether an update is wanted -- the coordinator skips
-     * this while the user is dragging a thumb.
+     * The thumbs are indicators, not controls -- this widget attaches no event
+     * handlers, and `isDragging` is set false at construction and never set
+     * true. The coordinator's guard on it is therefore always open. See #414.
      *
      * @param {State} state - The view state to render
      */

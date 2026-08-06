@@ -74,3 +74,48 @@ export const NAMESPACE_SURFACE = [
     'EventBus',
     'setUrlMapper'
 ]
+
+/**
+ * Browser instance members that exist as soon as a browser is constructed.
+ *
+ * This is the undeclared half of the contract, and the reason this file exists.
+ * `HICBrowser` is not exported; hosts receive instances from `init()`,
+ * `createBrowser()` or `getCurrentBrowser()` and use them directly.
+ *
+ * Five of these -- the four load methods and `parseGotoInput` -- forward to an
+ * internal collaborator without adding behaviour, and four of those have no
+ * internal callers at all: they exist solely for hosts. They look like
+ * deletable indirection from inside this repo and are not. Removing them would
+ * not remove a hop, it would promote the collaborators they delegate to from
+ * internal detail to published name, freezing this decomposition into the
+ * contract. See #467.
+ *
+ * Seven more are assigned in the constructor rather than declared on the
+ * prototype, so they are invisible to any check that reflects on the class
+ * instead of building an instance.
+ */
+export const BROWSER_SURFACE = [
+    // Delegating loaders and lookups -- no internal callers, hosts only
+    'loadHicFile',
+    'loadTracks',
+    'loadHicControlFile',
+    'loadLiveContactMap',
+    'parseGotoInput',
+
+    // Real methods
+    'reset',
+    'setCustomCrosshairsHandler',
+
+    // Accessors -- present from construction, populated by a load
+    'dataset',
+    'activeDataset',
+
+    // Constructor-assigned fields
+    'id',
+    'config',
+    'rootElement',
+    'eventBus',
+    'coordinator',
+    'layoutController',
+    'contactMatrixView'
+]

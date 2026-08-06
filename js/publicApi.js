@@ -170,7 +170,15 @@ export const SUB_SURFACES = [
     // ADR-0003's measurement and found while reviewing #470 -- which is the
     // point: a hand-measured table missed it, and a test would not have.
     {owner: 'contactMatrixView', member: 'viewportElement'},
-    {owner: 'coordinator', member: 'addCallback'}
+    {owner: 'coordinator', member: 'addCallback'},
+    // Spacewalk subscribes DidHideCrosshairs on the per-browser bus. Nothing in
+    // this repo subscribes to either bus any more -- the coordinator is the
+    // internal route -- so these three are read only from outside. unsubscribe
+    // is new in #414: a host holding a handler on a browser it later discards
+    // had no way to let go.
+    {owner: 'eventBus', member: 'subscribe'},
+    {owner: 'eventBus', member: 'unsubscribe'},
+    {owner: 'eventBus', member: 'post'}
 ]
 
 /**

@@ -22,11 +22,10 @@
  */
 
 
-function HICEvent (type, data, propogate) {
+function HICEvent (type, data) {
     return {
         type: type,
-        data: data || {},
-        propogate: propogate !== undefined ? propogate : true     // Default to true
+        data: data || {}
     }
 };
 

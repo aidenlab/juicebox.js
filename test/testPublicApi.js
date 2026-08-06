@@ -133,12 +133,13 @@ describe('event bus', () => {
     // These check the plumbing declared events travel over. Whether each event
     // is still *posted* is not checked -- see EVENTS_POSTED and #438.
 
-    it('exposes a per-browser bus that a host can subscribe to', () => {
-        expect(typeof context.browser.eventBus.subscribe).toBe('function')
-        expect(typeof context.browser.eventBus.post).toBe('function')
-        // Spacewalk subscribes DidHideCrosshairs on this bus and holds the
-        // handler for the browser's lifetime; unsubscribe is how it lets go.
-        expect(typeof context.browser.eventBus.unsubscribe).toBe('function')
+    it('exposes a per-browser bus whose members are callable', () => {
+        // Which members are contract is declared in SUB_SURFACES and checked
+        // there; this asserts the weaker thing that block cannot -- that each
+        // one is a function rather than merely present.
+        for (const {owner, member} of SUB_SURFACES.filter(entry => 'eventBus' === entry.owner)) {
+            expect(typeof context.browser[owner][member], `browser.eventBus.${member} is not callable`).toBe('function')
+        }
     })
 
     it('exposes a global bus', () => {

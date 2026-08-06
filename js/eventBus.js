@@ -67,7 +67,13 @@ class EventBus {
             return;
         }
 
-        this.subscribers[eventType] = subscriberList.filter(subscriber => subscriber !== object);
+        // Spliced in place rather than replaced, so a post already walking this
+        // list sees the removal. post() takes its own snapshot to stay safe.
+        for (let index = subscriberList.length - 1; index >= 0; index--) {
+            if (subscriberList[index] === object) {
+                subscriberList.splice(index, 1);
+            }
+        }
     }
 
     post(event) {

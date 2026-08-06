@@ -481,14 +481,14 @@ class ContactMatrixView {
             document.addEventListener('keydown', (e) => {
                 if (!this.willShowCrosshairs && mouseOver && e.shiftKey) {
                     this.willShowCrosshairs = true;
-                    this.browser.eventBus.post(HICEvent('DidShowCrosshairs', 'DidShowCrosshairs', false));
+                    this.browser.eventBus.post(HICEvent('DidShowCrosshairs', 'DidShowCrosshairs'));
                 }
             })
 
             document.addEventListener('keyup', () => {
                 this.browser.hideCrosshairs();
                 this.willShowCrosshairs = undefined;
-                this.browser.eventBus.post(HICEvent('DidHideCrosshairs', 'DidHideCrosshairs', false));
+                this.browser.eventBus.post(HICEvent('DidHideCrosshairs', 'DidHideCrosshairs'));
             })
 
             document.addEventListener('mouseup', (e) => {

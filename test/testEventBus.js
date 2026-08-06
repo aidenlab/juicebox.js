@@ -129,6 +129,8 @@ describe('internal subscribers', () => {
         for (const filePath of sourceFiles(jsDirectory)) {
             const lines = fs.readFileSync(filePath, 'utf8').split('\n')
             lines.forEach((line, index) => {
+                // Prose about the bus is fine; a call is not.
+                if (/^\s*(\*|\/\/|\/\*)/.test(line)) return
                 if (/\.subscribe\(/.test(line)) {
                     offenders.push(`${path.relative(jsDirectory, filePath)}:${index + 1}`)
                 }

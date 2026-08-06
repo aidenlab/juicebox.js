@@ -159,6 +159,30 @@ together with the headers its gate wants. Everything else fetches directly, on
 purpose: a genuine CORS or permissions failure has to stay visible in
 development.
 
+## The public surface
+
+**Public surface** — everything a host app can reach: the names exported from
+`js/index.js`, every member of a browser instance, anything reached through one
+of those members, the coordinator callback names, and the events posted with the
+shape of their payloads. Most of it is *undeclared by construction* —
+`HICBrowser` is not exported, so hosts get instances from `init()` and use them
+directly, and the surface never appears in an export list.
+
+**Manifest** — `js/publicApi.js`, which names that surface as data.
+`test/testPublicApi.js` reads it and fails when a declared name goes missing.
+Nothing imports the manifest at runtime; it exists so there is somewhere to look
+and something that breaks. It supersedes the tables in `docs/adr/0003`.
+
+**The deletion test is not valid against `js/` alone.** Before removing anything
+reachable from a browser instance or from the namespace, check the manifest.
+"No callers in this repo" is half a finding — four members have *no* internal
+callers at all and exist solely for hosts. A name on the manifest is a
+coordinated release across both consumers, not a deletion.
+
+Absence from the manifest lowers the risk of changing something; it does not zero
+it. juicebox.js is published and embeddable by anyone, so for anything resembling
+a load, a session, a state or a lifecycle call, prefer deprecation over deletion.
+
 ## Architecture vocabulary
 
 Refactoring work in this repo uses the deep-module vocabulary: **module**,

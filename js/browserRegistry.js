@@ -1,3 +1,4 @@
+import {AlertDialog} from 'igv-ui'
 import EventBus from './eventBus.js'
 import HICEvent from './hicEvent.js'
 import {pairSynchable} from './syncGroup.js'
@@ -21,12 +22,47 @@ import {pairSynchable} from './syncGroup.js'
  * One thing the ADR calls for is still absent: the sync group is each browser's
  * own `synchedBrowsers` set. What the registry owns is the *membership rule*:
  * whose browsers get paired.
+ *
+ * It is also where the two page-scoped singletons that were plainly per-embed
+ * have landed: the selected gene and the alert dialog. See #481.
  */
 class BrowserRegistry {
 
-    constructor() {
+    /**
+     * @param {Element} [container] - the host element this registry owns.
+     *   Absent only in tests that exercise the registry without a document.
+     */
+    constructor(container) {
+        this.container = container
         this.browsers = []
         this.currentBrowser = undefined
+
+        /**
+         * The gene a search last resolved to, or a restored session last named.
+         *
+         * Per registry rather than page-wide because it is serialized *per
+         * session*: two embeds restoring different sessions have different
+         * selected genes, and the module-level `Globals.selectedGene` gave them
+         * one. #481.
+         */
+        this.selectedGene = undefined
+
+        // Built on first alert rather than in the constructor: constructing a
+        // registry must not put a dialog in the host's element.
+        this.alertDialog = undefined
+    }
+
+    /**
+     * Show `alert` in this embed's own dialog.
+     *
+     * igv-ui's `Alert` singleton is re-bound to a container on every
+     * initialization, so the last embed to initialize captured every other
+     * embed's alerts. Each registry owns an `AlertDialog` in the container it
+     * owns instead. #481.
+     */
+    presentAlert(alert, callback) {
+        this.alertDialog ??= new AlertDialog(this.container ?? document.body)
+        this.alertDialog.present(alert, callback)
     }
 
     /**
@@ -171,7 +207,7 @@ function registryForContainer(container) {
     let registry = registriesByContainer.get(container)
 
     if (undefined === registry) {
-        registry = new BrowserRegistry()
+        registry = new BrowserRegistry(container)
         registriesByContainer.set(container, registry)
     }
 

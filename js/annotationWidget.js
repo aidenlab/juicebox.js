@@ -21,7 +21,7 @@
  *
  */
 
-import { Alert, createColorSwatchSelector } from 'igv-ui';
+import { createColorSwatchSelector } from 'igv-ui';
 import { makeDraggable } from 'igv-ui';
 import HICEvent from './hicEvent.js';
 import Track2D from './track2D.js';
@@ -61,7 +61,7 @@ class AnnotationWidget {
                 this.annotationPanelElement.style.display =
                     this.annotationPanelElement.style.display === 'none' ? 'flex' : 'none';
             } else {
-                Alert.presentAlert(alertMessage);
+                this.browser.registry.presentAlert(alertMessage);
             }
 
             this.browser.hideMenu();

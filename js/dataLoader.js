@@ -21,7 +21,6 @@
  */
 
 import igv from 'igv'
-import {Alert} from 'igv-ui'
 import {FileUtils} from 'igv-utils'
 import Dataset, { HiCDataset } from './hicDataset.js'
 import State from './hicState.js'
@@ -88,7 +87,7 @@ class DataLoader {
 
             const hicFileAlert = str => {
                 this.browser.coordinator.onNormalizationExternalChange('NONE');
-                Alert.presentAlert(str);
+                this.browser.registry.presentAlert(str);
             };
 
             const dataset = await Dataset.loadDataset(Object.assign({alert: hicFileAlert}, config));
@@ -189,7 +188,7 @@ class DataLoader {
             // tell is a response header it never sees. Everything else is left to the host, which
             // may already report the rethrow — see issue #441.
             if (isBotChallenge(error)) {
-                presentError("Error loading map", error);
+                presentError(this.browser.registry, "Error loading map", error);
             }
 
             throw error;
@@ -291,7 +290,7 @@ class DataLoader {
 
             const hicFileAlert = str => {
                 this.browser.coordinator.onNormalizationExternalChange('NONE');
-                Alert.presentAlert(str);
+                this.browser.registry.presentAlert(str);
             };
 
             const controlDataset = await Dataset.loadDataset(Object.assign({alert: hicFileAlert}, config));
@@ -318,7 +317,7 @@ class DataLoader {
 
                 return controlDataset;
             } else {
-                Alert.presentAlert(
+                this.browser.registry.presentAlert(
                     '"B" map genome (' + controlDataset.genomeId + ') does not match "A" map genome (' +
                     this.browser.genome.id + ')'
                 );
@@ -327,7 +326,7 @@ class DataLoader {
         } catch (error) {
             // Same reasoning as loadHicFile: report only the failure the host app cannot explain.
             if (isBotChallenge(error)) {
-                presentError("Error loading control map", error);
+                presentError(this.browser.registry, "Error loading control map", error);
             }
 
             throw error;
@@ -426,7 +425,7 @@ class DataLoader {
             }
 
         } catch (error) {
-            presentError(errorPrefix, error);
+            presentError(this.browser.registry, errorPrefix, error);
             console.error(error);
         } finally {
             this.browser.contactMatrixView.stopSpinner();

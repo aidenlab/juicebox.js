@@ -24,11 +24,12 @@
 import {extractConfig} from "./urlUtils.js"
 import {registryForContainer} from "./browserRegistry.js"
 import {restoreSession} from "./session.js"
-import {Alert} from "igv-ui"
 
 async function init(container, config) {
 
-    Alert.init(container);
+    // No `Alert.init(container)` here: igv-ui's singleton was re-bound on every
+    // initialization, so the last embed to initialize captured every embed's
+    // alerts. Each registry now owns its own dialog -- see #481.
 
     if (false !== config.queryParametersSupported) {
         const queryConfig = await extractConfig(window.location.href);

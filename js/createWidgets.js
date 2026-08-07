@@ -34,7 +34,6 @@ import RatioColorScale from "./ratioColorScale.js"
 import DiffColorScale from "./diffColorScale.js"
 import ContactMatrixView from "./contactMatrixView.js"
 import ImageTileSource from "./imageTileSource.js"
-import {Alert} from "igv-ui"
 import ChromosomeSelector from "./chromosomeSelector.js"
 import AnnotationWidget from "./annotationWidget.js"
 
@@ -97,7 +96,7 @@ function createWidgets(browser) {
             colorScaleChanged: (scale) => coordinator.onColorScale(scale),
 
             normalizationUnavailable: (requested, effective) => {
-                Alert.presentAlert(`Normalization option ${requested} unavailable at this resolution.`);
+                browser.registry.presentAlert(`Normalization option ${requested} unavailable at this resolution.`);
                 coordinator.onNormalizationExternalChange(effective);
                 // The source never writes canonical state, so the correction
                 // lands here. Still outside the setView chokepoint, as it was

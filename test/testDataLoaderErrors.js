@@ -6,13 +6,6 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 
 const presented = [];
 
-vi.mock('igv-ui', () => ({
-    Alert: {
-        presentAlert: (message) => presented.push(message),
-        init: () => undefined
-    }
-}));
-
 const loadDataset = vi.fn();
 
 vi.mock('../js/hicDataset.js', () => ({
@@ -29,7 +22,9 @@ function stubBrowser() {
         contactMatrixView: { startSpinner: () => undefined },
         contactMapLabel: { textContent: "", title: "" },
         userInteractionShield: { style: {} },
-        controlDataset: undefined
+        controlDataset: undefined,
+        // Alerts land in the browser's own embed, not a page-wide singleton -- #481.
+        registry: { presentAlert: (message) => presented.push(message) }
     };
 }
 

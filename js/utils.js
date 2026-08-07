@@ -1,4 +1,3 @@
-import {Alert} from 'igv-ui'
 import {isFile} from "./fileUtils.js"
 
 function createDOMFromHTMLString(string) {
@@ -88,10 +87,20 @@ const botChallengeMessage =
     "provider's allowlist. " +
     "See https://github.com/aidenlab/juicebox.js/issues/441";
 
-function presentError(prefix, error) {
+/**
+ * Report a failed load in one embed's own alert dialog.
+ *
+ * The registry is the alert surface -- passed in rather than reached for,
+ * because this module has no browser to resolve one from. See #481.
+ *
+ * @param {BrowserRegistry} registry - the registry whose container shows this
+ * @param {string} prefix - what was being loaded, e.g. "Error loading map"
+ * @param {Error} error - the error the load failed with
+ */
+function presentError(registry, prefix, error) {
 
     if (isBotChallenge(error)) {
-        Alert.presentAlert(`${prefix}: ${botChallengeMessage}`);
+        registry.presentAlert(`${prefix}: ${botChallengeMessage}`);
         return;
     }
 
@@ -106,7 +115,7 @@ function presentError(prefix, error) {
     // that is the only reliable key. Codes arrive as either numbers or strings; object keys
     // normalize both. See issue #442.
     const msg = Object.hasOwn(httpMessages, error.code) ? httpMessages[error.code] : error.message;
-    Alert.presentAlert(`${prefix}: ${msg}`);
+    registry.presentAlert(`${prefix}: ${msg}`);
 }
 
 export { createDOMFromHTMLString, getOffset, parseRgbString, prettyPrint, extractName, presentError, isBotChallenge, hitTestBbox }

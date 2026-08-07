@@ -8,6 +8,7 @@ import {parseColorScale} from './colorScaleParser.js';
 import ContactMatrixView from "./contactMatrixView.js";
 import HICEvent from "./hicEvent.js";
 import EventBus from "./eventBus.js";
+import {pairSynchable} from "./syncGroup.js";
 
 const defaultSize = { width: 640, height: 640 };
 
@@ -108,16 +109,10 @@ function getCurrentBrowser() {
 }
 
 function syncBrowsers(browsers) {
-    const synchableBrowsers = (browsers || allBrowsers).filter(b => b.synchable !== false && b.dataset !== undefined);
-
-    synchableBrowsers.forEach(b1 => {
-        synchableBrowsers.forEach(b2 => {
-            if (b1 !== b2 && b1.dataset.isCompatible(b2.dataset)) {
-                b1.synchedBrowsers.add(b2);
-                b2.synchedBrowsers.add(b1);
-            }
-        });
-    });
+    for (const [ b1, b2 ] of pairSynchable(browsers || allBrowsers)) {
+        b1.synchedBrowsers.add(b2);
+        b2.synchedBrowsers.add(b1);
+    }
 }
 
 function getAllBrowsers() {

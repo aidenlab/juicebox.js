@@ -72,6 +72,19 @@ registers with `coordinator.addCallback(name, fn)` to learn about map loads,
 locus changes and colour changes. Deleting it would push its fan-out back into
 `HICBrowser` and is not on the table — see `docs/adr/0002`.
 
+**Browser registry** — the owner of one embed: the browsers in a single host
+container, which of them is current, their sync group, and their teardown. One
+registry per container element. It is the thing `initRegistry(container, config)`
+returns, and the unit of isolation that lets two embeds coexist on a page —
+see `docs/adr/0004`.
+_Avoid_: browser session, browser context, embed.
+
+**Session** vs **browser registry** — a *session* is serialized configuration:
+the JSON a user saves, pastes as a URL, or restores (`js/session.js`, `toJSON`,
+`restoreSession`, `compressedSession`). A *browser registry* is the live object
+that produces and consumes one. A registry has a session; it is not one. Never
+call the registry a session.
+
 **Update** vs **repaint** — not synonyms. A **repaint** redraws everything from
 current state: rulers, track pairs, contact matrix, once, with no coordination.
 An **update** wraps a repaint in the things that must happen around it —

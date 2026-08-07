@@ -14,13 +14,13 @@ import {pairSynchable} from './syncGroup.js'
  * One registry owns one container element; `registryForContainer` below is how
  * every entry point finds the right one.
  *
- * Two things the ADR calls for are deliberately absent, because #478 was a lift
- * and #479 a re-keying, and neither may change observable behaviour:
+ * The registry holds the invariant *a non-empty registry has a current
+ * browser*: deleting the current one falls selection through to a survivor, and
+ * `currentBrowser` is `undefined` only while the registry is empty. Decision 7.
  *
- * - selection does not fall through on delete, so `currentBrowser` can still
- *   name a browser that has left the DOM. That is #475, ADR decision 7.
- * - the sync group is still each browser's own `synchedBrowsers` set. What the
- *   registry owns is the *membership rule*: whose browsers get paired.
+ * One thing the ADR calls for is still absent: the sync group is each browser's
+ * own `synchedBrowsers` set. What the registry owns is the *membership rule*:
+ * whose browsers get paired.
  */
 class BrowserRegistry {
 
@@ -92,6 +92,9 @@ class BrowserRegistry {
         browser.unsyncSelf()
         browser.rootElement.remove()
         this.browsers = this.browsers.filter(b => b !== browser)
+        if (browser === this.currentBrowser) {
+            this.select(this.browsers[0])
+        }
         this.refreshDeleteButtonVisibility()
     }
 
@@ -100,6 +103,7 @@ class BrowserRegistry {
             browser.rootElement.remove()
         }
         this.clear()
+        this.select(undefined)
     }
 
     async updateAll() {

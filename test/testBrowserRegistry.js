@@ -212,13 +212,45 @@ describe('BrowserRegistry', () => {
             expect(deleteButtonDisplays(registry)).toEqual(['block', 'block'])
         })
 
-        it('leaves the deleted browser current -- selection fall-through is #475, not this lift', () => {
+        it('falls selection through to a surviving browser and posts BrowserSelect for it', () => {
             const a = fakeBrowser('a')
+            const b = fakeBrowser('b')
             registry.add(a)
+            registry.add(b)
+            selectEvents.length = 0
+
+            registry.delete(b)
+
+            expect(registry.currentBrowser).toBe(a)
+            expect(isSelected(a)).toBe(true)
+            expect(selectEvents.map(e => e.data)).toEqual([a])
+        })
+
+        it('leaves selection alone and posts nothing when the deleted browser is not current', () => {
+            const a = fakeBrowser('a')
+            const b = fakeBrowser('b')
+            registry.add(a)
+            registry.add(b)
+            selectEvents.length = 0
 
             registry.delete(a)
 
-            expect(registry.currentBrowser).toBe(a)
+            expect(registry.currentBrowser).toBe(b)
+            expect(isSelected(b)).toBe(true)
+            expect(selectEvents).toHaveLength(0)
+        })
+
+        it('leaves selection undefined once deleting empties the registry', () => {
+            const a = fakeBrowser('a')
+            registry.add(a)
+            selectEvents.length = 0
+
+            registry.delete(a)
+
+            expect(registry.browsers).toEqual([])
+            expect(registry.currentBrowser).toBeUndefined()
+            expect(isSelected(a)).toBe(false)
+            expect(selectEvents).toHaveLength(0)
         })
     })
 
@@ -235,6 +267,20 @@ describe('BrowserRegistry', () => {
             expect(registry.browsers).toEqual([])
             expect(a.rootElement.removed).toBe(true)
             expect(b.rootElement.removed).toBe(true)
+        })
+
+        it('leaves selection undefined, the registry now being empty', () => {
+            const a = fakeBrowser('a')
+            const b = fakeBrowser('b')
+            registry.add(a)
+            registry.add(b)
+            selectEvents.length = 0
+
+            registry.deleteAll()
+
+            expect(registry.currentBrowser).toBeUndefined()
+            expect(isSelected(b)).toBe(false)
+            expect(selectEvents).toHaveLength(0)
         })
     })
 

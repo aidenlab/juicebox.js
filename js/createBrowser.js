@@ -4,119 +4,102 @@
 
 import { StringUtils } from 'igv-utils';
 import HICBrowser from './hicBrowser.js';
+import BrowserRegistry from './browserRegistry.js';
 import {parseColorScale} from './colorScaleParser.js';
 import ContactMatrixView from "./contactMatrixView.js";
-import HICEvent from "./hicEvent.js";
-import EventBus from "./eventBus.js";
-import {pairSynchable} from "./syncGroup.js";
 
 const defaultSize = { width: 640, height: 640 };
 
-let allBrowsers = [];
-let currentBrowser;
+/**
+ * The page's one registry. Every export below is a convenience over it, kept
+ * and delegating per decision 4 of ADR-0004 -- both known host apps import
+ * them, as ADR-0003 measures.
+ *
+ * Resolving a registry from the container element instead -- so two embeds can
+ * coexist -- is decisions 2 and 8 of `docs/adr/0004-browser-registry-per-container.md`
+ * and lands separately. Until then this constant is the whole population.
+ */
+const defaultRegistry = new BrowserRegistry();
 
 async function createBrowser(hicContainer, config, callback) {
-    setDefaults(config);
 
-    if (StringUtils.isString(config.colorScale)) config.colorScale = parseColorScale(config.colorScale);
-    if (StringUtils.isString(config.backgroundColor)) config.backgroundColor = ContactMatrixView.parseBackgroundColor(config.backgroundColor);
+    normalizeConfig(config);
 
     const browser = new HICBrowser(hicContainer, config);
     await browser.init(config);
 
     if (typeof callback === "function") callback();
 
-    allBrowsers.push(browser);
-    setCurrentBrowser(browser);
-
-    if (allBrowsers.length > 1) {
-        allBrowsers.forEach(b => b.browserPanelDeleteButton.style.display = 'block');
-    }
+    defaultRegistry.add(browser);
 
     return browser;
 }
 
 async function createBrowserList(hicContainer, session) {
+
     const configList = session.browsers || [session];
-    allBrowsers = [];
     const initPromises = [];
+
+    defaultRegistry.clear();
 
     for (const config of configList) {
 
-        setDefaults(config)
+        normalizeConfig(config);
 
-        if (StringUtils.isString(config.colorScale)) {
-            config.colorScale = parseColorScale(config.colorScale);
-        }
-        if (StringUtils.isString(config.backgroundColor)) {
-            config.backgroundColor = ContactMatrixView.parseBackgroundColor(config.backgroundColor);
-        }
         if (session.syncDatasets === false) {
             config.synchable = false;
         }
 
         const browser = new HICBrowser(hicContainer, config);
-        allBrowsers.push(browser);
+
+        // Registered before init: loading a dataset consults the registry.
+        defaultRegistry.register(browser);
         initPromises.push(browser.init(config));
     }
     await Promise.all(initPromises);
-    setCurrentBrowser(allBrowsers[0]);
 
-    if (allBrowsers.length > 1) {
-        allBrowsers.forEach(b => b.browserPanelDeleteButton.style.display = 'block');
-    }
+    defaultRegistry.select(defaultRegistry.browsers[0]);
+    defaultRegistry.refreshDeleteButtonVisibility();
 }
 
 async function updateAllBrowsers() {
-    for (let b of allBrowsers) {
-        await b.update();
-    }
+    await defaultRegistry.updateAll();
 }
 
 function deleteAllBrowsers() {
-    for (let b of allBrowsers) {
-        b.rootElement.remove();
-    }
-    allBrowsers = [];
+    defaultRegistry.deleteAll();
 }
 
 function setCurrentBrowser(browser) {
-    if (browser === undefined) {
-        currentBrowser?.rootElement.classList.remove('hic-root-selected');
-        currentBrowser = browser;
-        return;
-    }
-
-    if (browser !== currentBrowser) {
-        currentBrowser?.rootElement.classList.remove('hic-root-selected');
-        browser.rootElement.classList.add('hic-root-selected');
-        currentBrowser = browser;
-        EventBus.globalBus.post(HICEvent("BrowserSelect", browser));
-    }
+    defaultRegistry.select(browser);
 }
 
 function deleteBrowser(browser) {
-    browser.unsyncSelf();
-    browser.rootElement.remove();
-    allBrowsers = allBrowsers.filter(b => b !== browser);
-    if (allBrowsers.length <= 1) {
-        allBrowsers.forEach(b => b.browserPanelDeleteButton.style.display = 'none');
-    }
+    defaultRegistry.delete(browser);
 }
 
 function getCurrentBrowser() {
-    return currentBrowser;
+    return defaultRegistry.currentBrowser;
 }
 
 function syncBrowsers(browsers) {
-    for (const [ b1, b2 ] of pairSynchable(browsers || allBrowsers)) {
-        b1.synchedBrowsers.add(b2);
-        b2.synchedBrowsers.add(b1);
-    }
+    defaultRegistry.sync(browsers);
 }
 
 function getAllBrowsers() {
-    return allBrowsers;
+    return defaultRegistry.browsers;
+}
+
+function normalizeConfig(config) {
+
+    setDefaults(config);
+
+    if (StringUtils.isString(config.colorScale)) {
+        config.colorScale = parseColorScale(config.colorScale);
+    }
+    if (StringUtils.isString(config.backgroundColor)) {
+        config.backgroundColor = ContactMatrixView.parseBackgroundColor(config.backgroundColor);
+    }
 }
 
 function setDefaults(config) {

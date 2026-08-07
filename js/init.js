@@ -25,7 +25,22 @@ import {extractConfig} from "./urlUtils.js"
 import {registryForContainer} from "./browserRegistry.js"
 import {restoreSession} from "./session.js"
 
-async function init(container, config) {
+/**
+ * Initialize `container` as an embed and hand back the registry that owns it.
+ *
+ * The real initialization function, and the registry's front door: everything
+ * one embed has -- its browsers, which of them is current, its sync group, its
+ * session and its alerts -- is reachable from what this returns. Decision 3 of
+ * ADR-0004, #483.
+ *
+ * Calling in twice with the same element finds the same registry and replaces
+ * its contents; a different element gets a different registry, which is #384.
+ *
+ * @param {Element} container - the host element this embed occupies.
+ * @param {Object} config - a browser config or a session.
+ * @returns {Promise<BrowserRegistry>}
+ */
+async function initRegistry(container, config) {
 
     // No `Alert.init(container)` here: igv-ui's singleton was re-bound on every
     // initialization, so the last embed to initialize captured every embed's
@@ -40,16 +55,33 @@ async function init(container, config) {
 
     await restoreSession(container, config);
 
+    return registryForContainer(container);
+}
+
+/**
+ * Initialize `container` as an embed and hand back its browsers.
+ *
+ * A wrapper over `initRegistry`, and deliberately still the published shape: it
+ * resolves to a single browser when the session names one and to an array when
+ * it names several, which is what both known host apps depend on. The registry
+ * is not smuggled through this return type -- it has its own name. See the
+ * rejected alternatives in ADR-0004.
+ *
+ * @returns {Promise<HICBrowser|HICBrowser[]>}
+ */
+async function init(container, config) {
+
     // This container's browsers, not the page's: `init()` must return what it
     // just built even when another embed has since been selected.
-    const allBrowsers = registryForContainer(container).browsers;
+    const allBrowsers = (await initRegistry(container, config)).browsers;
 
     return allBrowsers.length === 1 ? allBrowsers[0] : allBrowsers
 }
 
 
 export {
-    init
+    init,
+    initRegistry
 }
 
 

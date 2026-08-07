@@ -3,7 +3,9 @@ import juicebox from '../js/index.js'
 import {withBrowser} from './utils/browserFixture.js'
 import {HiCDataset} from '../js/hicDataset.js'
 import EventBus from '../js/eventBus.js'
-import {NAMESPACE_SURFACE, BROWSER_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COORDINATOR_CALLBACKS, EVENTS_POSTED, EVENT_PAYLOAD_SHAPES} from '../js/publicApi.js'
+import BrowserRegistry from '../js/browserRegistry.js'
+import {initRegistry} from '../js/init.js'
+import {NAMESPACE_SURFACE, BROWSER_SURFACE, REGISTRY_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COORDINATOR_CALLBACKS, EVENTS_POSTED, EVENT_PAYLOAD_SHAPES} from '../js/publicApi.js'
 
 /**
  * Contract tests for the declared public surface.
@@ -49,6 +51,54 @@ describe('browser instance surface', () => {
             // until a map loads. Presence is the contract, not the value.
             expect(name in context.browser, `browser no longer exposes "${name}"`).toBe(true)
         }
+    })
+})
+
+describe('registry surface', () => {
+
+    const context = withBrowser()
+
+    // A registry is constructible without a document -- that is what makes it
+    // testable at all -- so the declared members are checked against a bare
+    // instance, and separately against the one a host is actually handed.
+
+    it('exposes every declared member', () => {
+        const registry = new BrowserRegistry()
+        for (const name of REGISTRY_SURFACE) {
+            // `in` rather than truthiness: `currentBrowser` and `selectedGene`
+            // are assigned in the constructor and stay undefined until
+            // something selects or searches. Presence is the contract.
+            expect(name in registry, `the registry no longer exposes "${name}"`).toBe(true)
+        }
+    })
+
+    it('is what a host reaches through browser.registry', () => {
+        // `browser.registry` is declared browser surface, and decision 9 of
+        // ADR-0004 is that it is contract from the moment it ships. What a host
+        // finds on the far side of it is this same declared surface.
+        expect(context.browser.registry).toBeInstanceOf(BrowserRegistry)
+        for (const name of REGISTRY_SURFACE) {
+            expect(name in context.browser.registry, `browser.registry no longer exposes "${name}"`).toBe(true)
+        }
+    })
+
+    it('is the registry owning the container the browser was built in', () => {
+        expect(context.browser.registry.container).toBe(context.browser.rootElement.parentElement)
+    })
+
+    it('declares browser.registry as the route to it', () => {
+        // A registry surface reached through an undeclared member would be a
+        // promise resting on nothing -- the same check the sub-surfaces make.
+        expect(BROWSER_SURFACE).toContain('registry')
+    })
+
+    it('is what the declared initRegistry export hands back', () => {
+        // The namespace entry is checked for identity rather than type: a name
+        // wired to the wrong function is exactly the failure this manifest
+        // exists to catch, and `typeof` would not see it. That the function
+        // then returns a registry is driven in test/testInitRegistry.js, which
+        // has the DOM to initialize into.
+        expect(juicebox.initRegistry).toBe(initRegistry)
     })
 })
 

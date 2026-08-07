@@ -1,4 +1,4 @@
-import {describe, it, expect, beforeEach, afterEach} from 'vitest'
+import {describe, it, expect} from 'vitest'
 import {JSDOM} from 'jsdom'
 
 /**
@@ -18,7 +18,7 @@ globalThis.document = priming.window.document
 const {registryForContainer} = await import('../js/browserRegistry.js')
 const {toJSON, restoreSession} = await import('../js/session.js')
 const {default: HICBrowser} = await import('../js/hicBrowser.js')
-const {withDOM} = await import('./utils/browserFixture.js')
+const {withContainers} = await import('./utils/browserFixture.js')
 
 globalThis.window = mockedWindow
 globalThis.document = mockedDocument
@@ -35,29 +35,6 @@ globalThis.document = mockedDocument
  * Real elements and a real `AlertDialog`: the claim is that an alert lands in
  * the container its own registry owns, and only the DOM can answer that.
  */
-
-function withContainers() {
-
-    const context = {}
-    let fixture
-
-    beforeEach(() => {
-        fixture = withDOM()
-        context.window = fixture.window
-        context.container = fixture.container
-        context.another = () => {
-            const element = fixture.window.document.createElement('div')
-            fixture.window.document.body.appendChild(element)
-            return element
-        }
-    })
-
-    afterEach(() => {
-        fixture.restore()
-    })
-
-    return context
-}
 
 describe('selectedGene', () => {
 

@@ -49,6 +49,27 @@ illustrated below.
 
 ```
 
+`init` resolves to a single browser, or to an array of them when the
+configuration is a session naming several.
+
+Multiple juicebox instances can share a page, one per container div. Each
+container owns a **browser registry**: its browsers, which of them is current,
+and their sync group. Initializing a second container leaves the first one
+alone. Call ```juicebox.initRegistry``` instead of ```juicebox.init``` to be
+handed that registry rather than its browsers.
+
+```javascript
+   const registry = await juicebox.initRegistry(container, config)
+
+   registry.browsers        // this embed's browsers
+   registry.currentBrowser  // the one selected in this embed
+```
+
+A registry is also reachable from any browser as ```browser.registry```. The
+zero-argument ```juicebox.getCurrentBrowser()``` and
+```juicebox.getAllBrowsers()``` are page-wide conveniences that follow whichever
+embed was most recently selected — with two embeds on a page, ask a registry.
+
 Configuration ```config``` object examples follow
 
 * A minimal juicebox config containing only a hic map with all default settings (see [examples/juicebox-minimal](https://github.com/igvteam/juicebox.js/blob/master/examples/juicebox-minimal.html)): 

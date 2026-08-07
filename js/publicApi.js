@@ -63,6 +63,10 @@
 export const NAMESPACE_SURFACE = [
     'version',
     'init',
+    // The registry's front door, new in #483. `init` is a wrapper over it and
+    // keeps its own return type, so this is an addition to the surface rather
+    // than a change to it. Decision 3 of ADR-0004.
+    'initRegistry',
     'toJSON',
     'restoreSession',
     'compressedSession',
@@ -134,6 +138,60 @@ export const BROWSER_SURFACE = [
     'coordinator',
     'layoutController',
     'contactMatrixView'
+]
+
+/**
+ * Members of the `BrowserRegistry` a host is handed.
+ *
+ * A host reaches a registry two ways, both declared surface: `initRegistry()`
+ * returns one, and `browser.registry` is one. Per "absence is not permission"
+ * above, everything reachable on that object becomes contract the moment it
+ * ships -- so the set is chosen here deliberately rather than being whatever
+ * the class happens to expose. Decisions 3 and 9 of ADR-0004, #483.
+ *
+ * This is the multi-embed answer to the page-wide getters: a host with two
+ * embeds asks a registry what its browsers are and which one is current,
+ * instead of asking `getAllBrowsers()` page-wide and getting whichever embed
+ * the user touched last.
+ *
+ * Deliberately *not* declared, and internal: `register`, `clear` and
+ * `refreshDeleteButtonVisibility`, which are steps of the initialization path
+ * -- a browser is registered before it is initialized, and visibility is
+ * settled once -- and mean nothing to a caller outside it; and `alertDialog`,
+ * which is the lazily built igv-ui dialog behind `presentAlert`. A host raises
+ * an alert; which widget the registry does it with is ours to change.
+ */
+export const REGISTRY_SURFACE = [
+    // The element this registry owns, which is what it is keyed by.
+    'container',
+
+    // The embed's browsers and which of them is current. The invariant is
+    // decision 7's: a non-empty registry has a current browser.
+    'browsers',
+    'currentBrowser',
+
+    // Per embed rather than page-wide because it is serialized per session.
+    'selectedGene',
+
+    // Lifecycle. `add` and `delete` are the registry-scoped counterparts of the
+    // exported `createBrowser` and `setCurrentBrowser`.
+    'add',
+    'select',
+    'delete',
+    'deleteAll',
+    'updateAll',
+
+    // The sync group's membership rule, over this registry's browsers by
+    // default. Decision 6.
+    'sync',
+
+    // A session describes one embed; these are where one is actually written
+    // and read. The exported `toJSON`/`restoreSession` delegate here.
+    'toJSON',
+    'restoreSession',
+
+    // This embed's own alert dialog, rather than igv-ui's page-wide singleton.
+    'presentAlert'
 ]
 
 /**

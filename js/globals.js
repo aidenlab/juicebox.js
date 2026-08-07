@@ -1,3 +1,0 @@
-const Globals = {}
-
-export {Globals}

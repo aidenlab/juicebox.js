@@ -27,7 +27,6 @@
 
 import {InputDialog, DOMUtils} from 'igv-ui'
 import * as hicUtils from './hicUtils.js'
-import {Globals} from "./globals.js"
 import EventBus from "./eventBus.js"
 import LayoutController, {setViewportSize} from './layoutController.js'
 import { geneSearch } from './geneSearch.js'
@@ -594,8 +593,8 @@ class HICBrowser {
         const upperName = trimmedName.toUpperCase();
 
         if (this.genome.featureDB.has(upperName)) {
-            Globals.selectedGene = trimmedName
-            this.state.selectedGene = Globals.selectedGene
+            this.registry.selectedGene = trimmedName
+            this.state.selectedGene = trimmedName
             const {chr, start, end } = this.genome.featureDB.get(upperName)
 
             // Internally, loci are 0-based. parseLocusString() assumes and user-provided locus which is 1-based
@@ -604,8 +603,8 @@ class HICBrowser {
 
         const geneResult = await geneSearch(this.genome.id, trimmedName);
         if (geneResult) {
-            Globals.selectedGene = trimmedName;
-            this.state.selectedGene = Globals.selectedGene;
+            this.registry.selectedGene = trimmedName;
+            this.state.selectedGene = trimmedName;
             return this.parseLocusString(geneResult)
         }
 
@@ -868,8 +867,8 @@ class HICBrowser {
         jsonOBJ.state = this.state.toJSON()
 
         jsonOBJ.colorScale = this.contactMatrixView.getColorScale().stringify()
-        if (Globals.selectedGene) {
-            jsonOBJ.selectedGene = Globals.selectedGene
+        if (this.registry.selectedGene) {
+            jsonOBJ.selectedGene = this.registry.selectedGene
         }
         let nviString = this.dataset.hicFile.config.nvi
         if (nviString) {

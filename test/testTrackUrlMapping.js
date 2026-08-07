@@ -12,7 +12,7 @@ vi.mock('igv', () => ({
 }));
 
 vi.mock('igv-ui', () => ({
-    Alert: { presentAlert: (message) => { throw Error(message) }, init: () => undefined },
+    AlertDialog: class {},
     InputDialog: class {},
     DOMUtils: {}
 }));
@@ -45,7 +45,9 @@ function stubBrowser() {
         contactMatrixView: { startSpinner: () => undefined, stopSpinner: () => undefined },
         layoutController: { updateLayoutWithTracks: () => undefined },
         updateLayout: async () => undefined,
-        coordinator: { onTrackLoad2D: () => undefined }
+        coordinator: { onTrackLoad2D: () => undefined },
+        // An alert here is a test failure: these loads are expected to succeed.
+        registry: { presentAlert: (message) => { throw Error(message) } }
     };
 }
 
@@ -155,6 +157,8 @@ describe("1D track loading", function () {
  */
 function sessionTracksFor(trackConfigs, tracks2D = []) {
     const stub = {
+        // A real browser always has one; toJSON reads the selected gene off it -- #481.
+        registry: {},
         dataset: { url: "https://example.org/x.hic", hicFile: { config: {} } },
         state: { toJSON: () => ({}) },
         contactMatrixView: {

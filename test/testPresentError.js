@@ -2,17 +2,14 @@
  * presentError maps HTTP status codes to friendly alert text. The lookup used to be keyed on
  * error.message, so it never fired. See issue #442.
  */
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect, beforeEach } from 'vitest';
+
+import { presentError } from "../js/utils.js";
 
 const presented = [];
 
-vi.mock('igv-ui', () => ({
-    Alert: {
-        presentAlert: (message) => presented.push(message)
-    }
-}));
-
-const { presentError } = await import("../js/utils.js");
+/** The one thing presentError asks of a registry. */
+const registry = { presentAlert: (message) => presented.push(message) };
 
 function alertFor(message, code, headers) {
     const error = Error(message);
@@ -22,7 +19,7 @@ function alertFor(message, code, headers) {
     if (headers !== undefined) {
         error.headers = headers;
     }
-    presentError("Error loading map", error);
+    presentError(registry, "Error loading map", error);
     return presented.at(-1);
 }
 

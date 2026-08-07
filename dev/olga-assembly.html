@@ -47,7 +47,6 @@
 <script type="module">
 
     import hic from "../js/index.js";
-    import {Alert} from "igv-ui"
     import { devMapUrl } from '../dev-proxy/map-url.js'
 
     // Dev-only: routes .hic reads on hosts that answer localhost with a bot challenge
@@ -65,7 +64,6 @@
 
     const container = document.getElementById("app-container");
 
-    Alert.init(container);
 
     hic.init(container, config)
         .then(function (hicBrowser) {

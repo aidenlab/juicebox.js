@@ -22,7 +22,6 @@
  */
 import State from './hicState.js';
 import {parseColorScale} from "./colorScaleParser.js"
-import {Globals} from "./globals.js";
 import {StringUtils, BGZip} from 'igv-utils'
 import {isFile} from './fileUtils.js'
 import {igvxhr} from 'igv-utils'
@@ -134,6 +133,27 @@ async function extractConfig(queryString) {
         sessionConfig = queryConfig;
     }
 
+    // `selectedGene` used to leave `decodeQuery` as a write to a page-scoped
+    // global, which is how it reached `restoreSession` from the two paths that
+    // do not put it at the top level: a query string carrying the gene beside a
+    // `session=`, and the legacy `juicebox=` form, where it sits inside each
+    // browser's config. It now rides the session config instead, so it can land
+    // on one registry. A session's own value wins, and after that the last
+    // writer does -- which is the order the successive global writes produced.
+    //
+    // Not preserved: `?selectedGene=` on a URL naming no map and no session at
+    // all. There being no session config to ride, the gene is dropped rather
+    // than reaching whatever config the host passed `init()`. juicebox never
+    // writes such a URL -- every URL it produces carries the gene inside the
+    // session it also writes. #481.
+    if (sessionConfig && undefined === sessionConfig.selectedGene) {
+        const fromBrowsers = (sessionConfig.browsers || []).map(b => b.selectedGene).filter(Boolean).pop();
+        const selectedGene = queryConfig.selectedGene || fromBrowsers;
+        if (selectedGene) {
+            sessionConfig.selectedGene = selectedGene;
+        }
+    }
+
     // Fix certain defaults
     if (sessionConfig) {
         if (sessionConfig.browsers) {
@@ -235,7 +255,7 @@ function decodeQuery(query, uriDecode) {
     }
 
     if (selectedGene) {
-        Globals.selectedGene = selectedGene;
+        config.selectedGene = selectedGene;
     }
 
     config.cycle = cycle;

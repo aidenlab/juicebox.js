@@ -4,7 +4,7 @@
 
 import { StringUtils } from 'igv-utils';
 import HICBrowser from './hicBrowser.js';
-import {registryForContainer, getMostRecentlySelectedBrowser} from './browserRegistry.js';
+import {registryForContainer, getMostRecentlySelectedBrowser, currentRegistry} from './browserRegistry.js';
 import {parseColorScale} from './colorScaleParser.js';
 import ContactMatrixView from "./contactMatrixView.js";
 
@@ -80,7 +80,7 @@ function deleteAllBrowsers(hicContainer) {
 function setCurrentBrowser(browser) {
 
     if (undefined === browser) {
-        getMostRecentlySelectedBrowser()?.registry.select(undefined);
+        currentRegistry()?.select(undefined);
         return;
     }
 
@@ -117,7 +117,7 @@ function getCurrentBrowser() {
  * is the other reason to hold a registry rather than ask page-wide.
  */
 function getAllBrowsers() {
-    return getMostRecentlySelectedBrowser()?.registry.browsers || [];
+    return currentRegistry()?.browsers || [];
 }
 
 function normalizeConfig(config) {

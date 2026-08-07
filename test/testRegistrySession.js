@@ -1,12 +1,9 @@
-import {describe, it, expect, beforeEach, afterEach, vi} from 'vitest'
+import {describe, it, expect} from 'vitest'
 import BrowserRegistry, {registryForContainer} from '../js/browserRegistry.js'
 import {toJSON, compressedSession, restoreSession} from '../js/session.js'
 import {init} from '../js/init.js'
-import {withDOM} from './utils/browserFixture.js'
-import DataLoader from '../js/dataLoader.js'
-import State from '../js/hicState.js'
-import ContactMatrixView from '../js/contactMatrixView.js'
-import HICBrowser from '../js/hicBrowser.js'
+import {withContainers} from './utils/browserFixture.js'
+import {withStubbedLoads} from './utils/stubbedLoads.js'
 import {BGZip} from 'igv-utils'
 
 /**
@@ -18,34 +15,6 @@ import {BGZip} from 'igv-utils'
  * is about isolation there are two registries in play. A single-registry
  * assertion would pass against the page-scoped code these replace.
  */
-
-/**
- * A JSDOM around each test in the calling describe, exposing the container the
- * fixture makes and a way to make more of them. Returns a holder rather than
- * the elements, which do not exist until `beforeEach` runs.
- */
-function withContainers() {
-
-    const context = {}
-    let fixture
-
-    beforeEach(() => {
-        fixture = withDOM()
-        context.window = fixture.window
-        context.container = fixture.container
-        context.another = () => {
-            const element = fixture.window.document.createElement('div')
-            fixture.window.document.body.appendChild(element)
-            return element
-        }
-    })
-
-    afterEach(() => {
-        fixture.restore()
-    })
-
-    return context
-}
 
 /**
  * Carries only what the registry and the session path read off a browser.
@@ -68,42 +37,6 @@ function fakeBrowser(name, registry) {
         unsyncSelf: () => undefined,
         toJSON: () => ({name})
     }
-}
-
-/**
- * Stand the restore path up without the two things a test cannot supply: the
- * network reads (`.hic` file, tracks) and the canvas.
- *
- * The `.hic` read is the real system boundary here, and the only reason a
- * restore cannot otherwise be driven in a test. What stands in for it does
- * exactly what the real loader does with the parts of a config a session round
- * trip is about: name the dataset, and build the state from `config.state`
- * through the real `State.fromJSON`. Everything downstream -- the registry, the
- * browser's own `toJSON`, the state itself -- is the real thing.
- *
- * The two update paths are stubbed for the same reason `browserFixture` stubs
- * the 2D context: what a session carries is state, and every route out of a
- * repaint ends at either the network or a pixel. Rendering has its own tests.
- */
-function withStubbedLoads() {
-
-    beforeEach(() => {
-        vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined)
-        vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined)
-        vi.spyOn(DataLoader.prototype, 'loadHicFile').mockImplementation(async function (config) {
-            this.browser.dataset = {
-                url: config.url,
-                name: config.name,
-                hicFile: {config: {nvi: config.nvi}}
-            }
-            this.browser.state = config.state ? State.fromJSON(config.state) : State.default(config)
-        })
-        vi.spyOn(DataLoader.prototype, 'loadTracks').mockImplementation(async () => undefined)
-    })
-
-    afterEach(() => {
-        vi.restoreAllMocks()
-    })
 }
 
 describe('registry.toJSON', () => {

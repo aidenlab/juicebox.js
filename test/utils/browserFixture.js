@@ -116,3 +116,35 @@ export function withBrowser() {
 
     return context
 }
+
+/**
+ * A JSDOM around each test in the calling describe, exposing the container the
+ * fixture makes and `another()` for making more of them.
+ *
+ * Every claim about which embed something belongs to needs two containers -- a
+ * single-embed assertion would pass against the page-scoped code the registries
+ * replace -- so this is what the registry suites open with. Returns a holder
+ * rather than the elements, which do not exist until `beforeEach` runs.
+ */
+export function withContainers() {
+
+    const context = {}
+    let fixture
+
+    beforeEach(() => {
+        fixture = withDOM()
+        context.window = fixture.window
+        context.container = fixture.container
+        context.another = () => {
+            const element = fixture.window.document.createElement('div')
+            fixture.window.document.body.appendChild(element)
+            return element
+        }
+    })
+
+    afterEach(() => {
+        fixture.restore()
+    })
+
+    return context
+}

@@ -123,6 +123,12 @@ export const BROWSER_SURFACE = [
     // Constructor-assigned fields
     'id',
     'config',
+    // The registry owning this browser's embed. Declared deliberately rather
+    // than acquired by accident: `setCurrentBrowser(browser)` resolves through
+    // it, so it is load-bearing from the moment it ships, and it is the route a
+    // multi-embed host takes when the page-wide getters are the wrong question.
+    // Decision 9 of ADR-0004, #479.
+    'registry',
     'rootElement',
     'eventBus',
     'coordinator',

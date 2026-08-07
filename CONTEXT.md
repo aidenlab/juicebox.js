@@ -79,6 +79,12 @@ is the thing `initRegistry(container, config)` returns, and the unit of
 isolation that lets two embeds coexist on a page — see `docs/adr/0004`.
 _Avoid_: browser session, browser context, embed.
 
+**Alert dialog** — the modal a load failure or an unavailable option is reported
+in, one per registry, built in that registry's container on first use
+(`registry.presentAlert`). Distinct from igv-ui's `Alert` singleton, which is
+page-scoped and no longer used here: the singleton rebound itself to whichever
+container initialized last, so one embed's failures surfaced in another's.
+
 **Selected gene** — the gene name a search last resolved to, or a restored
 session last named. Per registry, because it is serialized per session. Not
 canonical state: `state.selectedGene` is a per-browser copy the state carries

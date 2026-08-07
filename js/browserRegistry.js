@@ -218,5 +218,19 @@ function getMostRecentlySelectedBrowser() {
     return mostRecentlySelectedBrowser
 }
 
+/**
+ * The registry owning the page-wide current browser, and `undefined` before
+ * anything has been selected.
+ *
+ * The resolution every zero-argument entry point makes: `getCurrentBrowser`,
+ * `getAllBrowsers`, `setCurrentBrowser(undefined)` and `session.toJSON` all
+ * have no container to resolve from and land here. Named once so the walk is
+ * not written out at each of them -- and so the single-embed convenience they
+ * share has a single place to be read about. See decision 4 of ADR-0004.
+ */
+function currentRegistry() {
+    return mostRecentlySelectedBrowser?.registry
+}
+
 export default BrowserRegistry
-export {registryForContainer, getMostRecentlySelectedBrowser}
+export {registryForContainer, getMostRecentlySelectedBrowser, currentRegistry}

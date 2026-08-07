@@ -135,11 +135,17 @@ async function extractConfig(queryString) {
 
     // `selectedGene` used to leave `decodeQuery` as a write to a page-scoped
     // global, which is how it reached `restoreSession` from the two paths that
-    // do not put it at the top level: a bare query string with no `hicUrl`, and
-    // the legacy `juicebox=` form, where it sits inside each browser's config.
-    // It now rides the session config instead, so it can land on one registry.
-    // A session's own value wins, and after that the last writer does -- which
-    // is the order the successive global writes produced. #481.
+    // do not put it at the top level: a query string carrying the gene beside a
+    // `session=`, and the legacy `juicebox=` form, where it sits inside each
+    // browser's config. It now rides the session config instead, so it can land
+    // on one registry. A session's own value wins, and after that the last
+    // writer does -- which is the order the successive global writes produced.
+    //
+    // Not preserved: `?selectedGene=` on a URL naming no map and no session at
+    // all. There being no session config to ride, the gene is dropped rather
+    // than reaching whatever config the host passed `init()`. juicebox never
+    // writes such a URL -- every URL it produces carries the gene inside the
+    // session it also writes. #481.
     if (sessionConfig && undefined === sessionConfig.selectedGene) {
         const fromBrowsers = (sessionConfig.browsers || []).map(b => b.selectedGene).filter(Boolean).pop();
         const selectedGene = queryConfig.selectedGene || fromBrowsers;

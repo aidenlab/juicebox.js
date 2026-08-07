@@ -1,5 +1,5 @@
 import {createBrowserList, deleteAllBrowsers} from "./createBrowser.js"
-import {registryForContainer, getMostRecentlySelectedBrowser} from "./browserRegistry.js"
+import {registryForContainer, currentRegistry} from "./browserRegistry.js"
 import {StringUtils, BGZip} from "igv-utils";
 import {expandUrlShortcuts} from "./urlUtils.js";
 
@@ -12,10 +12,10 @@ function toJSON() {
     // "whichever embed was touched last" is decision 5 of ADR-0004, which needs
     // `registry.toJSON()` and lands with the per-embed session work.
     //
-    // This is `getAllBrowsers()` written out, which is also what names the
-    // registry the selected gene is read from: one embed's session carries that
-    // embed's gene, not the page's. #481.
-    const registry = getMostRecentlySelectedBrowser()?.registry;
+    // The same registry `getAllBrowsers()` resolves, which is also what names
+    // the registry the selected gene is read from: one embed's session carries
+    // that embed's gene, not the page's. #481.
+    const registry = currentRegistry();
 
     for (let browser of registry?.browsers || []) {
         browserJson.push(browser.toJSON());

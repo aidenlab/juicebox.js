@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest'
-import {pairSynchable} from '../js/browserSync.js'
+import {pairSynchable} from '../js/syncGroup.js'
 
 /**
  * The sync-group pairing rule -- see #476, decision 6 of ADR-0004.
@@ -66,6 +66,12 @@ describe('pairSynchable', () => {
         const only = fakeBrowser('only', {dataset: fakeDataset('hg38')})
 
         expect(pairSynchable([only])).toEqual([])
+    })
+
+    it('never pairs a browser with itself, even if the list repeats it', () => {
+        const only = fakeBrowser('only', {dataset: fakeDataset('hg38')})
+
+        expect(pairSynchable([only, only])).toEqual([])
     })
 
     it('pairs each compatible combination once, ignoring the rest', () => {

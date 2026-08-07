@@ -8,7 +8,7 @@ import {parseColorScale} from './colorScaleParser.js';
 import ContactMatrixView from "./contactMatrixView.js";
 import HICEvent from "./hicEvent.js";
 import EventBus from "./eventBus.js";
-import {pairSynchable} from "./browserSync.js";
+import {pairSynchable} from "./syncGroup.js";
 
 const defaultSize = { width: 640, height: 640 };
 

@@ -21,7 +21,7 @@ function pairSynchable(browsers) {
     for (let i = 0; i < synchableBrowsers.length; i++) {
         for (let j = i + 1; j < synchableBrowsers.length; j++) {
             const [a, b] = [synchableBrowsers[i], synchableBrowsers[j]]
-            if (a.dataset.isCompatible(b.dataset)) {
+            if (a !== b && a.dataset.isCompatible(b.dataset)) {
                 pairs.push([a, b])
             }
         }

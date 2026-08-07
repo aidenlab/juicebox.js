@@ -22,8 +22,7 @@
  */
 
 import {extractConfig} from "./urlUtils.js"
-import {getCurrentBrowser} from "./createBrowser.js"
-import {getAllBrowsers} from "./createBrowser.js"
+import {registryForContainer} from "./browserRegistry.js"
 import {restoreSession} from "./session.js"
 import {Alert} from "igv-ui"
 
@@ -40,7 +39,9 @@ async function init(container, config) {
 
     await restoreSession(container, config);
 
-    const allBrowsers = getAllBrowsers();
+    // This container's browsers, not the page's: `init()` must return what it
+    // just built even when another embed has since been selected.
+    const allBrowsers = registryForContainer(container).browsers;
 
     return allBrowsers.length === 1 ? allBrowsers[0] : allBrowsers
 }

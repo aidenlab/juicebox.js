@@ -1,4 +1,5 @@
-import {createBrowserList, deleteAllBrowsers, getAllBrowsers, syncBrowsers} from "./createBrowser.js"
+import {createBrowserList, deleteAllBrowsers, getAllBrowsers} from "./createBrowser.js"
+import {registryForContainer} from "./browserRegistry.js"
 import {Globals} from "./globals.js"
 import {StringUtils, BGZip} from "igv-utils";
 import {expandUrlShortcuts} from "./urlUtils.js";
@@ -6,6 +7,11 @@ import {expandUrlShortcuts} from "./urlUtils.js";
 function toJSON() {
     const jsonOBJ = {};
     const browserJson = [];
+
+    // Page-wide, because `toJSON()` is a published zero-argument export with no
+    // container to resolve from. Serializing one embed's session rather than
+    // "whichever embed was touched last" is decision 5 of ADR-0004, which needs
+    // `registry.toJSON()` and lands with the per-embed session work.
     const allBrowsers = getAllBrowsers();
     for (let browser of allBrowsers) {
         browserJson.push(browser.toJSON());
@@ -38,7 +44,7 @@ function compressedSession() {
 
 async function restoreSession(container, session) {
 
-    deleteAllBrowsers();
+    deleteAllBrowsers(container);
 
     // Expand URL shortcuts in session config for backward compatibility
     // This ensures sessions passed directly to restoreSession (not through extractConfig)
@@ -90,7 +96,7 @@ async function restoreSession(container, session) {
     await createBrowserList(container, session);
 
     if (false !== session.syncDatasets) {
-        syncBrowsers();
+        registryForContainer(container).sync();
     }
 
 }

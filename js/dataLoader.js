@@ -28,7 +28,6 @@ import State from './hicState.js'
 import Genome from './genome.js'
 import {extractName, presentError, isBotChallenge} from "./utils.js"
 import {isFile} from "./fileUtils.js"
-import {getAllBrowsers, syncBrowsers} from "./createBrowser.js"
 import HICEvent from './hicEvent.js'
 import EventBus from './eventBus.js'
 import nvi from './nvi.js'
@@ -164,10 +163,14 @@ class DataLoader {
                     });
             }
 
-            syncBrowsers(); // Sync browsers to ensure all browsers are updated with the new dataset
+            // This browser's own registry: syncing is scoped to one embed, so a
+            // dataset arriving here never reaches across to another container.
+            const registry = this.browser.registry;
+
+            registry.sync(); // Sync browsers to ensure all browsers are updated with the new dataset
 
             // Find a browser to sync with, if any
-            const compatibleBrowsers = getAllBrowsers().filter(
+            const compatibleBrowsers = registry.browsers.filter(
                 b => b !== this.browser &&
                      b.dataset &&
                      b.dataset.isCompatible(this.browser.dataset)

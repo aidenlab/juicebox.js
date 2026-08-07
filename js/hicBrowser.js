@@ -31,7 +31,7 @@ import {Globals} from "./globals.js"
 import EventBus from "./eventBus.js"
 import LayoutController, {setViewportSize} from './layoutController.js'
 import { geneSearch } from './geneSearch.js'
-import {getAllBrowsers} from "./createBrowser.js"
+import {registryForContainer} from "./browserRegistry.js"
 import {setTrackReorderArrowColors} from "./trackPair.js"
 import createWidgets from "./createWidgets.js"
 import BrowserCoordinator from "./browserCoordinator.js"
@@ -46,6 +46,14 @@ const MAX_PIXEL_SIZE = 128
 class HICBrowser {
 
     constructor(appContainer, config) {
+
+        // The back-pointer, per decision 9 of ADR-0004: `setCurrentBrowser` and
+        // `deleteBrowser` are handed a browser and nothing else, so this is how
+        // they find the registry to act on. Set here rather than by whoever
+        // registers the browser, so it holds for a browser's whole life --
+        // including during `init()`, which loads a dataset and so consults it.
+        this.registry = registryForContainer(appContainer);
+
         this.config = config;
         this.figureMode = config.figureMode || config.miniMode; // Mini mode for backward compatibility
         this.resolutionLocked = false;
@@ -515,8 +523,7 @@ class HICBrowser {
      * Remove reference to self from all synchedBrowsers lists.
      */
     unsyncSelf() {
-        const allBrowsers = getAllBrowsers()
-        for (let b of allBrowsers) {
+        for (let b of this.registry.browsers) {
             b.unsync(this)
         }
     }

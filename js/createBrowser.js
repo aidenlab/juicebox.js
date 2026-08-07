@@ -4,22 +4,23 @@
 
 import { StringUtils } from 'igv-utils';
 import HICBrowser from './hicBrowser.js';
-import BrowserRegistry from './browserRegistry.js';
+import {registryForContainer, getMostRecentlySelectedBrowser} from './browserRegistry.js';
 import {parseColorScale} from './colorScaleParser.js';
 import ContactMatrixView from "./contactMatrixView.js";
 
 const defaultSize = { width: 640, height: 640 };
 
 /**
- * The page's one registry. Every export below is a convenience over it, kept
- * and delegating per decision 4 of ADR-0004 -- both known host apps import
- * them, as ADR-0003 measures.
+ * Module-level conveniences over the registries, kept and delegating per
+ * decision 4 of ADR-0004 -- both known host apps import them, as ADR-0003
+ * measures.
  *
- * Resolving a registry from the container element instead -- so two embeds can
- * coexist -- is decisions 2 and 8 of `docs/adr/0004-browser-registry-per-container.md`
- * and lands separately. Until then this constant is the whole population.
+ * There is no default registry: each function below resolves one, from its
+ * container argument, from `browser.registry`, or -- for the two zero-argument
+ * getters, which have nothing to resolve from -- from the browser most recently
+ * selected page-wide. See `js/browserRegistry.js` and decisions 2, 8 and 9 of
+ * `docs/adr/0004-browser-registry-per-container.md`.
  */
-const defaultRegistry = new BrowserRegistry();
 
 async function createBrowser(hicContainer, config, callback) {
 
@@ -30,17 +31,18 @@ async function createBrowser(hicContainer, config, callback) {
 
     if (typeof callback === "function") callback();
 
-    defaultRegistry.add(browser);
+    registryForContainer(hicContainer).add(browser);
 
     return browser;
 }
 
 async function createBrowserList(hicContainer, session) {
 
+    const registry = registryForContainer(hicContainer);
     const configList = session.browsers || [session];
     const initPromises = [];
 
-    defaultRegistry.clear();
+    registry.clear();
 
     for (const config of configList) {
 
@@ -53,41 +55,69 @@ async function createBrowserList(hicContainer, session) {
         const browser = new HICBrowser(hicContainer, config);
 
         // Registered before init: loading a dataset consults the registry.
-        defaultRegistry.register(browser);
+        registry.register(browser);
         initPromises.push(browser.init(config));
     }
     await Promise.all(initPromises);
 
-    defaultRegistry.select(defaultRegistry.browsers[0]);
-    defaultRegistry.refreshDeleteButtonVisibility();
+    registry.select(registry.browsers[0]);
+    registry.refreshDeleteButtonVisibility();
 }
 
-async function updateAllBrowsers() {
-    await defaultRegistry.updateAll();
+function deleteAllBrowsers(hicContainer) {
+    registryForContainer(hicContainer).deleteAll();
 }
 
-function deleteAllBrowsers() {
-    defaultRegistry.deleteAll();
-}
-
+/**
+ * Select `browser` in its own registry, or -- given `undefined` -- clear the
+ * selection of whichever registry currently holds it.
+ *
+ * The `undefined` case is the one call that has no back-pointer to resolve
+ * through, and it predates the registries: `select` has always accepted it. So
+ * it falls back to the page-wide pointer, which in the single-embed case names
+ * the same registry a browser argument would have.
+ */
 function setCurrentBrowser(browser) {
-    defaultRegistry.select(browser);
+
+    if (undefined === browser) {
+        getMostRecentlySelectedBrowser()?.registry.select(undefined);
+        return;
+    }
+
+    browser.registry.select(browser);
 }
 
 function deleteBrowser(browser) {
-    defaultRegistry.delete(browser);
+    browser.registry.delete(browser);
 }
 
+/**
+ * The browser most recently selected, anywhere on the page.
+ *
+ * A single-embed convenience: with two embeds it names whichever one the user
+ * touched last, which is rarely what a caller holding a particular container
+ * means. Multi-embed callers should reach the registry -- `browser.registry`,
+ * or `registryForContainer(container)` -- instead of asking page-wide.
+ */
 function getCurrentBrowser() {
-    return defaultRegistry.currentBrowser;
+    return getMostRecentlySelectedBrowser();
 }
 
-function syncBrowsers(browsers) {
-    defaultRegistry.sync(browsers);
-}
-
+/**
+ * The browsers of the registry owning the current browser, and `[]` before
+ * anything has been selected.
+ *
+ * The same single-embed convenience as `getCurrentBrowser`, and inherits its
+ * caveat: which embed's list this is follows the page-wide selection. A
+ * multi-embed caller wants `registryForContainer(container).browsers`.
+ *
+ * The empty case is reachable mid-initialization as well as before it:
+ * `createBrowserList` registers every browser and only selects once they have
+ * all initialized, so a caller reading this from inside a load sees `[]`. That
+ * is the other reason to hold a registry rather than ask page-wide.
+ */
 function getAllBrowsers() {
-    return defaultRegistry.browsers;
+    return getMostRecentlySelectedBrowser()?.registry.browsers || [];
 }
 
 function normalizeConfig(config) {
@@ -124,7 +154,6 @@ export {
     deleteBrowser,
     setCurrentBrowser,
     getCurrentBrowser,
-    syncBrowsers,
     deleteAllBrowsers,
     getAllBrowsers
 };

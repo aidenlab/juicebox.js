@@ -53,6 +53,31 @@ function expandUrlShortcuts(url) {
     return expandedUrl;
 }
 
+/**
+ * Expand the URL shortcuts everywhere a session document can carry one, in
+ * place.
+ *
+ * Sessions handed straight to `restoreSession` never pass through
+ * `extractConfig`, so a host or a saved file written with `*s3/` would reach the
+ * loaders unexpanded without this. A single-browser config is a session with
+ * its one browser inlined, which is why both shapes are walked.
+ */
+function expandSessionUrlShortcuts(session) {
+
+    for (const config of session.browsers || [session]) {
+        for (const key of ['url', 'controlUrl']) {
+            if (config[key]) {
+                config[key] = expandUrlShortcuts(config[key]);
+            }
+        }
+        for (const track of config.tracks || []) {
+            if (track.url) {
+                track.url = expandUrlShortcuts(track.url);
+            }
+        }
+    }
+}
+
 async function extractConfig(queryString) {
 
     let query = extractQuery(queryString);
@@ -394,4 +419,4 @@ async function expandURL(url) {
 
 }
 
-export {extractConfig, DEFAULT_ANNOTATION_COLOR, expandUrlShortcuts}
+export {extractConfig, DEFAULT_ANNOTATION_COLOR, expandUrlShortcuts, expandSessionUrlShortcuts}

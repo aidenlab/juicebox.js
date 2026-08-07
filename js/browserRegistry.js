@@ -2,6 +2,13 @@ import {AlertDialog} from 'igv-ui'
 import EventBus from './eventBus.js'
 import HICEvent from './hicEvent.js'
 import {pairSynchable} from './syncGroup.js'
+import {expandSessionUrlShortcuts} from './urlUtils.js'
+// A cycle, deliberately: `createBrowser.js` resolves its registry from a
+// container, and `restoreSession` below needs browsers built. Neither module
+// touches the other while it is being evaluated, so the cycle is inert -- and
+// the alternative, letting the registry construct an `HICBrowser` itself, would
+// break the rule that keeps it testable.
+import {createBrowserList} from './createBrowser.js'
 
 /**
  * The owner of one embed's browsers: the list, which of them is current, and
@@ -158,6 +165,56 @@ class BrowserRegistry {
         for (const [b1, b2] of pairSynchable(browsers || this.browsers)) {
             b1.synchedBrowsers.add(b2)
             b2.synchedBrowsers.add(b1)
+        }
+    }
+
+    /**
+     * Serialize this embed as a session: its browsers, and the gene it has
+     * selected.
+     *
+     * A session describes one embed, not the page. That is the whole point of
+     * decision 5 of ADR-0004: the exported zero-argument `toJSON()` has no
+     * container to resolve from and so follows the page-wide selection, but
+     * what it resolves to is *a registry*, and everything in the document comes
+     * from that one registry.
+     */
+    toJSON() {
+
+        const json = {browsers: this.browsers.map(browser => browser.toJSON())}
+
+        if (this.selectedGene) {
+            json.selectedGene = this.selectedGene
+        }
+
+        return json
+    }
+
+    /**
+     * Replace this embed's browsers with the ones a session names.
+     *
+     * The load-bearing half of #384: restoring is something one embed does to
+     * itself, so the delete that opens it reaches only this registry's
+     * browsers, and a host restoring into its second container keeps the first
+     * one's DOM.
+     *
+     * The caption is not here -- it is a single page element outside every
+     * container, so the exported `restoreSession` handles it. Everything else a
+     * session carries belongs to one embed.
+     */
+    async restoreSession(session) {
+
+        this.deleteAll()
+
+        expandSessionUrlShortcuts(session)
+
+        if (Object.hasOwn(session, 'selectedGene')) {
+            this.selectedGene = session.selectedGene
+        }
+
+        await createBrowserList(this.container, session)
+
+        if (false !== session.syncDatasets) {
+            this.sync()
         }
     }
 

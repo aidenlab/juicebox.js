@@ -96,6 +96,14 @@ the JSON a user saves, pastes as a URL, or restores (`js/session.js`, `toJSON`,
 that produces and consumes one. A registry has a session; it is not one. Never
 call the registry a session.
 
+A session describes **one embed**, not the page: `registry.toJSON()` and
+`registry.restoreSession(config)` are where the work happens, and the exported
+functions of the same name delegate to a registry — `restoreSession` to the one
+owning the container it is given, `toJSON` to the same page-wide default the
+zero-argument getters use. The only part of a session no registry owns is the
+**caption**, a single `#hic-caption` element outside every container that two
+embeds share.
+
 **Update** vs **repaint** — not synonyms. A **repaint** redraws everything from
 current state: rulers, track pairs, contact matrix, once, with no coordination.
 An **update** wraps a repaint in the things that must happen around it —

@@ -1,31 +1,36 @@
-import {createBrowserList, deleteAllBrowsers} from "./createBrowser.js"
 import {registryForContainer, currentRegistry} from "./browserRegistry.js"
-import {StringUtils, BGZip} from "igv-utils";
-import {expandUrlShortcuts} from "./urlUtils.js";
+import {BGZip} from "igv-utils";
 
+/**
+ * The exported session functions -- the names both known host apps import, per
+ * ADR-0003.
+ *
+ * A session describes *one embed*, so the work is `registry.toJSON()` and
+ * `registry.restoreSession(config)`; these three keep their published
+ * signatures and delegate. Decision 5 of ADR-0004, #482.
+ *
+ * What is left here rather than on the registry is the caption: a single
+ * `#hic-caption` element outside every container, which two embeds on a page
+ * share and no registry can own.
+ */
+
+/**
+ * Serialize a session: the browsers of one embed, its selected gene, and the
+ * page caption.
+ *
+ * Which embed is the page-wide one, because `toJSON()` is a published
+ * zero-argument export with no container to resolve from -- the same
+ * single-embed convenience `getAllBrowsers()` carries. Once resolved, the whole
+ * document comes from that one registry: `registry.toJSON()` is where a session
+ * is actually written. Decision 5 of ADR-0004, #482.
+ */
 function toJSON() {
-    const jsonOBJ = {};
-    const browserJson = [];
 
-    // Page-wide, because `toJSON()` is a published zero-argument export with no
-    // container to resolve from. Serializing one embed's session rather than
-    // "whichever embed was touched last" is decision 5 of ADR-0004, which needs
-    // `registry.toJSON()` and lands with the per-embed session work.
-    //
-    // The same registry `getAllBrowsers()` resolves, which is also what names
-    // the registry the selected gene is read from: one embed's session carries
-    // that embed's gene, not the page's. #481.
-    const registry = currentRegistry();
+    const jsonOBJ = currentRegistry()?.toJSON() || {browsers: []};
 
-    for (let browser of registry?.browsers || []) {
-        browserJson.push(browser.toJSON());
-    }
-    jsonOBJ.browsers = browserJson;
-
-    if (registry?.selectedGene) {
-        jsonOBJ["selectedGene"] = registry.selectedGene;
-    }
-
+    // The caption is the one part of a session no registry owns: it is a single
+    // page element outside every container, so it is read here rather than in
+    // the registry. Two embeds on a page share it.
     const captionDiv = document.getElementById('hic-caption');
     if (captionDiv) {
         var captionText = captionDiv.textContent;
@@ -46,63 +51,25 @@ function compressedSession() {
 }
 
 
+/**
+ * Replace the browsers in `container`'s embed with the ones `session` names.
+ *
+ * The container argument has always implied this, and since #479 keyed
+ * registries by container it has been true. What #482 adds is that the session
+ * is the *registry's* -- restoring is something one embed does to itself, not a
+ * page-wide operation aimed at a container. A host initializing a second embed
+ * keeps the first one's DOM either way; #384.
+ */
 async function restoreSession(container, session) {
 
-    deleteAllBrowsers(container);
-
-    // Expand URL shortcuts in session config for backward compatibility
-    // This ensures sessions passed directly to restoreSession (not through extractConfig)
-    // still work with URL shortcuts like *s3/, *enc/, etc.
-    if (session.browsers) {
-        for (let browser of session.browsers) {
-            if (browser.url) {
-                browser.url = expandUrlShortcuts(browser.url);
-            }
-            if (browser.controlUrl) {
-                browser.controlUrl = expandUrlShortcuts(browser.controlUrl);
-            }
-            if (browser.tracks) {
-                for (let track of browser.tracks) {
-                    if (track.url) {
-                        track.url = expandUrlShortcuts(track.url);
-                    }
-                }
-            }
-        }
-    } else {
-        // Single browser config (not in browsers array)
-        if (session.url) {
-            session.url = expandUrlShortcuts(session.url);
-        }
-        if (session.controlUrl) {
-            session.controlUrl = expandUrlShortcuts(session.controlUrl);
-        }
-        if (session.tracks) {
-            for (let track of session.tracks) {
-                if (track.url) {
-                    track.url = expandUrlShortcuts(track.url);
-                }
-            }
-        }
-    }
-
-    if (session.hasOwnProperty("selectedGene")) {
-        registryForContainer(container).selectedGene = session.selectedGene;
-    }
-    if (session.hasOwnProperty("caption")) {
-        const captionText = session.caption;
-        var captionDiv = document.getElementById("hic-caption");
+    if (Object.hasOwn(session, "caption")) {
+        const captionDiv = document.getElementById("hic-caption");
         if (captionDiv) {
-            captionDiv.textContent = captionText;
+            captionDiv.textContent = session.caption;
         }
     }
 
-    await createBrowserList(container, session);
-
-    if (false !== session.syncDatasets) {
-        registryForContainer(container).sync();
-    }
-
+    await registryForContainer(container).restoreSession(session);
 }
 
 

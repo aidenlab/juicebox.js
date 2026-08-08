@@ -70,6 +70,27 @@ class HICBrowser {
     #disposed = false
 
     constructor(appContainer, config) {
+        this.#construct(appContainer, config);
+    }
+
+    /**
+     * Everything a browser is made of, in one method so that `reset()` can run
+     * it a second time on the same instance. Decision 1 of ADR-0005: the
+     * dispose-and-reconstruct happens *inside* the object, so a host reference
+     * taken before a reset is still a live browser after it.
+     *
+     * The contract with `dispose()` is that this is the list it undoes. A field
+     * installed here that outlives a `dispose()` is a leak; a field assigned
+     * anywhere *else* survives a reconstruction, which is why
+     * `customCrosshairsHandler` is named here even though its value is nothing.
+     *
+     * @param {string} [id] - the identity to build under. Only `reset()` passes
+     *   one, and it passes the browser's existing id. Element ids are minted
+     *   from it here, so a reconstruction that took a fresh guid and had it
+     *   overwritten afterwards would leave the browser named differently from
+     *   its own DOM.
+     */
+    #construct(appContainer, config, id = `browser_${DOMUtils.guid()}`) {
 
         // The back-pointer, per decision 9 of ADR-0004: `setCurrentBrowser` and
         // `deleteBrowser` are handed a browser and nothing else, so this is how
@@ -85,7 +106,7 @@ class HICBrowser {
 
         this.showTrackLabelAndGutter = true;
 
-        this.id = `browser_${DOMUtils.guid()}`;
+        this.id = id;
         this.trackPairs = [];
         this.tracks2D = [];
         this.normVectorFiles = [];
@@ -110,6 +131,11 @@ class HICBrowser {
         this.stateManager = new StateManager(this);
 
         this.isMobile = hicUtils.isMobile();
+
+        // Declared, not merely absent: `setCustomCrosshairsHandler` is the one
+        // published method that installs a field outside this method, and the
+        // handler it takes closes over the view a reconstruction throws away.
+        this.customCrosshairsHandler = undefined;
 
         /**
          * Everything this browser installs *outside* `rootElement`'s subtree.
@@ -571,15 +597,19 @@ class HICBrowser {
         // is a pair of references, and a host keeps its browser across call
         // sites (juicebox-web holds one from `getCurrentBrowser()`), so a zombie
         // still holding its old peers pins every live browser's object graph.
-        // `reset()` and `clearDataset()` deliberately do not do this -- those
-        // browsers are still on the page and get re-paired by `registry.sync()`.
-        // #492.
+        // `clearDataset()` deliberately does not do this -- that browser is
+        // still on the page and gets re-paired by `registry.sync()`. #492.
         this.synchedBrowsers = new Set();
 
         for (const element of this.externalElements) {
             element.remove();
         }
         this.externalElements = [];
+
+        // The other thing installed outside `rootElement`: the contact matrix
+        // view's document-level gesture handlers, which removing an element
+        // cannot take with it. #494.
+        this.contactMatrixView.dispose();
 
         this.rootElement.remove();
 
@@ -600,18 +630,79 @@ class HICBrowser {
         }
     }
 
+    /**
+     * Put this browser back to how it was constructed, without becoming a
+     * different browser.
+     *
+     * NOTE: public API function
+     *
+     * Dispose-then-construct on the same instance, per decision 1 of ADR-0005.
+     * The object, its `id` and its registry slot survive, because juicebox-web
+     * does
+     *
+     *     const browser = hic.getCurrentBrowser()
+     *     browser.reset();
+     *     await browser.loadHicFile(config);
+     *     controlMapDropdown.enableIfMapLoaded(browser)
+     *
+     * -- one reference held across three lines and then handed onward. That is
+     * what makes this non-breaking; returning a new browser would not be.
+     *
+     * `dispose()` is the teardown half, so this cannot drift from the delete
+     * paths. What is restored afterwards is the three things `dispose()` gives
+     * up that a *reset* browser has not actually lost: its place among its
+     * siblings, its registry slot, and being the current browser.
+     *
+     * The sync group is not restored: `reset()` has always unsynced, and the
+     * registry re-pairs on the next `sync()`.
+     */
     reset() {
+
         this.#assertNotDisposed('reset')
-        this.layoutController.removeAllTrackXYPairs()
-        this.contactMatrixView.clearImageCaches()
-        this.tracks2D = []
-        this.tracks = []
-        this.contactMapLabel.textContent = "";
-        this.contactMapLabel.title = "";
-        this.controlMapLabel.textContent = "";
-        this.controlMapLabel.title = "";
-        this.stateManager.clearState();
-        this.unsyncSelf()
+
+        const {config, id, registry} = this
+        const appContainer = this.rootElement.parentElement
+        const slot = registry.browsers.indexOf(this)
+        const wasCurrent = registry.currentBrowser === this
+
+        // The node to re-insert before, and it has to be one that survives the
+        // teardown: `rootElement`'s immediate sibling is this browser's own
+        // dialog, which `dispose()` removes. Skipping this browser's external
+        // elements lands on the next browser's root, or on nothing.
+        // Only `rootElement` is placed: the dialog beside it is a modal, and
+        // where it sits among its siblings is not something anyone can see.
+        const mine = new Set(this.externalElements)
+        let anchor = this.rootElement.nextSibling
+        while (anchor && mine.has(anchor)) {
+            anchor = anchor.nextSibling
+        }
+
+        // Deselected first, and for the same reason `deleteAll` does it:
+        // `releaseSlot` falls the selection through to a survivor, so disposing
+        // the current browser posts a `BrowserSelect` naming a sibling -- and
+        // juicebox-web subscribes to that event. A reset does not change which
+        // browser is selected, so it should post nothing at all.
+        if (wasCurrent) {
+            registry.select(undefined)
+        }
+
+        this.dispose()
+
+        // The one place this flag is cleared. A reset browser is alive again,
+        // and the guard on every published method has to see that.
+        this.#disposed = false
+
+        this.#construct(appContainer, config, id)
+
+        // Reconstruction appends, so the panels of a two-panel embed would
+        // visibly swap without this. Decision 3.
+        appContainer.insertBefore(this.rootElement, anchor)
+
+        // Not registered before the reset -- during `init()`, or in a test --
+        // so there is no slot to take back and nothing to select.
+        if (-1 !== slot) {
+            registry.reclaimSlot(this, slot, wasCurrent)
+        }
     }
 
     /**

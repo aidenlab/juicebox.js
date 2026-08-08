@@ -183,6 +183,41 @@ class BrowserRegistry {
         this.refreshDeleteButtonVisibility()
     }
 
+    /**
+     * Put a reconstructed browser back in the slot it held before it disposed
+     * itself.
+     *
+     * The other half of `reset()`, and internal for the same reason
+     * `releaseSlot` is: a browser tears itself down and rebuilds itself, and
+     * tells its registry both times. A host never has a browser that is out of
+     * its registry, because `reset()` returns before it can look.
+     *
+     * `index` is where the browser was, not where it goes: registry order is
+     * panel order, so appending would move the panel. It is clamped because a
+     * registry that lost browsers meanwhile is a registry with fewer slots than
+     * it had.
+     *
+     * `wasCurrent` restores the selection *without* going through `select`,
+     * deliberately: a reset does not change which browser is selected, and
+     * posting `BrowserSelect` for the browser that was already selected would
+     * announce a transition that never happened.
+     *
+     * @param {boolean} wasCurrent - whether this browser was the current one
+     *   before it disposed itself.
+     */
+    reclaimSlot(browser, index, wasCurrent) {
+
+        this.browsers.splice(Math.min(index, this.browsers.length), 0, browser)
+
+        if (wasCurrent) {
+            this.currentBrowser = browser
+            browser.rootElement.classList.add('hic-root-selected')
+            mostRecentlySelectedBrowser = browser
+        }
+
+        this.refreshDeleteButtonVisibility()
+    }
+
     async updateAll() {
         for (const browser of this.browsers) {
             await browser.update()

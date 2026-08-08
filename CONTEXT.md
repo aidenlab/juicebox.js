@@ -108,7 +108,8 @@ embeds share.
 descending order of how much they destroy. See `docs/adr/0005`.
 
 - **Dispose** — the browser is going away. `dispose()` removes every element the
-  constructor appended, including the ones outside `rootElement`, clears the
+  constructor appended, including the ones outside `rootElement`, gives up the
+  document-level gesture handlers the contact matrix view installs, clears the
   per-browser event bus, unsyncs from peers, and releases the registry slot. A
   disposed browser is dead: calling a published method on it throws. This is the
   *one* teardown — `registry.delete()` and `registry.deleteAll()` both go through

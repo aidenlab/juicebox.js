@@ -62,6 +62,41 @@ class ContactMatrixView {
         this.yGuideElement = viewportElement.querySelector("div[id$='-y-guide']");
 
         this.displayMode = 'A';
+
+        /**
+         * The handlers this view puts on `document`, so `dispose()` can take
+         * them off again.
+         *
+         * Everything else this view listens on lives inside the viewport and
+         * dies when `rootElement` is removed. Three modifier-key and mouse-up
+         * handlers do not: they are on `document` because a gesture that starts
+         * in the viewport can end outside it. Nothing removed them before, so a
+         * `reset()` -- which builds a second view over the same document --
+         * would post `DidHideCrosshairs` once per reset the browser had ever
+         * had. #494.
+         */
+        this.documentListeners = [];
+    }
+
+    /**
+     * Listen on `document`, recording the registration for `dispose()`.
+     */
+    addDocumentListener(type, handler) {
+        document.addEventListener(type, handler);
+        this.documentListeners.push([type, handler]);
+    }
+
+    /**
+     * Give up what this view installed outside its own viewport.
+     *
+     * Called by `HICBrowser.dispose()`, which is the one teardown path -- and
+     * so also by `reset()`, which is that path followed by a reconstruction.
+     */
+    dispose() {
+        for (const [type, handler] of this.documentListeners) {
+            document.removeEventListener(type, handler);
+        }
+        this.documentListeners = [];
     }
 
     // The color scales live on the image tile source. These read-through
@@ -478,20 +513,20 @@ class ContactMatrixView {
                 panMouseUpOrMouseOut();
             })
 
-            document.addEventListener('keydown', (e) => {
+            this.addDocumentListener('keydown', (e) => {
                 if (!this.willShowCrosshairs && mouseOver && e.shiftKey) {
                     this.willShowCrosshairs = true;
                     this.browser.eventBus.post(HICEvent('DidShowCrosshairs', 'DidShowCrosshairs'));
                 }
             })
 
-            document.addEventListener('keyup', () => {
+            this.addDocumentListener('keyup', () => {
                 this.browser.hideCrosshairs();
                 this.willShowCrosshairs = undefined;
                 this.browser.eventBus.post(HICEvent('DidHideCrosshairs', 'DidHideCrosshairs'));
             })
 
-            document.addEventListener('mouseup', (e) => {
+            this.addDocumentListener('mouseup', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
 

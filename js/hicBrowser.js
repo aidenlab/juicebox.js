@@ -567,6 +567,15 @@ class HICBrowser {
 
         this.unsyncSelf();
 
+        // The outbound half of the same edge, and only on this path: membership
+        // is a pair of references, and a host keeps its browser across call
+        // sites (juicebox-web holds one from `getCurrentBrowser()`), so a zombie
+        // still holding its old peers pins every live browser's object graph.
+        // `reset()` and `clearSession()` deliberately do not do this -- those
+        // browsers are still on the page and get re-paired by `registry.sync()`.
+        // #492.
+        this.synchedBrowsers = new Set();
+
         for (const element of this.externalElements) {
             element.remove();
         }

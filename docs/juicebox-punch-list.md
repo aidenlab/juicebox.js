@@ -29,7 +29,7 @@ Three repos are involved:
 
 ## Done since the 6 August list
 
-Phases 0, 1 and 2 are complete, and so is the first of the Phase 3 candidates.
+Phases 0, 1 and 2 are complete, and so are two of the Phase 3 candidates.
 
 | # | Task | Outcome |
 |---|---|---|
@@ -41,6 +41,7 @@ Phases 0, 1 and 2 are complete, and so is the first of the Phase 3 candidates.
 | 2.2 | Event system cleanup | #414 closed — bus **kept**, both buses are consumer API |
 | 2.3 | A repaint pass outliving the state it started from | #469 closed — it *abandons* the pass on a state-identity check (`f4f5ce5`), it does not throw. The earlier summary here said "throws"; that was wrong, and ADR-0005 depends on which it is |
 | 3 · c4 | Browser registry owner | ADR-0004 → #476, #478–#483, `78a5d0b..9fde9a2`. **Closes #384** (open since 2023) and #475 |
+| 3 · c8 | Browser teardown | ADR-0005 → #491–#496, `000a43a..8d50359`. `dispose()` at both levels, `reset()` keeps identity, four teardown verbs → two. Not breaking. Tests 439 → 497 |
 
 **The pattern to repeat: ADR → tickets → Outcome box on the card.** Candidate 4 ran it and it
 worked — its card proposed a shape that would have broken both hosts, and the Consumer impact
@@ -51,41 +52,35 @@ ADR correction in ADR-0004's addendum, and the file is deleted (`git log` has it
 
 ---
 
-## Phase 3 — The remaining seven candidates.
+## Phase 3 — The remaining six candidates.
 
-Seven candidates in `docs/architecture-review.html` are open. **Three are breaking as currently
-scoped** — candidate 8 was the fourth until ADR-0005 settled it. Each card carries a Consumer
-impact block; read it before filing anything.
+Six candidates in `docs/architecture-review.html` are open. **Two are breaking as currently
+scoped** — candidate 8 was the third until ADR-0005 settled it, and it has now landed. Each card
+carries a Consumer impact block; read it before filing anything.
 
 | Candidate | Status |
 |---|---|
-| **8 · Give the browser a teardown that matches its construction** | ✅ contract settled — ADR-0005 · **not breaking** · tickets filed, unblocked |
-| **5 · One decoder for session and URL** | ⚠️ breaking |
+| **5 · One decoder for session and URL** | ⚠️ breaking — **next up**, wants an ADR first |
 | **11 · Give the track tile one owner** | ⚠️ breaking |
 | **6 · Fold StateManager into State, and make restore use the chokepoint** | watch |
 | **7 · Move the gesture state machines behind InteractionHandler** | watch |
 | **9 · Give the config schema one reader** | watch |
 | **10 · One dataset-load path** — *this is the live-map seam* | watch |
 
-**8** — **settled in `docs/adr/0005-browser-teardown-contract.md`.** `reset()` keeps browser
-identity, so juicebox-web's `reset()` → `loadHicFile()` → `enableIfMapLoaded(browser)` is
-untouched and this candidate is no longer breaking. The candidate is also *smaller* than its card:
-two of its five "Before" bullets — both event-bus lines — were already fixed by #414, and
-`grep -rn subscribe js/` now returns nothing outside `eventBus.js`. What remains is the
-`inputDialog` leak (one construction site, zero teardown, leaks once per session restore), the
-sibling-position symmetry, clearing the per-browser bus, and folding four teardown verbs into two.
+**5 is next, and it should be scoped together with 9** — decode-then-normalize is one pipeline.
+Its contract is with **users**, not just the two host apps: shared session URLs get pasted into
+mail and papers and must still decode years later, and ADR-0003's tables do not measure that
+population at all. Needs its own ADR first — the sequence that kept candidates 4 and 8 from
+breaking a host, both times.
 
-Two things found while grilling it that are **not** part of the candidate:
-- `deleteAll()` skips `unsyncSelf()` and `delete()` does not, so every `restoreSession()` leaves
-  browsers holding references to deleted peers. Live bug, both hosts, one-line fix. Lands *before*
-  the refactor — it is on the refactor's critical path, which is the standing exception to
-  "file it and keep refactoring."
-- `reset()` must install a **new** `State` object, not mutate the old one, or #469's
-  identity-based abandonment check stops firing. Invisible, untested, only shows up under load
-  latency. This is the review-gate on the whole candidate.
-
-**5** — the contract is with **users**, not just the two host apps: shared session URLs must still
-decode. Needs its own ADR first.
+**What candidate 8 confirmed, worth carrying into 5:** ADR → tickets → Outcome box works, and the
+ADR is where the breaking/not-breaking question gets answered. 8 was on the breaking list until
+ADR-0005 found that `reset()` could keep browser identity; nothing about the code changed, only
+what had been established before writing it. Two smaller lessons: the general mechanism beat the
+named instance (the constructor records what it installs outside `rootElement`, and that record
+caught a *second* leak the card never named — the contact matrix view's document-level gesture
+handlers, #494); and the invisible failure mode named on the card as a review gate became a test
+rather than a warning (`test/testRepaintDuringReset.js`, #495).
 
 **11** — the `TrackXYPairLoad` payload *is* the track pair, and juicebox-web reads its shape.
 
@@ -102,8 +97,9 @@ then normalize.
 **10** — three named load methods must survive.
 
 **Skill:** `/to-tickets` when you pick one up. For candidate 5, write the ADR first — it turns on
-a decision, not an implementation. Candidate 8's ADR is done. Full routing rules, and the reason
-to file tickets *before* the blocker clears, are in `docs/agents/triage-labels.md`.
+a decision, not an implementation. Full routing rules, and the reason to file tickets *before* the
+blocker clears, are in `docs/agents/triage-labels.md`. ADR-0006 is the next free number; #477 was
+going to claim it, so whichever lands first takes it.
 
 When a candidate lands: tick it in [#466](https://github.com/aidenlab/juicebox.js/issues/466) and
 add an Outcome box to its card. That is the only time either file is touched.
@@ -139,9 +135,15 @@ so a moving `master` costs them nothing until then.
 
 Before releasing:
 1. Re-measure the consumer surface — `docs/adr/0003-public-api-contract.md` goes stale the moment
-   either app changes. It already under-counted once. #474 proposes making that re-runnable.
+   either app changes. It already under-counted once, and candidate 8 added two members to it
+   (`browser.dispose`, `registry.dispose`). #474 proposes making that re-runnable.
 2. Run #466's pre-release consumer verification checklist, **plus the registry click-through above**.
 3. Bump / tag / `gh release create` / repoint both consumers.
+
+**The release note candidate 8 owes:** a disposed browser now throws `DisposedBrowserError` rather
+than silently no-op'ing. Neither known host can reach it — nothing called `dispose()` before it
+existed — but a third-party embedder calling a method on a deleted browser and getting away with
+it will now see an exception. It is the one behavioural change on the list so far.
 
 ---
 

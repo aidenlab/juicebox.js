@@ -133,17 +133,28 @@ same instance, and browser identity survives it.**
 
 ### Sequencing
 
+**#438 does not block this candidate.** An earlier draft of this ADR said it did,
+on the premise that counting orphaned dialogs needed a scriptable browser
+harness. That was wrong: ADR-0004 built the test surface this needs, and the
+assertion runs in JSDOM today. A throwaway probe against
+`test/utils/browserFixture.js` confirms it —
+
+```
+container children after 3 build/delete cycles: 3
+child classes: [ 'igv-ui-generic-dialog-container' × 3 ]
+```
+
+Every acceptance criterion in this candidate is a DOM-node count or an
+object-graph check, and vitest does both. #438 remains needed for what JSDOM
+cannot do — real canvas output, real gestures, pixel probes — which is none of
+this work. It returns to the optional side track.
+
 1. This ADR.
-2. **#438, the scriptable probe harness, first.** Candidate 8's entire
-   justification is a DOM-node count and its success criterion is a DOM-node count
-   — restore a session N times, count orphaned dialogs and stale sync references.
-   #438 is listed as optional and non-blocking; candidate 8 is its cheapest
-   possible first customer. Shipping without it repeats candidate 4's one
-   unverified claim.
-3. **The `deleteAll()` / `unsyncSelf()` bug (fact 4), standalone.** A one-line fix
-   on the critical path of the thing being refactored, landed before the
-   restructuring so the candidate's diff stays pure.
-4. `dispose()`, and the `clearDataset` rename with it.
+2. The `clearSession` → `clearDataset` rename, as prefactor.
+3. The `deleteAll()` / `unsyncSelf()` bug (fact 4), standalone. A one-line fix on
+   the critical path of the thing being refactored, landed before the
+   restructuring so the candidate's diff stays pure. Independent of the rename.
+4. `dispose()`, then `reset()` on top of it, then `registry.dispose()`.
 
 ## Considered and rejected
 
@@ -181,5 +192,10 @@ exception is a bug on the critical path of the refactor itself, which this is.
   gets away with it will now see an exception. Neither known host does this
   today; a third-party embedder might. This is the one behavioural change worth
   naming in release notes.
-- Decision 2 is the failure mode to watch for in review: it is invisible, it is
-  not covered by any existing test, and it only shows up under load latency.
+- Decision 2 is the failure mode to watch for in review: it is invisible and it
+  only shows up under load latency. `test/testRepaintDuringReset.js` is where it
+  gets pinned — the file already exists, from #469.
+- The "no test surface" reflex is now wrong twice in this repo. ADR-0004 made
+  browsers constructible in a test, and `test/utils/browserFixture.js` stands one
+  up in JSDOM with a stubbed 2D context. Check it before concluding something
+  needs #438.

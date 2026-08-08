@@ -41,7 +41,7 @@ impact block; read it before filing anything.
 
 | Candidate | Status |
 |---|---|
-| **8 · Give the browser a teardown that matches its construction** | ✅ contract settled — ADR-0005 · **not breaking** · blocked on #438 |
+| **8 · Give the browser a teardown that matches its construction** | ✅ contract settled — ADR-0005 · **not breaking** · tickets filed, unblocked |
 | **5 · One decoder for session and URL** | ⚠️ breaking |
 | **11 · Give the track tile one owner** | ⚠️ breaking |
 | **6 · Fold StateManager into State, and make restore use the chokepoint** | watch |
@@ -119,29 +119,6 @@ add it to #466's checklist so it is not carried in someone's head.
 
 ---
 
-## Phase 3c — #438, no longer optional.
-
-| Task | Issue | Skill |
-|---|---|---|
-| Give the browser-level probe harness a home | [#438](https://github.com/aidenlab/juicebox.js/issues/438) | `/implement 438` |
-
-**Promoted out of the side track by ADR-0005.** Candidate 8's entire justification is a DOM-node
-count and its success criterion is a DOM-node count — restore a session N times, count orphaned
-`InputDialog`s and stale sync references. #438 is its cheapest possible first customer, and
-shipping candidate 8 without it repeats candidate 4's one unverified claim. The three remaining
-breaking candidates need it too.
-
-Two throwaway headless harnesses have now been built for exactly this. The `dev/` harnesses that
-could not load are repaired — `load-and-reset.html` and `non_synched_maps.html` still point at
-`hicfiles.s3.amazonaws.com` but route through `hic.setUrlMapper(devMapUrl)` per ADR-0001, so they
-work with the dev proxy running. #429 is closed. What is still missing is a *scriptable* harness,
-which is what #438 is about.
-
-Do this outside the candidate-8 thread. You return to candidate 8 by opening its tickets once
-#438 closes — which is why they get filed now, before it.
-
----
-
 ## Phase 4 — Release.
 
 #466 sets the rule: **no release until every candidate is done.** Both consumers pin `v3.6.2`,
@@ -159,7 +136,17 @@ Before releasing:
 
 | Task | Issue | Skill |
 |---|---|---|
+| Give the browser-level probe harness a home | [#438](https://github.com/aidenlab/juicebox.js/issues/438) | `/implement 438` |
 | Consumer-usage facts restated in four places | [#474](https://github.com/aidenlab/juicebox.js/issues/474) | `/implement 474` |
+
+#438 stays optional. ADR-0005 briefly promoted it to blocking on the premise that candidate 8's
+node-counting assertions needed a scriptable harness; they do not — ADR-0004 built the JSDOM test
+surface (`test/utils/browserFixture.js`) and a probe against it reproduces the `InputDialog` leak
+in three lines. **Check that fixture before concluding anything needs #438.** What #438 is still
+for is what JSDOM cannot do: real canvas output, real gestures, pixel probes. The `dev/` harnesses
+that could not load are repaired — `load-and-reset.html` and `non_synched_maps.html` still point at
+`hicfiles.s3.amazonaws.com` but route through `hic.setUrlMapper(devMapUrl)` per ADR-0001, so they
+work with the dev proxy running. #429 is closed. What is missing is a *scriptable* harness.
 
 #474 is the drift problem: the consumer surface is hand-measured prose in four places and has
 already gone stale once. Phase 4 step 1 is that measurement.

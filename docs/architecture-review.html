@@ -372,12 +372,19 @@
             <h3 class="font-serif text-2xl">8 · Give the browser a teardown that matches its construction</h3>
             <div class="flex gap-2 shrink-0">
               <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-white border border-slate-300 text-slate-600">Open</span>
-              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-amber-100 text-amber-900">Worth exploring</span>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-emerald-100 text-emerald-900">Contract settled — ADR-0005</span>
               <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-slate-200 text-slate-700">in-process</span>
             </div>
           </div>
 
-          <p class="font-mono text-sm text-slate-600">js/hicBrowser.js (constructor, reset) · js/createBrowser.js (deleteBrowser, deleteAllBrowsers) · js/layoutController.js · js/eventBus.js</p>
+          <p class="font-mono text-sm text-slate-600">js/hicBrowser.js (constructor, reset, clearSession) · js/browserRegistry.js (delete, deleteAll) · js/createBrowser.js (deleteBrowser, deleteAllBrowsers)</p>
+
+          <div class="rounded border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-950 space-y-2">
+            <div class="text-xs uppercase tracking-wider opacity-70">Settled — and the card below was wrong twice</div>
+            <p><strong>This candidate is not breaking.</strong> <a class="underline" href="../adr/0005-browser-teardown-contract.md">ADR-0005</a> keeps <span class="font-mono">reset()</span>'s browser identity, so juicebox-web's <span class="font-mono">reset()</span> → <span class="font-mono">loadHicFile()</span> → <span class="font-mono">enableIfMapLoaded(browser)</span> sequence is untouched. The Consumer impact box below asked the right question; the answer is the first of its two branches.</p>
+            <p><strong>Two of the five "Before" rows were already fixed.</strong> <span class="font-mono">grep -rn subscribe js/</span> returns zero subscription sites outside <span class="font-mono">eventBus.js</span> — #414 migrated every internal subscription to the coordinator and added <span class="font-mono">EventBus.unsubscribe()</span>. The only subscribers left are hosts, and juicebox cannot unsubscribe those on their behalf. The bus rows have been corrected in place.</p>
+            <p><strong>And one row was missing.</strong> There are <em>four</em> teardown paths, not three: <span class="font-mono">clearSession()</span> is the soft clear <span class="font-mono">loadHicFile</span> runs on its way in, which is why juicebox-web's <span class="font-mono">reset()</span> already clears state twice. ADR-0005 renames it <span class="font-mono">clearDataset()</span> and keeps it — the outcome is two verbs, not one.</p>
+          </div>
 
           <div class="grid md:grid-cols-2 gap-4">
             <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-2">
@@ -386,12 +393,12 @@
                 <div class="h-8 border-l-4 border-slate-400 bg-white px-3 flex items-center text-xs font-mono">constructor installs <span class="ml-auto text-slate-400">29 fields</span></div>
                 <div class="h-8 border-l-4 border-red-400 bg-red-50 px-3 flex items-center text-xs font-mono">rootElement → container <span class="ml-auto text-slate-400">removed ✓</span></div>
                 <div class="h-8 border-l-4 border-red-400 bg-red-50 px-3 flex items-center text-xs font-mono">InputDialog → appContainer <span class="ml-auto text-red-600">leaked ✗</span></div>
-                <div class="h-8 border-l-4 border-red-400 bg-red-50 px-3 flex items-center text-xs font-mono">this.eventBus subscriptions <span class="ml-auto text-red-600">never unsub ✗</span></div>
-                <div class="h-8 border-l-4 border-red-400 bg-red-50 px-3 flex items-center text-xs font-mono">globalBus subscriptions <span class="ml-auto text-red-600">never unsub ✗</span></div>
-                <div class="h-8 border-l-4 border-red-400 bg-red-50 px-3 flex items-center text-xs font-mono">LayoutController's 4 fields <span class="ml-auto text-red-600">not cleared ✗</span></div>
+                <div class="h-8 border-l-4 border-red-400 bg-red-50 px-3 flex items-center text-xs font-mono">per-browser bus, host handlers <span class="ml-auto text-red-600">retained ✗</span></div>
+                <div class="h-8 border-l-4 border-emerald-400 bg-emerald-50 px-3 flex items-center text-xs font-mono">internal bus subscriptions <span class="ml-auto text-emerald-700">none left — #414 ✓</span></div>
+                <div class="h-8 border-l-4 border-amber-400 bg-amber-50 px-3 flex items-center text-xs font-mono">LayoutController's 4 fields <span class="ml-auto text-amber-700">stale refs, not leaks</span></div>
                 <div class="h-8 border-l-4 border-amber-400 bg-amber-50 px-3 flex items-center text-xs font-mono">reset() touches <span class="ml-auto text-slate-400">7 of 29</span></div>
               </div>
-              <p class="text-xs text-slate-500 pt-2">Three teardown paths that do different things: <span class="font-mono">reset()</span>, <span class="font-mono">deleteBrowser()</span>, <span class="font-mono">deleteAllBrowsers()</span> — only one calls <span class="font-mono">unsyncSelf()</span>.</p>
+              <p class="text-xs text-slate-500 pt-2"><strong>Four</strong> teardown paths that do different things: <span class="font-mono">reset()</span>, <span class="font-mono">clearSession()</span>, <span class="font-mono">registry.delete()</span>, <span class="font-mono">registry.deleteAll()</span>. Three call <span class="font-mono">unsyncSelf()</span>; <span class="font-mono">deleteAll()</span> does not — so every <span class="font-mono">restoreSession()</span> leaves browsers holding deleted peers. That one is a live bug and lands before the refactor.</p>
             </div>
             <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-2">
               <div class="text-xs uppercase tracking-wider text-slate-500 mb-3">After — one symmetric pair</div>
@@ -400,30 +407,32 @@
                 <div class="h-[124px] border-l-4 border-slate-900 deep px-3 flex flex-col justify-center text-xs font-mono text-slate-200 gap-1">
                   <span>dispose()</span>
                   <span class="text-slate-400">removes every element it appended</span>
-                  <span class="text-slate-400">unsubscribes both buses</span>
+                  <span class="text-slate-400">clears the per-browser bus only</span>
                   <span class="text-slate-400">unsyncs from peers</span>
                   <span class="text-slate-400">releases the registry slot</span>
                 </div>
-                <div class="h-8 border-l-4 border-emerald-500 bg-emerald-50 px-3 flex items-center text-xs font-mono">reset() <span class="ml-auto text-slate-400">= dispose + construct</span></div>
+                <div class="h-8 border-l-4 border-emerald-500 bg-emerald-50 px-3 flex items-center text-xs font-mono">reset() <span class="ml-auto text-slate-400">= dispose + construct, same instance</span></div>
               </div>
-              <p class="text-xs text-slate-500 pt-2">One teardown. <span class="font-mono">deleteBrowser</span> and <span class="font-mono">deleteAllBrowsers</span> both call it.</p>
+              <p class="text-xs text-slate-500 pt-2">One teardown. <span class="font-mono">delete</span> and <span class="font-mono">deleteAll</span> both call it. <span class="font-mono">globalBus</span> is never touched — those registrations belong to the host.</p>
             </div>
           </div>
 
           <dl class="grid sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-            <div><dt class="text-xs uppercase tracking-wider text-slate-500">Problem</dt><dd>The constructor appends elements outside <span class="font-mono">rootElement</span>'s subtree — notably <span class="font-mono">InputDialog</span> into the app container — but every delete path removes only <span class="font-mono">rootElement</span>. Repeated <span class="font-mono">init()</span> / <span class="font-mono">restoreSession()</span> cycles accumulate orphaned dialogs, and no path unsubscribes from either event bus.</dd></div>
-            <div><dt class="text-xs uppercase tracking-wider text-slate-500">Solution</dt><dd>One <span class="font-mono">dispose()</span> on <span class="font-mono">HICBrowser</span>, symmetric with the constructor. <span class="font-mono">reset()</span> becomes dispose-then-construct; both free delete functions delegate to it.</dd></div>
+            <div><dt class="text-xs uppercase tracking-wider text-slate-500">Problem</dt><dd>The constructor appends elements outside <span class="font-mono">rootElement</span>'s subtree — notably <span class="font-mono">InputDialog</span> into the app container — but every delete path removes only <span class="font-mono">rootElement</span>. Repeated <span class="font-mono">init()</span> / <span class="font-mono">restoreSession()</span> cycles accumulate orphaned dialogs — one construction site, one read site, zero teardown — and the per-browser bus keeps host handler references alive after the browser is gone.</dd></div>
+            <div><dt class="text-xs uppercase tracking-wider text-slate-500">Solution</dt><dd>One <span class="font-mono">dispose()</span> on <span class="font-mono">HICBrowser</span>, symmetric with the constructor, published alongside <span class="font-mono">registry.dispose()</span>. <span class="font-mono">reset()</span> becomes dispose-then-construct <em>on the same instance</em>, restoring its sibling position; both delete paths delegate to it. A disposed browser throws.</dd></div>
           </dl>
 
           <ul class="text-sm space-y-1 list-disc list-inside marker:text-amber-600">
             <li>locality: one place to add cleanup when a field is added to the constructor</li>
-            <li>a leaked <span class="font-mono">InputDialog</span> per session restore is real, reproducible growth</li>
+            <li>a leaked <span class="font-mono">InputDialog</span> per session restore is real growth — but <strong>unverified</strong>, and blocked on the scriptable harness of #438, which this candidate promoted out of the optional side track</li>
             <li>pairs with candidate 4 — a registry needs something to call</li>
-            <li>the unsubscribe gap is also recorded in issue #414</li>
+            <li><strong>the review gate:</strong> <span class="font-mono">reset()</span> must install a <em>new</em> <span class="font-mono">State</span> object, not mutate the old one, or #469's identity-based abandonment check silently stops firing</li>
+            <li><span class="font-mono">rootElement</span> is appended with plain <span class="font-mono">appendChild</span>, so a naive dispose-then-construct on the first of two panels re-appends it last and the panels visibly swap</li>
           </ul>
-          <div class="rounded border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 space-y-1">
-            <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — redefines a method juicebox-web calls</div>
-            <div>juicebox-web calls <span class="font-mono">browser.reset()</span> and then, on the very next line, <span class="font-mono">await browser.loadHicFile(config)</span> on the <em>same instance</em> (<span class="font-mono">initializationHelper.js:366-367</span>). <br><br>"<span class="font-mono">reset()</span> becomes dispose-then-construct" breaks that if the browser it holds is invalidated or replaced. Either <span class="font-mono">reset()</span> keeps returning a usable browser of the same identity, or this needs a coordinated change in juicebox-web — decide which before writing code.</div>
+          <div class="rounded border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 space-y-2">
+            <div class="text-xs uppercase tracking-wider opacity-70">Consumer impact — asked and answered</div>
+            <div>juicebox-web calls <span class="font-mono">browser.reset()</span> and then, on the very next line, <span class="font-mono">await browser.loadHicFile(config)</span> on the <em>same instance</em> (<span class="font-mono">initializationHelper.js:371-372</span>). <br><br>"<span class="font-mono">reset()</span> becomes dispose-then-construct" breaks that if the browser it holds is invalidated or replaced. Either <span class="font-mono">reset()</span> keeps returning a usable browser of the same identity, or this needs a coordinated change in juicebox-web — decide which before writing code.</div>
+            <div class="rounded bg-white/60 border border-emerald-300 px-3 py-2 text-emerald-950"><strong>Answered:</strong> identity is preserved. Reconstruction happens <em>inside</em> the object — same instance, same <span class="font-mono">id</span>, same registry slot, same sibling position — so the host's reference stays valid and no coordinated release is needed. <span class="font-mono">dispose()</span> and <span class="font-mono">registry.dispose()</span> are new published members and go into <span class="font-mono">js/publicApi.js</span> with the change. The one behavioural change worth release notes: a disposed browser now throws rather than silently no-op'ing, which neither known host can hit today.</div>
           </div>
 
         </article>
@@ -1062,11 +1071,12 @@ flowchart TB
         <h2 class="font-serif text-3xl border-b border-stone-300 pb-3">Next task</h2>
         <div class="rounded-lg border-2 border-slate-900 deep text-slate-100 p-6 space-y-4">
           <div class="flex items-baseline justify-between gap-4 flex-wrap">
-            <a href="#c8" class="font-serif text-2xl text-white underline decoration-amber-400 decoration-2 underline-offset-4">8 · Give the browser a teardown that matches its construction</a>
+            <a href="https://github.com/aidenlab/juicebox.js/issues/438" class="font-serif text-2xl text-white underline decoration-amber-400 decoration-2 underline-offset-4">#438 · Give the browser-level probe harness a home</a>
             <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-amber-400 text-amber-950">start here</span>
           </div>
-          <p class="text-sm text-slate-300">Candidate 4 landed and left this one a call site waiting for a body. <span class="font-mono">BrowserRegistry.delete()</span> and <span class="font-mono">deleteAll()</span> run today's <span class="font-mono">deleteBrowser</span> logic; <span class="font-mono">dispose()</span> replaces that body behind the same call, which is exactly the shape ADR-0004 deferred here rather than folding in.</p>
-          <p class="text-sm text-slate-300"><strong>Settle the contract question before writing code.</strong> juicebox-web calls <span class="font-mono">browser.reset()</span> and then <span class="font-mono">loadHicFile()</span> on the same instance, so "reset = dispose + construct" — this card's proposal — has to leave that instance usable. That is a decision, not an implementation detail: it wants an ADR, the way candidate 4 wanted ADR-0004, and it is the difference between this being a refactor and a breaking change.</p>
+          <p class="text-sm text-slate-300"><strong>Candidate <a href="#c8" class="underline decoration-amber-400 underline-offset-2">8</a>'s contract is settled</strong> — <a class="underline" href="../adr/0005-browser-teardown-contract.md">ADR-0005</a>, and it turned out not to be breaking. What blocks the code is measurement, not decisions: the candidate's entire justification is a DOM-node count and its success criterion is a DOM-node count — restore a session N times, count orphaned <span class="font-mono">InputDialog</span>s and stale sync references. Nothing here can do that yet.</p>
+          <p class="text-sm text-slate-300">So #438 comes out of the optional side track and goes first. It is candidate 8's cheapest possible first customer, the three remaining breaking candidates need it too, and shipping candidate 8 without it repeats candidate 4's one unverified claim. <strong>File candidate 8's tickets before starting #438, not after</strong> — decomposition never needs the thing it is blocked on, and a ticket that says "blocked on #438" is what makes the work resumable.</p>
+          <p class="text-sm text-slate-300">One live bug found while settling the contract lands ahead of the refactor regardless: <span class="font-mono">deleteAll()</span> skips <span class="font-mono">unsyncSelf()</span> where <span class="font-mono">delete()</span> calls it, so every <span class="font-mono">restoreSession()</span> in both hosts leaves browsers holding references to deleted peers. One line.</p>
           <p class="text-sm text-slate-300">Two smaller things belong to whoever picks it up: the registry work is <strong>owed a runtime click-through against a running juicebox-web</strong> (see candidate 4's Outcome), and <strong>#477</strong> — the <span class="font-mono">--hic-viewport-*</span> CSS variables — is the last page-scoped singleton keeping two embeds from having different viewport sizes. #477 is independent of this card and is <span class="font-mono">ready-for-human</span>: it has open questions, not acceptance criteria.</p>
           <p class="text-sm text-slate-400">After that: <a href="#c5" class="underline decoration-slate-500 underline-offset-2">5</a> and <a href="#c9" class="underline decoration-slate-500 underline-offset-2">9</a> together, since decode-then-normalize is one pipeline — and 5's contract is with <em>users</em>, so shared session URLs must still decode; it wants its own ADR first. <a href="#c7" class="underline decoration-slate-500 underline-offset-2">7</a> is the largest remaining deepening — ~300 lines of gesture closures with no test surface.</p>
         </div>

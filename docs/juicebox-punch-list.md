@@ -24,7 +24,7 @@ Phases 0, 1 and 2 are complete, and so is the first of the Phase 3 candidates.
 | 1.1 | Mark the intended public surface in code | #470 → `js/publicApi.js` + `test/testPublicApi.js`, PR #472 |
 | 2.1 | One accessor vocabulary | #468 closed |
 | 2.2 | Event system cleanup | #414 closed — bus **kept**, both buses are consumer API |
-| 2.3 | `reset()` during in-flight render throws | #469 closed |
+| 2.3 | A repaint pass outliving the state it started from | #469 closed — it *abandons* the pass on a state-identity check (`f4f5ce5`), it does not throw. The earlier summary here said "throws"; that was wrong, and ADR-0005 depends on which it is |
 | 3 · c4 | Browser registry owner | ADR-0004 → #476, #478–#483, `78a5d0b..9fde9a2`. **Closes #384** (open since 2023) and #475 |
 
 Candidate 4 also produced `docs/architecture-review-item-4-punchlist.md` — the ticket
@@ -35,12 +35,13 @@ pattern is the one to repeat for the candidates below.
 
 ## Phase 3 — The remaining seven candidates.
 
-Seven candidates in `docs/architecture-review.html` are open. **Four are breaking as currently
-scoped.** Each card carries a Consumer impact block; read it before filing anything.
+Seven candidates in `docs/architecture-review.html` are open. **Three are breaking as currently
+scoped** — candidate 8 was the fourth until ADR-0005 settled it. Each card carries a Consumer
+impact block; read it before filing anything.
 
 | Candidate | Status |
 |---|---|
-| **8 · Give the browser a teardown that matches its construction** | ⚠️ breaking · **next** |
+| **8 · Give the browser a teardown that matches its construction** | ✅ contract settled — ADR-0005 · **not breaking** · blocked on #438 |
 | **5 · One decoder for session and URL** | ⚠️ breaking |
 | **11 · Give the track tile one owner** | ⚠️ breaking |
 | **6 · Fold StateManager into State, and make restore use the chokepoint** | watch |
@@ -48,9 +49,22 @@ scoped.** Each card carries a Consumer impact block; read it before filing anyth
 | **9 · Give the config schema one reader** | watch |
 | **10 · One dataset-load path** — *this is the live-map seam* | watch |
 
-**8** — juicebox-web calls `reset()` then `loadHicFile()` on the same instance. Candidate 4 left
-this a call site waiting for a body: `registry.delete()` runs today's `deleteBrowser` logic.
-**Settle the reset contract in an ADR before writing code.**
+**8** — **settled in `docs/adr/0005-browser-teardown-contract.md`.** `reset()` keeps browser
+identity, so juicebox-web's `reset()` → `loadHicFile()` → `enableIfMapLoaded(browser)` is
+untouched and this candidate is no longer breaking. The candidate is also *smaller* than its card:
+two of its five "Before" bullets — both event-bus lines — were already fixed by #414, and
+`grep -rn subscribe js/` now returns nothing outside `eventBus.js`. What remains is the
+`inputDialog` leak (one construction site, zero teardown, leaks once per session restore), the
+sibling-position symmetry, clearing the per-browser bus, and folding four teardown verbs into two.
+
+Two things found while grilling it that are **not** part of the candidate:
+- `deleteAll()` skips `unsyncSelf()` and `delete()` does not, so every `restoreSession()` leaves
+  browsers holding references to deleted peers. Live bug, both hosts, one-line fix. Lands *before*
+  the refactor — it is on the refactor's critical path, which is the standing exception to
+  "file it and keep refactoring."
+- `reset()` must install a **new** `State` object, not mutate the old one, or #469's
+  identity-based abandonment check stops firing. Invisible, untested, only shows up under load
+  latency. This is the review-gate on the whole candidate.
 
 **5** — the contract is with **users**, not just the two host apps: shared session URLs must still
 decode. Needs its own ADR first.
@@ -67,8 +81,14 @@ then normalize.
 
 **10** — three named load methods must survive.
 
-**Skill:** `/to-tickets` when you pick one up. For candidates 8 and 5, write the ADR first
-(`/domain-modeling` records ADRs) — both turn on a decision, not an implementation.
+**Skill:** `/to-tickets` when you pick one up. For candidate 5, write the ADR first
+(`/grill-with-docs` runs the interview and records the ADR in one pass) — it turns on a decision,
+not an implementation. Candidate 8's ADR is done.
+
+**File the tickets before the blocker clears, not after.** Decomposition never needs the thing
+it is blocked on; only implementation does. A candidate whose tickets exist and say "blocked on
+#N" is one `gh issue view` away from being resumable. A candidate settled only in an ADR has to
+be re-derived.
 
 If a candidate's scope feels unsettled, `/grilling` before `/to-tickets` — cheaper to stress-test
 the plan than to rewrite the code.
@@ -88,13 +108,37 @@ Track everything against [#466](https://github.com/aidenlab/juicebox.js/issues/4
 coexist; they still cannot have different viewport sizes. It is `ready-for-human` because it has
 open questions rather than acceptance criteria — whether the properties move to each registry's
 container or the rules stop needing custom properties at all, and whether any host reads them.
-The sequence is `/grill-with-docs` → ADR-0005 → `/to-tickets` → re-label → `/implement`.
+The sequence is `/grill-with-docs` → ADR-0006 → `/to-tickets` → re-label → `/implement`.
+(0005 went to candidate 8's teardown contract.)
 
 **The click-through is candidate 4's one unverified claim.** #479 was the ticket flagged as
 carrying a manual step no skill covers, and it was verified statically only — 13 juicebox-web call
 sites read, all resolving one registry, no headless browser available. Browser panel
 add/delete/select and session save against a running juicebox-web. Do it before the release, and
 add it to #466's checklist so it is not carried in someone's head.
+
+---
+
+## Phase 3c — #438, no longer optional.
+
+| Task | Issue | Skill |
+|---|---|---|
+| Give the browser-level probe harness a home | [#438](https://github.com/aidenlab/juicebox.js/issues/438) | `/implement 438` |
+
+**Promoted out of the side track by ADR-0005.** Candidate 8's entire justification is a DOM-node
+count and its success criterion is a DOM-node count — restore a session N times, count orphaned
+`InputDialog`s and stale sync references. #438 is its cheapest possible first customer, and
+shipping candidate 8 without it repeats candidate 4's one unverified claim. The three remaining
+breaking candidates need it too.
+
+Two throwaway headless harnesses have now been built for exactly this. The `dev/` harnesses that
+could not load are repaired — `load-and-reset.html` and `non_synched_maps.html` still point at
+`hicfiles.s3.amazonaws.com` but route through `hic.setUrlMapper(devMapUrl)` per ADR-0001, so they
+work with the dev proxy running. #429 is closed. What is still missing is a *scriptable* harness,
+which is what #438 is about.
+
+Do this outside the candidate-8 thread. You return to candidate 8 by opening its tickets once
+#438 closes — which is why they get filed now, before it.
 
 ---
 
@@ -115,14 +159,7 @@ Before releasing:
 
 | Task | Issue | Skill |
 |---|---|---|
-| Give the browser-level probe harness a home | [#438](https://github.com/aidenlab/juicebox.js/issues/438) | `/implement 438` |
 | Consumer-usage facts restated in four places | [#474](https://github.com/aidenlab/juicebox.js/issues/474) | `/implement 474` |
-
-#438: two throwaway headless harnesses have now been built for exactly this. The `dev/` harnesses
-that could not load are repaired — `load-and-reset.html` and `non_synched_maps.html` still point at
-`hicfiles.s3.amazonaws.com` but route through `hic.setUrlMapper(devMapUrl)` per ADR-0001, so they
-work with the dev proxy running. #429 is closed. What is still missing is a *scriptable* harness,
-which is what #438 is about — and the four breaking candidates above all need one.
 
 #474 is the drift problem: the consumer surface is hand-measured prose in four places and has
 already gone stale once. Phase 4 step 1 is that measurement.

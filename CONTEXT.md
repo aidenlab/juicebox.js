@@ -104,6 +104,27 @@ zero-argument getters use. The only part of a session no registry owns is the
 **caption**, a single `#hic-caption` element outside every container that two
 embeds share.
 
+**Dispose** vs **reset** vs **clear dataset** — the three teardown verbs, in
+descending order of how much they destroy. See `docs/adr/0005`.
+
+- **Dispose** — the browser is going away. `dispose()` removes every element the
+  constructor appended, including the ones outside `rootElement`, clears the
+  per-browser event bus, unsyncs from peers, and releases the registry slot. A
+  disposed browser is dead: calling a published method on it throws. This is the
+  *one* teardown — `registry.delete()` and `registry.deleteAll()` both go through
+  it. A registry disposes too, which evicts it from the container map.
+- **Reset** — the browser stays, but everything it holds goes. `reset()` is
+  dispose-then-construct on the same instance: same object, same `id`, same
+  registry slot, same position among its siblings. A host's reference survives
+  it. Reset installs a *new* `State` object rather than mutating the old one —
+  in-flight repaints detect a replaced browser by state identity.
+- **Clear dataset** — the browser and its DOM stay, only the data goes.
+  `clearDataset()` is the soft clear a load runs before installing a new dataset.
+  Internal only. _Avoid_: `clearSession`, which named a session it never touched.
+
+Do not add a fourth verb. Four of these drifted apart once already, and no two of
+them agreed about `unsyncSelf`.
+
 **Update** vs **repaint** — not synonyms. A **repaint** redraws everything from
 current state: rulers, track pairs, contact matrix, once, with no coordination.
 An **update** wraps a repaint in the things that must happen around it —

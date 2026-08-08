@@ -1,5 +1,13 @@
 # Architecture Review Item 4 Punchlist
 
+> **Status: the chain is complete.** All seven chain issues are closed and merged
+> to `master` — #476, #478, #479, #480, #481, #482, #483, landing as
+> `78a5d0b..9fde9a2`. #384 and #475 are closed with them. **#477 is still open**
+> and was never part of the chain; its section below is the only live one.
+> Two follow-ups are recorded in [What actually happened](#what-actually-happened)
+> at the foot of this document. The rest is kept as a record of which tool was
+> reached for and whether that was the right call.
+
 Candidate 4 of `docs/architecture-review.html` — *Give the browser registry an
 owner* — decomposed into eight issues, each mapped to the skill you should reach
 for when you pick it up.
@@ -42,11 +50,14 @@ Blocking edges are native GitHub dependencies, so the frontier is queryable:
 `gh issue list --state open` filtered on
 `issue_dependencies_summary.blocked_by == 0`.
 
+Every node above is closed; the frontier is empty. The chain was walked in
+dependency order and no edge was skipped.
+
 ---
 
 ### #476 — Extract `pairSynchable(browsers)` as a pure function
 
-`ready-for-agent` · no blockers · **on the frontier now**
+**Closed — `78a5d0b`.** `ready-for-agent` · no blockers
 
 **Reach for `/tdd`.** This is the single most test-shaped ticket in the set: a
 pure function with a fully enumerable input space and no DOM, no network, no
@@ -61,7 +72,7 @@ observable changed, so the Spec axis has little to bite on.
 
 ### #478 — Introduce `BrowserRegistry` holding today's module state
 
-`ready-for-agent` · blocked by #476
+**Closed — `2583f0e`.** `ready-for-agent` · blocked by #476
 
 **Reach for `/implement`.** A pure lift of module state onto an object. ADR-0004
 decisions 1 and 8 fix the name and the lookup, so there is nothing left to decide.
@@ -77,7 +88,7 @@ Then `/code-review`.
 
 ### #479 — Key browser registries by container element
 
-`ready-for-agent` · blocked by #478 · **the risky one**
+**Closed — `3e6bfef`.** `ready-for-agent` · blocked by #478 · **the risky one**
 
 **Reach for `/implement`**, but the acceptance criteria carry a manual step no
 skill covers: smoke-test against a real juicebox-web checkout. A mistake here
@@ -96,7 +107,7 @@ is silent divergence, and a symptom you can see is worth stopping for.
 
 ### #480 — Selection falls through when the current browser is deleted
 
-`ready-for-agent` · blocked by #478 · closes #475
+**Closed — `4cbf78a`, and #475 with it.** `ready-for-agent` · blocked by #478
 
 **Reach for `/tdd`.** Four enumerated state transitions, all assertable against
 browser-shaped test doubles: delete the current one, delete a non-current one,
@@ -110,7 +121,7 @@ Then `/code-review`.
 
 ### #481 — Move `selectedGene` and `Alert` onto the browser registry
 
-`ready-for-agent` · blocked by #479
+**Closed — `91e3e2a`.** `ready-for-agent` · blocked by #479
 
 **Reach for `/implement`.** The scope section of ADR-0004 already drew the line —
 two singletons move, two stay — so the judgement call is made. The one thing to
@@ -124,7 +135,7 @@ Then `/code-review`, Spec axis, specifically checking the negatives.
 
 ### #482 — Sessions become browser registry methods
 
-`ready-for-agent` · blocked by #479
+**Closed — `1047045`.** `ready-for-agent` · blocked by #479
 
 **Reach for `/tdd`** for the round-trip criterion — save a registry's session,
 restore it, compare canonical state — then `/implement` for the delegation
@@ -137,7 +148,7 @@ Then `/code-review`.
 
 ### #483 — Export `initRegistry`, declare the surface, prove two embeds coexist
 
-`ready-for-agent` · blocked by #476, #480, #481, #482 · closes #384
+**Closed — `9fde9a2`, and #384 with it.** `ready-for-agent` · blocked by #476, #480, #481, #482
 
 **Reach for `/implement`**, then `/code-review` on **both** axes — this is the
 ticket that touches `js/publicApi.js`, so Spec is checking a published contract,
@@ -158,7 +169,8 @@ If you run out of context mid-ticket — plausible, it is the widest one —
 
 ### #477 — `--hic-viewport-*` CSS variables are page-scoped
 
-`ready-for-human` · no blockers · **not** part of the chain
+**Still open — the one live section in this document.** `ready-for-human` · no
+blockers · **not** part of the chain
 
 **Reach for `/grill-with-docs`. Do not reach for `/implement`.**
 
@@ -177,6 +189,39 @@ rules resolve from a per-embed element at all — is faster to answer by trying 
 than by reasoning about it. Throwaway, not a branch.
 
 ---
+
+## What actually happened
+
+Seven issues, seven PRs (#484–#490), `78a5d0b..9fde9a2`, all on `master`. Tests
+337 → 439 across 22 → 28 files. #384 is closed after two years and #475 with it.
+The card in `docs/architecture-review.html` now carries an Outcome box saying
+where the review itself was wrong.
+
+**The plan bent in one place.** ADR-0004 decision 4 said the module-level
+functions would delegate to a *default registry*. They don't — there is no
+default registry. `createBrowser` resolves from its container argument and
+`setCurrentBrowser` from a new `browser.registry` back-pointer, and only the two
+zero-argument getters needed a policy. The ADR text is left as written; the
+implementation is what shipped, and #486's description records the difference.
+
+**The label scheme did its job.** Every `ready-for-agent` ticket was implementable
+without a new decision. The one `ready-for-human` ticket, #477, still is one —
+nothing about the chain landing changed the fact that nobody has decided what its
+fix is.
+
+### Two follow-ups this chain left behind
+
+1. **The runtime click-through against juicebox-web was never run.** #479's
+   acceptance criteria carried a manual step no skill covers — the punchlist said
+   so — and it was verified *statically*: 13 call sites read, all resolving one
+   registry, no headless browser available in the environment. That is the
+   candidate's one unverified claim. It belongs in #466's pre-release checklist,
+   not in someone's memory. Notably, the one step flagged as uncovered by tooling
+   is the one that did not happen.
+
+2. **#477 is open and blocks the full promise.** Two embeds coexist; they still
+   cannot have different viewport sizes. Anyone reading "candidate 4 is done" as
+   "multi-embed works" will be wrong in that one specific way.
 
 ## Meta tools
 

@@ -377,7 +377,7 @@
             </div>
           </div>
 
-          <p class="font-mono text-sm text-slate-600">js/hicBrowser.js (constructor, reset, clearSession) · js/browserRegistry.js (delete, deleteAll) · js/createBrowser.js (deleteBrowser, deleteAllBrowsers)</p>
+          <p class="font-mono text-sm text-slate-600">js/hicBrowser.js (constructor, reset, clearDataset) · js/browserRegistry.js (delete, deleteAll) · js/createBrowser.js (deleteBrowser, deleteAllBrowsers)</p>
 
           <div class="rounded border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-950 space-y-2">
             <div class="text-xs uppercase tracking-wider opacity-70">Settled — and the card below was wrong twice</div>
@@ -398,7 +398,7 @@
                 <div class="h-8 border-l-4 border-amber-400 bg-amber-50 px-3 flex items-center text-xs font-mono">LayoutController's 4 fields <span class="ml-auto text-amber-700">stale refs, not leaks</span></div>
                 <div class="h-8 border-l-4 border-amber-400 bg-amber-50 px-3 flex items-center text-xs font-mono">reset() touches <span class="ml-auto text-slate-400">7 of 29</span></div>
               </div>
-              <p class="text-xs text-slate-500 pt-2"><strong>Four</strong> teardown paths that do different things: <span class="font-mono">reset()</span>, <span class="font-mono">clearSession()</span>, <span class="font-mono">registry.delete()</span>, <span class="font-mono">registry.deleteAll()</span>. Three call <span class="font-mono">unsyncSelf()</span>; <span class="font-mono">deleteAll()</span> does not — so every <span class="font-mono">restoreSession()</span> leaves browsers holding deleted peers. That one is a live bug and lands before the refactor.</p>
+              <p class="text-xs text-slate-500 pt-2"><strong>Four</strong> teardown paths that do different things: <span class="font-mono">reset()</span>, <span class="font-mono">clearDataset()</span> (<span class="font-mono">clearSession()</span> when this was measured), <span class="font-mono">registry.delete()</span>, <span class="font-mono">registry.deleteAll()</span>. Three call <span class="font-mono">unsyncSelf()</span>; <span class="font-mono">deleteAll()</span> does not — so every <span class="font-mono">restoreSession()</span> leaves browsers holding deleted peers. That one is a live bug and lands before the refactor.</p>
             </div>
             <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-2">
               <div class="text-xs uppercase tracking-wider text-slate-500 mb-3">After — one symmetric pair</div>

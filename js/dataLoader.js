@@ -71,7 +71,7 @@ class DataLoader {
             return undefined;
         }
 
-        this.browser.clearSession();
+        this.browser.clearDataset();
         let name
         try {
             this.browser.contactMatrixView.startSpinner();
@@ -215,7 +215,7 @@ class DataLoader {
      * @returns {Promise<HiCDataset>}
      */
     async loadLiveContactMap(config, noUpdates) {
-        this.browser.clearSession();
+        this.browser.clearDataset();
 
         try {
             this.browser.contactMatrixView.startSpinner();

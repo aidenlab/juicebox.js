@@ -571,7 +571,7 @@ class HICBrowser {
         // is a pair of references, and a host keeps its browser across call
         // sites (juicebox-web holds one from `getCurrentBrowser()`), so a zombie
         // still holding its old peers pins every live browser's object graph.
-        // `reset()` and `clearSession()` deliberately do not do this -- those
+        // `reset()` and `clearDataset()` deliberately do not do this -- those
         // browsers are still on the page and get re-paired by `registry.sync()`.
         // #492.
         this.synchedBrowsers = new Set();
@@ -614,7 +614,11 @@ class HICBrowser {
         this.unsyncSelf()
     }
 
-    clearSession() {
+    /**
+     * The soft clear a dataset load runs on its way in: the browser and its DOM
+     * stay, only the data goes. Internal only -- not on the public API manifest.
+     */
+    clearDataset() {
         // Clear current datasets.
         this.stateManager.clearState();
         this.setDisplayMode('A')

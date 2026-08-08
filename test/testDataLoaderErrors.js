@@ -17,7 +17,7 @@ const { default: DataLoader } = await import("../js/dataLoader.js");
 
 function stubBrowser() {
     return {
-        clearSession: () => undefined,
+        clearDataset: () => undefined,
         stopSpinner: () => undefined,
         contactMatrixView: { startSpinner: () => undefined },
         contactMapLabel: { textContent: "", title: "" },

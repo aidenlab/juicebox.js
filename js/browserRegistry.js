@@ -136,7 +136,7 @@ class BrowserRegistry {
      * Tear a browser down and give up its slot.
      *
      * The teardown itself is the browser's -- `dispose()` is the one path, per
-     * ADR-0005 -- and it calls `evict` below on its way out. So this method is
+     * ADR-0005 -- and it calls `releaseSlot` below on its way out. So this method is
      * one line, and `deleteAll` is the same line in a loop: two delete paths
      * that used to disagree about `unsyncSelf` and about the dialog outside
      * `rootElement` now cannot.
@@ -162,6 +162,42 @@ class BrowserRegistry {
         // The postcondition, not the mechanism -- the loop above has already
         // emptied the list one slot at a time.
         this.clear()
+    }
+
+    /**
+     * Tear this embed down: dispose every browser it owns, take down the one
+     * node the registry itself installed, and evict the registry from the
+     * container map. Decisions 7 and 8 of ADR-0005.
+     *
+     * NOTE: public API function
+     *
+     * The counterpart of `initRegistry` the way `browser.dispose()` is the
+     * counterpart of the constructor: a host that is done with an embed --
+     * Spacewalk removing its Juicebox panel -- hands the container back empty.
+     *
+     * Eviction is what makes "dispose, then `hic.init()` the same element"
+     * supported rather than accidental. `registryForContainer` creates lazily,
+     * so the next call in builds a clean registry instead of finding this one.
+     * Decision 8 of ADR-0004 keyed the map by container precisely so a dropped
+     * container drops its registry; this is the explicit form of the same rule.
+     *
+     * Idempotent, for the same reason `browser.dispose()` is: a host that tears
+     * down twice is doing the right thing twice. It is deliberately *not*
+     * fatal, unlike a disposed browser -- a disposed registry is simply one
+     * with no browsers, and what a host can observe is that a second `init()`
+     * on the same container hands back a different object.
+     */
+    dispose() {
+
+        this.deleteAll()
+
+        // The registry's own contribution to the container, and the only node
+        // no browser teardown looks at: an embed whose host raised one alert
+        // would otherwise hand the container back non-empty.
+        this.alertDialog?.container.remove()
+        this.alertDialog = undefined
+
+        evict(this)
     }
 
     /**
@@ -338,6 +374,27 @@ function registryForContainer(container) {
     }
 
     return registry
+}
+
+/**
+ * Drop `registry` from the container map, so the next `registryForContainer`
+ * for the same element builds a new one.
+ *
+ * Internal, and the outbound half of `dispose()`: a registry tears itself down
+ * and evicts itself, rather than something outside reaching into the map.
+ *
+ * The identity check is what keeps `dispose()` idempotent once decision 8's
+ * sequence is taken up: dispose an embed, `init()` the same container again,
+ * and a host still holding the *first* registry can dispose it a second time.
+ * Deleting by container alone would take the live embed's entry with it, and
+ * the next `init()` would silently build a third registry over the second one's
+ * browsers. A registry built without a container -- the tests that exercise one
+ * without a document -- was never in the map, and matches nothing here.
+ */
+function evict(registry) {
+    if (registriesByContainer.get(registry.container) === registry) {
+        registriesByContainer.delete(registry.container)
+    }
 }
 
 function getMostRecentlySelectedBrowser() {

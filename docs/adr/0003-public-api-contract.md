@@ -108,6 +108,26 @@ all** — they exist solely for hosts. Deleting them would not remove a hop; it 
 promote `dataLoader` and `interactions` from internal collaborators to published
 names, freezing the browser's internal decomposition into the contract.
 
+### Browser registry — added since the measurement
+
+The measurement predates the per-container registry, so no row above names one:
+`initRegistry()` and `browser.registry` (ADR-0004, #483 and #479) hand a host an
+object this table never saw. Its declared members live in `REGISTRY_SURFACE` —
+that manifest, not this table, is the current list.
+
+**Added since the measurement:** `registry.dispose` (#496, decisions 7 and 8 of
+ADR-0005), the embed-level counterpart of `browser.dispose` above and of
+`initRegistry`. It disposes every browser the registry owns and then **evicts the
+registry from the container map**, so a host that takes its embed down and later
+calls `hic.init()` on the same element gets a clean registry rather than a dead
+one. Neither known host can be measured using it, for the same reason
+`browser.dispose` cannot: it did not exist when they were measured, and Spacewalk
+removing its Juicebox panel is exactly the case it is for.
+
+Unlike a disposed browser, a disposed *registry* is not fatal — it is simply a
+registry with no browsers, and what a host can observe is that a second `init()`
+on the same container hands back a different object. Nothing here throws.
+
 ### Sub-surfaces reached *through* those members
 
 These are contract too, and are easy to miss because they are one dot further out:

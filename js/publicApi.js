@@ -189,6 +189,11 @@ export const REGISTRY_SURFACE = [
     'delete',
     'deleteAll',
     'updateAll',
+    // The embed-level teardown, new in #496, and the counterpart of
+    // `initRegistry` the way `browser.dispose` is the counterpart of the
+    // constructor. Declared for the same reason that one is. Decisions 7 and 8
+    // of ADR-0005.
+    'dispose',
 
     // The sync group's membership rule, over this registry's browsers by
     // default. Decision 6.

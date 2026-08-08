@@ -109,6 +109,15 @@ export const BROWSER_SURFACE = [
     // Real methods
     'reset',
     'setCustomCrosshairsHandler',
+    // The one teardown path, new in #493. Declared deliberately rather than
+    // left to be discovered: Spacewalk tears down its Juicebox panel and has no
+    // way to say so today, and per "absence is not permission" a new reachable
+    // member is contract the moment it ships. Decision 7 of ADR-0005.
+    //
+    // It is also the one member whose *effect* on the rest of this list is
+    // contract: after it, every other method here throws a
+    // `DisposedBrowserError` rather than quietly doing nothing. Decision 6.
+    'dispose',
 
     // Accessors -- present from construction, populated by a load.
     //

@@ -16,8 +16,9 @@ import {createBrowserList} from './createBrowser.js'
  *
  * A registry never constructs a browser -- `js/createBrowser.js` does that and
  * hands the result over. The registry reads only four things off a browser:
- * `rootElement`, `browserPanelDeleteButton`, `synchedBrowsers` and
- * `unsyncSelf()`. That is what makes it constructible in a test.
+ * `rootElement`, `browserPanelDeleteButton`, `synchedBrowsers` and `dispose()`.
+ * That is what makes it constructible in a test. Nor does it tear one down:
+ * `delete` and `deleteAll` call `dispose()`, and the browser gives its slot back.
  *
  * One registry owns one container element; `registryForContainer` below is how
  * every entry point finds the right one.
@@ -131,22 +132,55 @@ class BrowserRegistry {
         }
     }
 
+    /**
+     * Tear a browser down and give up its slot.
+     *
+     * The teardown itself is the browser's -- `dispose()` is the one path, per
+     * ADR-0005 -- and it calls `evict` below on its way out. So this method is
+     * one line, and `deleteAll` is the same line in a loop: two delete paths
+     * that used to disagree about `unsyncSelf` and about the dialog outside
+     * `rootElement` now cannot.
+     */
     delete(browser) {
-        browser.unsyncSelf()
-        browser.rootElement.remove()
+        browser.dispose()
+    }
+
+    deleteAll() {
+
+        // Deselected first, and deliberately: `releaseSlot` falls the selection
+        // through to a survivor, so disposing the current browser while others
+        // are still queued to be disposed posts a `BrowserSelect` naming a
+        // browser that is about to die. juicebox-web subscribes to that event,
+        // and a restore opens with this method.
+        this.select(undefined)
+
+        // Over a copy: each dispose() releases its own slot from this list.
+        for (const browser of [...this.browsers]) {
+            browser.dispose()
+        }
+
+        // The postcondition, not the mechanism -- the loop above has already
+        // emptied the list one slot at a time.
+        this.clear()
+    }
+
+    /**
+     * Give up a disposed browser's slot, falling the selection through to a
+     * survivor.
+     *
+     * Internal, and the inbound half of `dispose()`: a browser tears itself
+     * down and tells its registry, rather than the registry reaching into a
+     * browser. Not declared surface -- a host deletes through `delete()`.
+     *
+     * Named for the slot rather than for eviction, because the glossary spends
+     * *evict* on what a registry's own teardown does to the container map.
+     */
+    releaseSlot(browser) {
         this.browsers = this.browsers.filter(b => b !== browser)
         if (browser === this.currentBrowser) {
             this.select(this.browsers[0])
         }
         this.refreshDeleteButtonVisibility()
-    }
-
-    deleteAll() {
-        for (const browser of this.browsers) {
-            browser.rootElement.remove()
-        }
-        this.clear()
-        this.select(undefined)
     }
 
     async updateAll() {

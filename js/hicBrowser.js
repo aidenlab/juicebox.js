@@ -42,7 +42,32 @@ import {unmappedUrl} from "./urlMapper.js"
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
 
+/**
+ * Thrown when a published method is called on a browser that has been disposed.
+ *
+ * Named, and exported, because it is the one behavioural change in #493 a host
+ * can observe: `dispose()` leaves a zombie the host may still hold -- juicebox-web
+ * holds `browser` across several call sites -- and decision 6 of ADR-0005 is
+ * that this fails visibly rather than drifting. An exception appears in the
+ * host's console in development; a silent no-op appears as a blank panel in
+ * production.
+ */
+class DisposedBrowserError extends Error {
+
+    constructor(browserId, methodName) {
+        super(`${browserId}.${methodName}() was called after dispose()`)
+        this.name = 'DisposedBrowserError'
+    }
+}
+
 class HICBrowser {
+
+    /**
+     * Set by `dispose()`, read by the guard on every published method. Private
+     * so that "is this browser alive?" is not itself published surface -- a
+     * host that wants to know is a host that has kept a zombie.
+     */
+    #disposed = false
 
     constructor(appContainer, config) {
 
@@ -86,6 +111,18 @@ class HICBrowser {
 
         this.isMobile = hicUtils.isMobile();
 
+        /**
+         * Everything this browser installs *outside* `rootElement`'s subtree.
+         *
+         * Every delete path removes `rootElement` and nothing else, so a node
+         * put anywhere else is a node nobody removes. `inputDialog` is the only
+         * member today and was leaking one dialog per browser per session
+         * restore; the record is the point rather than the dialog, so that a
+         * field added to this constructor has one obvious place to add its
+         * cleanup. Decision 4 of ADR-0005.
+         */
+        this.externalElements = [];
+
         this.rootElement = document.createElement('div');
         this.rootElement.className = 'hic-root unselect';
         appContainer.appendChild(this.rootElement);
@@ -97,7 +134,10 @@ class HICBrowser {
 
         this.layoutController = new LayoutController(this, this.rootElement);
 
+        // Into the host's container, not `rootElement`: a modal's stacking
+        // context is why it lives out there. Recorded on the way in.
         this.inputDialog = new InputDialog(appContainer, this);
+        this.externalElements.push(this.inputDialog.container);
 
         this.menuElement = this.createMenu(this.rootElement);
         this.menuElement.style.display = 'none';
@@ -352,6 +392,7 @@ class HICBrowser {
     }
 
     setCustomCrosshairsHandler(crosshairsHandler) {
+        this.#assertNotDisposed('setCustomCrosshairsHandler')
         this.customCrosshairsHandler = crosshairsHandler
     }
 
@@ -405,6 +446,7 @@ class HICBrowser {
      * @param configs
      */
     async loadTracks(configs) {
+        this.#assertNotDisposed('loadTracks');
         return this.dataLoader.loadTracks(configs);
     }
 
@@ -498,7 +540,59 @@ class HICBrowser {
         this.stateManager.setControlDataset(value);
     }
 
+    /**
+     * Tear this browser down: the counterpart of the constructor.
+     *
+     * NOTE: public API function
+     *
+     * The single teardown path -- `registry.delete()` and `registry.deleteAll()`
+     * both come here, which is what makes the four verbs of ADR-0005's context
+     * table agree. It removes what the constructor installed, in both places it
+     * installed it, gives up the browser's peers and its registry slot, and
+     * clears the bus the browser owns.
+     *
+     * It deliberately does *not* touch `EventBus.globalBus`: those
+     * registrations belong to the host and outlive every browser on the page.
+     *
+     * Idempotent, and the only method still callable afterwards -- a host that
+     * tears down twice is doing the right thing twice.
+     */
+    dispose() {
+
+        if (this.#disposed) {
+            return;
+        }
+
+        this.#disposed = true;
+
+        this.unsyncSelf();
+
+        for (const element of this.externalElements) {
+            element.remove();
+        }
+        this.externalElements = [];
+
+        this.rootElement.remove();
+
+        // The per-browser bus dies with the browser, so clearing it is what
+        // releases the host handlers still attached to it -- Spacewalk's
+        // DidHideCrosshairs subscription is a live retention path today.
+        this.eventBus.clear();
+
+        this.registry.releaseSlot(this);
+    }
+
+    /**
+     * Refuse a published call on a disposed browser. Decision 6 of ADR-0005.
+     */
+    #assertNotDisposed(methodName) {
+        if (this.#disposed) {
+            throw new DisposedBrowserError(this.id, methodName);
+        }
+    }
+
     reset() {
+        this.#assertNotDisposed('reset')
         this.layoutController.removeAllTrackXYPairs()
         this.contactMatrixView.clearImageCaches()
         this.tracks2D = []
@@ -551,6 +645,7 @@ class HICBrowser {
      * @param noUpdates
      */
     async loadHicFile(config, noUpdates) {
+        this.#assertNotDisposed('loadHicFile');
         return this.dataLoader.loadHicFile(config, noUpdates);
     }
 
@@ -564,6 +659,7 @@ class HICBrowser {
      * @returns {Promise<HiCDataset>}
      */
     async loadLiveContactMap(config, noUpdates) {
+        this.#assertNotDisposed('loadLiveContactMap');
         return this.dataLoader.loadLiveContactMap(config, noUpdates);
     }
 
@@ -576,10 +672,12 @@ class HICBrowser {
      * @param config
      */
     async loadHicControlFile(config, noUpdates) {
+        this.#assertNotDisposed('loadHicControlFile');
         return this.dataLoader.loadHicControlFile(config, noUpdates);
     }
 
     async parseGotoInput(input) {
+        this.#assertNotDisposed('parseGotoInput');
         return this.interactions.parseGotoInput(input);
     }
 
@@ -1019,6 +1117,6 @@ class HICBrowser {
     }
 }
 
-export { MAX_PIXEL_SIZE, DEFAULT_PIXEL_SIZE }
+export { MAX_PIXEL_SIZE, DEFAULT_PIXEL_SIZE, DisposedBrowserError }
 export default HICBrowser
 

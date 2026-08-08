@@ -35,6 +35,13 @@ function fakeBrowser(name, registry) {
         browserPanelDeleteButton: {style: {display: 'none'}},
         synchedBrowsers: new Set(),
         unsyncSelf: () => undefined,
+        // Since #493 a restore's opening `deleteAll()` asks each browser to
+        // dispose itself; what the registry sees of that is the DOM going and
+        // the slot being given up.
+        dispose() {
+            this.rootElement.remove()
+            this.registry.releaseSlot(this)
+        },
         toJSON: () => ({name})
     }
 }

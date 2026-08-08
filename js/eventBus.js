@@ -76,6 +76,20 @@ class EventBus {
         }
     }
 
+    /**
+     * Drop every subscriber, and anything held.
+     *
+     * For a bus that dies with its owner: `HICBrowser.dispose()` calls this on
+     * the per-browser bus, which is what releases the host handlers still
+     * attached to a browser being torn down. Never call it on
+     * `EventBus.globalBus` -- those registrations belong to the host and
+     * outlive every browser on the page. See #493.
+     */
+    clear() {
+        this.subscribers = {};
+        this.stack = [];
+    }
+
     post(event) {
 
         const eventType = event.type

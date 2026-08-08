@@ -26,15 +26,35 @@ function fakeElement() {
     }
 }
 
+/**
+ * The registry under test. Module-scoped rather than describe-scoped so a fake
+ * browser can carry the back-pointer a real one gets in its constructor: since
+ * #493 teardown runs the other way round -- the registry asks a browser to
+ * `dispose()`, and the browser evicts itself.
+ */
+let registry
+
 function fakeBrowser(name, {dataset, synchable} = {}) {
     const browser = {
         name,
+        registry,
         rootElement: fakeElement(),
         browserPanelDeleteButton: {style: {display: 'none'}},
         synchedBrowsers: new Set(),
         unsyncSelfCalls: 0,
         unsyncSelf() {
             this.unsyncSelfCalls++
+        },
+        // What the registry sees of a real dispose(): the peers let go, the DOM
+        // gone, the slot given up. The rest of it -- the dialog outside
+        // rootElement, the per-browser bus -- is the browser's own business and
+        // is tested in test/testBrowserDispose.js.
+        disposeCalls: 0,
+        dispose() {
+            this.disposeCalls++
+            this.unsyncSelf()
+            this.rootElement.remove()
+            this.registry.releaseSlot(this)
         }
     }
     if (dataset !== undefined) browser.dataset = dataset
@@ -59,7 +79,6 @@ function deleteButtonDisplays(registry) {
 
 describe('BrowserRegistry', () => {
 
-    let registry
     let selectEvents
     let selectListener
 
@@ -267,6 +286,25 @@ describe('BrowserRegistry', () => {
             expect(registry.browsers).toEqual([])
             expect(a.rootElement.removed).toBe(true)
             expect(b.rootElement.removed).toBe(true)
+        })
+
+        it('selects no survivor on the way down', () => {
+            // Teardown is not a selection change. Since #493 each browser
+            // releases its own slot, and a slot release falls the selection
+            // through -- so disposing the *current* browser while others are
+            // still queued would post a BrowserSelect naming a browser about to
+            // die. juicebox-web subscribes to that event, and `restoreSession`
+            // opens with this method.
+            const a = fakeBrowser('a')
+            const b = fakeBrowser('b')
+            registry.add(a)
+            registry.add(b)
+            registry.select(a)
+            selectEvents.length = 0
+
+            registry.deleteAll()
+
+            expect(selectEvents).toHaveLength(0)
         })
 
         it('leaves selection undefined, the registry now being empty', () => {

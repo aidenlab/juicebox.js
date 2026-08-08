@@ -93,6 +93,14 @@ it is used roughly as intended.
 | `setCustomCrosshairsHandler` | — | ✔ | real method |
 | `config` | ✔ | — | reads `{width, height}` back off the browser |
 
+**Added since the measurement:** `dispose` (#493, decision 7 of ADR-0005). It has
+no row above because the table measures what hosts *use*, and no host can use a
+method that did not exist when they were measured — Spacewalk tears its Juicebox
+panel down and had no way to say so. It is published deliberately, and it changes
+the meaning of every other row: after `dispose()` the browser is a zombie, and
+each method here throws `DisposedBrowserError` rather than quietly doing nothing.
+That is the behaviour change worth naming in release notes.
+
 **Five of these are the "zero-behaviour delegations"** that candidate 3's card
 counted as deletable: `loadHicFile`, `loadTracks`, `loadHicControlFile`,
 `loadLiveContactMap`, `parseGotoInput`. Four of them have **no internal callers at

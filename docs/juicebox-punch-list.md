@@ -1,6 +1,21 @@
 # Juicebox.js — Punch List
 
-**As of 2026-08-07.** Ordered. Work top to bottom; each phase assumes the one above it.
+**As of 2026-08-08.** Ordered. Work top to bottom; each phase assumes the one above it.
+
+> **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
+> agree with it. Where the durable facts live:
+>
+> | Question | Where it is answered |
+> |---|---|
+> | Why was this decided? | `docs/adr/` — append-only, never revised |
+> | What does this word mean? | `CONTEXT.md` |
+> | What do I do next on this ticket? | the GitHub issue |
+> | Is the candidate done? | the table in [#466](https://github.com/aidenlab/juicebox.js/issues/466), updated at candidate boundaries |
+> | Which skill do I reach for? | `docs/agents/triage-labels.md` |
+> | What did the review originally say? | `docs/architecture-review.html` — **frozen**, cards are not edited |
+>
+> If a fact here contradicts one of those, the other one wins and this file is stale.
+> Do not create a second punch list; per-candidate decomposition goes in issue bodies.
 
 Three repos are involved:
 - `~/JuiceboxDevelopment/juicebox.js`
@@ -27,9 +42,12 @@ Phases 0, 1 and 2 are complete, and so is the first of the Phase 3 candidates.
 | 2.3 | A repaint pass outliving the state it started from | #469 closed — it *abandons* the pass on a state-identity check (`f4f5ce5`), it does not throw. The earlier summary here said "throws"; that was wrong, and ADR-0005 depends on which it is |
 | 3 · c4 | Browser registry owner | ADR-0004 → #476, #478–#483, `78a5d0b..9fde9a2`. **Closes #384** (open since 2023) and #475 |
 
-Candidate 4 also produced `docs/architecture-review-item-4-punchlist.md` — the ticket
-decomposition and which skill fits which ticket. That ADR-then-punchlist-then-revise-the-card
-pattern is the one to repeat for the candidates below.
+**The pattern to repeat: ADR → tickets → Outcome box on the card.** Candidate 4 ran it and it
+worked — its card proposed a shape that would have broken both hosts, and the Consumer impact
+block caught it before any code was written. Candidate 4 also spawned a second punch list of its
+own; that was the mistake. The decomposition belonged in the issue bodies, where it would not
+have needed keeping in sync. Its reusable parts now live in `docs/agents/triage-labels.md`, its
+ADR correction in ADR-0004's addendum, and the file is deleted (`git log` has it if needed).
 
 ---
 
@@ -74,26 +92,21 @@ decode. Needs its own ADR first.
 **6** — accessor names are load-bearing; #468 already settled the vocabulary.
 
 **7** — must keep both crosshair paths firing for Spacewalk. Largest remaining deepening, ~300
-lines of closures with no test surface.
+lines of closures with no test surface. **The one candidate that may want `/wayfinder`** rather
+than `/to-tickets`: its shape is genuinely unknown, where candidate 4's was settled in a grilling
+session before any ticket existed.
 
 **9** — `hic.init(container, config)` is the most-used public surface. Pairs with 5 — decode,
 then normalize.
 
 **10** — three named load methods must survive.
 
-**Skill:** `/to-tickets` when you pick one up. For candidate 5, write the ADR first
-(`/grill-with-docs` runs the interview and records the ADR in one pass) — it turns on a decision,
-not an implementation. Candidate 8's ADR is done.
+**Skill:** `/to-tickets` when you pick one up. For candidate 5, write the ADR first — it turns on
+a decision, not an implementation. Candidate 8's ADR is done. Full routing rules, and the reason
+to file tickets *before* the blocker clears, are in `docs/agents/triage-labels.md`.
 
-**File the tickets before the blocker clears, not after.** Decomposition never needs the thing
-it is blocked on; only implementation does. A candidate whose tickets exist and say "blocked on
-#N" is one `gh issue view` away from being resumable. A candidate settled only in an ADR has to
-be re-derived.
-
-If a candidate's scope feels unsettled, `/grilling` before `/to-tickets` — cheaper to stress-test
-the plan than to rewrite the code.
-
-Track everything against [#466](https://github.com/aidenlab/juicebox.js/issues/466).
+When a candidate lands: tick it in [#466](https://github.com/aidenlab/juicebox.js/issues/466) and
+add an Outcome box to its card. That is the only time either file is touched.
 
 ---
 
@@ -175,5 +188,5 @@ task — which is why it is not in a phase above.
 2. The red banner at the top of `docs/architecture-review.html` — what was wrong and why
 3. This list
 
-For the pattern to copy on the next candidate: `docs/adr/0004-browser-registry-per-container.md`
-and `docs/architecture-review-item-4-punchlist.md`, in that order.
+For the pattern to copy on the next candidate: `docs/adr/0004-browser-registry-per-container.md`,
+including its addendum on where the plan bent.

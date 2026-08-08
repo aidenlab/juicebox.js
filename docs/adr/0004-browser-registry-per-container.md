@@ -129,3 +129,23 @@ release, not a refactor.
   keep delegating: a mistake there silently changes what juicebox-web's
   `getAllBrowsers()` returns, with nothing failing. Smoke-test that step against a
   real juicebox-web checkout before building on it.
+
+## Addendum — what shipped, 8 August 2026
+
+Implemented as #476, #478–#483 (`78a5d0b..9fde9a2`). #384 and #475 closed with it.
+
+**Decision 4 did not ship as written.** It said the module-level functions would
+delegate to a *default registry*. There is no default registry. `createBrowser`
+resolves from its container argument and `setCurrentBrowser` from a new
+`browser.registry` back-pointer; only the two zero-argument getters needed the
+"most recently selected page-wide" policy. The decision text above is left as
+written — this addendum is the correction, and #486 records the difference.
+
+**One acceptance criterion was never met.** #479's runtime click-through against a
+running juicebox-web was verified statically only: 13 call sites read, all
+resolving one registry, no headless browser available. That is this ADR's one
+unverified claim; it is carried on #466's pre-release checklist.
+
+**#477 remains open**, so "the registry has an owner" does not yet mean
+"multi-embed works" — two embeds coexist but still cannot have different viewport
+sizes.

@@ -119,6 +119,13 @@ zero-argument getters use. The only part of a session no registry owns is the
 **caption**, a single `#hic-caption` element outside every container that two
 embeds share.
 
+**Empty browser** — a browser panel with no dataset, the normal transient state
+while a user is partway through adding a map. It serializes to `null` and the
+registry drops it, so it is absent from the session rather than present as a
+browser naming no map. **Accepted asymmetry:** browser *count* does not survive
+the round trip when one of them is empty — an embed saved with an empty panel
+open restores one panel short. ADR-0006 decision 6.
+
 **Wire format** — the serialized spelling of a session, as distinct from the
 session itself. It is a contract with *users*, not just with host apps: a link
 pasted into mail or a paper years ago must still decode. Two versions are

@@ -25,6 +25,7 @@ import {parseColorScale} from "./colorScaleParser.js"
 import {StringUtils, BGZip} from 'igv-utils'
 import {isFile} from './fileUtils.js'
 import {igvxhr} from 'igv-utils'
+import {decodeSessionString, isCompressedSession} from './sessionCodec.js'
 
 const DEFAULT_ANNOTATION_COLOR = "rgb(22, 129, 198)";
 
@@ -78,6 +79,20 @@ function expandSessionUrlShortcuts(session) {
     }
 }
 
+/**
+ * Report a session that would not decode, in the shape the arm naming `origin`
+ * has always reported it. Two arms, one shape, one noun apart.
+ *
+ * `cause` is the failure underneath the codec's single `SessionDecodeError`, and
+ * is not always an `Error` -- `BGZip` rejects a corrupt payload with a bare
+ * string, whose `message` is `undefined`. That `undefined` reaches the user
+ * today; #521 is where it stops.
+ */
+function parseFailure(origin, e) {
+    console.error(`Error parsing session ${origin}:`, e.cause);
+    return new Error(`Failed to parse session ${origin}: ${e.cause?.message}`);
+}
+
 async function extractConfig(queryString) {
 
     let query = extractQuery(queryString);
@@ -85,38 +100,40 @@ async function extractConfig(queryString) {
 
     if (query.hasOwnProperty("session")) {
         const sessionValue = query.session;
-        if (sessionValue.startsWith("blob:") || sessionValue.startsWith("data:")) {
-            sessionConfig = JSON.parse(BGZip.uncompressString(sessionValue.substr(5)));
+
+        // Three arms, one decoder. The arms differ only in where the session
+        // text comes from -- the parameter itself, a File, or a fetched
+        // document -- and in how they report a failure. The reporting is
+        // preserved verbatim: `decodeSessionString` raises one error for every
+        // malformed session (ADR-0006 decision 9), and each arm rethrows its
+        // `cause` in the shape it has always thrown, because #503's golden file
+        // pins those messages and this ticket changes no behaviour. Collapsing
+        // the three outward messages into one moves those snapshots and is #521.
+        if (isCompressedSession(sessionValue)) {
+            // No wrapping here, and never has been: a corrupt share link
+            // rejects with whatever the decompressor threw, which is a bare
+            // string rather than an Error.
+            try {
+                sessionConfig = decodeSessionString(sessionValue);
+            } catch (e) {
+                throw e.cause ?? e;
+            }
         } else if (isFile(sessionValue)) {
             // Handle File object
             const sessionText = await sessionValue.text();
             try {
-                // Try to parse as compressed blob first
-                if (sessionText.startsWith("blob:") || sessionText.startsWith("data:")) {
-                    sessionConfig = JSON.parse(BGZip.uncompressString(sessionText.substr(5)));
-                } else {
-                    // Parse as plain JSON
-                    sessionConfig = JSON.parse(sessionText);
-                }
+                sessionConfig = decodeSessionString(sessionText);
             } catch (e) {
-                console.error("Error parsing session file:", e);
-                throw new Error(`Failed to parse session file: ${e.message}`);
+                throw parseFailure("file", e);
             }
         } else if (typeof sessionValue === 'string') {
             // Handle session URL or local file path
             try {
                 const sessionText = await igvxhr.loadString(sessionValue);
                 try {
-                    // Try to parse as compressed blob first
-                    if (sessionText.startsWith("blob:") || sessionText.startsWith("data:")) {
-                        sessionConfig = JSON.parse(BGZip.uncompressString(sessionText.substr(5)));
-                    } else {
-                        // Parse as plain JSON
-                        sessionConfig = JSON.parse(sessionText);
-                    }
+                    sessionConfig = decodeSessionString(sessionText);
                 } catch (e) {
-                    console.error("Error parsing session from URL/file:", e);
-                    throw new Error(`Failed to parse session from URL/file: ${e.message}`);
+                    throw parseFailure("from URL/file", e);
                 }
             } catch (e) {
                 console.error("Error loading session from URL/file:", e);

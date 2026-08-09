@@ -35,7 +35,19 @@ import {getLayoutDimensions} from './layoutController.js'
 import Track2D from './track2D.js'
 
 import {DEFAULT_ANNOTATION_COLOR} from "./urlUtils.js"
+import {decodeState} from "./sessionCodec.js"
 import {mapTrackConfig} from "./urlMapper.js"
+
+/**
+ * How this module reports a `config.state` that is neither a state token nor a
+ * state object. `decodeState` returns the default view either way; saying so is
+ * kept out of the codec, which is pure by design and has no business raising an
+ * `alert`.
+ */
+function reportUnknownStateType() {
+    alert('config.state is of unknown type');
+    console.error('config.state is of unknown type');
+}
 
 /**
  * DataLoader handles all data loading responsibilities for HICBrowser.
@@ -109,15 +121,7 @@ class DataLoader {
                 this.browser.setActiveDataset(dataset, state);
                 await this.browser.parseGotoInput(config.locus);
             } else if (config.state) {
-                if (typeof config.state === 'string') {
-                    state = State.parse(config.state);
-                } else if (typeof config.state === 'object') {
-                    state = State.fromJSON(config.state);
-                } else {
-                    alert('config.state is of unknown type');
-                    console.error('config.state is of unknown type');
-                    state = State.default(config);
-                }
+                state = decodeState(config.state, config, reportUnknownStateType);
 
                 this.browser.setActiveDataset(dataset, state);
                 await this.browser.setState(state);
@@ -240,14 +244,11 @@ class DataLoader {
                 EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
             }
 
-            let state;
-            if (config.state) {
-                state = typeof config.state === 'object'
-                    ? State.fromJSON(config.state)
-                    : State.parse(config.state);
-            } else {
-                state = State.default(config);
-            }
+            // The same ladder the file path walks. It used to be spelled
+            // differently here and had lost the unknown-type rung, so a numeric
+            // `state` crashed in `State.parse` on this path and opened the
+            // default view on the other. #504.
+            const state = decodeState(config.state, config, reportUnknownStateType);
 
             this.browser.setActiveDataset(dataset, state);
             await this.browser.setState(state);

@@ -1103,6 +1103,7 @@ flowchart TB
           <div class="rounded-lg border border-red-300 bg-red-50 p-4 text-sm space-y-1">
             <div class="font-semibold text-red-900"><span class="font-mono">browser.toJSON()</span> returns the string <span class="font-mono">"{}"</span>, not an object</div>
             <p class="text-slate-700"><span class="font-mono">hicBrowser.js:903</span> — when a browser has no dataset. <span class="font-mono">session.js:11</span> pushes it into the <span class="font-mono">browsers</span> array, and on restore <span class="font-mono">setDefaults</span> assigns properties to a string primitive. Saving a session while any browser is empty produces a session that cannot be reloaded.</p>
+            <p class="text-slate-700"><strong>Fixed — #500</strong>, per ADR-0006 decision 6. An empty browser serializes to <span class="font-mono">null</span> and the registry filters it out. Accepted asymmetry: browser <em>count</em> does not survive the round trip when one of them is empty.</p>
           </div>
           <div class="rounded-lg border border-red-300 bg-red-50 p-4 text-sm space-y-1">
             <div class="font-semibold text-red-900"><span class="font-mono">expandURL</span> repairs only the first brace pair — candidate cause of #283</div>

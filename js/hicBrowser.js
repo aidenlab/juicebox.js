@@ -1054,9 +1054,18 @@ class HICBrowser {
         return this.dataset.bpResolutions[this.state.zoom]
     };
 
+    /**
+     * Serialize this browser as a session entry, or `null` when it has no map.
+     *
+     * A browser with no dataset names nothing a session can restore, and `null`
+     * is what says so to the registry, which drops it. It used to be the string
+     * `"{}"`, which was neither a browser nor distinguishable from one: the
+     * defaults pass on restore assigned properties to a string primitive and
+     * the whole session failed to reload. ADR-0006 decision 6, #500.
+     */
     toJSON() {
 
-        if (!(this.dataset && this.dataset.url)) return "{}"   // URL is required
+        if (!(this.dataset && this.dataset.url)) return null   // URL is required
 
         const jsonOBJ = {}
 

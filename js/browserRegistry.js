@@ -282,10 +282,20 @@ class BrowserRegistry {
      * container to resolve from and so follows the page-wide selection, but
      * what it resolves to is *a registry*, and everything in the document comes
      * from that one registry.
+     *
+     * A browser with no dataset serializes to `null` and is dropped here rather
+     * than written into the session: it names no map, and restoring it would
+     * rebuild an empty panel. **Accepted asymmetry:** browser *count* does not
+     * survive the round trip when one of them is empty -- an embed saved with
+     * an empty panel open restores one panel short. ADR-0006 decision 6, #500.
      */
     toJSON() {
 
-        const json = {browsers: this.browsers.map(browser => browser.toJSON())}
+        const json = {
+            browsers: this.browsers
+                .map(browser => browser.toJSON())
+                .filter(browserJson => null !== browserJson)
+        }
 
         if (this.selectedGene) {
             json.selectedGene = this.selectedGene

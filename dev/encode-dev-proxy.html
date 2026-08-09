@@ -249,8 +249,10 @@
 
             // The constraint that makes this more than a load: toJSON copies config URLs verbatim,
             // so a config-time rewrite would bake a dev-server path into every saved session.
+            // A browser with no map serializes to null (#500), which is what this reads if the
+            // probe is run before a map has loaded -- no tracks, hence no urls to check.
             const session = browser.toJSON()
-            const sessionUrls = (session.tracks || []).map(t => t.url)
+            const sessionUrls = (session?.tracks || []).map(t => t.url)
             const leaked = sessionUrls.filter(url => typeof url === 'string' && url.includes(PROXY_PREFIX))
             const bothSerialized = sessionUrls.includes(ENCODE_BIGWIG_URL) && sessionUrls.includes(ENCODE_BEDPE_URL)
 

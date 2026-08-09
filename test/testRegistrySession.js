@@ -2,6 +2,7 @@ import {describe, it, expect} from 'vitest'
 import BrowserRegistry, {registryForContainer} from '../js/browserRegistry.js'
 import {toJSON, compressedSession, restoreSession} from '../js/session.js'
 import {init} from '../js/init.js'
+import HICBrowser from '../js/hicBrowser.js'
 import {withContainers} from './utils/browserFixture.js'
 import {withStubbedLoads} from './utils/stubbedLoads.js'
 import {BGZip} from 'igv-utils'
@@ -76,6 +77,75 @@ describe('registry.toJSON', () => {
 
     it('writes an empty browser list for an empty registry', () => {
         expect(new BrowserRegistry().toJSON().browsers).toEqual([])
+    })
+})
+
+/**
+ * A browser with no dataset names no map, so it is left out of the session
+ * rather than written into it -- ADR-0006 decision 6, #500.
+ *
+ * An empty panel is a normal transient state while a user is partway through
+ * adding a map, so saving then is not an error. What it costs is stated in the
+ * accepted asymmetry: browser *count* does not survive the round trip when one
+ * of them is empty.
+ */
+describe('a browser with no dataset', () => {
+
+    const dom = withContainers()
+    withStubbedLoads()
+
+    /** An empty panel: constructed, registered, never given a map. */
+    function emptyBrowser(registry) {
+        const browser = new HICBrowser(registry.container, {})
+        registry.add(browser)
+        return browser
+    }
+
+    it('serializes to null, which a consumer can tell from a real browser', () => {
+        const registry = registryForContainer(dom.container)
+
+        expect(emptyBrowser(registry).toJSON()).toBeNull()
+    })
+
+    it('is left out of a session that also holds a loaded browser', async () => {
+        const registry = registryForContainer(dom.container)
+        await registry.restoreSession({browsers: [{url: 'https://example.com/a.hic'}]})
+        emptyBrowser(registry)
+
+        const session = registry.toJSON()
+
+        expect(session.browsers).toHaveLength(1)
+        expect(session.browsers[0].url).toBe('https://example.com/a.hic')
+    })
+
+    it('leaves a session with no browsers when every browser is empty', () => {
+        const registry = registryForContainer(dom.container)
+        emptyBrowser(registry)
+        emptyBrowser(registry)
+
+        expect(registry.toJSON().browsers).toEqual([])
+    })
+
+    it('restores from a session it was saved into, one panel short', async () => {
+        const first = registryForContainer(dom.container)
+        await first.restoreSession({browsers: [{url: 'https://example.com/a.hic'}]})
+        emptyBrowser(first)
+
+        const second = registryForContainer(dom.another())
+        await second.restoreSession(first.toJSON())
+
+        expect(second.browsers).toHaveLength(1)
+        expect(second.browsers[0].dataset.url).toBe('https://example.com/a.hic')
+    })
+
+    it('restores an all-empty registry\'s session as an embed with no browsers', async () => {
+        const first = registryForContainer(dom.container)
+        emptyBrowser(first)
+
+        const second = registryForContainer(dom.another())
+        await second.restoreSession(first.toJSON())
+
+        expect(second.browsers).toEqual([])
     })
 })
 

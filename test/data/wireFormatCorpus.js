@@ -674,6 +674,35 @@ export const wireFormatCorpus = [
 ]
 
 /**
+ * The corpus partitioned by *what a test has to supply* before the fixture can
+ * be decoded. Every consuming test needs this split and there is only one right
+ * answer, so it lives beside the fixtures rather than being re-derived — two
+ * copies that disagreed would silently stop covering whichever group fell
+ * through the gap.
+ *
+ * The four groups are disjoint and exhaustive, which `testDecoderGolden.js`
+ * asserts. Adding a fixture that belongs to none of them fails that assertion
+ * rather than being quietly skipped.
+ *
+ * `selfContained` — hand it `input` and nothing else.
+ * `viaLoader`     — stub `igvxhr.loadString` with `loaderResponse` first; a
+ *                   `loaderResponse` of null means the loader itself rejects.
+ * `viaBitly`      — stub `fetch` with `expandedUrl` first.
+ * `viaFile`       — needs a File where `extractQuery` can only put a string.
+ *                   See the golden test's note on this group.
+ */
+export const selfContained = wireFormatCorpus.filter(f =>
+    f.input !== undefined &&
+    f.loaderResponse === undefined &&
+    f.format !== 'juiceboxURL')
+
+export const viaLoader = wireFormatCorpus.filter(f => f.loaderResponse !== undefined)
+
+export const viaBitly = wireFormatCorpus.filter(f => f.format === 'juiceboxURL')
+
+export const viaFile = wireFormatCorpus.filter(f => f.format === 'sessionFile')
+
+/**
  * Fixtures for `State.parse` (`js/hicState.js`), the `state` query parameter on
  * its own.
  *

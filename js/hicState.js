@@ -141,11 +141,13 @@ class State {
      * domain-specific inputs (BP loci, dx/dy deltas, anchor pixels, peer-sync targets)
      * into these.
      *
-     * @param {number} chr1 - Chromosome 1 index. Caller is responsible for ordering
-     *                        (chr1 <= chr2) when that matters.
+     * @param {number} chr1 - Chromosome 1 index. Ordering is NOT the caller's
+     *                        responsibility: setView enforces the chr1 <= chr2
+     *                        invariant itself, transposing the pair when handed an
+     *                        unordered one.
      * @param {number} chr2 - Chromosome 2 index.
-     * @param {number} x - Bin position on x axis.
-     * @param {number} y - Bin position on y axis.
+     * @param {number} x - Bin position on the chr1 axis.
+     * @param {number} y - Bin position on the chr2 axis.
      * @param {number} zoom - Zoom level (index into bpResolutions).
      * @param {number} [pixelSize] - Target pixelSize. May be undefined when
      *                               options.useDefaultMin is true (DEFAULT_PIXEL_SIZE
@@ -168,6 +170,16 @@ class State {
      */
     async setView(chr1, chr2, x, y, zoom, pixelSize, browser, dataset, viewDimensions, options = {}) {
         const { useDefaultMin = false, minPixelSize, clampXY = true, adjustPixelSize = true } = options;
+
+        // Axis ordering (ADR-0006 decision 3). A .hic file stores one triangle of a
+        // symmetric matrix, so an unordered pair names a view that already has a
+        // canonical spelling. Transpose it here — the one place that receives both
+        // chromosomes and both origins together, and so can swap all four atomically.
+        // Every translator inherits the invariant by delegating here.
+        if (chr1 > chr2) {
+            [chr1, chr2] = [chr2, chr1];
+            [x, y] = [y, x];
+        }
 
         const chrChanged = this._detectChromosomeChange(chr1, chr2);
         const resolutionChanged = this._detectResolutionChange(zoom);

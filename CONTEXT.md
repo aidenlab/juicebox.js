@@ -40,6 +40,21 @@ and unambiguously specify the view: `chr1`, `chr2`, `x`, `y`, `zoom`,
 `pixelSize`, `normalization`. Everything else the user sees is derived from
 these. See `docs/state-manipulation.md`.
 
+**Axis ordering** — the invariant `chr1 ≤ chr2`, part of what makes canonical
+state *unambiguous*. A `.hic` file stores one triangle of a symmetric matrix, so
+an x-axis of chr5 against a y-axis of chr2 is the same view as its transpose,
+not a second one. A state naming the axes in the other order is a second
+spelling of a view that already has one, which is why the ordering is an
+invariant rather than a convention — see `docs/adr/0006`.
+
+Enforced in **`setView`**, the chokepoint: it receives both chromosomes and both
+origins together, so when handed an unordered pair it transposes all four
+atomically. Callers — including the translators — never order their arguments;
+they inherit the invariant by delegating. The `State` constructor transposes too,
+as belt-and-braces for states arriving from outside the chokepoint (a decoded
+session, a pasted URL); on canonical state that transposition is a no-op, which
+is what makes save → restore the identity.
+
 **Projection** — anything derived from canonical state on read rather than
 stored. The **locus** is the important one: chromosome BP coordinates computed
 via `state.getLocus(dataset, viewDimensions)`, never stored, because view

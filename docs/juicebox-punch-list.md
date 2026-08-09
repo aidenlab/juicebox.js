@@ -60,18 +60,38 @@ carries a Consumer impact block; read it before filing anything.
 
 | Candidate | Status |
 |---|---|
-| **5 · One decoder for session and URL** | ⚠️ breaking — **next up**, wants an ADR first |
+| **5 · One decoder for session and URL** | **ADR-0006 + tickets #499–#509 filed** — start at #499, #500, #501, #502 |
 | **11 · Give the track tile one owner** | ⚠️ breaking |
 | **6 · Fold StateManager into State, and make restore use the chokepoint** | watch |
 | **7 · Move the gesture state machines behind InteractionHandler** | watch |
 | **9 · Give the config schema one reader** | watch |
 | **10 · One dataset-load path** — *this is the live-map seam* | watch |
 
-**5 is next, and it should be scoped together with 9** — decode-then-normalize is one pipeline.
-Its contract is with **users**, not just the two host apps: shared session URLs get pasted into
-mail and papers and must still decode years later, and ADR-0003's tables do not measure that
-population at all. Needs its own ADR first — the sequence that kept candidates 4 and 8 from
-breaking a host, both times.
+**5 — ADR-0006 is written** (`docs/adr/0006-session-wire-format-and-one-decoder.md`), so the next
+step is `/to-tickets` against it. Ten decisions; the load-bearing ones: the compatibility contract
+is the decoder's currently-accepted set frozen as fixtures, with bit.ly `juiceboxURL=` the one
+named drop; url.md becomes a versioned spec (v0 = 7-token state, v1 = 9-token + session JSON);
+`chr1 ≤ chr2` becomes a real invariant enforced in `setView`; one encoder for the session-JSON form
+only; and decode/normalize is drawn as a seam here but **crossed in candidate 9**, not in 5.
+
+**Tickets are filed: #499–#509**, with native GitHub blocking edges, so the frontier is a query
+rather than a reading exercise — a ticket is startable exactly when `blocked_by == 0`.
+
+| | Ticket | Gated on |
+|---|---|---|
+| **Start here** | #499 axis ordering · #500 empty browsers · #501 versioned url.md + delete `stringify` · #502 fixture corpus | nothing |
+| **The gate** | #503 golden-file snapshot — **no decoder code moves until it is green** | #499, #500, #502 |
+| Collapse | #504 pure `sniffFormat`/`decodeState` → #505 `decodeSession` + injected loader → #506 drop bit.ly | linear |
+| Payoff | #507 `encodeSession` + round-trip property test → #508 version field | #500, #505 |
+| Off-chain | #509 external citation harvest (`ready-for-human`, gates nothing) · #510 `State.default()` defect | — |
+
+#499 and #500 gate the snapshot because both legitimately move decoded output; baselining before
+them would bake in behaviour already decided against. #499 is **a live bug today with no session
+involved** — any `goto` whose y-axis chromosome index is below the x-axis's renders one way and
+reloads transposed.
+
+The ADR is not breaking for the archive — the `State` constructor already transposes, so links in
+the wild decode exactly as they do now.
 
 **What candidate 8 confirmed, worth carrying into 5:** ADR → tickets → Outcome box works, and the
 ADR is where the breaking/not-breaking question gets answered. 8 was on the breaking list until
@@ -96,10 +116,9 @@ then normalize.
 
 **10** — three named load methods must survive.
 
-**Skill:** `/to-tickets` when you pick one up. For candidate 5, write the ADR first — it turns on
-a decision, not an implementation. Full routing rules, and the reason to file tickets *before* the
-blocker clears, are in `docs/agents/triage-labels.md`. ADR-0006 is the next free number; #477 was
-going to claim it, so whichever lands first takes it.
+**Skill:** `/to-tickets` when you pick one up. Full routing rules, and the reason to file tickets
+*before* the blocker clears, are in `docs/agents/triage-labels.md`. **ADR-0006 went to candidate 5**;
+**ADR-0007 is the next free number**, and #477 takes it.
 
 When a candidate lands: tick it in [#466](https://github.com/aidenlab/juicebox.js/issues/466) and
 add an Outcome box to its card. That is the only time either file is touched.
@@ -117,8 +136,8 @@ add an Outcome box to its card. That is the only time either file is touched.
 coexist; they still cannot have different viewport sizes. It is `ready-for-human` because it has
 open questions rather than acceptance criteria — whether the properties move to each registry's
 container or the rules stop needing custom properties at all, and whether any host reads them.
-The sequence is `/grill-with-docs` → ADR-0006 → `/to-tickets` → re-label → `/implement`.
-(0005 went to candidate 8's teardown contract.)
+The sequence is `/grill-with-docs` → ADR-0007 → `/to-tickets` → re-label → `/implement`.
+(0005 went to candidate 8's teardown contract, 0006 to candidate 5's wire format.)
 
 **The click-through is candidate 4's one unverified claim.** #479 was the ticket flagged as
 carrying a manual step no skill covers, and it was verified statically only — 13 juicebox-web call

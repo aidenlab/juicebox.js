@@ -119,6 +119,21 @@ zero-argument getters use. The only part of a session no registry owns is the
 **caption**, a single `#hic-caption` element outside every container that two
 embeds share.
 
+**Wire format** — the serialized spelling of a session, as distinct from the
+session itself. It is a contract with *users*, not just with host apps: a link
+pasted into mail or a paper years ago must still decode. Two versions are
+accepted. **v0** is the older query form documented in `docs/url.md` — a
+7-token state string, a 3-token track string. **v1** is the 9-token state, the
+4-token track string, and the session JSON that `compressedSession` writes.
+Juicebox reads both and writes only v1. See `docs/adr/0006`.
+
+**Decode** vs **normalize** — two stages, not one. *Decoding* turns a wire
+format into a session document and is the only stage that knows a format exists.
+*Normalizing* turns a session document into one every loader can consume —
+applying defaults, expanding URL shortcuts, reconciling a selected gene — and is
+reached by every entry path, including a session handed straight to
+`restoreSession`. Format knowledge never crosses into normalize.
+
 **Dispose** vs **reset** vs **clear dataset** — the three teardown verbs, in
 descending order of how much they destroy. See `docs/adr/0005`.
 

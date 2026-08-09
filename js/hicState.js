@@ -328,22 +328,31 @@ class State {
      * In both cases x and y are reset to 0.
      */
     async setChromosomesView(chr1Index, chr2Index, wholeChr, browser, dataset, viewDimensions) {
-        const newChr1 = Math.min(chr1Index, chr2Index)
-        const newChr2 = Math.max(chr1Index, chr2Index)
+        // State-level ordering is setView's job now (ADR-0006 decision 3) — this
+        // translator passes the caller's pair through untouched, and x/y are both 0
+        // so it has no origins of its own to keep in step.
+        //
+        // The ordered pair survives for the two lookups below, which are genuinely
+        // order-sensitive: minZoom maxes chr1 against the view width and chr2 against
+        // its height (they differ on a non-square viewport), and hic-straw caches
+        // matrices under the pre-transposition key, so an unordered call re-reads a
+        // matrix it already holds.
+        const lookupChr1 = Math.min(chr1Index, chr2Index)
+        const lookupChr2 = Math.max(chr1Index, chr2Index)
 
         let newZoom, newPixelSize
         if (wholeChr) {
-            newZoom = await browser.minZoom(newChr1, newChr2)
-            const minPS = await browser.minPixelSize(newChr1, newChr2, newZoom)
+            newZoom = await browser.minZoom(lookupChr1, lookupChr2)
+            const minPS = await browser.minPixelSize(lookupChr1, lookupChr2, newZoom)
             newPixelSize = Math.min(100, Math.max(DEFAULT_PIXEL_SIZE, minPS))
         } else {
             newZoom = 0
-            const minPS = await browser.minPixelSize(newChr1, newChr2, newZoom)
+            const minPS = await browser.minPixelSize(lookupChr1, lookupChr2, newZoom)
             newPixelSize = Math.max(this.pixelSize, minPS)
         }
 
         return await this.setView(
-            newChr1, newChr2, 0, 0, newZoom, newPixelSize,
+            chr1Index, chr2Index, 0, 0, newZoom, newPixelSize,
             browser, dataset, viewDimensions,
             { adjustPixelSize: false, clampXY: true },
         )

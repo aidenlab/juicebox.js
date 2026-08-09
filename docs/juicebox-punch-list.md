@@ -60,7 +60,7 @@ carries a Consumer impact block; read it before filing anything.
 
 | Candidate | Status |
 |---|---|
-| **5 · One decoder for session and URL** | **ADR-0006 + tickets #499–#509 filed** — #499 and #500 landed; next up #501, #502 |
+| **5 · One decoder for session and URL** | **ADR-0006 + tickets #499–#509 filed** — #499, #500 and #501 landed; next up #502 |
 | **11 · Give the track tile one owner** | ⚠️ breaking |
 | **6 · Fold StateManager into State, and make restore use the chokepoint** | watch |
 | **7 · Move the gesture state machines behind InteractionHandler** | watch |
@@ -79,7 +79,7 @@ rather than a reading exercise — a ticket is startable exactly when `blocked_b
 
 | | Ticket | Gated on |
 |---|---|---|
-| **Start here** | ~~#499 axis ordering~~ **landed** · ~~#500 empty browsers~~ **landed** · #501 versioned url.md + delete `stringify` · #502 fixture corpus | nothing |
+| **Start here** | ~~#499 axis ordering~~ **landed** · ~~#500 empty browsers~~ **landed** · ~~#501 versioned url.md + delete `stringify`~~ **landed** · #502 fixture corpus | nothing |
 | **The gate** | #503 golden-file snapshot — **no decoder code moves until it is green** | #499, #500, #502 |
 | Collapse | #504 pure `sniffFormat`/`decodeState` → #505 `decodeSession` + injected loader → #506 drop bit.ly | linear |
 | Payoff | #507 `encodeSession` + round-trip property test → #508 version field | #500, #505 |

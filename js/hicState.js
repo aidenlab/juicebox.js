@@ -444,14 +444,6 @@ class State {
         return { zoomChanged: resolutionChanged, chrChanged }
     }
 
-    stringify() {
-        if (this.normalization) {
-            return `${this.chr1},${this.chr2},${this.zoom},${this.x},${this.y},0,0,${this.pixelSize},${this.normalization}`
-        } else {
-            return `${this.chr1},${this.chr2},${this.zoom},${this.x},${this.y},0,0,${this.pixelSize}`
-        }
-    }
-
     /**
      * Shallow clone is intentional and correct: State holds only scalar fields
      * (chr1, chr2, zoom, x, y, pixelSize, normalization) since locus was made
@@ -475,11 +467,23 @@ class State {
         return pixels * (zoom.binSize/this.pixelSize)
     }
 
+    /**
+     * Decode the `state` query parameter. Two versions, told apart by token
+     * count: v0 is seven tokens or fewer, v1 is more than seven and carries two
+     * filler tokens (the view width and height, retired in March 2025 and never
+     * read) between y and pixelSize. Both branches are intentional — links in
+     * the wild use both.
+     *
+     * There is no encoder: juicebox writes only the compressed session form.
+     * `docs/url.md` is the specification, and the wire-format tests at the end
+     * of `test/testState.js` are its executable half. Change one, change all
+     * three. ADR-0006 decisions 2 and 5.
+     */
     static parse(string) {
         const tokens = string.split(",")
 
         if (tokens.length <= 7) {
-            // Backwards compatibility
+            // v0
             return new State(
                 parseInt(tokens[0]),    // chr1
                 parseInt(tokens[1]),    // chr2
@@ -490,6 +494,7 @@ class State {
                 tokens.length > 6 ? tokens[6] : "NONE"   // normalization
             )
         } else {
+            // v1 — tokens[5] and tokens[6] are the retired view width and height
             return new State(
                 parseInt(tokens[0]),    // chr1
                 parseInt(tokens[1]),    // chr2

@@ -1096,3 +1096,72 @@ describe('Axis ordering — chr1 <= chr2 is enforced in setView', () => {
             .toEqual(state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS))
     })
 })
+
+/**
+ * The `state` query parameter is a wire format — session links get pasted into
+ * mail and papers and must still decode years later. `docs/url.md` is now its
+ * specification, and these tests are the executable half of that spec: they are
+ * what remains after State.stringify() was deleted (#501, ADR-0006 decision 5).
+ *
+ * Two versions are accepted. Juicebox reads both and writes neither — the only
+ * URL it writes today is juicebox-web's compressed `?session=blob:` link.
+ */
+describe('Wire format — the `state` query parameter (docs/url.md)', () => {
+
+    test('v0: seven tokens, pixelSize sixth, normalization seventh', () => {
+        // Harvested from a published aidenlab.org link; also test/testURL.js.
+        const state = State.parse('3,3,6,5537.98746,5537.749239047619,1,KR')
+
+        expect(state.toJSON()).toEqual({
+            chr1: 3,
+            chr2: 3,
+            zoom: 6,
+            x: 5537.98746,
+            y: 5537.749239047619,
+            pixelSize: 1,
+            normalization: 'KR',
+        })
+    })
+
+    test('v0: normalization is optional and defaults to NONE', () => {
+        expect(State.parse('1,2,4,10,20,3').normalization).toBe('NONE')
+    })
+
+    test('v1: nine tokens, pixelSize eighth, normalization ninth', () => {
+        const state = State.parse('3,5,6,100,200,0,0,2,KR')
+
+        expect(state.toJSON()).toEqual({
+            chr1: 3,
+            chr2: 5,
+            zoom: 6,
+            x: 100,
+            y: 200,
+            pixelSize: 2,
+            normalization: 'KR',
+        })
+    })
+
+    test('v1: tokens 6 and 7 are filler — the retired view width and height', () => {
+        // Written as literal zeroes since March 2025, and carrying the real
+        // viewport size before that. The parser has never read them.
+        const zeroes = State.parse('3,5,6,100,200,0,0,2,KR')
+        const legacyViewport = State.parse('3,5,6,100,200,1250,1250,2,KR')
+
+        expect(legacyViewport.toJSON()).toEqual(zeroes.toJSON())
+    })
+
+    test('v1: normalization is optional and defaults to NONE', () => {
+        expect(State.parse('3,5,6,100,200,0,0,2').normalization).toBe('NONE')
+    })
+
+    test('an unordered chromosome pair decodes to its transpose, in both versions', () => {
+        // chr1 <= chr2 is a State invariant, so a link written before it was
+        // enforced decodes to the same view with the axes flipped about the
+        // diagonal — same contacts, not a second view. ADR-0006 decision 3.
+        expect(State.parse('5,3,6,100,200,2,KR').toJSON())
+            .toEqual(State.parse('3,5,6,200,100,2,KR').toJSON())
+
+        expect(State.parse('5,3,6,100,200,0,0,2,KR').toJSON())
+            .toEqual(State.parse('3,5,6,200,100,0,0,2,KR').toJSON())
+    })
+})

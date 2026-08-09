@@ -1063,6 +1063,23 @@ describe('Axis ordering — chr1 <= chr2 is enforced in setView', () => {
         expect(locus.y.start).toBe(1_000_000)
     })
 
+    test('the zoom fit is computed against the axes the state ends up with', async () => {
+        // On a non-square viewport the fit weighs one range against the width and the
+        // other against the height, so it has to know which chromosome lands on which
+        // axis. An unordered goto must produce the same canonical state as the ordered
+        // spelling of the same view.
+        const browser = createMockBrowser()
+        const viewport = { width: 800, height: 400 }
+
+        const unordered = createState({ chr1: 1, chr2: 1, zoom: 3, x: 0, y: 0, pixelSize: 2 })
+        await unordered.updateWithLoci('chr3', 0, 8_000_000, 'chr1', 0, 40_000_000, browser, viewport.width, viewport.height)
+
+        const ordered = createState({ chr1: 1, chr2: 1, zoom: 3, x: 0, y: 0, pixelSize: 2 })
+        await ordered.updateWithLoci('chr1', 0, 40_000_000, 'chr3', 0, 8_000_000, browser, viewport.width, viewport.height)
+
+        expect(unordered.toJSON()).toEqual(ordered.toJSON())
+    })
+
     test('save -> restore is the identity for a view reached by an unordered goto', async () => {
         const browser = createMockBrowser({ findMatchingZoomIndex: () => 4 })
         const dataset = createMockDataset()

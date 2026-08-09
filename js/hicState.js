@@ -48,6 +48,11 @@ import {DEFAULT_PIXEL_SIZE, MAX_PIXEL_SIZE} from "./hicBrowser.js"
  * - No code outside this file should mutate state fields directly. Everything is
  *   a translator-then-setView chain.
  * - locus reads always go through getLocus(); state.locus does not exist.
+ * - chr1 <= chr2 (axis ordering). A .hic file stores one triangle of a symmetric
+ *   matrix, so an unordered pair is a second spelling of a view that already has
+ *   one. setView enforces it, transposing chr1/chr2 and x/y together; translators
+ *   inherit it by delegating. The constructor transposes too, for states arriving
+ *   from outside the chokepoint. See ADR-0006 decision 3.
  */
 class State {
 
@@ -297,14 +302,23 @@ class State {
 
     async updateWithLoci(chr1Name, bpX, bpXMax, chr2Name, bpY, bpYMax, browser, width, height) {
         const bpResolutions = browser.getResolutions()
-        const bpPerPixelTarget = Math.max((bpXMax - bpX) / width, (bpYMax - bpY) / height)
+
+        const { index: chr1Index } = browser.genome.getChromosome(chr1Name)
+        const { index: chr2Index } = browser.genome.getChromosome(chr2Name)
+
+        // The fit weighs one BP range against the view width and the other against its
+        // height, so it must be computed against the axis assignment the state will
+        // actually end up with — and setView orders the pair. Ordering here is for this
+        // computation only; setView still receives the caller's pair and does the swap.
+        const [fitRangeX, fitRangeY] = chr1Index <= chr2Index
+            ? [bpXMax - bpX, bpYMax - bpY]
+            : [bpYMax - bpY, bpXMax - bpX]
+
+        const bpPerPixelTarget = Math.max(fitRangeX / width, fitRangeY / height)
         const zoomNew = (true === browser.resolutionLocked)
             ? this.zoom
             : browser.findMatchingZoomIndex(bpPerPixelTarget, bpResolutions)
         const { binSize: binSizeNew } = bpResolutions[zoomNew]
-
-        const { index: chr1Index } = browser.genome.getChromosome(chr1Name)
-        const { index: chr2Index } = browser.genome.getChromosome(chr2Name)
 
         return await this.setView(
             chr1Index, chr2Index,
@@ -334,9 +348,9 @@ class State {
         //
         // The ordered pair survives for the two lookups below, which are genuinely
         // order-sensitive: minZoom maxes chr1 against the view width and chr2 against
-        // its height (they differ on a non-square viewport), and hic-straw caches
-        // matrices under the pre-transposition key, so an unordered call re-reads a
-        // matrix it already holds.
+        // its height, and those differ on a non-square viewport. Since setView will
+        // order the pair anyway, fitting against the caller's order would size the view
+        // for an axis pairing the state is not going to have.
         const lookupChr1 = Math.min(chr1Index, chr2Index)
         const lookupChr2 = Math.max(chr1Index, chr2Index)
 

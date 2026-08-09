@@ -8,7 +8,7 @@ This document catalogs every way the browser's `State` can be mutated. It exists
 
 | Field | Meaning |
 |---|---|
-| `chr1` | Chromosome index, x axis |
+| `chr1` | Chromosome index, x axis — always `≤ chr2` (see *axis ordering* below) |
 | `chr2` | Chromosome index, y axis |
 | `x` | Bin position, x axis |
 | `y` | Bin position, y axis |
@@ -32,7 +32,10 @@ async state.setView(chr1, chr2, x, y, zoom, pixelSize,
 
 `setView` is the only place that:
 
-- Detects whether `chr1`/`chr2` or `zoom` changed (against pre-mutation state).
+- Enforces **axis ordering** — `chr1 ≤ chr2`, transposing `chr1↔chr2` and `x↔y` together
+  when handed an unordered pair. See below.
+- Detects whether `chr1`/`chr2` or `zoom` changed (against pre-mutation state, and
+  against the *ordered* pair — a transposed re-set reports no change).
 - Adjusts `pixelSize` through the standard floor-and-cap pipeline (`Math.max(1, x)` → floor by `minPixelSize` → `Math.min(MAX_PIXEL_SIZE, x)`).
 - Mutates the canonical fields in a fixed order.
 - Optionally clamps `x`/`y` to chromosome bounds.
@@ -46,11 +49,17 @@ async state.setView(chr1, chr2, x, y, zoom, pixelSize,
 | `clampXY` | `true` | Whether to clamp `x`/`y` to chromosome bounds after mutation. `updateWithLoci` sets this `false` (it has historically not clamped). |
 | `adjustPixelSize` | `true` | Whether to run `pixelSize` through `_adjustPixelSize`. Pan paths set this `false`: panning never alters pixelSize, including by implicit floor. Translators that have already computed the final `pixelSize` themselves also set this `false`. |
 
-### Invariant
+### Invariants
 
-> **No code outside `js/hicState.js` should mutate state fields directly.**
+> **1. No code outside `js/hicState.js` should mutate state fields directly.**
 
 Every external caller goes through a translator (below), which itself goes through `setView`. This invariant is what makes locus-related bugs tractable to debug — there is exactly one place to look when state diverges from intent.
+
+> **2. `chr1 ≤ chr2` — axis ordering.**
+
+A `.hic` file stores one triangle of a symmetric matrix, so an x-axis of chr5 against a y-axis of chr2 is the same view as its transpose, not a second one. `setView` receives both chromosomes and both origins together and so transposes all four atomically; translators pass their pair through unordered and inherit the invariant. The `State` constructor transposes too, as belt-and-braces for states arriving from outside the chokepoint (a decoded session, a pasted URL).
+
+Where a translator's own arithmetic depends on which chromosome sits on which axis — `updateWithLoci`'s zoom fit, `setChromosomesView`'s `minZoom`/`minPixelSize` lookups, both of which weigh one axis against the view width and the other against its height — it orders locally *for that computation only*, and still hands `setView` the caller's pair. See ADR-0006 decision 3 and #499.
 
 ## Translators on `State`
 

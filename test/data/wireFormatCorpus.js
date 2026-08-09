@@ -39,13 +39,30 @@
  * path is drivable from literals, which is the point of ADR-0006 decision 10's
  * injected loader.
  *
- * **Harvest scope.** ADR-0006 names three repos and the published docs. This
- * corpus draws on juicebox.js (`git log`, `test/test_urls.md`, `test/testURL.js`)
- * and juicebox-web (`test/testURLs.md`, `js/initializationHelper.js`). Spacewalk
- * was **not** searched — it is not checked out alongside the other two here — so
- * the absence of Spacewalk fixtures is unmeasured, not negative. `dev/` was
- * searched and holds no URL literals at all. External citation harvesting is a
+ * **Harvest scope.** ADR-0006 names three repos and the published docs. All
+ * three were searched: juicebox.js (`git log`, `test/test_urls.md`,
+ * `test/testURL.js`; `dev/` holds no URL literals at all), juicebox-web
+ * (`test/testURLs.md`, `js/initializationHelper.js`), and Spacewalk
+ * (`~/SpacewalkDevelopment/spacewalk`). External citation harvesting is a
  * separate ticket by design and blocks nothing.
+ *
+ * **Spacewalk contributes no fixture for this decoder, and the reason matters
+ * more than the fixture would have.** It sets `queryParametersSupported: false`
+ * (`src/juicebox/juiceboxPanel.js:79,82,97`) and so never reaches
+ * `extractConfig` at all. Instead it reads `?session=` itself in
+ * `src/launchIntent.js`, decodes it in `src/sessionURLCodec.js`, and hands the
+ * parsed object to `hic.restoreSession` — ADR-0006 fact 6's bypass, in
+ * production, in a host app.
+ *
+ * So the `session=` wire format has **two independent decoders**, and they do
+ * not accept the same set. Spacewalk's takes a `/gzip;base64` data URI that
+ * juicebox's throws on (see `reject-session-gzip-data-uri`), while juicebox's
+ * takes a `data:`-prefixed BGZip payload that Spacewalk's would mangle — its
+ * `else` arm slices a fixed five characters, which is right for `blob:` and
+ * wrong for `data:`. Both are reached by the same parameter name on the same
+ * launch URL. ADR-0006's "one decoder" is one decoder *in this repo*; the
+ * contract has a second reader, and collapsing the decoders here does not
+ * change that. Worth its own ticket — it is a divergence, not a bug in either.
  *
  * @see docs/url.md — the specification these fixtures are instances of
  * @see docs/adr/0006-session-wire-format-and-one-decoder.md
@@ -564,6 +581,17 @@ export const wireFormatCorpus = [
     // ---------------------------------------------------------------------
     // Expected to be rejected. A decoder's rejections are part of its contract.
     // ---------------------------------------------------------------------
+
+    {
+        id: 'reject-session-gzip-data-uri',
+        format: 'sessionData',
+        provenance: 'harvested',
+        role: 'load-bearing',
+        source: 'Spacewalk src/sessionURLCodec.js — the `/gzip;base64` arm of uncompressSessionURL',
+        outcome: 'throws',
+        input: '?session=data:application/gzip;base64,H4sIAAAAAAAAE6tWSirKLy9OLSpWsoquViotylGyUsooKSkottLXT61IzC3ISdXLL0rXT9TLyExW0lHKS8xNVbJSclSqja0FAMrS4c89AAAA',
+        note: 'A real data URI carrying gzipped session JSON. **Spacewalk decodes this and juicebox throws on it**, under the same `?session=` parameter name — juicebox tests only the five-character `data:` prefix and hands the remainder to BGZip.uncompressString, which is not what a data URI holds. Harvested as a *form Spacewalk accepts*, not as a string seen in the wild; Spacewalk documents it as one of two "historical forms", so something once wrote it. The payload here decodes to {"browsers":[{"url":"https://example.org/a.hic","name":"A"}]}. This is the sharpest single piece of evidence that the wire format has two readers — see the harvest-scope note at the top of this file.',
+    },
 
     {
         id: 'reject-session-url-unreachable',

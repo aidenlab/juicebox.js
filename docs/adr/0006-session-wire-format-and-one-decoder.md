@@ -71,9 +71,12 @@ from here. Not "only what we write today" — the whole risk is the inbound
 population we cannot see. What the current decoder accepts becomes the spec,
 captured as fixtures, and anything intentionally dropped is named here.
 
-*Exception list — dropped deliberately:* `juiceboxURL=` (legacy bit.ly). The
-bearer token at `urlUtils.js:405` is mojibake and the endpoint requires
-authentication, so this path almost certainly returns 401 today. Its
+*Exception list — dropped deliberately:* `juiceboxURL=` (legacy bit.ly). This ADR
+originally justified the drop by asserting that the mojibake bearer token at
+`urlUtils.js:405` would draw a 401; **measured 2026-08-09 (#502), it does not** —
+`v4/expand` accepts it for a public link and the session decodes in full. See the
+consequence below. The drop stands on the remaining grounds: nothing writes the
+format, it cannot be tested without the network, and its
 single-brace-repair bug (`:417`, `replace("{", "%7B")` with a string pattern,
 which repairs only the first pair and so mangles any multi-browser link from
 browser 2 on) becomes moot rather than fixed.
@@ -203,7 +206,15 @@ the round-trip property test. Candidate 9 follows with the normalize stage.
   view opens one bin below the origin. It is in the blast radius but is not a
   prerequisite — the standing rule is file-and-keep-refactoring, and this one
   does not block the property test the way decisions 3 and 6 do.
-- Legacy `juiceboxURL=` links stop working. They almost certainly already do not.
+- Legacy `juiceboxURL=` links stop working. This ADR assumed they already did.
+  **They do not.** Harvesting the fixture corpus (#502) ran
+  `?juiceboxURL=http://bit.ly/2C1VSHy` through the decoder on 2026-08-09: bit.ly
+  expanded it and the two-browser session decoded in full. The mojibake bearer
+  token at `urlUtils.js:405` is accepted by `v4/expand` for a public link. The
+  decision stands — a format we cannot write, cannot test without the network,
+  and whose brace repair is broken from browser 2 on is still the right one to
+  drop — but #506 is removing live behaviour, not tidying a dead path, and the
+  corpus carries the fixture that says so.
 - Sessions saved with an empty browser will restore with one fewer panel rather
   than failing to restore at all.
 - `docs/url.md` becomes a **versioned format specification** and acquires the

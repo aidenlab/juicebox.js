@@ -156,8 +156,11 @@ tracks=http://…/GM12878_CTCF_orientation.bed|GM12878_CTCF_orientation.bed||rgb
 ```
 
 Empty fields are allowed and common — the example above supplies no data range.
-An empty **data range** is not the same as an absent one, though: it decodes to
-`NaN` bounds rather than leaving the track to pick its own. Filed as #515.
+An empty **data range** decodes to `NaN` bounds, which the decoder's own
+`fixDefaults` pass then deletes, so what leaves the decoder has no range at all
+and the track picks its own. Filed as #515: the repair is real but it is a
+second pass undoing the first, and only inputs that go through the decoder reach
+it — a session handed straight to `restoreSession` is never swept.
 
 **Three fields** is accepted, and is the v0 layout. The colour is always the
 last field, so the three-field form decodes as `url | name | colour` with no
@@ -181,8 +184,8 @@ follow the same rules as above.
 | --------- | ----------- |
 | `session=` | **v1 session JSON**. A `blob:` or `data:` prefix means the rest is compressed and base64-encoded — the only form juicebox writes, as juicebox-web's share link. Anything else is loaded as a URL or file and may be either compressed or plain JSON. |
 | `juicebox={…},{…}` | one brace-wrapped query string per browser, comma-separated. Read-only legacy. |
-| `juiceboxData=` | compressed session JSON under an older parameter name. Read-only legacy. |
-| `juiceboxURL=` | a bit.ly short link to expand and re-decode. **Deprecated, and the one format deliberately dropped** — see ADR-0006 decision 1. The decoder still takes this path today; #506 removes it. The bit.ly endpoint requires a credential we no longer hold, so the path almost certainly already fails. |
+| `juiceboxData=` | the `juicebox=` value above, compressed. **Not** session JSON — the two share one code path, and the only difference is that this one is decompressed first. Read-only legacy. |
+| `juiceboxURL=` | a bit.ly short link to expand and re-decode. **Deprecated, and the one format deliberately dropped** — see ADR-0006 decision 1. The decoder still takes this path today; #506 removes it. ADR-0006 expected it to be dead already, on the grounds that the bit.ly endpoint wants a credential we no longer hold; measured 2026-08-09 (#502) it is **not** dead — a link expands and its session decodes in full. #506 therefore removes working behaviour. |
 
 Session JSON has no `version` field today; its absence means v1. When one is
 added (#508) it will be written but never required.

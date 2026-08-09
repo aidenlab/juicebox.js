@@ -34,8 +34,7 @@ import * as hicUtils from './hicUtils.js'
 import {getLayoutDimensions} from './layoutController.js'
 import Track2D from './track2D.js'
 
-import {DEFAULT_ANNOTATION_COLOR} from "./urlUtils.js"
-import {decodeState} from "./sessionCodec.js"
+import {DEFAULT_ANNOTATION_COLOR, decodeState} from "./sessionCodec.js"
 import {mapTrackConfig} from "./urlMapper.js"
 
 /**

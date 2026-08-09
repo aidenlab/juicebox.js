@@ -25,9 +25,12 @@
  * The I/O edge of the session decoder, and nothing else.
  *
  * Every decision about what a session URL *means* lives in `js/sessionCodec.js`,
- * which fetches nothing. What is left here is the two reads that path may need —
- * a `session=<url>` document and a legacy bit.ly expansion — and `extractConfig`,
- * which injects them. ADR-0006 decisions 9 and 10.
+ * which fetches nothing. What is left here is the one read that path may need —
+ * a `session=<url>` document — and `extractConfig`, which injects it. ADR-0006
+ * decisions 9 and 10.
+ *
+ * There were two reads until #506 retired the legacy bit.ly expansion, taking
+ * the module's only `fetch` and its embedded bearer credential with it.
  *
  * **`extractConfig` stays internal.** It has one caller (`init.js`) and is not
  * exported from `js/index.js`: the public contract here is the wire format, not
@@ -51,49 +54,7 @@ import {decodeSession} from './sessionCodec.js'
 async function extractConfig(queryString) {
     return decodeSession(queryString, {
         loadString: url => igvxhr.loadString(url),
-        expandUrl: expandURL,
     })
-}
-
-/**
- * Expand legacy bitly URLs
- *
- * **The bearer literal below is byte-fragile.** It is mojibake carrying three
- * unprintable characters (0x7f, 0x1a, 0x1d); an editor that normalizes them away
- * leaves a token bit.ly answers 403 to, and `test/testURL.js` is the only thing
- * that notices. ADR-0006 decision 1 drops this format and #506 deletes this
- * function; until then, move these bytes, never retype them.
- *
- * @param url
- * @returns {Promise<*>}
- */
-async function expandURL(url) {
-
-    const endpoint = `https://api-ssl.bitly.com/v4/expand`;
-    const id = url.startsWith("http://") ? url.substring(7) : url.substring(8);
-    const message = {
-        "bitlink_id": id
-    }
-
-    const response = await fetch(endpoint, {
-        method: 'POST', // or 'PUT'
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${btoa("ëtá¾´ãÎtsßéÆºÙçµóf¸í¿9snéÝz")}`
-        },
-        body: JSON.stringify(message),
-    })
-
-    if (!response.ok) {
-        throw new Error(`Network error (${response.status}): ${response.statusText}`)
-    }
-    const json = await response.json();
-    let longUrl = json.long_url;
-
-    // Fix some Bitly "normalization"
-    longUrl = longUrl.replace("{", "%7B").replace("}", "%7D");
-    return longUrl;
-
 }
 
 export {extractConfig}

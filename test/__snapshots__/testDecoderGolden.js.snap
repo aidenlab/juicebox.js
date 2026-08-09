@@ -118,6 +118,16 @@ exports[`decoder golden file — inputs the decoder takes as a string > harveste
 }
 `;
 
+exports[`decoder golden file — inputs the decoder takes as a string > harvested-juiceboxURL-bitly 1`] = `
+{
+  "error": {
+    "message": "juiceboxURL= links are no longer supported: the bit.ly expansion was removed in #506 (ADR-0006 decision 1). Open the link in a browser to read the juicebox URL it stands for, and use that. See docs/url.md.",
+    "name": "SessionDecodeError",
+  },
+  "outcome": "throws",
+}
+`;
+
 exports[`decoder golden file — inputs the decoder takes as a string > harvested-query-4dn-control-map 1`] = `
 {
   "config": {
@@ -1213,103 +1223,5 @@ exports[`decoder golden file — the File arm is not reachable > synth-session-f
     "name": "TypeError",
   },
   "outcome": "throws",
-}
-`;
-
-exports[`decoder golden file — the legacy bit.ly form > harvested-juiceboxURL-bitly 1`] = `
-{
-  "config": {
-    "browsers": [
-      {
-        "colorScale": ColorScale {
-          "b": 0,
-          "binsize": 0.07210918707440236,
-          "cache": [],
-          "g": 0,
-          "nbins": 2000,
-          "r": 255,
-          "threshold": 144.21837414880474,
-        },
-        "cycle": undefined,
-        "name": "ADAC_30.hic",
-        "nvi": "7989194045,18679",
-        "state": State {
-          "chr1": 2,
-          "chr2": 2,
-          "normalization": "KR",
-          "pixelSize": 1.5423280423280423,
-          "x": 1896.1562537317725,
-          "y": 1916.657181523778,
-          "zoom": 6,
-        },
-        "tracks": [
-          {
-            "color": "rgb(255,255,0)",
-            "displayMode": "COLLAPSED",
-            "name": "5000_blocks",
-            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC/inter_30_contact_domains/5000_blocks",
-          },
-          {
-            "color": "rgb(0,36,255)",
-            "displayMode": "COLLAPSED",
-            "name": "merged_loops.bedpe",
-            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_loops/merged_loops.bedpe",
-          },
-          {
-            "color": "rgb(0,255,36)",
-            "displayMode": "COLLAPSED",
-            "name": "differential_loops1.bedpe",
-            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_vs_EndoC/differential_loops1.bedpe",
-          },
-        ],
-        "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC/ADAC_30.hic",
-      },
-      {
-        "colorScale": ColorScale {
-          "b": 0,
-          "binsize": 0.07138719710904917,
-          "cache": [],
-          "g": 0,
-          "nbins": 2000,
-          "r": 255,
-          "threshold": 142.77439421809834,
-        },
-        "cycle": undefined,
-        "name": "EndoC_30.hic",
-        "nvi": "6818528104,18679",
-        "state": State {
-          "chr1": 2,
-          "chr2": 2,
-          "normalization": "KR",
-          "pixelSize": 1.5423280423280423,
-          "x": 1896.1562537317725,
-          "y": 1916.657181523778,
-          "zoom": 6,
-        },
-        "tracks": [
-          {
-            "color": "rgb(18,0,255)",
-            "displayMode": "COLLAPSED",
-            "name": "merged_loops.bedpe",
-            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC_loops/merged_loops.bedpe",
-          },
-          {
-            "color": "rgb(255,255,0)",
-            "displayMode": "COLLAPSED",
-            "name": "5000_blocks",
-            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC/inter_30_contact_domains/5000_blocks",
-          },
-          {
-            "color": "rgb(18,255,0)",
-            "displayMode": "COLLAPSED",
-            "name": "differential_loops2.bedpe",
-            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_vs_EndoC/differential_loops2.bedpe",
-          },
-        ],
-        "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC/EndoC_30.hic",
-      },
-    ],
-  },
-  "outcome": "decodes",
 }
 `;

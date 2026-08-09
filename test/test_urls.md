@@ -15,7 +15,15 @@
 * http://localhost/juicebox.js/dev/juicebox-blank.html?juicebox={hicUrl%3Dhttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FADAC%2FADAC_30.hic%26name%3DADAC_30.hic%26state%3D2%2C2%2C6%2C1896.1562537317725%2C1916.657181523778%2C1.5423280423280423%2CKR%26colorScale%3D144.21837414880474%2C255%2C0%2C0%26nvi%3D7989194045%2C18679%26tracks%3Dhttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FADAC%2Finter_30_contact_domains%2F5000_blocks%7C5000_blocks%7C%7Crgb(255%2C255%2C0)%7C%7C%7Chttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FADAC_loops%2Fmerged_loops.bedpe%7Cmerged_loops.bedpe%7C%7Crgb(0%2C36%2C255)%7C%7C%7Chttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FADAC_vs_EndoC%2Fdifferential_loops1.bedpe%7Cdifferential_loops1.bedpe%7C%7Crgb(0%2C255%2C36)},{hicUrl%3Dhttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FEndoC%2FEndoC_30.hic%26name%3DEndoC_30.hic%26state%3D2%2C2%2C6%2C1896.1562537317725%2C1916.657181523778%2C1.5423280423280423%2CKR%26colorScale%3D142.77439421809834%2C255%2C0%2C0%26nvi%3D6818528104%2C18679%26tracks%3Dhttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FEndoC_loops%2Fmerged_loops.bedpe%7Cmerged_loops.bedpe%7C%7Crgb(18%2C0%2C255)%7C%7C%7Chttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FEndoC%2Finter_30_contact_domains%2F5000_blocks%7C5000_blocks%7C%7Crgb(255%2C255%2C0)%7C%7C%7Chttps%3A%2F%2Fs3.amazonaws.com%2Fhicfiles%2Fhiseq%2FnSxhJZHdDRQ0kGDR%2F12.31.17%2FADAC_vs_EndoC%2Fdifferential_loops2.bedpe%7Cdifferential_loops2.bedpe%7C%7Crgb(18%2C255%2C0)}
 
 
-# Legacy bitly URLs
+# Legacy bitly URLs — no longer supported
+
+`juiceboxURL=` was retired in #506 (ADR-0006 decision 1). These links now fail
+with an error naming the format rather than expanding; they are kept here as the
+record of what the parameter looked like, and because `test/testURL.js` and the
+fixture corpus are driven from the third one.
+
+To recover a link like these, open the bit.ly URL in a browser and use the
+juicebox URL it redirects to — that URL is in one of the supported forms above.
 
 2  Browsers, 2D annotations
 
@@ -26,7 +34,9 @@
 * http://localhost/juicebox.js/dev/juicebox-blank.html?juiceboxURL=http://bit.ly/2C1VSHy
 
 
-# Embedded googl drive track (requires google config) 
+# Embedded googl drive track (requires google config)
+
+Also a retired `juiceboxURL=` link — see above.
 
 * http://localhost/juicebox.js/dev/juicebox-blank.html?juiceboxURL=http://bit.ly/2srvPJK
 

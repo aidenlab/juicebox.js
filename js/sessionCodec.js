@@ -8,9 +8,9 @@
  * reachable from a test**. That, more than the duplication, is the defect this
  * module exists to fix. ADR-0006 decisions 9 and 10.
  *
- * `js/urlUtils.js` keeps only the two I/O sites the decode path may need — the
- * session-URL fetch and the legacy bit.ly expansion — and the internal entry
- * point that injects them.
+ * `js/urlUtils.js` keeps only the one I/O site the decode path may need — the
+ * session-URL fetch — and the internal entry point that injects it. There were
+ * two until #506 retired the legacy bit.ly expansion.
  *
  * ## The decode path
  *
@@ -20,18 +20,20 @@
  * is the one place a wire format is named: four formats, one adapter each,
  * folded in order over a shared decode context. **A fifth format is an entry in
  * that array and nothing else** — which is the acceptance criterion of #505 and
- * the reason the fold takes a context rather than four bespoke arms.
+ * the reason the fold takes a context rather than four bespoke arms. Retiring
+ * one is an entry there too: `juiceboxURL` was dropped by #506 and its adapter
+ * stayed, now refusing rather than expanding, so a retired link fails saying so
+ * instead of falling through to `query` and decoding to nothing.
  *
- * The order is not decoration. `juiceboxURL` rewrites the query the later
- * adapters read, `juicebox` overwrites a config the `session` adapter may have
- * produced, and `query` overwrites both when it names a map. That precedence is
- * exactly what the previous straight-line function expressed by statement order,
- * and the golden file (#503) pins it.
+ * The order is not decoration. `juicebox` overwrites a config the `session`
+ * adapter may have produced, and `query` overwrites both when it names a map.
+ * That precedence is exactly what the previous straight-line function expressed
+ * by statement order, and the golden file (#503) pins it.
  *
  * ## No I/O
  *
- * `decodeSession` fetches nothing. The two loaders it may need arrive as
- * arguments, so the whole path is drivable from a test with string literals.
+ * `decodeSession` fetches nothing. The loader it may need arrives as an
+ * argument, so the whole path is drivable from a test with string literals.
  * Hoisting the fetching into the caller was considered and rejected in decision
  * 10: a session parameter may name a URL whose *contents* then need sniffing, so
  * a caller deciding whether more I/O is needed would need to know the format.
@@ -514,8 +516,9 @@ function parseFailure(origin, e) {
 /**
  * @typedef {object} DecodeContext
  * @property {object} query - the query parameters, as `extractQuery` read them.
- *   `juiceboxURL` replaces this wholesale, which is why it is context and not an
- *   argument.
+ *   Context rather than an argument because an adapter may rewrite it for the
+ *   ones below: `juiceboxURL` did exactly that until #506 retired it, and it is
+ *   the shape the fold is built for rather than a quirk of that one format.
  * @property {object|undefined} config - the session config decoded so far. A
  *   later adapter that owns the input overwrites an earlier one's answer.
  * @property {object|undefined} queryConfig - what the query parameters alone
@@ -527,9 +530,8 @@ function parseFailure(origin, e) {
 /**
  * @typedef {object} SessionLoaders
  * @property {function(string): Promise<string>} [loadString] - fetches the
- *   document a `session=<url>` names
- * @property {function(string): Promise<string>} [expandUrl] - expands a legacy
- *   bit.ly link to the href it stands for
+ *   document a `session=<url>` names. The only loader: `expandUrl` went with the
+ *   bit.ly expansion in #506.
  */
 
 /**
@@ -600,16 +602,29 @@ export const WIRE_FORMATS = [
     },
 
     /**
-     * `?juiceboxURL=` — a bit.ly link standing for a whole juicebox href. It
-     * decodes to no config of its own: it replaces the query the adapters below
-     * read. ADR-0006 decision 1 drops this format and #506 is where it goes.
+     * `?juiceboxURL=` — **retired**. A bit.ly link standing for a whole juicebox
+     * href; expanding it replaced the query the adapters below read. ADR-0006
+     * decision 1 named this the one deliberate exception to the frozen
+     * compatibility contract, and #506 removed the expansion.
+     *
+     * The entry stays, and what it does now is refuse. Deleting it would leave
+     * `?juiceboxURL=…` matching no adapter, so it would fall through to `query`,
+     * decode to no config, and the host would silently show whatever it was
+     * configured with — a link that does nothing, with nothing said. A retired
+     * format is still a format the decoder has an answer for; this is the
+     * answer.
+     *
+     * The grounds for the removal are ADR-0006 decision 1's, and are recorded
+     * there rather than repeated here.
      */
     {
         format: 'juiceboxURL',
         appliesTo: ({query}) => query.hasOwnProperty('juiceboxURL'),
-        decode: async ctx => {
-            const expandUrl = requireLoader(ctx, 'expandUrl', 'a legacy bit.ly link')
-            ctx.query = extractQuery(await expandUrl(ctx.query['juiceboxURL']))
+        decode: async () => {
+            throw new SessionDecodeError(
+                'juiceboxURL= links are no longer supported: the bit.ly expansion was ' +
+                'removed in #506 (ADR-0006 decision 1). Open the link in a browser to ' +
+                'read the juicebox URL it stands for, and use that. See docs/url.md.')
         },
     },
 

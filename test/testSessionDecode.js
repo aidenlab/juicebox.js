@@ -9,10 +9,11 @@
  * is exercised here without network, without a DOM and without a file, by
  * handing `decodeSession` a fake loader and a string.
  *
- * The two I/O sites — the session-URL fetch and the legacy bit.ly expansion —
- * arrive as injected functions. The suite passes loaders that *throw* wherever a
- * fixture should not need one, so a format that quietly starts doing I/O fails
- * loudly rather than reaching for the wire.
+ * The one I/O site — the session-URL fetch — arrives as an injected function.
+ * The suite passes a loader that *throws* wherever a fixture should not need
+ * one, so a format that quietly starts doing I/O fails loudly rather than
+ * reaching for the wire. (There were two until #506 removed the bit.ly
+ * expansion.)
  *
  * Division of labour with the neighbouring suites:
  *
@@ -27,9 +28,9 @@
  * @see js/sessionCodec.js
  * @see docs/adr/0006-session-wire-format-and-one-decoder.md
  */
-import {describe, expect, test} from 'vitest'
+import {afterEach, describe, expect, test, vi} from 'vitest'
 import {BGZip} from 'igv-utils'
-import {WIRE_FORMATS, decodeSession} from '../js/sessionCodec.js'
+import {SessionDecodeError, WIRE_FORMATS, decodeSession} from '../js/sessionCodec.js'
 import State from '../js/hicState.js'
 
 /**
@@ -39,9 +40,6 @@ import State from '../js/hicState.js'
 const noIO = {
     loadString: async url => {
         throw new Error(`unexpected load of ${url}`)
-    },
-    expandUrl: async url => {
-        throw new Error(`unexpected expansion of ${url}`)
     },
 }
 
@@ -53,6 +51,10 @@ function compress(object) {
 const oneBrowserSession = {
     browsers: [{url: 'https://example.org/one.hic', name: 'one'}],
 }
+
+afterEach(() => {
+    vi.unstubAllGlobals()
+})
 
 describe('decodeSession — the query-parameter form', () => {
 
@@ -160,18 +162,45 @@ describe('decodeSession — the legacy braced forms', () => {
         expect(config.browsers[0].url).toBe('https://example.org/one.hic')
     })
 
-    test('juiceboxURL= expands through the injected expander, never through fetch', async () => {
-        const expanded = []
-        const config = await decodeSession('?juiceboxURL=http://bit.ly/2C1VSHy', {
-            ...noIO,
-            expandUrl: async url => {
-                expanded.push(url)
-                return 'https://host/?hicUrl=https://example.org/one.hic'
-            },
+})
+
+/**
+ * `juiceboxURL=` — the one deliberate deviation from ADR-0006's frozen
+ * compatibility contract, dropped by decision 1 in #506.
+ *
+ * The adapter stays in {@link WIRE_FORMATS} rather than being deleted outright,
+ * and these tests are why: a URL naming a retired format has to *say so*. Delete
+ * the entry and the parameter falls through to the `query` adapter, which finds
+ * no `hicUrl`, returns no config, and leaves the host silently showing whatever
+ * it was configured with — the confusing failure the ticket rules out.
+ */
+describe('decodeSession — the retired bit.ly form', () => {
+
+    test('juiceboxURL= is refused, and never reaches the network', async () => {
+        vi.stubGlobal('fetch', async () => {
+            throw new Error('the bit.ly expansion is gone; nothing here may fetch')
         })
 
-        expect(expanded).toEqual(['http://bit.ly/2C1VSHy'])
-        expect(config.url).toBe('https://example.org/one.hic')
+        await expect(decodeSession('?juiceboxURL=http://bit.ly/2C1VSHy', noIO))
+            .rejects.toThrow(SessionDecodeError)
+    })
+
+    test('the refusal names the format, the ticket and where to read about it', async () => {
+        const error = await decodeSession('?juiceboxURL=http://bit.ly/2C1VSHy', noIO)
+            .catch(e => e)
+
+        expect(error.message).toMatch(/juiceboxURL/)
+        expect(error.message).toMatch(/#506/)
+        expect(error.message).toMatch(/docs\/url\.md/)
+    })
+
+    test('it is refused before the rest of the URL is decoded, not after', async () => {
+        // The expansion used to *replace* the query, so anything beside it was
+        // read from the expanded href rather than from the URL as pasted.
+        // Decoding the remainder would answer a link that was never written.
+        await expect(decodeSession(
+            '?juiceboxURL=http://bit.ly/2C1VSHy&hicUrl=https://example.org/one.hic', noIO))
+            .rejects.toThrow(SessionDecodeError)
     })
 })
 
@@ -219,7 +248,10 @@ describe('the format registry', () => {
         }
     })
 
-    test('the four wire formats are the four the ADR names', () => {
+    test('the registry names four formats, one of them retired', () => {
+        // `juiceboxURL` is still named here after #506, and still in the same
+        // position in the fold: the array is where a format's *disposition* is
+        // recorded, and "retired, refuse it loudly" is a disposition.
         expect(WIRE_FORMATS.map(a => a.format))
             .toEqual(['session', 'juiceboxURL', 'juicebox', 'query'])
     })

@@ -48,6 +48,11 @@ import {DEFAULT_PIXEL_SIZE, MAX_PIXEL_SIZE} from "./hicBrowser.js"
  * - No code outside this file should mutate state fields directly. Everything is
  *   a translator-then-setView chain.
  * - locus reads always go through getLocus(); state.locus does not exist.
+ * - chr1 <= chr2 (axis ordering). A .hic file stores one triangle of a symmetric
+ *   matrix, so an unordered pair is a second spelling of a view that already has
+ *   one. setView enforces it, transposing chr1/chr2 and x/y together; translators
+ *   inherit it by delegating. The constructor transposes too, for states arriving
+ *   from outside the chokepoint. See ADR-0006 decision 3.
  */
 class State {
 
@@ -141,11 +146,13 @@ class State {
      * domain-specific inputs (BP loci, dx/dy deltas, anchor pixels, peer-sync targets)
      * into these.
      *
-     * @param {number} chr1 - Chromosome 1 index. Caller is responsible for ordering
-     *                        (chr1 <= chr2) when that matters.
+     * @param {number} chr1 - Chromosome 1 index. Ordering is NOT the caller's
+     *                        responsibility: setView enforces the chr1 <= chr2
+     *                        invariant itself, transposing the pair when handed an
+     *                        unordered one.
      * @param {number} chr2 - Chromosome 2 index.
-     * @param {number} x - Bin position on x axis.
-     * @param {number} y - Bin position on y axis.
+     * @param {number} x - Bin position on the chr1 axis.
+     * @param {number} y - Bin position on the chr2 axis.
      * @param {number} zoom - Zoom level (index into bpResolutions).
      * @param {number} [pixelSize] - Target pixelSize. May be undefined when
      *                               options.useDefaultMin is true (DEFAULT_PIXEL_SIZE
@@ -168,6 +175,16 @@ class State {
      */
     async setView(chr1, chr2, x, y, zoom, pixelSize, browser, dataset, viewDimensions, options = {}) {
         const { useDefaultMin = false, minPixelSize, clampXY = true, adjustPixelSize = true } = options;
+
+        // Axis ordering (ADR-0006 decision 3). A .hic file stores one triangle of a
+        // symmetric matrix, so an unordered pair names a view that already has a
+        // canonical spelling. Transpose it here — the one place that receives both
+        // chromosomes and both origins together, and so can swap all four atomically.
+        // Every translator inherits the invariant by delegating here.
+        if (chr1 > chr2) {
+            [chr1, chr2] = [chr2, chr1];
+            [x, y] = [y, x];
+        }
 
         const chrChanged = this._detectChromosomeChange(chr1, chr2);
         const resolutionChanged = this._detectResolutionChange(zoom);
@@ -285,14 +302,23 @@ class State {
 
     async updateWithLoci(chr1Name, bpX, bpXMax, chr2Name, bpY, bpYMax, browser, width, height) {
         const bpResolutions = browser.getResolutions()
-        const bpPerPixelTarget = Math.max((bpXMax - bpX) / width, (bpYMax - bpY) / height)
+
+        const { index: chr1Index } = browser.genome.getChromosome(chr1Name)
+        const { index: chr2Index } = browser.genome.getChromosome(chr2Name)
+
+        // The fit weighs one BP range against the view width and the other against its
+        // height, so it must be computed against the axis assignment the state will
+        // actually end up with — and setView orders the pair. Ordering here is for this
+        // computation only; setView still receives the caller's pair and does the swap.
+        const [fitRangeX, fitRangeY] = chr1Index <= chr2Index
+            ? [bpXMax - bpX, bpYMax - bpY]
+            : [bpYMax - bpY, bpXMax - bpX]
+
+        const bpPerPixelTarget = Math.max(fitRangeX / width, fitRangeY / height)
         const zoomNew = (true === browser.resolutionLocked)
             ? this.zoom
             : browser.findMatchingZoomIndex(bpPerPixelTarget, bpResolutions)
         const { binSize: binSizeNew } = bpResolutions[zoomNew]
-
-        const { index: chr1Index } = browser.genome.getChromosome(chr1Name)
-        const { index: chr2Index } = browser.genome.getChromosome(chr2Name)
 
         return await this.setView(
             chr1Index, chr2Index,
@@ -316,22 +342,31 @@ class State {
      * In both cases x and y are reset to 0.
      */
     async setChromosomesView(chr1Index, chr2Index, wholeChr, browser, dataset, viewDimensions) {
-        const newChr1 = Math.min(chr1Index, chr2Index)
-        const newChr2 = Math.max(chr1Index, chr2Index)
+        // State-level ordering is setView's job now (ADR-0006 decision 3) — this
+        // translator passes the caller's pair through untouched, and x/y are both 0
+        // so it has no origins of its own to keep in step.
+        //
+        // The ordered pair survives for the two lookups below, which are genuinely
+        // order-sensitive: minZoom maxes chr1 against the view width and chr2 against
+        // its height, and those differ on a non-square viewport. Since setView will
+        // order the pair anyway, fitting against the caller's order would size the view
+        // for an axis pairing the state is not going to have.
+        const lookupChr1 = Math.min(chr1Index, chr2Index)
+        const lookupChr2 = Math.max(chr1Index, chr2Index)
 
         let newZoom, newPixelSize
         if (wholeChr) {
-            newZoom = await browser.minZoom(newChr1, newChr2)
-            const minPS = await browser.minPixelSize(newChr1, newChr2, newZoom)
+            newZoom = await browser.minZoom(lookupChr1, lookupChr2)
+            const minPS = await browser.minPixelSize(lookupChr1, lookupChr2, newZoom)
             newPixelSize = Math.min(100, Math.max(DEFAULT_PIXEL_SIZE, minPS))
         } else {
             newZoom = 0
-            const minPS = await browser.minPixelSize(newChr1, newChr2, newZoom)
+            const minPS = await browser.minPixelSize(lookupChr1, lookupChr2, newZoom)
             newPixelSize = Math.max(this.pixelSize, minPS)
         }
 
         return await this.setView(
-            newChr1, newChr2, 0, 0, newZoom, newPixelSize,
+            chr1Index, chr2Index, 0, 0, newZoom, newPixelSize,
             browser, dataset, viewDimensions,
             { adjustPixelSize: false, clampXY: true },
         )

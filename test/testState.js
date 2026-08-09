@@ -976,3 +976,123 @@ describe('InteractionHandler.setChromosomes — inline-mutation path', () => {
         expect(browser.state.pixelSize).toBe(9)
     })
 })
+
+/**
+ * Axis ordering (#499, ADR-0006 decision 3).
+ *
+ * A .hic file stores one triangle of a symmetric matrix, so (chr5, chr2) is the same
+ * view as (chr2, chr5) — not a second one. chr1 <= chr2 is therefore an invariant of
+ * canonical state, enforced at the chokepoint where all four fields (both chromosomes
+ * and both origins) arrive together and can be swapped atomically.
+ */
+describe('Axis ordering — chr1 <= chr2 is enforced in setView', () => {
+    test('unordered chromosome pair is transposed, swapping x with y', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 1, zoom: 3, x: 0, y: 0, pixelSize: 1 })
+
+        // x-axis chr3, y-axis chr1 — the unordered spelling.
+        await state.setView(3, 1, 50, 75, 4, 6, browser, dataset, DEFAULT_VIEW_DIMENSIONS, {
+            clampXY: false,
+        })
+
+        expect(state.chr1).toBe(1)
+        expect(state.chr2).toBe(3)
+        // The origins travel with their chromosomes: chr1's origin was 75, chr3's was 50.
+        expect(state.x).toBe(75)
+        expect(state.y).toBe(50)
+    })
+
+    test('an already-ordered pair is left alone', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 0, chr2: 0, zoom: 0, x: 0, y: 0, pixelSize: 1 })
+
+        await state.setView(1, 3, 50, 75, 4, 6, browser, dataset, DEFAULT_VIEW_DIMENSIONS, {
+            clampXY: false,
+        })
+
+        expect(state.chr1).toBe(1)
+        expect(state.chr2).toBe(3)
+        expect(state.x).toBe(50)
+        expect(state.y).toBe(75)
+    })
+
+    test('chrChanged compares the ordered pair, so a transposed re-set reports no change', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 3, zoom: 3, x: 0, y: 0, pixelSize: 1 })
+
+        const result = await state.setView(3, 1, 0, 0, 3, 1, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        expect(result).toEqual({ chrChanged: false, resolutionChanged: false })
+    })
+
+    test('clamping uses the post-swap chromosomes', async () => {
+        const browser = createMockBrowser()
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 1 })
+
+        // Ask for x-axis chr3 (200M), y-axis chr1 (250M), both origins past the end.
+        await state.setView(3, 1, 999_999, 999_999, 3, 1, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
+
+        // Post-swap: chr1=1 (250M -> 1000 bins, maxX = 1000 - 800 = 200),
+        //            chr2=3 (200M -> 800 bins,  maxY = 800 - 800 = 0).
+        expect(state.chr1).toBe(1)
+        expect(state.chr2).toBe(3)
+        expect(state.x).toBe(200)
+        expect(state.y).toBe(0)
+    })
+
+    test('translators inherit the invariant — updateWithLoci needs no fix of its own', async () => {
+        const browser = createMockBrowser({ findMatchingZoomIndex: () => 4 })
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 1, zoom: 3, x: 0, y: 0, pixelSize: 2 })
+
+        // goto() with the y-axis chromosome below the x-axis's: x-axis chr3, y-axis chr1.
+        await state.updateWithLoci('chr3', 1_000_000, 9_000_000, 'chr1', 2_000_000, 10_000_000, browser, 800, 800)
+
+        expect(state.chr1).toBe(1)
+        expect(state.chr2).toBe(3)
+
+        // Same view, spelled canonically: the requested chr1 locus is now the x axis.
+        const locus = state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+        expect(locus.x.chr).toBe('chr1')
+        expect(locus.x.start).toBe(2_000_000)
+        expect(locus.y.chr).toBe('chr3')
+        expect(locus.y.start).toBe(1_000_000)
+    })
+
+    test('the zoom fit is computed against the axes the state ends up with', async () => {
+        // On a non-square viewport the fit weighs one range against the width and the
+        // other against the height, so it has to know which chromosome lands on which
+        // axis. An unordered goto must produce the same canonical state as the ordered
+        // spelling of the same view.
+        const browser = createMockBrowser()
+        const viewport = { width: 800, height: 400 }
+
+        const unordered = createState({ chr1: 1, chr2: 1, zoom: 3, x: 0, y: 0, pixelSize: 2 })
+        await unordered.updateWithLoci('chr3', 0, 8_000_000, 'chr1', 0, 40_000_000, browser, viewport.width, viewport.height)
+
+        const ordered = createState({ chr1: 1, chr2: 1, zoom: 3, x: 0, y: 0, pixelSize: 2 })
+        await ordered.updateWithLoci('chr1', 0, 40_000_000, 'chr3', 0, 8_000_000, browser, viewport.width, viewport.height)
+
+        expect(unordered.toJSON()).toEqual(ordered.toJSON())
+    })
+
+    test('save -> restore is the identity for a view reached by an unordered goto', async () => {
+        const browser = createMockBrowser({ findMatchingZoomIndex: () => 4 })
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 1, zoom: 3, x: 0, y: 0, pixelSize: 2 })
+
+        await state.updateWithLoci('chr3', 1_000_000, 9_000_000, 'chr1', 2_000_000, 10_000_000, browser, 800, 800)
+
+        const restored = State.fromJSON(JSON.parse(JSON.stringify(state.toJSON())))
+
+        // The constructor's transposition is a no-op on canonical state, so the second
+        // render matches the first.
+        expect(restored.toJSON()).toEqual(state.toJSON())
+        expect(restored.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS))
+            .toEqual(state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS))
+    })
+})

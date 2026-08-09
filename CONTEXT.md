@@ -134,6 +134,13 @@ accepted. **v0** is the older query form documented in `docs/url.md` — a
 4-token track string, and the session JSON that `compressedSession` writes.
 Juicebox reads both and writes only v1. See `docs/adr/0006`.
 
+The accepted set is pinned, not described: `test/data/wireFormatCorpus.js` holds
+one fixture per format and per decoder branch, and `test/testDecoderGolden.js`
+snapshots what today's decoder makes of each. Those snapshots *are* the
+compatibility contract in executable form, so a snapshot that moves is a change
+to the wire format until shown otherwise. That file's header carries the
+convention for updating one.
+
 **Decode** vs **normalize** — two stages, not one. *Decoding* turns a wire
 format into a session document and is the only stage that knows a format exists.
 *Normalizing* turns a session document into one every loader can consume —

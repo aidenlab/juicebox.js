@@ -19,20 +19,11 @@ import State from '../js/hicState.js'
 import {
     FORMATS,
     OUTCOMES,
-    wireFormatCorpus,
+    selfContained,
     stateStringCorpus,
+    viaLoader,
+    wireFormatCorpus,
 } from './data/wireFormatCorpus.js'
-
-/**
- * Fixtures whose input is a plain string and whose decode needs nothing else.
- * The rest need something a string literal cannot supply — a network fetch, an
- * injected loader, or a File object — and are exercised by whatever test
- * supplies it.
- */
-const selfContained = wireFormatCorpus.filter(f =>
-    f.input !== undefined &&
-    f.loaderResponse === undefined &&
-    f.format !== 'juiceboxURL')
 
 const stateStringById = Object.fromEntries(stateStringCorpus.map(f => [f.id, f.input]))
 
@@ -131,7 +122,7 @@ describe('wire-format corpus — session URLs decode from their loader response'
 
     afterEach(() => vi.restoreAllMocks())
 
-    for (const fixture of wireFormatCorpus.filter(f => f.loaderResponse !== undefined)) {
+    for (const fixture of viaLoader) {
         test(fixture.id, async () => {
             vi.spyOn(igvxhr, 'loadString').mockImplementation(async () => {
                 if (fixture.loaderResponse === null) throw new Error('simulated fetch failure')

@@ -1,14 +1,52 @@
 /**
- * The session wire format, decoded — the pure half.
+ * The session wire format, decoded. Every decision about what a session URL
+ * *means* lives here, and nothing here reaches the network.
  *
- * Everything here takes a string (or a plain object) and returns a value. No
- * network, no DOM, no async, no `State` mutation. That is the point: the decode
- * decisions this module owns were previously written two and three times each,
- * inside async wrappers that could only be exercised through `extractConfig`
- * with a stubbed loader, and so were reachable from no test at all.
+ * The decode path was a single `async` function that did its own fetching, of
+ * which two lines were I/O and ninety were format logic — and because the whole
+ * thing was async and fetched for itself, **none of that format logic was
+ * reachable from a test**. That, more than the duplication, is the defect this
+ * module exists to fix. ADR-0006 decisions 9 and 10.
  *
- * ADR-0006 decision 9. `js/urlUtils.js` keeps only URL-shortcut and
- * query-string concerns, which is the one job its name describes.
+ * `js/urlUtils.js` keeps only the two I/O sites the decode path may need — the
+ * session-URL fetch and the legacy bit.ly expansion — and the internal entry
+ * point that injects them.
+ *
+ * ## The decode path
+ *
+ * {@link decodeSession} is the one decode interface **in this repo** — Spacewalk
+ * reads the same `session=` parameter with a decoder of its own, and collapsing
+ * these four did not make the contract single-reader (#518). {@link WIRE_FORMATS}
+ * is the one place a wire format is named: four formats, one adapter each,
+ * folded in order over a shared decode context. **A fifth format is an entry in
+ * that array and nothing else** — which is the acceptance criterion of #505 and
+ * the reason the fold takes a context rather than four bespoke arms.
+ *
+ * The order is not decoration. `juiceboxURL` rewrites the query the later
+ * adapters read, `juicebox` overwrites a config the `session` adapter may have
+ * produced, and `query` overwrites both when it names a map. That precedence is
+ * exactly what the previous straight-line function expressed by statement order,
+ * and the golden file (#503) pins it.
+ *
+ * ## No I/O
+ *
+ * `decodeSession` fetches nothing. The two loaders it may need arrive as
+ * arguments, so the whole path is drivable from a test with string literals.
+ * Hoisting the fetching into the caller was considered and rejected in decision
+ * 10: a session parameter may name a URL whose *contents* then need sniffing, so
+ * a caller deciding whether more I/O is needed would need to know the format.
+ *
+ * The one read left inside is `File.text()`, in the `session` adapter's second
+ * arm — an arm the sole caller cannot reach at all (see `testDecoderGolden.js`,
+ * "the File arm is not reachable"). It gets no loader slot because inventing one
+ * for a dead arm would be design work in service of nothing.
+ *
+ * ## What is pure, and what is not
+ *
+ * Everything above {@link decodeSession} — the sniff, the decode ladders, the
+ * shortcut expansion, the query decoders — takes a string or a plain object and
+ * returns a value: no network, no DOM, no async. Only the fold and its adapters
+ * are `async`, and only because a session may name a document to fetch.
  *
  * ## The error contract
  *
@@ -18,9 +56,10 @@
  * three call sites reached it, which made a user's bug report ambiguous about
  * where their link actually failed.
  *
- * **The three call sites in `urlUtils.js` still rethrow `cause` in the shape
- * each has always thrown**, because ADR-0006's golden file (#503) pins those
- * outward messages and this ticket changes no behaviour. Unifying what the
+ * **The three arms of the `session` adapter still rethrow `cause` in the shape
+ * each has always thrown** — they were three call sites in `urlUtils.js` until
+ * #505 moved them here — because ADR-0006's golden file (#503) pins those
+ * outward messages and neither ticket changes behaviour. Unifying what the
  * *caller* reports is a deliberate, snapshot-moving change and belongs to a
  * later ticket in the candidate; unifying what the *decoder* raises is this one.
  *
@@ -29,6 +68,8 @@
  */
 import {BGZip} from 'igv-utils'
 import State from './hicState.js'
+import {parseColorScale} from './colorScaleParser.js'
+import {isFile} from './fileUtils.js'
 
 /**
  * The shapes a session string can arrive in.
@@ -200,4 +241,510 @@ export function decodeState(value, config, onUnknownType = () => {}) {
     onUnknownType(value)
 
     return State.default(config)
+}
+
+// ---------------------------------------------------------------------------
+// URL shortcuts
+//
+// Moved from `urlUtils.js` unchanged. They come here rather than staying put
+// because `decodeQuery` below expands shortcuts at three call sites, and leaving
+// the primitive behind would make `urlUtils` and this module import each other.
+// `expandSessionUrlShortcuts` follows its primitive; it is the *second* copy of
+// the expansion, the one `restoreSession` reaches, and collapsing the two is
+// candidate 9's job, not #505's (ADR-0006 decision 8).
+//
+// Everything from here to the end of `decodeQuery` is a verbatim move. Its `var`
+// and its semicolons do not match the rest of the file, deliberately: #503's
+// golden file is the only thing standing between this refactor and a silent
+// change to a format users have pasted into papers, and a verbatim move is the
+// one kind of move it can vouch for. Restyling belongs to a commit that moves
+// nothing.
+// ---------------------------------------------------------------------------
+
+export const DEFAULT_ANNOTATION_COLOR = "rgb(22, 129, 198)"
+
+const urlShortcuts = {
+    "*s3e/": "https://hicfiles.s3.amazonaws.com/external/",
+    "*s3/": "https://hicfiles.s3.amazonaws.com/",
+    "*s3e_/": "http://hicfiles.s3.amazonaws.com/external/",
+    "*s3_/": "http://hicfiles.s3.amazonaws.com/",
+    "*enc/": "https://www.encodeproject.org/files/"
+}
+
+/**
+ * Expand URL shortcuts in a URL string (e.g., *s3/ -> full URL)
+ * @param {string} url - URL that may contain shortcuts
+ * @returns {string} - URL with shortcuts expanded
+ */
+export function expandUrlShortcuts(url) {
+    if (!url || typeof url !== 'string') return url;
+    let expandedUrl = url;
+    Object.keys(urlShortcuts).forEach(function (key) {
+        const value = urlShortcuts[key];
+        if (expandedUrl.startsWith(key)) {
+            expandedUrl = expandedUrl.replace(key, value);
+        }
+    });
+    return expandedUrl;
+}
+
+/**
+ * Expand the URL shortcuts everywhere a session document can carry one, in
+ * place.
+ *
+ * Sessions handed straight to `restoreSession` never pass through
+ * `decodeSession`, so a host or a saved file written with `*s3/` would reach the
+ * loaders unexpanded without this. A single-browser config is a session with
+ * its one browser inlined, which is why both shapes are walked.
+ *
+ * This is the second copy of the expansion — the first runs inside
+ * {@link decodeQuery}, three call sites deep. Collapsing the two belongs to the
+ * normalize stage both entry paths will pass through, which is candidate 9;
+ * ADR-0006 decision 8 draws that seam and #505 deliberately does not cross it.
+ */
+export function expandSessionUrlShortcuts(session) {
+
+    for (const config of session.browsers || [session]) {
+        for (const key of ['url', 'controlUrl']) {
+            if (config[key]) {
+                config[key] = expandUrlShortcuts(config[key]);
+            }
+        }
+        for (const track of config.tracks || []) {
+            if (track.url) {
+                track.url = expandUrlShortcuts(track.url);
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Query strings
+// ---------------------------------------------------------------------------
+
+function extractQuery(uri) {
+    var i1, i2, i, j, s, query, tokens;
+
+    query = {};
+    i1 = uri.indexOf("?");
+    i2 = uri.lastIndexOf("#");
+    const i3 = uri.indexOf("=");
+    if (i1 > i3) i1 = -1;
+
+    if (i2 < 0) i2 = uri.length;
+    for (i = i1 + 1; i < i2;) {
+
+        j = uri.indexOf("&", i);
+        if (j < 0) j = i2;
+
+        s = uri.substring(i, j);
+        tokens = s.split("=", 2);
+        if (tokens.length === 2) {
+            query[tokens[0]] = tokens[1];
+        }
+
+        i = j + 1;
+
+    }
+    return query;
+}
+
+function paramDecode(str, uriDecode) {
+
+    if (uriDecode) {
+        return decodeURIComponent(str);   // Still more backward compatibility
+    } else {
+        var s = replaceAll(str, '%26', '&');
+        s = replaceAll(s, '%20', ' ');
+        s = replaceAll(s, '+', ' ');
+        s = replaceAll(s, "%7C", "|");
+        s = replaceAll(s, "%23", "#");
+        s = replaceAll(s, "%3F", "?");
+        s = replaceAll(s, "%3D", "=");
+        return s;
+    }
+}
+
+function replaceAll(str, target, replacement) {
+    return str.split(target).join(replacement);
+}
+
+/**
+ * Extend config properties with query parameters
+ *
+ * @param query
+ * @param config
+ */
+function decodeQuery(query, uriDecode) {
+
+    const config = {};
+
+    let hicUrl = query["hicUrl"];
+    const name = query["name"];
+    let stateString = query["state"];
+    let colorScale = query["colorScale"];
+    let trackString = query["tracks"];
+    const selectedGene = query["selectedGene"];
+    const nvi = query["nvi"];
+
+    let controlUrl = query["controlUrl"];
+    const controlName = query["controlName"];
+    const displayMode = query["displayMode"];
+    const controlNvi = query["controlNvi"];
+    const cycle = query["cycle"];
+
+    if (hicUrl) {
+        hicUrl = paramDecode(hicUrl, uriDecode);
+        hicUrl = expandUrlShortcuts(hicUrl);
+        config.url = hicUrl;
+
+    }
+    if (name) {
+        config.name = paramDecode(name, uriDecode);
+    }
+    if (controlUrl) {
+        controlUrl = paramDecode(controlUrl, uriDecode);
+        controlUrl = expandUrlShortcuts(controlUrl);
+        config.controlUrl = controlUrl;
+    }
+    if (controlName) {
+        config.controlName = paramDecode(controlName, uriDecode);
+    }
+
+    if (stateString) {
+        stateString = paramDecode(stateString, uriDecode);
+        config.state = State.parse(stateString);
+    }
+    if (colorScale) {
+        colorScale = paramDecode(colorScale, uriDecode);
+        config.colorScale = parseColorScale(colorScale);
+    }
+
+    if (displayMode) {
+        config.displayMode = paramDecode(displayMode, uriDecode);
+    }
+
+    if (trackString) {
+        trackString = paramDecode(trackString, uriDecode);
+        config.tracks = destringifyTracksV0(trackString);
+
+        // If an oAuth token is provided append it to track configs.
+        if (config.tracks && config.oauthToken) {
+            config.tracks.forEach(function (t) {
+                t.oauthToken = config.oauthToken;
+            })
+        }
+    }
+
+    if (selectedGene) {
+        config.selectedGene = selectedGene;
+    }
+
+    config.cycle = cycle;
+
+    if (nvi) {
+        config.nvi = paramDecode(nvi, uriDecode);
+    }
+    if (controlNvi) {
+        config.controlNvi = paramDecode(controlNvi, uriDecode);
+    }
+
+    return config;
+
+    function destringifyTracksV0(tracks) {
+
+        const trackStringList = tracks.split("|||");
+        const configList = [];
+        for (let trackString of trackStringList) {
+
+            const tokens = trackString.split("|");
+            const color = tokens.pop();
+            let url = tokens.length > 1 ? tokens[0] : trackString;
+            if (url && url.trim().length > 0 && "undefined" !== url) {
+                url = expandUrlShortcuts(url);
+                const trackConfig = {url: url};
+
+                if (tokens.length > 1) {
+                    trackConfig.name = replaceAll(tokens[1], "$", "|");
+                }
+
+                if (tokens.length > 2) {
+                    const dataRangeString = tokens[2];
+                    if (dataRangeString.startsWith("-")) {
+                        const r = dataRangeString.substring(1).split("-");
+                        trackConfig.min = -parseFloat(r[0]);
+                        trackConfig.max = parseFloat(r[1]);
+                    } else {
+                        const r = dataRangeString.split("-");
+                        trackConfig.min = parseFloat(r[0]);
+                        trackConfig.max = parseFloat(r[1]);
+                    }
+                }
+
+                if (color) {
+                    trackConfig.color = color;
+                }
+
+                configList.push(trackConfig);
+            }
+        }
+        return configList;
+    }
+
+}
+
+// ---------------------------------------------------------------------------
+// The wire formats
+// ---------------------------------------------------------------------------
+
+/**
+ * Report a session that would not decode, in the shape the arm naming `origin`
+ * has always reported it. Two arms, one shape, one noun apart.
+ *
+ * `cause` is the failure underneath the codec's single `SessionDecodeError`, and
+ * is not always an `Error` -- `BGZip` rejects a corrupt payload with a bare
+ * string, whose `message` is `undefined`. That `undefined` reaches the user
+ * today; #521 is where it stops.
+ */
+function parseFailure(origin, e) {
+    console.error(`Error parsing session ${origin}:`, e.cause);
+    return new Error(`Failed to parse session ${origin}: ${e.cause?.message}`);
+}
+
+/**
+ * @typedef {object} DecodeContext
+ * @property {object} query - the query parameters, as `extractQuery` read them.
+ *   `juiceboxURL` replaces this wholesale, which is why it is context and not an
+ *   argument.
+ * @property {object|undefined} config - the session config decoded so far. A
+ *   later adapter that owns the input overwrites an earlier one's answer.
+ * @property {object|undefined} queryConfig - what the query parameters alone
+ *   decode to, kept because the `selectedGene` reconciliation below needs it
+ *   whether or not the query named a map.
+ * @property {SessionLoaders} loaders
+ */
+
+/**
+ * @typedef {object} SessionLoaders
+ * @property {function(string): Promise<string>} [loadString] - fetches the
+ *   document a `session=<url>` names
+ * @property {function(string): Promise<string>} [expandUrl] - expands a legacy
+ *   bit.ly link to the href it stands for
+ */
+
+/**
+ * @typedef {object} WireFormatAdapter
+ * @property {string} format - the parameter family this adapter owns
+ * @property {function(DecodeContext): boolean} appliesTo
+ * @property {function(DecodeContext): Promise<void>} decode - writes its answer
+ *   into the context
+ */
+
+/**
+ * One adapter per wire format, applied in order. **This array is the one place a
+ * format is named**; a fifth is an entry here.
+ *
+ * @type {WireFormatAdapter[]}
+ */
+export const WIRE_FORMATS = [
+
+    /**
+     * `?session=` — the only form juicebox still writes, and the only one that
+     * may need a second read. Three arms, one decoder: they differ in where the
+     * session text comes from — the parameter itself, a File, or a fetched
+     * document — and in how they report a failure. The reporting is preserved
+     * verbatim, because #503's golden file pins those messages; collapsing the
+     * three outward messages into one is #521.
+     */
+    {
+        format: 'session',
+        appliesTo: ({query}) => query.hasOwnProperty('session'),
+        decode: async ctx => {
+            const sessionValue = ctx.query.session
+
+            if (isCompressedSession(sessionValue)) {
+                // No wrapping here, and never has been: a corrupt share link
+                // rejects with whatever the decompressor threw, which is a bare
+                // string rather than an Error.
+                try {
+                    ctx.config = decodeSessionString(sessionValue)
+                } catch (e) {
+                    throw e.cause ?? e
+                }
+            } else if (isFile(sessionValue)) {
+                const sessionText = await sessionValue.text()
+                try {
+                    ctx.config = decodeSessionString(sessionText)
+                } catch (e) {
+                    throw parseFailure('file', e)
+                }
+            } else if (typeof sessionValue === 'string') {
+                // A session URL, or a local file path. The fetched document is
+                // itself sniffed -- it may be plain JSON or either compressed
+                // form -- which is why this read cannot be hoisted out of the
+                // decoder (ADR-0006 decision 10).
+                const loadString = requireLoader(ctx, 'loadString', 'a session URL')
+                try {
+                    const sessionText = await loadString(sessionValue)
+                    try {
+                        ctx.config = decodeSessionString(sessionText)
+                    } catch (e) {
+                        throw parseFailure('from URL/file', e)
+                    }
+                } catch (e) {
+                    console.error("Error loading session from URL/file:", e);
+                    throw new Error(`Failed to load session from URL/file: ${e.message}`);
+                }
+            }
+        },
+    },
+
+    /**
+     * `?juiceboxURL=` — a bit.ly link standing for a whole juicebox href. It
+     * decodes to no config of its own: it replaces the query the adapters below
+     * read. ADR-0006 decision 1 drops this format and #506 is where it goes.
+     */
+    {
+        format: 'juiceboxURL',
+        appliesTo: ({query}) => query.hasOwnProperty('juiceboxURL'),
+        decode: async ctx => {
+            const expandUrl = requireLoader(ctx, 'expandUrl', 'a legacy bit.ly link')
+            ctx.query = extractQuery(await expandUrl(ctx.query['juiceboxURL']))
+        },
+    },
+
+    /**
+     * `?juicebox={…},{…}` and its compressed spelling `?juiceboxData=` — one
+     * braced query string per browser. Read-only legacy inbound: nothing has
+     * written either in years.
+     */
+    {
+        format: 'juicebox',
+        appliesTo: ({query}) =>
+            query.hasOwnProperty('juicebox') || query.hasOwnProperty('juiceboxData'),
+        decode: async ctx => {
+            const {query} = ctx
+            let q;
+            if (query.hasOwnProperty("juiceboxData")) {
+                q = BGZip.uncompressString(query["juiceboxData"])
+            } else {
+                q = query["juicebox"];
+                if (q.startsWith("%7B")) {
+                    q = decodeURIComponent(q);
+                }
+            }
+
+            q = q.substr(1, q.length - 2);  // Strip leading and trailing bracket
+            const parts = q.split("},{");
+            const browsers = [];
+            for (let p of parts) {
+                const qObj = extractQuery(decodeURIComponent(p));
+                browsers.push(decodeQuery(qObj))
+            }
+            ctx.config = {browsers};
+        },
+    },
+
+    /**
+     * `?hicUrl=&state=&tracks=` — the parameter form.
+     *
+     * The one adapter whose `appliesTo` is unconditional, and it has to be: its
+     * decode is also what the `selectedGene` reconciliation reads, whether or
+     * not the query named a map. It claims the session only when it does.
+     */
+    {
+        format: 'query',
+        appliesTo: () => true,
+        decode: async ctx => {
+            const uriDecode = true;
+            ctx.queryConfig = decodeQuery(ctx.query, uriDecode)
+            if (ctx.queryConfig.url) {
+                ctx.config = ctx.queryConfig
+            }
+        },
+    },
+]
+
+function requireLoader(ctx, name, what) {
+    const loader = ctx.loaders[name]
+    if (typeof loader !== 'function') {
+        throw new Error(`decodeSession was given no ${name}, and this session names ${what}`)
+    }
+    return loader
+}
+
+/**
+ * Decode a URL to the session config it encodes, whichever wire format it is in.
+ *
+ * @param {string} queryString - a whole href or query string, exactly as the
+ *   caller received it from `window.location.href`
+ * @param {SessionLoaders} [loaders] - the I/O this decoder will not do itself.
+ *   Both are optional: a format that needs one and was not given it says so.
+ * @returns {Promise<object|undefined>} the session config, or `undefined` when
+ *   nothing in the URL was ours
+ */
+export async function decodeSession(queryString, loaders = {}) {
+
+    const ctx = {query: extractQuery(queryString), config: undefined, queryConfig: undefined, loaders}
+
+    for (const adapter of WIRE_FORMATS) {
+        if (adapter.appliesTo(ctx)) {
+            await adapter.decode(ctx)
+        }
+    }
+
+    // `selectedGene` used to leave `decodeQuery` as a write to a page-scoped
+    // global, which is how it reached `restoreSession` from the two paths that
+    // do not put it at the top level: a query string carrying the gene beside a
+    // `session=`, and the legacy `juicebox=` form, where it sits inside each
+    // browser's config. It now rides the session config instead, so it can land
+    // on one registry. A session's own value wins, and after that the last
+    // writer does -- which is the order the successive global writes produced.
+    //
+    // Not preserved: `?selectedGene=` on a URL naming no map and no session at
+    // all. There being no session config to ride, the gene is dropped rather
+    // than reaching whatever config the host passed `init()`. juicebox never
+    // writes such a URL -- every URL it produces carries the gene inside the
+    // session it also writes. #481.
+    if (ctx.config && undefined === ctx.config.selectedGene) {
+        const fromBrowsers = (ctx.config.browsers || []).map(b => b.selectedGene).filter(Boolean).pop();
+        // `?.` rather than a bare dereference: `queryConfig` is set by the last
+        // adapter, so it is only guaranteed by that adapter's `appliesTo` being
+        // unconditional. Reading it defensively keeps this line's correctness
+        // independent of the registry's contents.
+        const selectedGene = ctx.queryConfig?.selectedGene || fromBrowsers;
+        if (selectedGene) {
+            ctx.config.selectedGene = selectedGene;
+        }
+    }
+
+    // Fix certain defaults
+    if (ctx.config) {
+        if (ctx.config.browsers) {
+            for (let b of ctx.config.browsers) {
+                fixDefaults(b);
+            }
+        } else {
+            fixDefaults(ctx.config);
+        }
+    }
+
+    return ctx.config
+}
+
+function fixDefaults(browserConfig) {
+    if (browserConfig.tracks) {
+        for (let t of browserConfig.tracks) {
+            if (t.color === DEFAULT_ANNOTATION_COLOR) {
+                delete t.color;
+            }
+            if (t.min !== undefined && Number.isNaN(t.min)) {
+                delete t.min;
+            }
+            if (t.max !== undefined && Number.isNaN(t.max)) {
+                delete t.max;
+            }
+            t.displayMode = "COLLAPSED";
+        }
+    }
 }

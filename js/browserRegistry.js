@@ -2,7 +2,7 @@ import {AlertDialog} from 'igv-ui'
 import EventBus from './eventBus.js'
 import HICEvent from './hicEvent.js'
 import {pairSynchable} from './syncGroup.js'
-import {expandSessionUrlShortcuts} from './urlUtils.js'
+import {expandSessionUrlShortcuts} from './sessionCodec.js'
 // A cycle, deliberately: `createBrowser.js` resolves its registry from a
 // container, and `restoreSession` below needs browsers built. Neither module
 // touches the other while it is being evaluated, so the cycle is inert -- and

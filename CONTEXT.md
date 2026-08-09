@@ -141,6 +141,13 @@ compatibility contract in executable form, so a snapshot that moves is a change
 to the wire format until shown otherwise. That file's header carries the
 convention for updating one.
 
+**Wire-format adapter** — one entry in `WIRE_FORMATS` (`js/sessionCodec.js`):
+the pair of "does this input carry my format?" and "decode it into the shared
+decode context." The array is the only place a format is named, so adding a
+fifth is adding an entry. The adapters are folded **in order**, and the order is
+the format precedence the old straight-line decoder expressed by statement order.
+ADR-0006 decisions 9 and 10.
+
 **Decode** vs **normalize** — two stages, not one. *Decoding* turns a wire
 format into a session document and is the only stage that knows a format exists.
 *Normalizing* turns a session document into one every loader can consume —

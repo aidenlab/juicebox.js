@@ -22,9 +22,12 @@ const defaultSize = { width: 640, height: 640 };
 
 async function createBrowser(hicContainer, config, callback) {
 
-    // A single browser config is a session with its one browser inlined, so the
-    // session-shaped stage takes it as it is. See js/normalizeSession.js.
-    normalizeSession(config);
+    // Wrapped rather than handed over as it is: this door takes a browser
+    // config and *only* a browser config, so a `browsers` member on it is an
+    // ordinary unread member and must not steer the stage away from the object
+    // that actually becomes `browser.config`. The wrapper is discarded;
+    // `config` is what is normalized. See js/normalizeSession.js.
+    normalizeSession({browsers: [config]});
 
     const browser = new HICBrowser(hicContainer, config);
     await browser.init(config);

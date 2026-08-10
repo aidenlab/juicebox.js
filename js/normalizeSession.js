@@ -10,7 +10,7 @@
  *
  * Nothing has moved *across* the seam here. What this module does is exactly
  * what the two unexported functions inside `createBrowser.js` did, in the same
- * order: default the three chrome-visibility flags, with the `figureMode`
+ * order: default the three widget-visibility flags, with the `figureMode`
  * special case, and coerce the two members a session can carry as strings.
  * `fixDefaults`, the `selectedGene` reconciliation and the second copy of the
  * URL-shortcut expansion are still on the decoder's side; #533 and #534 move
@@ -19,10 +19,15 @@
  * ## Session-shaped, not browser-shaped
  *
  * A single-browser config is a session with its one browser inlined -- the same
- * shape convention {@link expandSessionUrlShortcuts} already uses, and the shape
- * `createBrowserList` has always read. Walking `session.browsers || [session]`
- * is what lets both browser-creation entry points delegate to one call rather
- * than one call per browser.
+ * shape convention `expandSessionUrlShortcuts` (`js/sessionCodec.js`) already
+ * uses, and the shape `createBrowserList` has always read. Walking
+ * `session.browsers || [session]` is what lets both browser-creation entry
+ * points delegate to one call rather than one call per browser.
+ *
+ * The convention is a *reading* of a document, not a test any object passes: a
+ * caller that already knows it holds exactly one browser config -- `createBrowser`
+ * does -- says so by wrapping it, `normalizeSession({browsers: [config]})`, and
+ * does not have to hope the config carries no member spelled `browsers`.
  *
  * ## "Pure" here means free of the world, not free of mutation
  *
@@ -71,7 +76,7 @@ export function normalizeSession(session) {
 
 function normalizeBrowserConfig(config) {
 
-    setChromeDefaults(config)
+    setWidgetVisibilityDefaults(config)
 
     if (StringUtils.isString(config.colorScale)) {
         config.colorScale = parseColorScale(config.colorScale)
@@ -82,7 +87,8 @@ function normalizeBrowserConfig(config) {
 }
 
 /**
- * The three flags that decide whether a browser draws its chrome.
+ * The three flags that decide whether a browser draws the widgets around its
+ * contact map -- the locus box, the map label and the chromosome selector.
  *
  * `figureMode` forces all three off rather than defaulting them, which is why
  * this is not three `??`s: a host asking for `figureMode` *and* a locus box gets
@@ -90,7 +96,7 @@ function normalizeBrowserConfig(config) {
  * this stage does not -- a live disagreement, pinned in the golden file, and
  * candidate 9's to close later rather than here.
  */
-function setChromeDefaults(config) {
+function setWidgetVisibilityDefaults(config) {
 
     if (config.figureMode === true) {
         config.showLocusGoto = false
@@ -102,5 +108,3 @@ function setChromeDefaults(config) {
         config.showChromosomeSelector = config.showChromosomeSelector ?? true
     }
 }
-
-export default normalizeSession

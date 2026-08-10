@@ -21,7 +21,7 @@ import {normalizeSession} from '../js/normalizeSession.js'
 import ColorScale from '../js/colorScale.js'
 import RatioColorScale from '../js/ratioColorScale.js'
 
-const CHROME_FLAGS = ['showLocusGoto', 'showHicContactMapLabel', 'showChromosomeSelector']
+const WIDGET_FLAGS = ['showLocusGoto', 'showHicContactMapLabel', 'showChromosomeSelector']
 
 describe('the two session shapes', () => {
 
@@ -61,15 +61,32 @@ describe('the two session shapes', () => {
 
         expect(session.showLocusGoto).toBeUndefined()
     })
+
+    /**
+     * `createBrowser` is the one entry path that takes a browser config and
+     * *only* a browser config, so it wraps rather than handing its argument
+     * over: a member spelled `browsers` on a single browser config is an
+     * ordinary unread member, and reading it as a browser list would leave the
+     * object that becomes `browser.config` undefaulted.
+     */
+    test('a caller that knows it holds one browser config says so by wrapping it', () => {
+
+        const config = {url: 'a.hic', browsers: 'a member nothing reads'}
+
+        normalizeSession({browsers: [config]})
+
+        expect(config.showLocusGoto).toBe(true)
+        expect(config.browsers).toBe('a member nothing reads')
+    })
 })
 
-describe('the chrome-visibility defaults', () => {
+describe('the widget-visibility defaults', () => {
 
     test('the three flags default on', () => {
 
         const config = normalizeSession({})
 
-        for (const flag of CHROME_FLAGS) {
+        for (const flag of WIDGET_FLAGS) {
             expect(config[flag], flag).toBe(true)
         }
     })
@@ -87,7 +104,7 @@ describe('the chrome-visibility defaults', () => {
 
         const config = normalizeSession({figureMode: true, showLocusGoto: true})
 
-        for (const flag of CHROME_FLAGS) {
+        for (const flag of WIDGET_FLAGS) {
             expect(config[flag], flag).toBe(false)
         }
     })
@@ -99,7 +116,7 @@ describe('the chrome-visibility defaults', () => {
         // and pinned in the golden file; it is not this ticket's to close.
         const config = normalizeSession({miniMode: true})
 
-        for (const flag of CHROME_FLAGS) {
+        for (const flag of WIDGET_FLAGS) {
             expect(config[flag], flag).toBe(true)
         }
     })

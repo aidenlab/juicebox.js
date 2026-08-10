@@ -2,9 +2,10 @@
  * The config fixtures — one input per thing an entry path is known, or
  * suspected, to treat differently. #531, the gate for candidate 9.
  *
- * Candidate 9 is "give the config schema one reader". Today there is no reader:
- * `createBrowser.normalizeConfig` applies some defaults, `sessionCodec.fixDefaults`
- * applies others, `expandSessionUrlShortcuts` runs in two places, and
+ * Candidate 9 is "give the config schema one reader". There is not yet one
+ * reader: `normalizeSession` (`js/normalizeSession.js`, #532) applies some
+ * defaults, `sessionCodec.fixDefaults` applies others,
+ * `expandSessionUrlShortcuts` runs in two places, and
  * `HICBrowser` itself reads raw fields and defaults them inline. Which of those
  * a config meets depends on which door it came in through.
  *
@@ -99,15 +100,15 @@ export const configFixtures = [
 
     {
         id: 'figure-mode',
-        note: '`figureMode: true`, which `setDefaults` turns into three explicit `false` flags.',
-        divergence: 'None expected: both browser-creation paths call `normalizeConfig`, and the two entry paths above them end in one of those two.',
+        note: '`figureMode: true`, which `normalizeSession` turns into three explicit `false` flags.',
+        divergence: 'None expected: both browser-creation paths call `normalizeSession`, and the two entry paths above them end in one of those two.',
         config: {url: 'https://example.com/a.hic', figureMode: true},
     },
 
     {
         id: 'mini-mode-the-legacy-spelling-of-figure-mode',
         note: '`miniMode: true`, the backward-compatible spelling `HICBrowser` still reads at hicBrowser.js:103.',
-        divergence: '**Known divergence, and not between paths — between readers.** `setDefaults` tests `config.figureMode === true` only, so `miniMode` leaves the three display flags defaulted to `true` while `browser.figureMode` is `true`. Every path agrees, and every path is inconsistent with itself. The snapshot pins the resolved flags; `browser.figureMode` is snapshotted beside the config because that disagreement is invisible in the config alone. #536 is where the schema says which spelling wins.',
+        divergence: '**Known divergence, and not between paths — between readers.** `normalizeSession` tests `config.figureMode === true` only, so `miniMode` leaves the three display flags defaulted to `true` while `browser.figureMode` is `true`. Every path agrees, and every path is inconsistent with itself. The snapshot pins the resolved flags; `browser.figureMode` is snapshotted beside the config because that disagreement is invisible in the config alone. #536 is where the schema says which spelling wins.',
         config: {url: 'https://example.com/a.hic', miniMode: true},
     },
 
@@ -125,14 +126,14 @@ export const configFixtures = [
 
     {
         id: 'color-scale-as-a-string',
-        note: 'The colour scale in its wire spelling. `normalizeConfig` parses a string into a scale object in place, so the *host\'s own object* comes back holding a class instance where it put a string.',
+        note: 'The colour scale in its wire spelling. `normalizeSession` parses a string into a scale object in place, so the *host\'s own object* comes back holding a class instance where it put a string.',
         divergence: 'None expected between paths. Pinned because the in-place rewrite is observable to a host that reuses its config object, and because `browser.config.colorScale` is a class instance in the snapshot rather than the string the host wrote.',
         config: {url: 'https://example.com/a.hic', colorScale: '100,255,0,0'},
     },
 
     {
         id: 'background-color-as-a-string',
-        note: 'The other in-place string→object rewrite in `normalizeConfig`.',
+        note: 'The other in-place string→object rewrite in `normalizeSession`.',
         divergence: 'None expected between paths. Same reason as the colour scale.',
         config: {url: 'https://example.com/a.hic', backgroundColor: '255,255,255'},
     },
@@ -253,7 +254,7 @@ export const sessionFixtures = [
     {
         id: 'session-with-per-browser-divergent-flags',
         note: 'Two browsers whose configs disagree about the display flags — one in figure mode, one not.',
-        divergence: 'None expected: `normalizeConfig` is applied per browser, not per session. Pinned because a normalize stage lifted to the session level could quietly make one browser\'s flags win over the other\'s.',
+        divergence: 'None expected: `normalizeSession` normalizes per browser, not per session. Pinned because a normalize stage lifted to the session level could quietly make one browser\'s flags win over the other\'s.',
         session: {
             browsers: [
                 {url: 'https://example.com/a.hic', figureMode: true},

@@ -204,12 +204,19 @@ than left to be found:
 
 - **Browser count**, when a browser was empty. A panel with no map serializes to
   `null` and the registry drops it, so an embed saved with an empty panel open
-  restores one panel short (ADR-0006 decision 6).
-- **Track display mode.** The decoder's `fixDefaults` pass forces every track to
-  `COLLAPSED` on the way in, so a round-tripped track carries a field the saved
-  form never had — and a session handed straight to `restoreSession` is not swept,
-  so the two entry paths disagree. Filed as #525; the fix is candidate 9's
-  `normalizeSession` stage (ADR-0006 decision 8).
+  restores one panel short (ADR-0006 decision 6). Nothing in the session records
+  that a panel was dropped, so the count is not recoverable.
+- **Tracks**, which the decoder's `fixDefaults` pass sweeps: every track comes
+  back `COLLAPSED` — a field the saved form never carries, and one that overrides
+  a track that asked for something else — and a track whose colour is the default
+  annotation colour comes back with no colour at all. A session handed straight
+  to `restoreSession` is never swept, so the two entry paths disagree. Filed as
+  #525; the fix is candidate 9's `normalizeSession` stage (ADR-0006 decision 8).
+
+The parameter is written in one spelling, `blob:`. The decoder reads three —
+`blob:`, `data:` and bare JSON — but the other two are inbound only: nothing has
+emitted a `data:` share link, and a bare-JSON *parameter* would carry braces and
+quotes into a query string. There is no `format` argument to reach them with.
 
 The compressed payload is URL-safe base64, unpadded: no `+`, `/` or `=` reaches
 the query string. The decoder's query splitter takes a value only up to its

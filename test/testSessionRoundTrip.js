@@ -22,25 +22,29 @@
  * about the format juicebox actually emits and nothing else. A generator free to
  * invent fields would be testing a format no session is ever in.
  *
- * No network and no DOM: the loader passed to `decodeSession` throws, and
- * nothing here constructs a browser. What a *registry* does with an empty
- * browser is `test/testRegistrySession.js`'s (#500); what the codec does with
- * the session that comes out of one is here.
+ * No network and no DOM: the loader passed to `decodeSession` throws, and the
+ * one place a `BrowserRegistry` appears — the count asymmetry — constructs it
+ * without a container and registers stand-ins, so nothing renders and nothing is
+ * selected. What a registry does with a real empty `HICBrowser` is
+ * `test/testRegistrySession.js`'s (#500).
  *
  * @see js/sessionCodec.js
  * @see docs/adr/0006-session-wire-format-and-one-decoder.md
  */
 import {describe, expect, test} from 'vitest'
 import {BGZip} from 'igv-utils'
+// The namespace import is for one assertion only -- "the codec exports exactly
+// one encoder", which is a claim about the module's *surface* and so cannot be
+// written with named imports.
 import * as codec from '../js/sessionCodec.js'
 import {
+    DEFAULT_ANNOTATION_COLOR,
     SessionEncodeError,
-    SessionFormat,
     decodeSession,
-    decodeSessionString,
     encodeSession,
     encodeSessionString,
 } from '../js/sessionCodec.js'
+import BrowserRegistry from '../js/browserRegistry.js'
 import State from '../js/hicState.js'
 
 /**
@@ -121,13 +125,22 @@ function generator(seed) {
         if (chance(0.5)) t.type = pick(['annotation', 'wig', 'interaction'])
         if (chance(0.5)) t.format = pick(['bed', 'bigwig', 'bedpe'])
         if (chance(0.7)) t.name = `track ${int(100)}`
+        // Always numbers: `HICBrowser.toJSON` writes a range only from a
+        // `track.dataRange`, so the `NaN` bounds `fixDefaults` also sweeps
+        // cannot arise from a written session. They arise from an empty field in
+        // a v0 `tracks=` string, which is #515's, not this property's.
         if (chance(0.4)) {
             t.min = -rnd() * 10
             t.max = rnd() * 100
         }
-        // Never `DEFAULT_ANNOTATION_COLOR`: that one is dropped on decode, and
-        // is pinned in "the accepted asymmetries" below rather than here.
-        if (chance(0.5)) t.color = `rgb(${int(255)},${int(255)},${int(255)})`
+        // `DEFAULT_ANNOTATION_COLOR` is in the pool deliberately: the decoder
+        // drops it, and a generator that steered around that deviation would be
+        // routing around the very thing the property is for.
+        if (chance(0.2)) {
+            t.color = DEFAULT_ANNOTATION_COLOR
+        } else if (chance(0.5)) {
+            t.color = `rgb(${int(255)},${int(255)},${int(255)})`
+        }
         return t
     }
 
@@ -216,27 +229,16 @@ describe('encodeSession', () => {
     })
 
     /**
-     * All three spellings the sniff tells apart, because the property below is
-     * over a *format* and a spelling with no encoder would be the one corner
-     * nothing exercises. Only `blob:` is ever written — see `encodeSession`.
+     * The sniff reads three spellings; the encoder writes one. `data:` is an
+     * inbound spelling juicebox has never produced, and a bare-JSON *parameter*
+     * would carry braces and quotes straight into a query string — so neither
+     * gets an encoder, and there is no `format` argument for a caller to reach
+     * one with. Reading all three back is `testSessionCodec.js`'s.
      */
-    test.each([
-        [SessionFormat.BLOB, 'blob:'],
-        [SessionFormat.DATA_URI, 'data:'],
-    ])('%s is written with its prefix', (format, prefix) => {
-        const encoded = encodeSessionString(session, format)
-
-        expect(encoded.startsWith(prefix)).toBe(true)
-        expect(decodeSessionString(encoded)).toEqual(session)
-    })
-
-    test('the JSON spelling is the document itself, uncompressed', () => {
-        expect(encodeSessionString(session, SessionFormat.JSON)).toBe(JSON.stringify(session))
-    })
-
-    test('a spelling the sniff cannot read back is refused rather than written', () => {
-        expect(() => encodeSessionString(session, 'base85')).toThrow(SessionEncodeError)
-        expect(() => encodeSessionString(session, 'base85')).toThrow('Unknown session format')
+    test('takes no format argument, so there is one spelling to own', () => {
+        expect(encodeSessionString.length).toBe(1)
+        expect(encodeSession.length).toBe(1)
+        expect(encodeSessionString(session, 'data-uri').startsWith('blob:')).toBe(true)
     })
 
     test('a document JSON cannot express is refused, with the failure kept', () => {
@@ -260,8 +262,8 @@ describe('encodeSession', () => {
     test('a State instance encodes as the object State.toJSON writes', () => {
         const state = new State(2, 5, 3, 10, 20, 4, 'KR')
 
-        expect(encodeSessionString({browsers: [{url: 'a.hic', state}]}, SessionFormat.JSON))
-            .toBe(JSON.stringify({browsers: [{url: 'a.hic', state: state.toJSON()}]}))
+        expect(encodeSessionString({browsers: [{url: 'a.hic', state}]}))
+            .toBe(encodeSessionString({browsers: [{url: 'a.hic', state: state.toJSON()}]}))
     })
 })
 
@@ -277,27 +279,76 @@ async function roundTrip(session) {
     return await decodeSession(encodeSession(session), noIO)
 }
 
+/** How many sessions each property walks. */
+const SESSIONS = 200
+
+/**
+ * Walk the generated space, round-tripping each session. `assert` is handed the
+ * session as written, the session as it came back, and a label carrying the seed
+ * and the offending document — a property whose failure you cannot reproduce is
+ * not much of a property.
+ */
+async function forEachGeneratedSession(seed, options, assert) {
+    const generate = generator(seed)
+    for (let i = 0; i < SESSIONS; i++) {
+        const session = generate(options)
+        await assert(session, await roundTrip(session), `seed ${seed}, session ${i}: ${JSON.stringify(session)}`)
+    }
+}
+
 describe('decode(encode(session)) is the identity', () => {
 
     /**
-     * The property. Every seed is a session drawn from the space
-     * `registry.toJSON()` writes, and the assertion is strict equality — not
-     * equality after any normalising step, which ADR-0006 rejected as defining
-     * the test to pass.
+     * The property. Every session is drawn from the space `registry.toJSON()`
+     * writes, and the assertion is strict equality — not equality after any
+     * normalising step, which ADR-0006 rejected as defining the test to pass.
      *
-     * Tracks are held out of *this* loop by one line and get their own loop
-     * below, because the decoder's normalize pass touches them and that
-     * deviation is asserted rather than absorbed.
+     * Tracks are held out of *this* loop by one line, and get a loop of their
+     * own immediately below with the same strictness and two named exceptions.
+     * The split is presentational: nothing about a track is untested, and the
+     * exceptions are asserted rather than absorbed.
      */
-    test('over 200 generated sessions', async () => {
-        const generate = generator(20260810)
+    test('over 200 generated sessions, tracks aside', async () => {
+        await forEachGeneratedSession(20260810, {tracks: false}, (session, decoded, label) => {
+            expect(decoded, label).toEqual(session)
+        })
+    })
 
-        for (let seed = 0; seed < 200; seed++) {
-            const session = generate({tracks: false})
+    /**
+     * The same property over track-bearing sessions. `fixDefaults` — the
+     * decoder's normalize pass — makes exactly two changes to a track a session
+     * can carry, and both are asserted *here*, per track, before being undone:
+     * that is what makes this an assertion about behaviour rather than a
+     * normalising step. Anything else it touched would fail the `toEqual`.
+     *
+     * ADR-0006 decision 8 moves that pass out of the decoder in candidate 9;
+     * when it does, this test collapses into the one above. Filed as #525.
+     */
+    test('over 200 generated sessions with tracks, up to fixDefaults and nothing else', async () => {
+        await forEachGeneratedSession(777, {tracks: true}, (session, decoded, label) => {
 
-            expect(await roundTrip(session), `session ${seed}: ${JSON.stringify(session)}`)
-                .toEqual(session)
-        }
+            for (const [i, browser] of decoded.browsers.entries()) {
+                for (const [j, track] of (browser.tracks || []).entries()) {
+                    const written = session.browsers[i].tracks[j]
+
+                    // One: a displayMode the written form never carried.
+                    expect(Object.hasOwn(written, 'displayMode'), label).toBe(false)
+                    expect(track.displayMode, label).toBe('COLLAPSED')
+                    delete track.displayMode
+
+                    // Two: the default annotation colour, dropped — and only
+                    // that colour, which is why the else arm asserts too.
+                    if (DEFAULT_ANNOTATION_COLOR === written.color) {
+                        expect(Object.hasOwn(track, 'color'), label).toBe(false)
+                        track.color = written.color
+                    } else {
+                        expect(track.color, label).toBe(written.color)
+                    }
+                }
+            }
+
+            expect(decoded, label).toEqual(session)
+        })
     })
 
     /**
@@ -306,19 +357,20 @@ describe('decode(encode(session)) is the identity', () => {
      * restore, and the view that comes out has to be the view that was saved.
      * The generator asks for pairs in both orders, so this covers both sides of
      * the diagonal.
+     *
+     * The codec itself passes a `state` through verbatim — it is one more object
+     * in the document — so this leg, not the `toEqual` above, is where the
+     * invariant is load-bearing. Without it the pair asked for as `(chr5, chr2)`
+     * comes back spelled the other way; "the spelling axis ordering retired",
+     * below, is that failure, pinned.
      */
     test('the view survives being rebuilt as a State', async () => {
-        const generate = generator(4242)
-
-        for (let seed = 0; seed < 200; seed++) {
-            const session = generate({tracks: false})
-            const decoded = await roundTrip(session)
-
-            for (const [i, browser] of (decoded?.browsers || []).entries()) {
-                expect(State.fromJSON(browser.state).toJSON(), `session ${seed}, browser ${i}`)
+        await forEachGeneratedSession(4242, {tracks: false}, (session, decoded, label) => {
+            for (const [i, browser] of decoded.browsers.entries()) {
+                expect(State.fromJSON(browser.state).toJSON(), `${label} (browser ${i})`)
                     .toEqual(session.browsers[i].state)
             }
-        }
+        })
     })
 
     /**
@@ -384,6 +436,21 @@ describe('the generated space', () => {
         expect(counts.some(n => n > 1)).toBe(true)
     })
 
+    /**
+     * The deviation the track property's `else` arm exists for. A generator that
+     * never emitted the default colour would leave that arm unexercised and the
+     * drop unpinned.
+     */
+    test('holds tracks carrying the default annotation colour, and tracks carrying another', () => {
+        const generate = generator(777)
+        const tracks = Array.from({length: SESSIONS}, () => generate({tracks: true}))
+            .flatMap(session => session.browsers)
+            .flatMap(browser => browser.tracks || [])
+
+        expect(tracks.filter(t => DEFAULT_ANNOTATION_COLOR === t.color).length).toBeGreaterThan(0)
+        expect(tracks.filter(t => t.color && DEFAULT_ANNOTATION_COLOR !== t.color).length).toBeGreaterThan(0)
+    })
+
     test('tracks are generated when they are asked for, and not when they are not', () => {
         const withTracks = generator(99)
         const without = generator(99)
@@ -444,80 +511,96 @@ describe('the accepted asymmetries', () => {
 
     /**
      * ADR-0006 decision 6. A browser with no dataset serializes to `null` and
-     * the registry drops it, so an embed saved with an empty panel open
-     * restores one panel short. The registry half is `testRegistrySession.js`'s;
-     * what is asserted here is that the *codec* faithfully round-trips the
-     * shorter list — the count is already gone before the encoder sees it, and
-     * nothing downstream puts it back.
+     * the registry drops it, so an embed saved with an empty panel open restores
+     * one panel short.
+     *
+     * The asymmetry is asserted end to end — two panels in, one browser out,
+     * round-tripped — because a test that hands the encoder a one-browser
+     * session and finds one browser has asserted nothing. That means a real
+     * `BrowserRegistry`, which needs no document as long as nothing selects a
+     * browser: `register` pushes, and `toJSON` reads only `toJSON`. The two
+     * stand-ins are what a loaded panel and an empty one serialize to, per #500,
+     * and `testRegistrySession.js` is where *that* is pinned against the real
+     * `HICBrowser`.
      */
     test('browser count does not survive when a browser was empty', async () => {
-        const written = {browsers: [{url: 'https://example.org/a.hic', state: State.default().toJSON()}]}
+        const loaded = {url: 'https://example.org/a.hic', state: State.default().toJSON()}
+        const registry = new BrowserRegistry()
+        registry.register({toJSON: () => loaded})
+        registry.register({toJSON: () => null})     // a panel with no map
 
-        // What two panels, one of them empty, serialize to.
+        const written = registry.toJSON()
         const decoded = await roundTrip(written)
 
-        expect(decoded.browsers).toHaveLength(1)
+        expect(registry.browsers).toHaveLength(2)
+        expect(written.browsers).toEqual([loaded])
         expect(decoded).toEqual(written)
     })
 
     /**
+     * And the count is gone for good — nothing in the decoded session records
+     * that a panel was dropped, which is what makes this an accepted asymmetry
+     * rather than a recoverable one. Restore rebuilds what the session names.
+     */
+    test('and nothing in the session says a panel was dropped', async () => {
+        const registry = new BrowserRegistry()
+        registry.register({toJSON: () => null})
+        registry.register({toJSON: () => null})
+
+        expect(await roundTrip(registry.toJSON())).toEqual({browsers: []})
+    })
+
+    /**
      * The decoder's normalize pass — `fixDefaults` — runs on every format,
-     * including this one, and it forces every track to `COLLAPSED`, drops the
-     * default annotation colour, and drops a `NaN` data range. A saved session's
-     * tracks carry no `displayMode` at all, so the round trip adds a field.
+     * including this one, and it makes two changes to a track a session can
+     * carry: it forces `displayMode` to `COLLAPSED`, a field the written form
+     * never has, and it drops the default annotation colour. (Its third effect,
+     * dropping a `NaN` data range, cannot be reached from a written session; see
+     * the generator's `track()`.)
+     *
+     * The property above asserts both of these per track over the generated
+     * space, which is where they are pinned. These two are the same claims in
+     * literal form — a reader finding a stray `COLLAPSED` in a decoded session
+     * should be able to see why in one screen.
      *
      * This is normalization sitting inside the decoder, which ADR-0006 decision
-     * 8 names as candidate 9's to move behind a `normalizeSession` stage. **When
-     * it moves, this block goes and the property above gets stricter** — the
-     * three `delete`s below are the whole cost of the deviation, and they are
-     * written out rather than hidden in a helper so that cost stays visible.
-     * Filed as #525.
+     * 8 names as candidate 9's to move behind a `normalizeSession` stage that
+     * *both* entry paths pass through. Until it moves, a session restored from a
+     * URL and the same session handed to `restoreSession` disagree. Filed as
+     * #525; when it lands, this block goes and the property above absorbs the
+     * track case.
      */
     describe('the decoder normalises tracks on the way in', () => {
 
+        const withTrack = track => ({browsers: [{url: 'https://example.org/a.hic', tracks: [track]}]})
+
         test('every track comes back COLLAPSED, whatever was saved', async () => {
-            const session = {
-                browsers: [{
-                    url: 'https://example.org/a.hic',
-                    tracks: [{url: 'https://example.org/a.bed', name: 'a'}],
-                }],
-            }
+            const session = withTrack({url: 'https://example.org/a.bed', name: 'a'})
+
+            expect((await roundTrip(session)).browsers[0].tracks[0].displayMode).toBe('COLLAPSED')
+        })
+
+        /**
+         * Including one that asked for something else — which is the part that
+         * makes the two entry paths disagree rather than merely differ from the
+         * written form.
+         */
+        test('even one that saved a different display mode', async () => {
+            const session = withTrack({url: 'https://example.org/a.bed', displayMode: 'EXPANDED'})
 
             expect((await roundTrip(session)).browsers[0].tracks[0].displayMode).toBe('COLLAPSED')
         })
 
         test('the default annotation colour is dropped', async () => {
-            const session = {
-                browsers: [{
-                    url: 'https://example.org/a.hic',
-                    tracks: [{url: 'https://example.org/a.bed', color: codec.DEFAULT_ANNOTATION_COLOR}],
-                }],
-            }
+            const session = withTrack({url: 'https://example.org/a.bed', color: DEFAULT_ANNOTATION_COLOR})
 
             expect(Object.hasOwn((await roundTrip(session)).browsers[0].tracks[0], 'color')).toBe(false)
         })
 
-        /**
-         * The property, over track-bearing sessions, with the normalize pass's
-         * one addition asserted and then removed. Everything else about a track
-         * — url, type, format, name, data range, colour — is identity.
-         */
-        test('and changes nothing else about a track', async () => {
-            const generate = generator(777)
+        test('and any other colour is kept', async () => {
+            const session = withTrack({url: 'https://example.org/a.bed', color: 'rgb(1,2,3)'})
 
-            for (let seed = 0; seed < 200; seed++) {
-                const session = generate()
-                const decoded = await roundTrip(session)
-
-                for (const browser of decoded?.browsers || []) {
-                    for (const track of browser.tracks || []) {
-                        expect(track.displayMode, `session ${seed}`).toBe('COLLAPSED')
-                        delete track.displayMode
-                    }
-                }
-
-                expect(decoded, `session ${seed}: ${JSON.stringify(session)}`).toEqual(session)
-            }
+            expect((await roundTrip(session)).browsers[0].tracks[0].color).toBe('rgb(1,2,3)')
         })
     })
 })

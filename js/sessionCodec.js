@@ -41,9 +41,10 @@
  *
  * The identity is not total, and both places it is not are asserted by that
  * suite rather than left to be discovered: browser *count* does not survive a
- * session saved with an empty panel (decision 6), and the decoder's normalize
- * pass forces every track to `COLLAPSED` on the way in (decision 8 — the pass
- * moves out of the decoder in candidate 9, and the property gets stricter then).
+ * session saved with an empty panel (decision 6), and `fixDefaults` below —
+ * normalization, sitting inside the decoder — forces every track to `COLLAPSED`
+ * and drops the default annotation colour on the way in (decision 8, #525; the
+ * pass moves out in candidate 9, and the property gets stricter then).
  *
  * ## No I/O
  *
@@ -228,22 +229,22 @@ export class SessionEncodeError extends Error {
 
 /**
  * Write a session as a session string — the inverse of
- * {@link decodeSessionString}.
+ * {@link decodeSessionString} for the one spelling juicebox writes.
  *
- * All three spellings the sniff tells apart are writable, because they are three
- * spellings of **one** format and a member of {@link SessionFormat} with no
- * encoder would be the one corner the round-trip property could not reach. Only
- * `blob:` is ever written in anger; see {@link encodeSession}.
+ * **One spelling, not three.** The sniff reads `blob:`, `data:` and bare JSON;
+ * this writes `blob:` only. The other two are inbound spellings — a `data:`
+ * share link is not a thing juicebox has ever produced, and a bare-JSON
+ * *parameter* would carry braces and quotes into a query string. Taking a
+ * `format` argument here would be a live encoder for a spelling nothing emits,
+ * which is the same trade ADR-0006 decision 4 refuses at the format level.
  *
  * @param {object} session - a session document, as `registry.toJSON()` writes
  *   one. A `State` instance in it encodes as the object `State.toJSON()` writes,
  *   because that is what `JSON.stringify` does with it.
- * @param {string} [format] - a {@link SessionFormat} member
  * @returns {string}
- * @throws {SessionEncodeError} if `format` is not a spelling the sniff can read
- *   back, or if the document is one JSON cannot express
+ * @throws {SessionEncodeError} if the document is one JSON cannot express
  */
-export function encodeSessionString(session, format = SessionFormat.BLOB) {
+export function encodeSessionString(session) {
 
     let json
     try {
@@ -252,18 +253,7 @@ export function encodeSessionString(session, format = SessionFormat.BLOB) {
         throw new SessionEncodeError('Session cannot be written as JSON', e)
     }
 
-    if (format === SessionFormat.JSON) {
-        return json
-    }
-
-    const prefix = Object.entries(COMPRESSED_PREFIXES)
-        .find(([, candidate]) => candidate === format)?.[0]
-
-    if (undefined === prefix) {
-        throw new SessionEncodeError(`Unknown session format: ${format}`)
-    }
-
-    return `${prefix}${BGZip.compressString(json)}`
+    return `blob:${BGZip.compressString(json)}`
 }
 
 /**
@@ -279,16 +269,15 @@ export function encodeSessionString(session, format = SessionFormat.BLOB) {
  * {@link decodeSession} accepts directly. Nothing needs escaping on the way in:
  * `BGZip` writes the URL-safe base64 alphabet unpadded, so the payload carries
  * no `&`, `#` or second `=` for the query splitter to eat. That is a dependency
- * of the round trip, and `test/testSessionRoundTrip.js` asserts it.
+ * of the round trip — the splitter reads a value only as far as its second `=` —
+ * and `test/testSessionRoundTrip.js` asserts it.
  *
  * @param {object} session
- * @param {string} [format] - a {@link SessionFormat} member. Defaulted, and in
- *   practice never passed: the share link is a `blob:`.
  * @returns {string}
  * @throws {SessionEncodeError}
  */
-export function encodeSession(session, format = SessionFormat.BLOB) {
-    return `session=${encodeSessionString(session, format)}`
+export function encodeSession(session) {
+    return `session=${encodeSessionString(session)}`
 }
 
 /**

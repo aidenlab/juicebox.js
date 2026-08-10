@@ -30,7 +30,13 @@
  */
 import {afterEach, describe, expect, test, vi} from 'vitest'
 import {BGZip} from 'igv-utils'
-import {SessionDecodeError, WIRE_FORMATS, decodeSession} from '../js/sessionCodec.js'
+import {
+    SESSION_VERSION,
+    SessionDecodeError,
+    WIRE_FORMATS,
+    decodeSession,
+    encodeSession,
+} from '../js/sessionCodec.js'
 import State from '../js/hicState.js'
 
 /**
@@ -201,6 +207,100 @@ describe('decodeSession — the retired bit.ly form', () => {
         await expect(decodeSession(
             '?juiceboxURL=http://bit.ly/2C1VSHy&hicUrl=https://example.org/one.hic', noIO))
             .rejects.toThrow(SessionDecodeError)
+    })
+})
+
+/**
+ * The read half of the version stamp — `js/sessionCodec.js` `SESSION_VERSION`
+ * carries what it is for. #508, ADR-0006 decision 7.
+ *
+ * Since the field buys nothing today, what is asserted here is mostly what it
+ * does *not* do: it is never required, its absence is not a degraded path, and a
+ * session that carries it decodes to the same document as one that does not.
+ * The write half, and the strict identity that depends on the field being taken
+ * back off, are `test/testSessionRoundTrip.js`'s.
+ */
+describe('decodeSession — the version stamp', () => {
+
+    test('a session with no version field decodes as v1, unremarked', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+        const config = await decodeSession(`?session=blob:${compress(oneBrowserSession)}`, noIO)
+
+        expect(config).toEqual(oneBrowserSession)
+        expect(warn).not.toHaveBeenCalled()
+        expect(error).not.toHaveBeenCalled()
+    })
+
+    test('the version juicebox writes decodes to the same document, field consumed', async () => {
+        const stamped = {...oneBrowserSession, version: SESSION_VERSION}
+
+        expect(await decodeSession(`?session=blob:${compress(stamped)}`, noIO))
+            .toEqual(oneBrowserSession)
+    })
+
+    test('what juicebox itself writes decodes, which is the round trip in one line', async () => {
+        expect(await decodeSession(encodeSession(oneBrowserSession), noIO))
+            .toEqual(oneBrowserSession)
+    })
+
+    test('an unknown version is refused, and the message names it', async () => {
+        const future = {...oneBrowserSession, version: 2}
+
+        await expect(decodeSession(`?session=blob:${compress(future)}`, noIO))
+            .rejects.toThrow(SessionDecodeError)
+        await expect(decodeSession(`?session=blob:${compress(future)}`, noIO))
+            .rejects.toThrow(/version 2/)
+    })
+
+    /**
+     * Refused *before* anything is read out of it, which is the difference
+     * between a session that fails and one that half-decodes into a view the
+     * user did not save.
+     */
+    test('and nothing of it is decoded', async () => {
+        const future = {browsers: [{url: 'https://example.org/one.hic'}], version: 2, selectedGene: 'MYC'}
+
+        await expect(decodeSession(`?session=blob:${compress(future)}`, noIO))
+            .rejects.toThrow(SessionDecodeError)
+    })
+
+    /**
+     * A version is a version whichever arm carried the document. The URL arm is
+     * the one that wraps what it catches (#521), so it is the arm where a
+     * message can be lost on the way out.
+     */
+    test('a fetched session is version-checked too, and the version survives the report', async () => {
+        await expect(decodeSession('?session=https://example.org/session.json', {
+            ...noIO,
+            loadString: async () => JSON.stringify({...oneBrowserSession, version: 7}),
+        })).rejects.toThrow(/version 7/)
+    })
+
+    /**
+     * The version is a number, and a string spelling of it is a different
+     * format — one nothing here wrote. Refusing it is the same call as refusing
+     * version 2: this reader does not know what wrote the document, so it does
+     * not guess. The message quotes the value, so the two cases are told apart
+     * in a bug report.
+     */
+    test('a version that is not the number 1 is unknown, however it is spelled', async () => {
+        await expect(decodeSession(`?session=blob:${compress({...oneBrowserSession, version: '1'})}`, noIO))
+            .rejects.toThrow(/version "1"/)
+    })
+
+    /**
+     * The legacy forms carry no version and are not made to. `?juicebox=` is a
+     * braced query string per browser; a `version` token in one would decode to
+     * nothing, exactly as any other unrecognised parameter does.
+     */
+    test('the braced legacy form is untouched by any of this', async () => {
+        const input = '?juicebox={hicUrl%3Dhttps%3A%2F%2Fexample.org%2Fone.hic%26version%3D2}'
+        const config = await decodeSession(input, noIO)
+
+        expect(config.browsers[0].url).toBe('https://example.org/one.hic')
+        expect(config.browsers[0].version).toBeUndefined()
     })
 })
 

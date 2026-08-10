@@ -134,6 +134,14 @@ accepted. **v0** is the older query form documented in `docs/url.md` — a
 4-token track string, and the session JSON that `compressedSession` writes.
 Juicebox reads both and writes only v1. See `docs/adr/0006`.
 
+A session JSON juicebox writes says so, in a top-level `version` field holding
+the number 1; **a session that says nothing is v1**, which is every session ever
+saved before the field existed. It is the format's field, not the document's:
+stamped by the encoder, taken off by the decoder, never seen by
+`restoreSession`. Numbered on the same v0/v1 sequence as the rest of this
+paragraph — v0 has no session JSON, so 1 is the first number it can hold. See
+`docs/url.md` "Version" and ADR-0006 decision 7.
+
 The accepted set is pinned, not described: `test/data/wireFormatCorpus.js` holds
 one fixture per format and per decoder branch, and `test/testDecoderGolden.js`
 snapshots what today's decoder makes of each. Those snapshots *are* the

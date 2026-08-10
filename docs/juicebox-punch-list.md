@@ -61,7 +61,7 @@ Each card carries a Consumer impact block; read it before filing anything.
 
 | Candidate | Status |
 |---|---|
-| **9 · Give the config schema one reader** | **next up** — seam already drawn by ADR-0006 decision 8; may not need its own ADR |
+| **9 · Give the config schema one reader** | **filed — #531–#536**, frontier is #531. Seam already drawn by ADR-0006 decision 8; no ADR opened |
 | **11 · Give the track tile one owner** | ⚠️ breaking |
 | **6 · Fold StateManager into State, and make restore use the chokepoint** | watch |
 | **7 · Move the gesture state machines behind InteractionHandler** | watch |
@@ -76,11 +76,39 @@ entirely. One `normalizeSession` stage that *both* entry paths pass through make
 copies deletable. That deletion was held back from 5 on purpose: both at once doubles the blast
 radius on `hic.init`, the most-used public surface.
 
-So the hard question — where the seam goes and why — is answered. The one genuinely open piece is
+So the hard question — where the seam goes and why — is answered. The one genuinely open piece was
 **whether normalizing at both entry points changes what `restoreSession` accepts**, and that is
-consumer-facing, so it may still be worth an ADR (ADR-0007 is claimed by #477; **ADR-0008 is the
-next free number**). Decide that first; if the answer is "no change", this is `/to-tickets` against
-decision 8 rather than a fresh ADR.
+consumer-facing, so it might have been worth an ADR.
+
+**Decided: no ADR.** The answer is "no change to what is *accepted*" — normalize **defaults and
+coerces, never rejects**, which is an acceptance criterion on every ticket that could violate it.
+What *does* change is what `restoreSession` *produces*, and only for the three divergences #533
+closes deliberately. That is `/to-tickets` against decision 8, not a fresh ADR. ADR-0008 stays the
+next free number.
+
+**Filed as six tickets, gate first** — the shape candidate 5 proved:
+
+| # | Ticket | Blocked by |
+|---|---|---|
+| #531 | Gate: snapshot the resolved config every entry path produces today | — **frontier** |
+| #532 | Extract `normalizeSession`: a pure, session-shaped normalize stage | #531 |
+| #533 | Move the remaining normalization across the seam | #532 |
+| #534 | Delete the duplicate URL-shortcut expansion | #533 |
+| #535 | Normalize once, at the entry | #533 |
+| #536 | Downstream readers stop defaulting, and the schema is written down | #535 |
+
+#534 and #535 run in parallel after #533. **#533 is the only ticket that deliberately moves
+snapshots** — it closes three divergences at once: track defaults skipped by `restoreSession`, the
+`selectedGene` reconciliation, and `syncDatasets` honoured by `createBrowserList` but not
+`createBrowser`. Blocking edges are GitHub-native, so the frontier is queryable rather than read
+off this table.
+
+**Two card corrections found while decomposing**, both from candidate 5 landing — recorded here and
+in #466 rather than on the frozen card: `normalizeConfig` **already exists** in `createBrowser.js`
+(browser-shaped, unexported, called once per browser), so #532 deepens it rather than inventing it,
+and the new stage is named `normalizeSession` to avoid the collision. `fixDefaults` now lives in
+`sessionCodec.js`, not `urlUtils.js`. The card also lists `js/browserUIManager.js`, which candidate
+3 deleted.
 
 **9 inherits the gate 5 had to build.** The golden-file snapshot over the wire-format corpus is
 green and covers every accepted format; normalization changes are exactly the kind that move
@@ -118,7 +146,7 @@ session before any ticket existed.
 **Skill:** `/to-tickets` when you pick one up. Full routing rules, and the reason to file tickets
 *before* the blocker clears, are in `docs/agents/triage-labels.md`. **ADR-0005 went to candidate 8
 and ADR-0006 to candidate 5. ADR-0007 is claimed by #477, so ADR-0008 is the next free number** —
-and candidate 9 may not need one, per above.
+and candidate 9 does not need one, per above.
 
 When a candidate lands: tick it in [#466](https://github.com/aidenlab/juicebox.js/issues/466) and
 add an Outcome box to its card. That is the only time either file is touched.

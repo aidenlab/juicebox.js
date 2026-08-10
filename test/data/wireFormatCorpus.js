@@ -27,17 +27,19 @@
  * Every `outcome` was measured against `extractConfig` at `b92b602` rather than
  * inferred from reading the code. `test/testWireFormatCorpus.js` re-measures on
  * every run everything drivable from literals, including the `sessionUrl`
- * fixtures via a stubbed loader. Four are left out and were measured by hand:
- * the three `sessionFile` fixtures, which the sole caller cannot reach at all
- * (see their notes), and `harvested-juiceboxURL-bitly`, whose outcome depends on
- * a third party. Distrust those four first if the corpus and the decoder ever
+ * fixtures via a stubbed loader. Three are left out and were measured by hand:
+ * the `sessionFile` fixtures, which the sole caller cannot reach at all (see
+ * their notes). Distrust those three first if the corpus and the decoder ever
  * disagree.
+ *
+ * There was a fourth — `harvested-juiceboxURL-bitly`, whose outcome depended on
+ * a third party. #506 retired that format, so the fixture now measures a
+ * rejection off its own literal like everything else.
  *
  * Nothing here does I/O. Every fixture whose decode path would reach the network
  * or a file carries the *text* that path would have returned as a further string
- * literal — `loaderResponse`, `fileText`, `expandedUrl` — so the whole decode
- * path is drivable from literals, which is the point of ADR-0006 decision 10's
- * injected loader.
+ * literal — `loaderResponse`, `fileText` — so the whole decode path is drivable
+ * from literals, which is the point of ADR-0006 decision 10's injected loader.
  *
  * **Harvest scope.** ADR-0006 names three repos and the published docs. All
  * three were searched: juicebox.js (`git log`, `test/test_urls.md`,
@@ -82,7 +84,10 @@
  * `juicebox`        — `juicebox={…},{…}`, one braced query string per browser.
  * `juiceboxData`    — `juiceboxData=`, the *braced* form compressed. Not session
  *                     JSON — see the fixture note.
- * `juiceboxURL`     — `juiceboxURL=`, a bit.ly link. Dropped by decision 1.
+ * `juiceboxURL`     — `juiceboxURL=`, a bit.ly link. **Retired** by decision 1,
+ *                     removed in #506. Its fixture stays: what the decoder does
+ *                     with a format it no longer accepts is part of the
+ *                     contract, and this is the corpus that records it.
  */
 export const FORMATS = [
     'sessionBlob',
@@ -229,11 +234,10 @@ export const wireFormatCorpus = [
         format: 'juiceboxURL',
         provenance: 'harvested',
         role: 'load-bearing',
-        outcome: 'decodes',
+        outcome: 'throws',
         source: 'test/test_urls.md and juicebox-web js/initializationHelper.js:490',
         input: 'http://localhost/juicebox-web/index.html?juiceboxURL=http://bit.ly/2C1VSHy',
-        expandedUrl: 'http://aidenlab.org/juicebox/?juicebox={hicUrl%253Dhttps%253A%252F%252Fs3.amazonaws.com%252Fhicfiles%252Fhiseq%252FnSxhJZHdDRQ0kGDR%252F12.31.17%252FADAC%252FADAC_30.hic%2526name%253DADAC_30.hic%2526state%253D2%252C2%252C6%252C1896.1562537317725%252C1916.657181523778%252C1.5423280423280423%252CKR%2526colorScale%253D144.21837414880474%252C255%252C0%252C0%2526nvi%253D7989194045%252C18679%2526tracks%253Dhttps%253A%252F%252Fs3.amazonaws.com%252Fhicfiles%252Fhiseq%252FnSxhJZHdDRQ0kGDR%252F12.31.17%252FADAC%252Finter_30_contact_domains%252F5000_blocks%257C5000_blocks%257C%257Crgb(255%252C255%252C0)%257C%257C%257Chttps%253A%252F%252Fs3.amazonaws.com%252Fhicfiles%252Fhiseq%252FnSxhJZHdDRQ0kGDR%252F12.31.17%252FADAC_loops%252Fmerged_loops.bedpe%257Cmerged_loops.bedpe%257C%257Crgb(0%252C36%252C255)%257C%257C%257Chttps%253A%252F%252Fs3.amazonaws.com%252Fhicfiles%252Fhiseq%252FnSxhJZHdDRQ0kGDR%252F12.31.17%252FADAC_vs_EndoC%252Fdifferential_loops1.bedpe%257Cdifferential_loops1.bedpe%257C%257Crgb(0%252C255%252C36)},{hicUrl%253Dhttps%253A%252F%252Fs3.amazonaws.com%252Fhicfiles%252Fhiseq%252FnSxhJZHdDRQ0kGDR%252F12.31.17%252FEndoC%252FEndoC_30.hic%2526name%253DEndoC_30.hic%2526state%253D2%252C2%252C6%252C1896.1562537317725%252C1916.657181523778%252C1.5423280423280423%252CKR%2526colorScale%253D142.77439421809834%252C255%252C0%252C0%2526nvi%253D6818528104%252C18679%2526tracks%253Dhttps%253A%252F%252Fs3.amazonaws.com%252Fhicfiles%252Fhiseq%252FnSxhJZHdDRQ0kGDR%252F12.31.17%252FEndoC_loops%252Fmerged_loops.bedpe%257Cmerged_loops.bedpe%257C%257Crgb(18%252C0%252C255)%257C%257C%257Chttps%253A%252F%252Fs3.amazonaws.com%252Fhicfiles%252Fhiseq%252FnSxhJZHdDRQ0kGDR%252F12.31.17%252FEndoC%252Finter_30_contact_domains%252F5000_blocks%257C5000_blocks%257C%257Crgb(255%252C255%252C0)%257C%257C%257Chttps%253A%252F%252Fs3.amazonaws.com%252Fhicfiles%252Fhiseq%252FnSxhJZHdDRQ0kGDR%252F12.31.17%252FADAC_vs_EndoC%252Fdifferential_loops2.bedpe%257Cdifferential_loops2.bedpe%257C%257Crgb(18%252C255%252C0)}',
-        note: 'The one format ADR-0006 decision 1 drops deliberately — and, measured 2026-08-09, **it still works**: bit.ly expands the link and the two-browser session decodes in full. ADR-0006 and docs/url.md both predicted a 401 from the mojibake bearer token at urlUtils.js:405; v4/expand accepts it for a public link. So #506 removes live behaviour rather than tidying a dead path, and this fixture is the evidence. `expandedUrl` is bit.ly\'s `long_url` field captured verbatim on the same date, so the fixture is drivable offline by stubbing the fetch with it — note it arrives **double**-encoded (`%253D` for `=`) with the braces literal, which is what the brace repair at urlUtils.js:417 exists to undo. The corpus integrity test still skips this fixture: it is the one input whose measured outcome depends on a third party.',
+        note: 'The one format ADR-0006 decision 1 dropped deliberately, removed in #506 — and it was **not** a dead path when it went. Measured 2026-08-09, bit.ly expanded this link and the two-browser session decoded in full; both ADR-0006 and docs/url.md had predicted a 401 from the mojibake bearer token, and v4/expand accepted it for a public link. What the fixture pins now is the refusal that replaced the expansion: a SessionDecodeError naming the format and the ticket, raised before the rest of the URL is read. It no longer depends on a third party, so the corpus integrity test no longer skips it. The captured `long_url` went with the expansion rather than being kept as inert evidence — it described a decode path that no longer exists, and the removal it was evidence for is recorded in the ADR and in the golden file\'s snapshot-movement log.',
     },
 
     // ---------------------------------------------------------------------
@@ -680,25 +684,25 @@ export const wireFormatCorpus = [
  * copies that disagreed would silently stop covering whichever group fell
  * through the gap.
  *
- * The four groups are disjoint and exhaustive, which `testDecoderGolden.js`
+ * The three groups are disjoint and exhaustive, which `testDecoderGolden.js`
  * asserts. Adding a fixture that belongs to none of them fails that assertion
  * rather than being quietly skipped.
  *
  * `selfContained` — hand it `input` and nothing else.
  * `viaLoader`     — stub `igvxhr.loadString` with `loaderResponse` first; a
  *                   `loaderResponse` of null means the loader itself rejects.
- * `viaBitly`      — stub `fetch` with `expandedUrl` first.
  * `viaFile`       — needs a File where `extractQuery` can only put a string.
  *                   See the golden test's note on this group.
+ *
+ * There was a fourth, `viaBitly`, which stubbed `fetch` with a captured
+ * `long_url`. #506 removed the expansion, so its one fixture needs nothing
+ * stubbed and is self-contained like the rest.
  */
 export const selfContained = wireFormatCorpus.filter(f =>
     f.input !== undefined &&
-    f.loaderResponse === undefined &&
-    f.format !== 'juiceboxURL')
+    f.loaderResponse === undefined)
 
 export const viaLoader = wireFormatCorpus.filter(f => f.loaderResponse !== undefined)
-
-export const viaBitly = wireFormatCorpus.filter(f => f.format === 'juiceboxURL')
 
 export const viaFile = wireFormatCorpus.filter(f => f.format === 'sessionFile')
 

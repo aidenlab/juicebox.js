@@ -185,7 +185,27 @@ follow the same rules as above.
 | `session=` | **v1 session JSON**. A `blob:` or `data:` prefix means the rest is compressed and base64-encoded — the only form juicebox writes, as juicebox-web's share link. Anything else is loaded as a URL or file and may be either compressed or plain JSON. |
 | `juicebox={…},{…}` | one brace-wrapped query string per browser, comma-separated. Read-only legacy. |
 | `juiceboxData=` | the `juicebox=` value above, compressed. **Not** session JSON — the two share one code path, and the only difference is that this one is decompressed first. Read-only legacy. |
-| `juiceboxURL=` | a bit.ly short link to expand and re-decode. **Deprecated, and the one format deliberately dropped** — see ADR-0006 decision 1. The decoder still takes this path today; #506 removes it. ADR-0006 expected it to be dead already, on the grounds that the bit.ly endpoint wants a credential we no longer hold; measured 2026-08-09 (#502) it is **not** dead — a link expands and its session decodes in full. #506 therefore removes working behaviour. |
 
 Session JSON has no `version` field today; its absence means v1. When one is
 added (#508) it will be written but never required.
+
+A fourth whole-session parameter, `juiceboxURL=`, was accepted until 2026-08-09
+— see [Removed forms](#removed-forms).
+
+## Removed forms
+
+The accepted set is frozen (ADR-0006 decision 1): a form listed anywhere above
+stays readable. This section is the exception list — forms that were accepted
+once and are not any more. It exists so that someone holding an old link can
+find out what happened to it, which is the only reason a removal is
+discoverable at all.
+
+| Parameter | Removed | What it was, and what to do with one |
+| --------- | ------- | ------------------------------------ |
+| `juiceboxURL=` | **2026-08-09**, in #506 — ADR-0006 decision 1 | A bit.ly short link standing for a whole juicebox href: juicebox expanded it through bit.ly's API and re-decoded the href that came back. It is now **refused**, with an error naming the parameter — not a timeout and not a parse failure. **To recover a link:** open the bit.ly URL in a browser and use the juicebox URL it redirects to; that URL is in one of the forms above and still decodes. |
+
+The grounds are in
+[ADR-0006](adr/0006-session-wire-format-and-one-decoder.md) decision 1 and are
+not restated here. One thing that page records and this one should not hide:
+the removal took **working** behaviour. The ADR predicted the format was already
+dead; measured on the day it went, it was not.

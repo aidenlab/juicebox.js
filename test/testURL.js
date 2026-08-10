@@ -54,17 +54,19 @@ describe("testURLs", function () {
 
     })
 
-    test("juiceboxURL'", async function () {
+    /**
+     * `juiceboxURL=` was the one test in this file that went to the network on
+     * every `npm test`, expanding a bit.ly link through a live third-party
+     * endpoint. #506 retired the format (ADR-0006 decision 1), so what is left to
+     * check is that the refusal is a refusal — the rejection itself, and every
+     * message it carries, is pinned in `testSessionDecode.js` and in the golden
+     * file.
+     */
+    test("juiceboxURL= is refused rather than expanded", async function () {
 
         const url = "http://localhost/juicebox-web/index.html?juiceboxURL=http://bit.ly/2C1VSHy";
 
-        const sessionJSON = await extractConfig(url);
-
-        assert.equal(sessionJSON.browsers.length, 2);
-
-        const browser1 = sessionJSON.browsers[0];
-        assert.equal(browser1.name, "ADAC_30.hic");
-        assert.equal(browser1.tracks.length, 3);
+        await expect(extractConfig(url)).rejects.toThrow(/juiceboxURL/);
 
     })
 

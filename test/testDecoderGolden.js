@@ -48,6 +48,7 @@
  * | Date | Fixtures | Authorised by |
  * |------|----------|---------------|
  * | 2026-08-09 | all — baseline taken | #503, after #499 (axis ordering) and #500 (empty browsers), both of which move decoded output and so had to land first |
+ * | 2026-08-09 | `harvested-juiceboxURL-bitly` — `decodes` became `throws` | **#506**, ADR-0006 decision 1: the named exception to the frozen contract. The bit.ly expansion and its embedded credential are gone, so the fixture that decoded a two-browser session through a live third-party endpoint now records the refusal that replaced it. **This is the first deliberate deviation from the baseline** — the whole point of the log is that it is written down rather than absorbed by a bare `-u`. No other fixture moved, which is the other half of the claim. |
  *
  * @see docs/adr/0006-session-wire-format-and-one-decoder.md
  * @see test/data/wireFormatCorpus.js — the inputs
@@ -60,7 +61,6 @@ import State from '../js/hicState.js'
 import {
     selfContained,
     stateStringCorpus,
-    viaBitly,
     viaFile,
     viaLoader,
     wireFormatCorpus,
@@ -118,13 +118,13 @@ expect.addSnapshotSerializer({
 
 /**
  * "Every fixture in the corpus has a committed snapshot" has to hold by
- * construction, not by having been true the day it was written. The four suites
- * below run the four partitions the corpus exports; a fixture belonging to none
+ * construction, not by having been true the day it was written. The three suites
+ * below run the three partitions the corpus exports; a fixture belonging to none
  * of them would otherwise be skipped in silence, which is the one failure mode a
  * golden file cannot survive.
  */
-test('every fixture falls into exactly one of the four suites', () => {
-    const partitioned = [...selfContained, ...viaLoader, ...viaBitly, ...viaFile]
+test('every fixture falls into exactly one of the three suites', () => {
+    const partitioned = [...selfContained, ...viaLoader, ...viaFile]
     expect(partitioned.length, 'a fixture in two partitions is snapshotted twice')
         .toBe(wireFormatCorpus.length)
     expect(new Set(partitioned.map(f => f.id)).size, 'a fixture in none is never snapshotted')
@@ -133,9 +133,11 @@ test('every fixture falls into exactly one of the four suites', () => {
 
 /**
  * "Runs without network, DOM or file I/O" is enforced here rather than asserted
- * in a comment: both I/O sites are replaced with a throw by default, so a
- * fixture that reaches one fails loudly instead of quietly going to the wire.
- * The two suites that legitimately need them re-stub them with a canned answer.
+ * in a comment: `igvxhr.loadString` and `fetch` are both replaced with a throw,
+ * so a fixture that reaches either fails loudly instead of quietly going to the
+ * wire. One suite — the session URLs — re-stubs `loadString` with a canned
+ * answer. Nothing re-stubs `fetch` any more: the bit.ly expansion was the only
+ * caller and #506 removed it, so the stub is now purely a tripwire.
  *
  * `console.error` is silenced because the decoder logs every rejection before
  * rethrowing it — behaviour worth keeping, noise worth not printing forty times
@@ -176,31 +178,6 @@ describe('decoder golden file — session URLs, driven from their loader respons
                 if (fixture.loaderResponse === null) throw new Error('simulated fetch failure')
                 return fixture.loaderResponse
             })
-
-            const captured = await capture(fixture.input)
-            expect(captured.outcome, fixture.id).toBe(fixture.outcome)
-            expect(captured).toMatchSnapshot()
-        })
-    }
-})
-
-/**
- * The bit.ly path, driven from the `long_url` the real service returned on
- * 2026-08-09. ADR-0006 decision 1 drops this format, and #506 is where it goes;
- * until then it is live behaviour and gets a snapshot like everything else.
- *
- * Stubbing `fetch` rather than the network is what makes it snapshottable at
- * all — the corpus integrity test skips this fixture precisely because its
- * unstubbed outcome depends on a third party.
- */
-describe('decoder golden file — the legacy bit.ly form', () => {
-
-    for (const fixture of viaBitly) {
-        test(fixture.id, async () => {
-            vi.stubGlobal('fetch', async () => ({
-                ok: true,
-                json: async () => ({long_url: fixture.expandedUrl}),
-            }))
 
             const captured = await capture(fixture.input)
             expect(captured.outcome, fixture.id).toBe(fixture.outcome)

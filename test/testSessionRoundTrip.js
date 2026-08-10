@@ -39,6 +39,7 @@ import {BGZip} from 'igv-utils'
 import * as codec from '../js/sessionCodec.js'
 import {
     DEFAULT_ANNOTATION_COLOR,
+    SESSION_VERSION,
     SessionEncodeError,
     decodeSession,
     encodeSession,
@@ -204,7 +205,50 @@ describe('encodeSession', () => {
 
         expect(encoded.startsWith('session=blob:')).toBe(true)
         expect(BGZip.uncompressString(encoded.substring('session=blob:'.length)))
-            .toBe(JSON.stringify(session))
+            .toBe(JSON.stringify({...session, version: SESSION_VERSION}))
+    })
+
+    /**
+     * The write half of the version stamp (#508, ADR-0006 decision 7);
+     * `testSessionDecode.js` owns the read half, and `SESSION_VERSION`'s own doc
+     * comment owns why the field exists at all.
+     *
+     * It does not appear in the property below because the decoder takes it back
+     * off, which is what keeps that property a strict identity rather than
+     * "equal apart from one field" — the same weakening ADR-0006 rejected for
+     * axis ordering.
+     */
+    describe('the version stamp', () => {
+
+        const written = encoded => JSON.parse(BGZip.uncompressString(encoded.substring('session=blob:'.length)))
+
+        test('every session juicebox writes carries the version', () => {
+            expect(written(encodeSession(session))).toEqual({...session, version: SESSION_VERSION})
+        })
+
+        test('over one the caller handed it — what juicebox writes is what juicebox writes', () => {
+            expect(written(encodeSession({...session, version: 0})).version).toBe(SESSION_VERSION)
+        })
+
+        test('and the caller\'s own document is not touched', () => {
+            const document = {browsers: []}
+            encodeSession(document)
+
+            expect(Object.hasOwn(document, 'version')).toBe(false)
+        })
+
+        /**
+         * The stamp sits at the parameter layer, beside the adapter that reads
+         * it, so that the two string-level functions stay exact inverses of each
+         * other with no opinion about what is in the document. A host reaching
+         * for `encodeSessionString` gets a compressor, not a writer of the
+         * format.
+         */
+        test('the string encoder stamps nothing — the two layers do not overlap', () => {
+            const string = encodeSessionString(session)
+
+            expect(JSON.parse(BGZip.uncompressString(string.substring('blob:'.length)))).toEqual(session)
+        })
     })
 
     /**
@@ -224,8 +268,14 @@ describe('encodeSession', () => {
         }
     })
 
+    /**
+     * The parameter is the string with a name in front — and, since #508, the
+     * version stamp: the string encoder compresses a document, and the parameter
+     * encoder is the one that writes the format.
+     */
     test('a session string is the payload without the parameter name', () => {
-        expect(encodeSession(session)).toBe(`session=${encodeSessionString(session)}`)
+        expect(encodeSession(session))
+            .toBe(`session=${encodeSessionString({...session, version: SESSION_VERSION})}`)
     })
 
     /**

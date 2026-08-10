@@ -12,6 +12,11 @@ emits today is the compressed session link described under
 [Session forms](#session-forms). The query form is read-only inbound: links in
 the wild, links in papers, and links written by the Java desktop application.
 
+Neither query-form version carries a version marker: they are told apart
+structurally, by token count. The session form is the one that says which
+version it is outright — see [Version](#version) — and **the absence of that
+marker means v1**, which is the rule the whole archive rests on.
+
 All parameter values must be URL encoded.
 
 > **Maintenance obligation.** This page is the only complete record of the state
@@ -182,12 +187,47 @@ follow the same rules as above.
 
 | Parameter | Description |
 | --------- | ----------- |
-| `session=` | **v1 session JSON**. A `blob:` or `data:` prefix means the rest is compressed and base64-encoded — the only form juicebox writes, as juicebox-web's share link. Anything else is loaded as a URL or file and may be either compressed or plain JSON. |
+| `session=` | **v1 session JSON**, carrying a [version](#version) field on the way out and never requiring one on the way in. A `blob:` or `data:` prefix means the rest is compressed and base64-encoded — the only form juicebox writes, as juicebox-web's share link. Anything else is loaded as a URL or file and may be either compressed or plain JSON. |
 | `juicebox={…},{…}` | one brace-wrapped query string per browser, comma-separated. Read-only legacy. |
 | `juiceboxData=` | the `juicebox=` value above, compressed. **Not** session JSON — the two share one code path, and the only difference is that this one is decompressed first. Read-only legacy. |
 
-Session JSON has no `version` field today; its absence means v1. When one is
-added (#508) it will be written but never required.
+### Version
+
+Session JSON carries a `version` field, at the top level of the document beside
+`browsers`. It holds the number **1** — the same v0/v1 sequence this page uses
+throughout, on which session JSON begins at 1 because v0 had none — and juicebox
+stamps it on every session it writes (#508,
+[ADR-0006](adr/0006-session-wire-format-and-one-decoder.md) decision 7).
+
+```json
+{"browsers": [{"url": "…"}], "version": 1}
+```
+
+**A session with no `version` field is v1.** This is the rule, not a fallback:
+every session written before the field existed lacks it — links pasted into mail
+and papers, session files on disk — and all of them decode exactly as they
+always have, with nothing logged and nothing degraded. The field is **never
+required**, and a reader that demanded one would break the entire archive to
+gain a check on nothing.
+
+A session naming any *other* version is **refused**, with a message quoting the
+version it named. A document from a future juicebox may spell fields this reader
+would misread, so half-decoding it into a view the user never saved is worse
+than saying what happened.
+
+The version belongs to the **wire format**, not to the session document: the
+encoder writes it and the decoder consumes it, in the same way the `blob:`
+prefix is written and read off. It does not reach `restoreSession`, and a
+session document obtained from `hic.toJSON()` does not carry one — which is also
+why `decode(encode(session)) === session` stays a strict identity.
+
+Only the `session=` parameter carries a version. The braced legacy forms are
+query strings with nowhere to put one, and nothing has written either in years.
+
+**What this buys today: nothing.** There is one version, and every session in
+the wild predates it. Its whole value is to whoever changes the format next, who
+would otherwise have to detect the change structurally — by sniffing — which is
+the position this format was in until #508.
 
 ### The one form juicebox writes
 

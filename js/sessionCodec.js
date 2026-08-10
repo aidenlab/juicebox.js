@@ -39,6 +39,11 @@
  * accepted formats are **decode-only** by decision, not by omission: ADR-0006
  * decision 4. `session.compressedSession()` is the one caller.
  *
+ * Every session written here carries a version stamp and no session read here
+ * requires one — see {@link SESSION_VERSION} for what that buys and what it
+ * costs. It does not weaken the identity below, because the stamp belongs to the
+ * format rather than to the document and is taken off on the way in.
+ *
  * The identity is not total, and both places it is not are asserted by that
  * suite rather than left to be discovered: browser *count* does not survive a
  * session saved with an empty panel (decision 6), and `fixDefaults` below —
@@ -108,6 +113,32 @@ export const SessionFormat = {
     DATA_URI: 'data-uri',
     JSON: 'json',
 }
+
+/**
+ * The version stamped on every session juicebox writes, and the only one it
+ * reads. ADR-0006 decision 7, #508.
+ *
+ * **A session that carries no version is v1.** Not a fallback and not a degraded
+ * path — the rule, and it has to be, because every session ever saved predates
+ * the field: links pasted into mail and papers years ago, session files on disk,
+ * the corpus in `test/data/wireFormatCorpus.js`. Requiring the field would break
+ * the entire archive to gain a check on nothing.
+ *
+ * **It buys nothing now.** There is one version and one reader of it. Its whole
+ * value is to whoever changes the format next, who would otherwise have to
+ * detect structurally what a discriminator states outright — which is exactly
+ * the position this format was in until #508.
+ *
+ * The version belongs to the **wire format**, not to the session document:
+ * {@link encodeSession} writes it and {@link takeSessionVersion} takes it off,
+ * the same way the `blob:` prefix is written and read off. Nothing downstream of
+ * {@link decodeSession} sees it, which is what keeps `decode(encode(x)) === x` a
+ * strict identity rather than an identity with an exception.
+ *
+ * @see docs/url.md — "Version", where the rule is specified rather than
+ *   described, since the format is a contract with users
+ */
+export const SESSION_VERSION = 1
 
 const COMPRESSED_PREFIXES = {
     'blob:': SessionFormat.BLOB,
@@ -238,9 +269,16 @@ export class SessionEncodeError extends Error {
  * `format` argument here would be a live encoder for a spelling nothing emits,
  * which is the same trade ADR-0006 decision 4 refuses at the format level.
  *
+ * **No version stamp here.** The stamp goes on in {@link encodeSession}, one
+ * layer up, because that is the layer its reader sits in: the `session=` adapter
+ * consumes it. Keeping both halves at the same layer is what makes this function
+ * and {@link decodeSessionString} exact inverses — this one compresses a
+ * document, that one parses one back, and neither has an opinion about what is
+ * in it.
+ *
  * @param {object} session - a session document, as `registry.toJSON()` writes
- *   one. A `State` instance in it encodes as the object `State.toJSON()` writes,
- *   because that is what `JSON.stringify` does with it.
+ *   one — a plain object. A `State` instance *in* it encodes as the object
+ *   `State.toJSON()` writes, because that is what `JSON.stringify` does with it.
  * @returns {string}
  * @throws {SessionEncodeError} if the document is one JSON cannot express
  */
@@ -272,12 +310,22 @@ export function encodeSessionString(session) {
  * of the round trip — the splitter reads a value only as far as its second `=` —
  * and `test/testSessionRoundTrip.js` asserts it.
  *
+ * **The version is stamped here**, and here only: this is the one place juicebox
+ * writes the `session=` format, and the inverse of the one place that reads a
+ * version off it ({@link SESSION_VERSION}, #508). The caller's document is not
+ * touched — the stamp goes into the copy that is serialized — and a `version`
+ * already on the document is overwritten rather than honoured, because what
+ * juicebox writes is what juicebox writes.
+ *
+ * A session is a plain document here, as `registry.toJSON()` writes one; a
+ * top-level `toJSON()` method on the object itself is not consulted.
+ *
  * @param {object} session
  * @returns {string}
  * @throws {SessionEncodeError}
  */
 export function encodeSession(session) {
-    return `session=${encodeSessionString(session)}`
+    return `session=${encodeSessionString({...session, version: SESSION_VERSION})}`
 }
 
 /**
@@ -597,6 +645,49 @@ function parseFailure(origin, e) {
 }
 
 /**
+ * Take the version off a decoded session document — the read half of
+ * {@link SESSION_VERSION}, and the inverse of the stamp {@link encodeSession}
+ * writes.
+ *
+ * Three rules:
+ *
+ * 1. **No version means v1**, so the document is returned exactly as it arrived,
+ *    with nothing logged. This is the common case forever, not a fallback.
+ * 2. **{@link SESSION_VERSION} is accepted and consumed** — taken off rather
+ *    than passed on, because a version describes the wire format and not the
+ *    session.
+ * 3. **Anything else is refused, by name.** A session from a future juicebox may
+ *    spell fields this reader would misread, so half-decoding it into a view the
+ *    user never saved is worse than saying what happened. Quoting the version
+ *    lets a bug report say which juicebox wrote the link.
+ *
+ * Only the `session=` adapter calls this: the braced legacy forms are query
+ * strings with nowhere to put a version, and nothing has written one in years.
+ * A copy comes back rather than a mutated argument, which is the same courtesy
+ * the encoder extends to its caller's document.
+ *
+ * @param {object} session - a decoded session document
+ * @returns {object} the document, without its version field
+ * @throws {SessionDecodeError} if the version is one this juicebox cannot read
+ */
+function takeSessionVersion(session) {
+
+    if (null === session || typeof session !== 'object' || !Object.hasOwn(session, 'version')) {
+        return session
+    }
+
+    const {version, ...document} = session
+
+    if (SESSION_VERSION !== version) {
+        throw new SessionDecodeError(
+            `Session was written in wire format version ${JSON.stringify(version)}, and this ` +
+            `juicebox reads version ${SESSION_VERSION}. Update juicebox to open it. See docs/url.md.`)
+    }
+
+    return document
+}
+
+/**
  * @typedef {object} DecodeContext
  * @property {object} query - the query parameters, as `extractQuery` read them.
  *   Context rather than an argument because an adapter may rewrite it for the
@@ -680,6 +771,17 @@ export const WIRE_FORMATS = [
                     console.error("Error loading session from URL/file:", e);
                     throw new Error(`Failed to load session from URL/file: ${e.message}`);
                 }
+            }
+
+            // Outside the arms on purpose, and after all three. Outside, because
+            // each arm rewraps what it catches -- the URL arm's wrapper reads
+            // `cause.message`, which a version refusal does not have, so a check
+            // inside would report `undefined` to the user (#521). After, because
+            // the version is a property of the document, not of where it was
+            // read from: a session named by a URL is version-checked exactly as
+            // one carried in the parameter.
+            if (ctx.config) {
+                ctx.config = takeSessionVersion(ctx.config)
             }
         },
     },

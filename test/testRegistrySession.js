@@ -6,6 +6,7 @@ import HICBrowser from '../js/hicBrowser.js'
 import {withContainers} from './utils/browserFixture.js'
 import {withStubbedLoads} from './utils/stubbedLoads.js'
 import {BGZip} from 'igv-utils'
+import {SESSION_VERSION} from '../js/sessionCodec.js'
 
 /**
  * A session belongs to one embed -- #482, decision 5 of ADR-0004.
@@ -179,6 +180,13 @@ describe('exported toJSON', () => {
         expect(toJSON().caption).toBe('a figure legend')
     })
 
+    /**
+     * The share link carries the document `toJSON()` returns, plus the wire
+     * format's version stamp — which the encoder adds and the decoder consumes,
+     * so it is present here and absent from `toJSON()` itself (#508, ADR-0006
+     * decision 7). `test/testSessionRoundTrip.js` owns the stamp; this asserts
+     * that nothing else differs between what a host reads and what it shares.
+     */
     it('compresses the same document it returns', () => {
         const registry = registryForContainer(dom.container)
         registry.add(fakeBrowser('a', registry))
@@ -188,7 +196,7 @@ describe('exported toJSON', () => {
 
         expect(compressed.startsWith('session=blob:')).toBe(true)
         expect(JSON.parse(BGZip.uncompressString(compressed.slice('session=blob:'.length))))
-            .toEqual({browsers: [{name: 'a'}], selectedGene: 'ace'})
+            .toEqual({browsers: [{name: 'a'}], selectedGene: 'ace', version: SESSION_VERSION})
     })
 })
 

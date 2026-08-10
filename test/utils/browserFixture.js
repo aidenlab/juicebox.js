@@ -91,7 +91,7 @@ export function withDOM() {
         window.close()
     }
 
-    return {window, container, restore}
+    return {dom, window, container, restore}
 }
 
 /**
@@ -140,6 +140,12 @@ export function withContainers() {
             fixture.window.document.body.appendChild(element)
             return element
         }
+        // The one thing `init()` reads that is neither an argument nor a DOM
+        // node: `window.location.href`. JSDOM's `location` is unforgeable, so
+        // the page is navigated rather than the property replaced -- which is
+        // also the honest simulation, since a URL a user pastes has been
+        // through a real URL parser before juicebox sees it.
+        context.navigate = href => fixture.dom.reconfigure({url: href})
     })
 
     afterEach(() => {

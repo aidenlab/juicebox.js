@@ -73,8 +73,8 @@ export const configFixtures = [
 
     {
         id: 'track-carrying-the-defaults-fixDefaults-strips',
-        note: 'A track with the default annotation colour, NaN data limits, and no displayMode — exactly what `normalizeSession.fixTrackDefaults` exists to clean up.',
-        divergence: '**Closed by #533.** The pass was `fixDefaults` inside `decodeSession`, so none of the four config-shaped doors met it: all four kept the default colour, kept the NaN limits, and got no `displayMode`, while the query path stripped all three. It is `normalizeSession.fixTrackDefaults` now and every door meets it, which is the snapshot movement logged in `testConfigGolden.js`. The fixture stays, and its id keeps the old function\'s name on purpose: it is what keeps the closure from reopening.',
+        note: 'A track with the default annotation colour, NaN data limits, and no displayMode — exactly what `normalizeSession.applyTrackDefaults` exists to clean up.',
+        divergence: '**Closed by #533.** The pass was `fixDefaults` inside `decodeSession`, so none of the four config-shaped doors met it: all four kept the default colour, kept the NaN limits, and got no `displayMode`, while the query path stripped all three. It is `normalizeSession.applyTrackDefaults` now and every door meets it, which is the snapshot movement logged in `testConfigGolden.js`. The fixture stays, and its id keeps the old function\'s name on purpose: it is what keeps the closure from reopening.',
         config: {
             url: 'https://example.com/a.hic',
             tracks: [{

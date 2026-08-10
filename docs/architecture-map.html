@@ -333,7 +333,7 @@ flowchart TB
               <div class="rounded border border-rose-300 bg-rose-50 p-4 space-y-2">
                 <div class="text-xs uppercase tracking-wider text-rose-900">Today — several readers, no schema</div>
                 <p><s><span class="font-mono">syncDatasets</span> is honoured by <span class="font-mono">createBrowserList</span> and absent from <span class="font-mono">createBrowser</span>.</s> Resolved at session level in normalize — <strong>#533</strong>.</p>
-                <p><s><span class="font-mono">fixDefaults</span> runs on the URL path only — <span class="font-mono">restoreSession</span> skips it.</s> Moved to <span class="font-mono">normalizeSession.fixTrackDefaults</span>, which every door meets — <strong>#533</strong>. What <strong>#525</strong> still asks is whether forcing every track to <span class="font-mono">COLLAPSED</span> is right at all; it is no longer a disagreement between paths.</p>
+                <p><s><span class="font-mono">fixDefaults</span> runs on the URL path only — <span class="font-mono">restoreSession</span> skips it.</s> Moved to <span class="font-mono">normalizeSession.applyTrackDefaults</span>, which every door meets — <strong>#533</strong>. What <strong>#525</strong> still asks is whether forcing every track to <span class="font-mono">COLLAPSED</span> is right at all; it is no longer a disagreement between paths.</p>
                 <p>Normalization is applied at <span class="font-mono">init:156</span> and re-validated at <span class="font-mono">:176</span>.</p>
                 <p>URL-shortcut expansion runs <strong>twice</strong> — once on the URL path, again in <span class="font-mono">restoreSession</span>.</p>
               </div>

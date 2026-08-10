@@ -180,8 +180,11 @@ single browser config, since `createBrowserList` reads `session.browsers ||
 copy: every normalizer rewrites the host's own object in place, so the host's
 config and the browser's are one object. It is an observable surface, because
 juicebox-web reads `browser.config` back (ADR-0003). Which normalizers a config
-meets depends on its entry path, and today they disagree — `test/testConfigGolden.js`
-pins the disagreements (#531, candidate 9).
+meets depends on its entry path, and they still disagree — `test/testConfigGolden.js`
+pins the disagreements (#531, candidate 9). Three of them are closed: #533 moved
+track defaults, the selected-gene hoist and the `syncDatasets` resolution behind
+the shared normalize stage. What is left is the URL-shortcut expansion, which
+runs in two places (#534, #535).
 
 **Dispose** vs **reset** vs **clear dataset** — the three teardown verbs, in
 descending order of how much they destroy. See `docs/adr/0005`.

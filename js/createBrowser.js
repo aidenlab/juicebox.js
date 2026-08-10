@@ -34,6 +34,14 @@ async function createBrowser(hicContainer, config, callback) {
     // unread member, and letting it steer the stage would leave the object that
     // actually becomes `browser.config` undefaulted. The copy is discarded;
     // `config` is what is normalized. See js/normalizeSession.js.
+    //
+    // So a session-level rule that writes *down* onto the browsers reaches
+    // `config` -- `syncDatasets` does -- and one that writes *up* onto the
+    // session lands on the discarded copy. Only the selected-gene hoist writes
+    // up, and this door has no registry to give it to: `createBrowser` adds a
+    // browser to a registry rather than restoring an embed's session, and it is
+    // `BrowserRegistry.restoreSession` that owns the gene. Nothing is lost here
+    // that anything reads.
     normalizeSession({...config, browsers: [config]});
 
     const browser = new HICBrowser(hicContainer, config);

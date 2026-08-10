@@ -80,7 +80,7 @@ import ContactMatrixView from './contactMatrixView.js'
  * carrying it is not really asking for.
  *
  * It lives here rather than in `js/sessionCodec.js` because it is a *track
- * default*, not a wire format: `fixTrackDefaults` below and
+ * default*, not a wire format: `applyTrackDefaults` below and
  * `DataLoader.loadTracks` are its two readers, and neither is a decoder. It sat
  * in the codec only because the pass that reads it did (#533).
  */
@@ -111,7 +111,7 @@ export function normalizeSession(session) {
 function normalizeBrowserConfig(config) {
 
     setWidgetVisibilityDefaults(config)
-    fixTrackDefaults(config)
+    applyTrackDefaults(config)
 
     if (StringUtils.isString(config.colorScale)) {
         config.colorScale = parseColorScale(config.colorScale)
@@ -214,8 +214,28 @@ function reconcileSelectedGene(session, configs) {
  * So a session-borne annotation track meets both, and agrees with itself: this
  * stage has already done what `loadTracks` would do for it. A runtime-added one
  * meets only the loader. Neither rule is safe to delete in favour of the other.
+ *
+ * ## The display mode is an override, not a default, and it is kept as one
+ *
+ * The last line writes `COLLAPSED` unconditionally, so a track that *asked* for
+ * `EXPANDED` does not get it. That is not defaulting, and this stage is
+ * supposed to default -- but it is what the decoder did, verbatim, and #533 is a
+ * move rather than a redecision. Two consequences, both deliberate:
+ *
+ * - The override is now **wider**: it used to reach only tracks that arrived
+ *   through a URL, and it reaches every entry path now. #533 asks for exactly
+ *   that -- "a session handed straight to `restoreSession` gets the same track
+ *   defaults a URL-borne one gets ... display mode collapsed" -- because the
+ *   alternative is the two doors disagreeing about the same document, which is
+ *   the defect being closed.
+ * - Whether to override *at all* is **#525**, open and unanswered. Nothing
+ *   juicebox writes carries a track `displayMode` and no accepted wire format
+ *   encodes one, so no saved link loses information today; what changed here is
+ *   that the question is now about one stage rather than about which door you
+ *   came in by. Softening this to `??=` is that ticket's call, and it would move
+ *   the query path's snapshot too.
  */
-function fixTrackDefaults(config) {
+function applyTrackDefaults(config) {
 
     // `Array.isArray` rather than a truthiness test: the decoder's copy walked
     // whatever it found, so a hand-written `tracks: 'a.bed'` reached it as a

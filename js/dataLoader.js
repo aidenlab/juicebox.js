@@ -366,7 +366,7 @@ class DataLoader {
                 }
 
                 // The load-time half of the per-track defaults. The other half is
-                // `normalizeSession.fixTrackDefaults`, and the two own different
+                // `normalizeSession.applyTrackDefaults`, and the two own different
                 // questions rather than duplicating one: normalize answers what
                 // the *document* says, before anything is fetched and on every
                 // entry path; these four rules answer what the *load* discovered
@@ -374,7 +374,7 @@ class DataLoader {
                 // missing `max`. This is also the only stage a track added at
                 // runtime through the published `browser.loadTracks(configs)`
                 // meets, since such a track was never part of a session. See the
-                // ownership note on `fixTrackDefaults` (#533).
+                // ownership note on `applyTrackDefaults` (#533).
                 if (config.type === 'annotation') {
                     config.displayMode = 'COLLAPSED';
                     if (config.color === DEFAULT_ANNOTATION_COLOR) {

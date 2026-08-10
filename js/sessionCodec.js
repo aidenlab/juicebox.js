@@ -926,7 +926,7 @@ export async function decodeSession(queryString, loaders = {}) {
     // No `fixDefaults` here any more. The track defaults it applied were
     // normalization sitting inside the decoder, so they reached a session that
     // arrived as a URL and skipped one handed straight to `restoreSession`.
-    // #533 moved them to `normalizeSession.fixTrackDefaults`, which every entry
+    // #533 moved them to `normalizeSession.applyTrackDefaults`, which every entry
     // path passes through. What this module returns is now a decoded document
     // and nothing else -- which is what makes `decode(encode(x))` a strict
     // identity over tracks as well (ADR-0006 decision 8, #525).

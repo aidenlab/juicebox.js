@@ -560,7 +560,7 @@ export const wireFormatCorpus = [
         format: 'query',
         provenance: 'synthesized',
         role: 'branch-coverage',
-        source: 'normalizeSession.js fixTrackDefaults — DEFAULT_ANNOTATION_COLOR is deleted',
+        source: 'normalizeSession.js applyTrackDefaults — DEFAULT_ANNOTATION_COLOR is deleted',
         outcome: 'decodes',
         input: '?hicUrl=https://example.org/a.hic&tracks=https%3A%2F%2Fexample.org%2Fa.bed%7CA%7C0-50%7Crgb(22%2C%20129%2C%20198)',
         note: 'The colour must match `rgb(22, 129, 198)` byte for byte, spaces included, to be recognised as the default and dropped. Harvested links carry exactly this spelling. The drop itself is no longer visible in *this* file\'s snapshot — #533 moved it out of the decoder — so the fixture now pins that decoding preserves the colour, and testConfigGolden.js pins that normalizing drops it.',

@@ -305,9 +305,14 @@ describe('decodeSession — the version stamp', () => {
 })
 
 /**
- * The normalization the decode path still carries. ADR-0006 decision 8 hands
- * both of these to the normalize stage in candidate 9; until then they are
- * decode's, and pinning them here is what will make that move visible.
+ * The one normalization the decode path still carries, and the one it no longer
+ * does. ADR-0006 decision 8 drew the line; #533 is where the crossing happened.
+ *
+ * What stays is what needs to know a *format*: reading the `selectedGene=` query
+ * parameter. What went is what only needed to read a *document*: the track
+ * defaults, and the hoist of a gene named inside a browser. Both are
+ * `js/normalizeSession.js`'s now, and `test/testNormalizeSession.js` owns the
+ * assertions about them.
  */
 describe('decodeSession — the normalization it still carries', () => {
 
@@ -318,7 +323,7 @@ describe('decodeSession — the normalization it still carries', () => {
         expect(config.selectedGene).toBe('MYC')
     })
 
-    test('tracks come back collapsed, with the default annotation colour dropped', async () => {
+    test('a track comes back exactly as the session spelled it', async () => {
         const session = {
             browsers: [{
                 url: 'https://example.org/one.hic',
@@ -328,8 +333,19 @@ describe('decodeSession — the normalization it still carries', () => {
         const config = await decodeSession(`?session=blob:${compress(session)}`, noIO)
         const [track] = config.browsers[0].tracks
 
-        expect(track.color).toBeUndefined()
-        expect(track.displayMode).toBe('COLLAPSED')
+        // The default annotation colour is kept and no display mode is invented:
+        // both are defaults, and defaulting is the next stage's. #533.
+        expect(track.color).toBe('rgb(22, 129, 198)')
+        expect(Object.hasOwn(track, 'displayMode')).toBe(false)
+    })
+
+    test('a gene named inside a browser is left where the session put it', async () => {
+        const session = {browsers: [{url: 'https://example.org/one.hic', selectedGene: 'MYC'}]}
+
+        const config = await decodeSession(`?session=blob:${compress(session)}`, noIO)
+
+        expect(Object.hasOwn(config, 'selectedGene')).toBe(false)
+        expect(config.browsers[0].selectedGene).toBe('MYC')
     })
 })
 

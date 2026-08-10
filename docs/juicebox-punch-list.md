@@ -61,7 +61,7 @@ Each card carries a Consumer impact block; read it before filing anything.
 
 | Candidate | Status |
 |---|---|
-| **9 · Give the config schema one reader** | **filed — #531–#536**, frontier is #531. Seam already drawn by ADR-0006 decision 8; no ADR opened |
+| **9 · Give the config schema one reader** | **filed — #531–#536**; #531, #532 and #533 landed, frontier is #534 and #535 in parallel. Seam already drawn by ADR-0006 decision 8; no ADR opened |
 | **11 · Give the track tile one owner** | ⚠️ breaking |
 | **6 · Fold StateManager into State, and make restore use the chokepoint** | watch |
 | **7 · Move the gesture state machines behind InteractionHandler** | watch |
@@ -69,8 +69,8 @@ Each card carries a Consumer impact block; read it before filing anything.
 
 **9 — start here, and the first decision is whether it needs an ADR at all.** ADR-0006 decision 8
 already drew the seam: decode and normalize are two stages, and 5 deliberately stopped at the line.
-What is left on the wrong side of it is `fixDefaults` (`sessionCodec.js`) and the `selectedGene`
-reconciliation (#481), plus **shortcut expansion running twice** — once on the URL path, once again
+What was left on the wrong side of it was `fixDefaults` and the `selectedGene`
+reconciliation (#481) — both crossed in #533 — plus **shortcut expansion running twice** — once on the URL path, once again
 in `restoreSession`, because a session handed straight to `restoreSession` bypasses the decoder
 entirely. One `normalizeSession` stage that *both* entry paths pass through makes one of those
 copies deletable. That deletion was held back from 5 on purpose: both at once doubles the blast
@@ -90,11 +90,11 @@ next free number.
 
 | # | Ticket | Blocked by |
 |---|---|---|
-| #531 | Gate: snapshot the resolved config every entry path produces today | — **frontier** |
-| #532 | Extract `normalizeSession`: a pure, session-shaped normalize stage | #531 |
-| #533 | Move the remaining normalization across the seam | #532 |
-| #534 | Delete the duplicate URL-shortcut expansion | #533 |
-| #535 | Normalize once, at the entry | #533 |
+| #531 | Gate: snapshot the resolved config every entry path produces today | — **landed** |
+| #532 | Extract `normalizeSession`: a pure, session-shaped normalize stage | #531 — **landed** |
+| #533 | Move the remaining normalization across the seam | #532 — **landed** |
+| #534 | Delete the duplicate URL-shortcut expansion | #533 — **frontier** |
+| #535 | Normalize once, at the entry | #533 — **frontier** |
 | #536 | Downstream readers stop defaulting, and the schema is written down | #535 |
 
 #534 and #535 run in parallel after #533. **#533 is the only ticket that deliberately moves
@@ -113,9 +113,11 @@ and the new stage is named `normalizeSession` to avoid the collision. `fixDefaul
 **9 inherits the gate 5 had to build.** The golden-file snapshot over the wire-format corpus is
 green and covers every accepted format; normalization changes are exactly the kind that move
 decoded output, so the snapshot is 9's acceptance test too, and every moved fixture must be one
-someone can explain. **#525 is already a filed instance of the bug 9 exists to fix:** `fixDefaults`
-forces every track to `COLLAPSED`, so the URL path and the direct-restore path disagree about the
-same session today.
+someone can explain. **#525 was a filed instance of the bug 9 exists to fix:** `fixDefaults`
+forced every track to `COLLAPSED`, so the URL path and the direct-restore path disagreed about the
+same session. #533 closed the disagreement by moving the pass to the shared stage; what #525 still
+asks — whether forcing `COLLAPSED` at all is right — is now a question about one stage rather than
+about which door you came in by.
 
 **What candidate 5 confirmed, worth carrying into 9:** the pattern held a third time — ADR →
 tickets → Outcome box — and the ADR is again where the breaking/not-breaking question got answered

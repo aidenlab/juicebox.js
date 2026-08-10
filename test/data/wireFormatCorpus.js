@@ -173,7 +173,7 @@ export const wireFormatCorpus = [
         source: 'www.aidenlab.org/juicebox published link, Haarhuis et al. Cell 2017; test/test_urls.md',
         outcome: 'decodes',
         input: 'http://www.aidenlab.org/juicebox/?state=3,3,6,5537.98746,5537.749239047619,1,KR&colorScale=18.89619862813927&hicUrl=https://s3.amazonaws.com/hicfiles/external/wapl_hic/WT.hic&name=Haarhuis%20et%20al.%20|%20Cell%202017%20Hap1%20control&tracks=http://hicfiles.s3.amazonaws.com/external/GM12878_CTCF_orientation.bed|GM12878_CTCF_orientation.bed||rgb(22,%20129,%20198)|||https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.collapsed.bed.gz|gencode.v18.collapsed.bed.gz||rgb(22,%20129,%20198)',
-        note: 'v0 seven-token state, bare-threshold colorScale (#514), two four-field tracks with empty data ranges (#515), and the default annotation colour that fixDefaults strips. Unencoded bars and braces in a real published URL.',
+        note: 'v0 seven-token state, bare-threshold colorScale (#514), two four-field tracks with empty data ranges (#515), and the default annotation colour the normalize stage strips downstream of this snapshot (#533). Unencoded bars and braces in a real published URL.',
     },
 
     {
@@ -549,10 +549,10 @@ export const wireFormatCorpus = [
         format: 'query',
         provenance: 'synthesized',
         role: 'branch-coverage',
-        source: 'urlUtils.js destringifyTracksV0 then fixDefaults',
+        source: 'sessionCodec.js destringifyTracksV0 — NaN bounds',
         outcome: 'decodes',
         input: '?hicUrl=https://example.org/a.hic&tracks=https%3A%2F%2Fexample.org%2Fa.bed%7CA%7C%7Crgb(255%2C0%2C0)',
-        note: 'The common harvested shape — every four-field track in test/test_urls.md has an empty range. destringifyTracksV0 sets min and max to NaN and `fixDefaults` then deletes both, so by the time the config leaves extractConfig the range is *absent*, not NaN. #515 is about that round trip through NaN, not about the decoder\'s output.',
+        note: 'The common harvested shape — every four-field track in test/test_urls.md has an empty range. destringifyTracksV0 sets min and max to NaN, and the decoder now leaves them that way: the pass that deleted them was `fixDefaults`, which #533 moved to `js/normalizeSession.js`, downstream of this snapshot. So what leaves the *decoder* is NaN and what reaches a *browser* has no range at all — see testConfigGolden.js. #515 is about that round trip through NaN.',
     },
 
     {
@@ -560,10 +560,10 @@ export const wireFormatCorpus = [
         format: 'query',
         provenance: 'synthesized',
         role: 'branch-coverage',
-        source: 'urlUtils.js fixDefaults — DEFAULT_ANNOTATION_COLOR is deleted',
+        source: 'normalizeSession.js fixTrackDefaults — DEFAULT_ANNOTATION_COLOR is deleted',
         outcome: 'decodes',
         input: '?hicUrl=https://example.org/a.hic&tracks=https%3A%2F%2Fexample.org%2Fa.bed%7CA%7C0-50%7Crgb(22%2C%20129%2C%20198)',
-        note: 'The colour must match `rgb(22, 129, 198)` byte for byte, spaces included, to be recognised as the default and dropped. Harvested links carry exactly this spelling.',
+        note: 'The colour must match `rgb(22, 129, 198)` byte for byte, spaces included, to be recognised as the default and dropped. Harvested links carry exactly this spelling. The drop itself is no longer visible in *this* file\'s snapshot — #533 moved it out of the decoder — so the fixture now pins that decoding preserves the colour, and testConfigGolden.js pins that normalizing drops it.',
     },
 
     {

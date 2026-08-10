@@ -44,12 +44,13 @@
  * costs. It does not weaken the identity below, because the stamp belongs to the
  * format rather than to the document and is taken off on the way in.
  *
- * The identity is not total, and both places it is not are asserted by that
- * suite rather than left to be discovered: browser *count* does not survive a
- * session saved with an empty panel (decision 6), and `fixDefaults` below —
- * normalization, sitting inside the decoder — forces every track to `COLLAPSED`
- * and drops the default annotation colour on the way in (decision 8, #525; the
- * pass moves out in candidate 9, and the property gets stricter then).
+ * The identity has one exception, asserted by that suite rather than left to be
+ * discovered: browser *count* does not survive a session saved with an empty
+ * panel (decision 6). It had a second until #533 — `fixDefaults`, normalization
+ * sitting inside the decoder, which forced every track to `COLLAPSED` and
+ * dropped the default annotation colour on the way in. That pass now lives in
+ * `js/normalizeSession.js`, one stage downstream and on every entry path, and
+ * the property got stricter when it moved (decision 8, #525).
  *
  * ## No I/O
  *
@@ -393,8 +394,6 @@ export function decodeState(value, config, onUnknownType = () => {}) {
 // one kind of move it can vouch for. Restyling belongs to a commit that moves
 // nothing.
 // ---------------------------------------------------------------------------
-
-export const DEFAULT_ANNOTATION_COLOR = "rgb(22, 129, 198)"
 
 const urlShortcuts = {
     "*s3e/": "https://hicfiles.s3.amazonaws.com/external/",
@@ -898,53 +897,39 @@ export async function decodeSession(queryString, loaders = {}) {
     // do not put it at the top level: a query string carrying the gene beside a
     // `session=`, and the legacy `juicebox=` form, where it sits inside each
     // browser's config. It now rides the session config instead, so it can land
-    // on one registry. A session's own value wins, and after that the last
-    // writer does -- which is the order the successive global writes produced.
+    // on one registry (#481).
+    //
+    // **Half of that reconciliation is here and half is not.** This half reads a
+    // *query parameter*, which is format knowledge and so cannot leave the
+    // decoder. The other half -- hoisting a gene named inside one of the
+    // browsers -- is a reading of a session document, and #533 moved it to
+    // `normalizeSession`, where every entry path meets it rather than only this
+    // one. Precedence is unchanged, because this runs first: the session's own
+    // value wins, then the query parameter, then the last browser to name one.
     //
     // Not preserved: `?selectedGene=` on a URL naming no map and no session at
     // all. There being no session config to ride, the gene is dropped rather
     // than reaching whatever config the host passed `init()`. juicebox never
     // writes such a URL -- every URL it produces carries the gene inside the
-    // session it also writes. #481.
+    // session it also writes.
     if (ctx.config && undefined === ctx.config.selectedGene) {
-        const fromBrowsers = (ctx.config.browsers || []).map(b => b.selectedGene).filter(Boolean).pop();
         // `?.` rather than a bare dereference: `queryConfig` is set by the last
         // adapter, so it is only guaranteed by that adapter's `appliesTo` being
         // unconditional. Reading it defensively keeps this line's correctness
         // independent of the registry's contents.
-        const selectedGene = ctx.queryConfig?.selectedGene || fromBrowsers;
+        const selectedGene = ctx.queryConfig?.selectedGene;
         if (selectedGene) {
             ctx.config.selectedGene = selectedGene;
         }
     }
 
-    // Fix certain defaults
-    if (ctx.config) {
-        if (ctx.config.browsers) {
-            for (let b of ctx.config.browsers) {
-                fixDefaults(b);
-            }
-        } else {
-            fixDefaults(ctx.config);
-        }
-    }
+    // No `fixDefaults` here any more. The track defaults it applied were
+    // normalization sitting inside the decoder, so they reached a session that
+    // arrived as a URL and skipped one handed straight to `restoreSession`.
+    // #533 moved them to `normalizeSession.fixTrackDefaults`, which every entry
+    // path passes through. What this module returns is now a decoded document
+    // and nothing else -- which is what makes `decode(encode(x))` a strict
+    // identity over tracks as well (ADR-0006 decision 8, #525).
 
     return ctx.config
-}
-
-function fixDefaults(browserConfig) {
-    if (browserConfig.tracks) {
-        for (let t of browserConfig.tracks) {
-            if (t.color === DEFAULT_ANNOTATION_COLOR) {
-                delete t.color;
-            }
-            if (t.min !== undefined && Number.isNaN(t.min)) {
-                delete t.min;
-            }
-            if (t.max !== undefined && Number.isNaN(t.max)) {
-                delete t.max;
-            }
-            t.displayMode = "COLLAPSED";
-        }
-    }
 }

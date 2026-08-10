@@ -22,12 +22,19 @@ const defaultSize = { width: 640, height: 640 };
 
 async function createBrowser(hicContainer, config, callback) {
 
-    // Wrapped rather than handed over as it is: this door takes a browser
-    // config and *only* a browser config, so a `browsers` member on it is an
-    // ordinary unread member and must not steer the stage away from the object
-    // that actually becomes `browser.config`. The wrapper is discarded;
+    // A single browser config *is* a session with its one browser inlined, and
+    // that is what this hands over: the config's own members as the session's,
+    // and the config itself as the one browser. Session-level rules --
+    // `syncDatasets`, the selected gene -- therefore reach it here exactly as
+    // they reach a document naming `browsers`, which is the divergence #533
+    // closed at this door.
+    //
+    // Spread rather than handed over as it is, because `browsers` is overwritten
+    // in the copy: a `browsers` member on a single browser config is an ordinary
+    // unread member, and letting it steer the stage would leave the object that
+    // actually becomes `browser.config` undefaulted. The copy is discarded;
     // `config` is what is normalized. See js/normalizeSession.js.
-    normalizeSession({browsers: [config]});
+    normalizeSession({...config, browsers: [config]});
 
     const browser = new HICBrowser(hicContainer, config);
     await browser.init(config);
@@ -44,7 +51,11 @@ async function createBrowserList(hicContainer, session) {
     const registry = registryForContainer(hicContainer);
 
     // One call for the whole document: the stage walks the same
-    // `browsers || [session]` shape this loop does. See js/normalizeSession.js.
+    // `browsers || [session]` shape this loop does, and since #533 it resolves
+    // the session-level members too -- `syncDatasets` was translated into a
+    // per-browser `synchable` here, which is why the same document opted out of
+    // the sync group through this door and not through `createBrowser`.
+    // See js/normalizeSession.js.
     normalizeSession(session);
 
     const configList = session.browsers || [session];
@@ -53,10 +64,6 @@ async function createBrowserList(hicContainer, session) {
     registry.clear();
 
     for (const config of configList) {
-
-        if (session.syncDatasets === false) {
-            config.synchable = false;
-        }
 
         const browser = new HICBrowser(hicContainer, config);
 

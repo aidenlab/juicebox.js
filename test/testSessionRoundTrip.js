@@ -37,8 +37,10 @@ import {BGZip} from 'igv-utils'
 // one encoder", which is a claim about the module's *surface* and so cannot be
 // written with named imports.
 import * as codec from '../js/sessionCodec.js'
+// The default annotation colour comes from the *normalize* stage since #533,
+// which is where the pass that reads it went; the codec no longer knows it.
+import {DEFAULT_ANNOTATION_COLOR} from '../js/normalizeSession.js'
 import {
-    DEFAULT_ANNOTATION_COLOR,
     SESSION_VERSION,
     SessionEncodeError,
     decodeSession,
@@ -127,16 +129,18 @@ function generator(seed) {
         if (chance(0.5)) t.format = pick(['bed', 'bigwig', 'bedpe'])
         if (chance(0.7)) t.name = `track ${int(100)}`
         // Always numbers: `HICBrowser.toJSON` writes a range only from a
-        // `track.dataRange`, so the `NaN` bounds `fixDefaults` also sweeps
+        // `track.dataRange`, so the `NaN` bounds the normalize stage sweeps
         // cannot arise from a written session. They arise from an empty field in
         // a v0 `tracks=` string, which is #515's, not this property's.
         if (chance(0.4)) {
             t.min = -rnd() * 10
             t.max = rnd() * 100
         }
-        // `DEFAULT_ANNOTATION_COLOR` is in the pool deliberately: the decoder
-        // drops it, and a generator that steered around that deviation would be
-        // routing around the very thing the property is for.
+        // `DEFAULT_ANNOTATION_COLOR` is in the pool deliberately: the *normalize*
+        // stage drops it, and it was the decoder that dropped it until #533. A
+        // generator that steered around the colour would be routing around the
+        // very thing that made this property inexact — and it is the input that
+        // proves the codec no longer touches it.
         if (chance(0.2)) {
             t.color = DEFAULT_ANNOTATION_COLOR
         } else if (chance(0.5)) {
@@ -353,10 +357,11 @@ describe('decode(encode(session)) is the identity', () => {
      * writes, and the assertion is strict equality — not equality after any
      * normalising step, which ADR-0006 rejected as defining the test to pass.
      *
-     * Tracks are held out of *this* loop by one line, and get a loop of their
-     * own immediately below with the same strictness and two named exceptions.
-     * The split is presentational: nothing about a track is untested, and the
-     * exceptions are asserted rather than absorbed.
+     * Tracks used to be held out of this loop by one line, because the decoder's
+     * `fixDefaults` made two changes to every track it read. #533 moved that
+     * pass to `js/normalizeSession.js`, one stage downstream, so the property is
+     * now strict over tracks too and the two loops below differ only in their
+     * seed and in whether the generator emits tracks at all.
      */
     test('over 200 generated sessions, tracks aside', async () => {
         await forEachGeneratedSession(20260810, {tracks: false}, (session, decoded, label) => {
@@ -365,38 +370,13 @@ describe('decode(encode(session)) is the identity', () => {
     })
 
     /**
-     * The same property over track-bearing sessions. `fixDefaults` — the
-     * decoder's normalize pass — makes exactly two changes to a track a session
-     * can carry, and both are asserted *here*, per track, before being undone:
-     * that is what makes this an assertion about behaviour rather than a
-     * normalising step. Anything else it touched would fail the `toEqual`.
-     *
-     * ADR-0006 decision 8 moves that pass out of the decoder in candidate 9;
-     * when it does, this test collapses into the one above. Filed as #525.
+     * The same property over track-bearing sessions, and it is the *same*
+     * assertion now: no per-track exception, nothing deleted before comparing.
+     * That strictness is the observable result of #533 — a track goes into the
+     * wire format and comes back spelled as it was written, colour and all.
      */
-    test('over 200 generated sessions with tracks, up to fixDefaults and nothing else', async () => {
+    test('over 200 generated sessions with tracks, exactly as written', async () => {
         await forEachGeneratedSession(777, {tracks: true}, (session, decoded, label) => {
-
-            for (const [i, browser] of decoded.browsers.entries()) {
-                for (const [j, track] of (browser.tracks || []).entries()) {
-                    const written = session.browsers[i].tracks[j]
-
-                    // One: a displayMode the written form never carried.
-                    expect(Object.hasOwn(written, 'displayMode'), label).toBe(false)
-                    expect(track.displayMode, label).toBe('COLLAPSED')
-                    delete track.displayMode
-
-                    // Two: the default annotation colour, dropped — and only
-                    // that colour, which is why the else arm asserts too.
-                    if (DEFAULT_ANNOTATION_COLOR === written.color) {
-                        expect(Object.hasOwn(track, 'color'), label).toBe(false)
-                        track.color = written.color
-                    } else {
-                        expect(track.color, label).toBe(written.color)
-                    }
-                }
-            }
-
             expect(decoded, label).toEqual(session)
         })
     })
@@ -554,8 +534,12 @@ describe('the spelling axis ordering retired', () => {
 // ---------------------------------------------------------------------------
 
 /**
- * Two deviations, each asserted as behaviour rather than allowed to fail. Both
- * are named in ADR-0006; neither is a licence to normalise the property above.
+ * One deviation, asserted as behaviour rather than allowed to fail, and it is
+ * named in ADR-0006; it is not a licence to normalise the property above.
+ *
+ * There were two until #533 moved the decoder's track defaults to the normalize
+ * stage. The block that recorded the second is still here, saying the opposite
+ * of what it used to.
  */
 describe('the accepted asymmetries', () => {
 
@@ -601,53 +585,49 @@ describe('the accepted asymmetries', () => {
     })
 
     /**
-     * The decoder's normalize pass — `fixDefaults` — runs on every format,
-     * including this one, and it makes two changes to a track a session can
-     * carry: it forces `displayMode` to `COLLAPSED`, a field the written form
-     * never has, and it drops the default annotation colour. (Its third effect,
-     * dropping a `NaN` data range, cannot be reached from a written session; see
-     * the generator's `track()`.)
+     * The asymmetry that used to be here, in literal form, and now says the
+     * opposite.
      *
-     * The property above asserts both of these per track over the generated
-     * space, which is where they are pinned. These two are the same claims in
-     * literal form — a reader finding a stray `COLLAPSED` in a decoded session
-     * should be able to see why in one screen.
+     * `fixDefaults` ran at the end of every decode and made two changes to every
+     * track it read: it forced `displayMode` to `COLLAPSED`, a field the written
+     * form never has, and it dropped the default annotation colour. That is
+     * normalization sitting inside the decoder — ADR-0006 decision 8, filed as
+     * #525 — and it meant a session restored from a URL and the same session
+     * handed to `restoreSession` disagreed.
      *
-     * This is normalization sitting inside the decoder, which ADR-0006 decision
-     * 8 names as candidate 9's to move behind a `normalizeSession` stage that
-     * *both* entry paths pass through. Until it moves, a session restored from a
-     * URL and the same session handed to `restoreSession` disagree. Filed as
-     * #525; when it lands, this block goes and the property above absorbs the
-     * track case.
+     * #533 moved the pass to `js/normalizeSession.js`, which every entry path
+     * reaches. The codec is a codec again, and these four tests are kept
+     * inverted rather than deleted: the claim "the wire format does not default"
+     * is worth a reader finding in one screen, and it is exactly the claim that
+     * was false before.
+     *
+     * That the defaults are still *applied*, one stage on, is
+     * `test/testNormalizeSession.js`'s to say.
      */
-    describe('the decoder normalises tracks on the way in', () => {
+    describe('the codec normalises nothing on the way in', () => {
 
         const withTrack = track => ({browsers: [{url: 'https://example.org/a.hic', tracks: [track]}]})
 
-        test('every track comes back COLLAPSED, whatever was saved', async () => {
+        test('no display mode is invented for a track that saved none', async () => {
             const session = withTrack({url: 'https://example.org/a.bed', name: 'a'})
 
-            expect((await roundTrip(session)).browsers[0].tracks[0].displayMode).toBe('COLLAPSED')
+            const [track] = (await roundTrip(session)).browsers[0].tracks
+            expect(Object.hasOwn(track, 'displayMode')).toBe(false)
         })
 
-        /**
-         * Including one that asked for something else — which is the part that
-         * makes the two entry paths disagree rather than merely differ from the
-         * written form.
-         */
-        test('even one that saved a different display mode', async () => {
+        test('and one that saved a display mode keeps the one it saved', async () => {
             const session = withTrack({url: 'https://example.org/a.bed', displayMode: 'EXPANDED'})
 
-            expect((await roundTrip(session)).browsers[0].tracks[0].displayMode).toBe('COLLAPSED')
+            expect((await roundTrip(session)).browsers[0].tracks[0].displayMode).toBe('EXPANDED')
         })
 
-        test('the default annotation colour is dropped', async () => {
+        test('the default annotation colour survives the round trip', async () => {
             const session = withTrack({url: 'https://example.org/a.bed', color: DEFAULT_ANNOTATION_COLOR})
 
-            expect(Object.hasOwn((await roundTrip(session)).browsers[0].tracks[0], 'color')).toBe(false)
+            expect((await roundTrip(session)).browsers[0].tracks[0].color).toBe(DEFAULT_ANNOTATION_COLOR)
         })
 
-        test('and any other colour is kept', async () => {
+        test('as does any other colour', async () => {
             const session = withTrack({url: 'https://example.org/a.bed', color: 'rgb(1,2,3)'})
 
             expect((await roundTrip(session)).browsers[0].tracks[0].color).toBe('rgb(1,2,3)')

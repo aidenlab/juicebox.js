@@ -81,6 +81,23 @@ describe('selectedGene', () => {
         expect(registryForContainer(other).selectedGene).toBeUndefined()
     })
 
+    /**
+     * The legacy `juicebox={…},{…}` form spells the gene inside each browser
+     * rather than at the top level, and the decoder used to hoist it before
+     * anything else saw the document. #533 moved that hoist to the normalize
+     * stage, which `BrowserRegistry.restoreSession` now runs *before* it reads
+     * the gene -- so the ordering this asserts is what keeps such a link
+     * restoring the gene it names.
+     */
+    it('is restored from a session that names it inside a browser rather than at the top', async () => {
+        const other = dom.another()
+
+        await restoreSession(dom.container, {browsers: [{selectedGene: 'ace'}]})
+
+        expect(registryForContainer(dom.container).selectedGene).toBe('ace')
+        expect(registryForContainer(other).selectedGene).toBeUndefined()
+    })
+
     it('is serialized from the embed whose browser is current, not page-wide', () => {
         // `toJSON()` is a zero-argument export with no container to resolve
         // from, so it follows the page-wide selection -- the same

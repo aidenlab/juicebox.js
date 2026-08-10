@@ -3,6 +3,7 @@ import EventBus from './eventBus.js'
 import HICEvent from './hicEvent.js'
 import {pairSynchable} from './syncGroup.js'
 import {expandSessionUrlShortcuts} from './sessionCodec.js'
+import {normalizeSession} from './normalizeSession.js'
 // A cycle, deliberately: `createBrowser.js` resolves its registry from a
 // container, and `restoreSession` below needs browsers built. Neither module
 // touches the other while it is being evaluated, so the cycle is inert -- and
@@ -321,6 +322,15 @@ class BrowserRegistry {
         this.deleteAll()
 
         expandSessionUrlShortcuts(session)
+
+        // Normalized here as well as inside `createBrowserList`, because this
+        // method reads a session-level member -- the selected gene -- that the
+        // stage resolves: a document naming a gene only inside one of its
+        // browsers has to have been hoisted before the line below looks for one
+        // (#533, #481). The stage is idempotent and rewrites the caller's own
+        // object, so the second call inside `createBrowserList` finds its work
+        // done; #535 collapses the two into one call at the entry.
+        normalizeSession(session)
 
         if (Object.hasOwn(session, 'selectedGene')) {
             this.selectedGene = session.selectedGene

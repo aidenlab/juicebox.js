@@ -161,11 +161,12 @@ tracks=http://…/GM12878_CTCF_orientation.bed|GM12878_CTCF_orientation.bed||rgb
 ```
 
 Empty fields are allowed and common — the example above supplies no data range.
-An empty **data range** decodes to `NaN` bounds, which the decoder's own
-`fixDefaults` pass then deletes, so what leaves the decoder has no range at all
-and the track picks its own. Filed as #515: the repair is real but it is a
-second pass undoing the first, and only inputs that go through the decoder reach
-it — a session handed straight to `restoreSession` is never swept.
+An empty **data range** decodes to `NaN` bounds, which the **normalize** stage
+then deletes, so what reaches a browser has no range at all and the track picks
+its own. Filed as #515: the repair is real, but it is a second pass undoing the
+first. It is no longer a *path-dependent* repair — the sweep was the decoder's
+own until #533 and so skipped a session handed straight to `restoreSession`;
+`js/normalizeSession.js` now runs on every entry path.
 
 **Three fields** is accepted, and is the v0 layout. The colour is always the
 last field, so the three-field form decodes as `url | name | colour` with no
@@ -239,19 +240,22 @@ share link. It is the inverse of the decoder, and
 decision** — ADR-0006 decision 4 — because writing encoders for formats nothing
 has emitted in years means owning them forever.
 
-The identity is not total. Two deviations, both asserted by that suite rather
-than left to be found:
+The identity is not total. One deviation, asserted by that suite rather than
+left to be found:
 
 - **Browser count**, when a browser was empty. A panel with no map serializes to
   `null` and the registry drops it, so an embed saved with an empty panel open
   restores one panel short (ADR-0006 decision 6). Nothing in the session records
   that a panel was dropped, so the count is not recoverable.
-- **Tracks**, which the decoder's `fixDefaults` pass sweeps: every track comes
-  back `COLLAPSED` — a field the saved form never carries, and one that overrides
-  a track that asked for something else — and a track whose colour is the default
-  annotation colour comes back with no colour at all. A session handed straight
-  to `restoreSession` is never swept, so the two entry paths disagree. Filed as
-  #525; the fix is candidate 9's `normalizeSession` stage (ADR-0006 decision 8).
+
+There was a second until #533: the decoder swept every track it read, forcing
+`displayMode` to `COLLAPSED` — a field the saved form never carries, and one
+that overrode a track asking for something else — and dropping the default
+annotation colour. That was normalization sitting inside the decoder, so the two
+entry paths disagreed about the same session (#525). The sweep now runs in
+`js/normalizeSession.js`, one stage on and on every entry path, so the wire
+format round-trips a track exactly as it was written. The defaults still apply;
+they are simply no longer part of what decoding means (ADR-0006 decision 8).
 
 The parameter is written in one spelling, `blob:`. The decoder reads three —
 `blob:`, `data:` and bare JSON — but the other two are inbound only: nothing has

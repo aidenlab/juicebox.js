@@ -1,6 +1,6 @@
 # Juicebox.js — Punch List
 
-**As of 2026-08-08.** Ordered. Work top to bottom; each phase assumes the one above it.
+**As of 2026-08-10.** Ordered. Work top to bottom; each phase assumes the one above it.
 
 > **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
 > agree with it. Where the durable facts live:
@@ -29,7 +29,7 @@ Three repos are involved:
 
 ## Done since the 6 August list
 
-Phases 0, 1 and 2 are complete, and so are two of the Phase 3 candidates.
+Phases 0, 1 and 2 are complete, and so are three of the Phase 3 candidates.
 
 | # | Task | Outcome |
 |---|---|---|
@@ -42,6 +42,7 @@ Phases 0, 1 and 2 are complete, and so are two of the Phase 3 candidates.
 | 2.3 | A repaint pass outliving the state it started from | #469 closed — it *abandons* the pass on a state-identity check (`f4f5ce5`), it does not throw. The earlier summary here said "throws"; that was wrong, and ADR-0005 depends on which it is |
 | 3 · c4 | Browser registry owner | ADR-0004 → #476, #478–#483, `78a5d0b..9fde9a2`. **Closes #384** (open since 2023) and #475 |
 | 3 · c8 | Browser teardown | ADR-0005 → #491–#496, `000a43a..8d50359`. `dispose()` at both levels, `reset()` keeps identity, four teardown verbs → two. Not breaking. Tests 439 → 497 |
+| 3 · c5 | One decoder for session and URL | ADR-0006 → #499–#509, `7d93be4..683ed54`. `js/sessionCodec.js` (950 lines) holds every format decision; `urlUtils.js` (60) holds the one read. Golden snapshot gated the whole thing. Not breaking except the one named drop (`juiceboxURL=`, #506). Tests 497 → 731. Eight follow-ups filed: #510, #514, #515, #518, #519, #521, #525, #528 |
 
 **The pattern to repeat: ADR → tickets → Outcome box on the card.** Candidate 4 ran it and it
 worked — its card proposed a shape that would have broken both hosts, and the Consumer impact
@@ -52,73 +53,72 @@ ADR correction in ADR-0004's addendum, and the file is deleted (`git log` has it
 
 ---
 
-## Phase 3 — The remaining six candidates.
+## Phase 3 — The remaining five candidates.
 
-Six candidates in `docs/architecture-review.html` are open. **Two are breaking as currently
-scoped** — candidate 8 was the third until ADR-0005 settled it, and it has now landed. Each card
-carries a Consumer impact block; read it before filing anything.
+Five candidates in `docs/architecture-review.html` are open. **One is breaking as currently
+scoped** — candidate 8 was settled by ADR-0005 and candidate 5 by ADR-0006, and both have landed.
+Each card carries a Consumer impact block; read it before filing anything.
 
 | Candidate | Status |
 |---|---|
-| **5 · One decoder for session and URL** | **ADR-0006 + tickets #499–#509 filed** — #499–#507 landed; next up #508 (version field). Open follow-ups found on the way: #510, #514, #515, #518, #519, #521, #525 |
+| **9 · Give the config schema one reader** | **next up** — seam already drawn by ADR-0006 decision 8; may not need its own ADR |
 | **11 · Give the track tile one owner** | ⚠️ breaking |
 | **6 · Fold StateManager into State, and make restore use the chokepoint** | watch |
 | **7 · Move the gesture state machines behind InteractionHandler** | watch |
-| **9 · Give the config schema one reader** | watch |
 | **10 · One dataset-load path** — *this is the live-map seam* | watch |
 
-**5 — ADR-0006 is written** (`docs/adr/0006-session-wire-format-and-one-decoder.md`), so the next
-step is `/to-tickets` against it. Ten decisions; the load-bearing ones: the compatibility contract
-is the decoder's currently-accepted set frozen as fixtures, with bit.ly `juiceboxURL=` the one
-named drop; url.md becomes a versioned spec (v0 = 7-token state, v1 = 9-token + session JSON);
-`chr1 ≤ chr2` becomes a real invariant enforced in `setView`; one encoder for the session-JSON form
-only; and decode/normalize is drawn as a seam here but **crossed in candidate 9**, not in 5.
+**9 — start here, and the first decision is whether it needs an ADR at all.** ADR-0006 decision 8
+already drew the seam: decode and normalize are two stages, and 5 deliberately stopped at the line.
+What is left on the wrong side of it is `fixDefaults` (`sessionCodec.js`) and the `selectedGene`
+reconciliation (#481), plus **shortcut expansion running twice** — once on the URL path, once again
+in `restoreSession`, because a session handed straight to `restoreSession` bypasses the decoder
+entirely. One `normalizeSession` stage that *both* entry paths pass through makes one of those
+copies deletable. That deletion was held back from 5 on purpose: both at once doubles the blast
+radius on `hic.init`, the most-used public surface.
 
-**Tickets are filed: #499–#509**, with native GitHub blocking edges, so the frontier is a query
-rather than a reading exercise — a ticket is startable exactly when `blocked_by == 0`.
+So the hard question — where the seam goes and why — is answered. The one genuinely open piece is
+**whether normalizing at both entry points changes what `restoreSession` accepts**, and that is
+consumer-facing, so it may still be worth an ADR (ADR-0007 is claimed by #477; **ADR-0008 is the
+next free number**). Decide that first; if the answer is "no change", this is `/to-tickets` against
+decision 8 rather than a fresh ADR.
 
-| | Ticket | Gated on |
-|---|---|---|
-| **Start here** | ~~#499 axis ordering~~ **landed** · ~~#500 empty browsers~~ **landed** · ~~#501 versioned url.md + delete `stringify`~~ **landed** · ~~#502 fixture corpus~~ **landed** | nothing |
-| **The gate** | ~~#503 golden-file snapshot~~ **landed and green** — no decoder code moved until it was | #499, #500, #502 |
-| Collapse | ~~#504 pure `sniffFormat`/`decodeState`~~ → ~~#505 `decodeSession` + injected loader~~ → ~~#506 drop bit.ly~~ **all landed** | linear |
-| Payoff | ~~#507 `encodeSession` + round-trip property test~~ **landed** → #508 version field | #500, #505 |
-| Off-chain | #509 external citation harvest (`ready-for-human`, gates nothing) · #510 `State.default()` defect | — |
+**9 inherits the gate 5 had to build.** The golden-file snapshot over the wire-format corpus is
+green and covers every accepted format; normalization changes are exactly the kind that move
+decoded output, so the snapshot is 9's acceptance test too, and every moved fixture must be one
+someone can explain. **#525 is already a filed instance of the bug 9 exists to fix:** `fixDefaults`
+forces every track to `COLLAPSED`, so the URL path and the direct-restore path disagree about the
+same session today.
 
-#499 and #500 gate the snapshot because both legitimately move decoded output; baselining before
-them would bake in behaviour already decided against. #499 is **a live bug today with no session
-involved** — any `goto` whose y-axis chromosome index is below the x-axis's renders one way and
-reloads transposed.
+**What candidate 5 confirmed, worth carrying into 9:** the pattern held a third time — ADR →
+tickets → Outcome box — and the ADR is again where the breaking/not-breaking question got answered
+before any code moved. Three lessons specific to this kind of work:
 
-The ADR is not breaking for the archive — the `State` constructor already transposes, so links in
-the wild decode exactly as they do now.
-
-**What candidate 8 confirmed, worth carrying into 5:** ADR → tickets → Outcome box works, and the
-ADR is where the breaking/not-breaking question gets answered. 8 was on the breaking list until
-ADR-0005 found that `reset()` could keep browser identity; nothing about the code changed, only
-what had been established before writing it. Two smaller lessons: the general mechanism beat the
-named instance (the constructor records what it installs outside `rootElement`, and that record
-caught a *second* leak the card never named — the contact matrix view's document-level gesture
-handlers, #494); and the invisible failure mode named on the card as a review gate became a test
-rather than a warning (`test/testRepaintDuringReset.js`, #495).
+- **The characterization snapshot must land before anything moves, and the fixes that legitimately
+  move output must land before *it*.** #499 and #500 gated #503 for exactly that reason. Baselining
+  first would have pinned behaviour already decided against.
+- **A "dead" path is not dead until measured.** ADR-0006 justified dropping `juiceboxURL=` partly
+  on an assumed 401; measured, bit.ly still expanded it and the session still decoded. The drop
+  stood on other grounds, but the ADR's consequences section had to be corrected — #506 removed
+  live behaviour.
+- **File and keep refactoring worked at scale.** Eight follow-ups (#510, #514, #515, #518, #519,
+  #521, #525, #528) came out of this candidate without derailing it.
 
 **11** — the `TrackXYPairLoad` payload *is* the track pair, and juicebox-web reads its shape.
 
-**6** — accessor names are load-bearing; #468 already settled the vocabulary.
+**6** — accessor names are load-bearing; #468 already settled the vocabulary. Pairs naturally with
+9: both are about restore going through the chokepoint rather than around it.
 
 **7** — must keep both crosshair paths firing for Spacewalk. Largest remaining deepening, ~300
 lines of closures with no test surface. **The one candidate that may want `/wayfinder`** rather
 than `/to-tickets`: its shape is genuinely unknown, where candidate 4's was settled in a grilling
 session before any ticket existed.
 
-**9** — `hic.init(container, config)` is the most-used public surface. Pairs with 5 — decode,
-then normalize.
-
 **10** — three named load methods must survive.
 
 **Skill:** `/to-tickets` when you pick one up. Full routing rules, and the reason to file tickets
-*before* the blocker clears, are in `docs/agents/triage-labels.md`. **ADR-0006 went to candidate 5**;
-**ADR-0007 is the next free number**, and #477 takes it.
+*before* the blocker clears, are in `docs/agents/triage-labels.md`. **ADR-0005 went to candidate 8
+and ADR-0006 to candidate 5. ADR-0007 is claimed by #477, so ADR-0008 is the next free number** —
+and candidate 9 may not need one, per above.
 
 When a candidate lands: tick it in [#466](https://github.com/aidenlab/juicebox.js/issues/466) and
 add an Outcome box to its card. That is the only time either file is touched.
@@ -159,10 +159,23 @@ Before releasing:
 2. Run #466's pre-release consumer verification checklist, **plus the registry click-through above**.
 3. Bump / tag / `gh release create` / repoint both consumers.
 
-**The release note candidate 8 owes:** a disposed browser now throws `DisposedBrowserError` rather
-than silently no-op'ing. Neither known host can reach it — nothing called `dispose()` before it
-existed — but a third-party embedder calling a method on a deleted browser and getting away with
-it will now see an exception. It is the one behavioural change on the list so far.
+**The release notes owed so far — three, from candidates 8 and 5:**
+
+1. **A disposed browser now throws `DisposedBrowserError`** rather than silently no-op'ing
+   (candidate 8). Neither known host can reach it — nothing called `dispose()` before it existed —
+   but a third-party embedder calling a method on a deleted browser and getting away with it will
+   now see an exception.
+2. **`?juiceboxURL=` links no longer work** (candidate 5, #506). This is the one deliberate break in
+   the wire format, and it is **not** the dead path ADR-0006 originally assumed: measured on
+   9 August, bit.ly still expanded these links and the session still decoded in full. Any published
+   link in that form is now broken. How many exist is unknown and, per #509, was deliberately not
+   measured beyond our own issue trackers.
+3. **A session saved while a browser panel was empty now restores with one fewer panel** (candidate
+   5, #500), where before it produced a session that could not be reloaded at all. Strictly an
+   improvement, but browser *count* no longer survives that round trip, which is worth saying out
+   loud rather than letting a host discover it.
+
+Note that 2 is the only one that can affect an end user rather than an embedder.
 
 ---
 

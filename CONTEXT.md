@@ -149,6 +149,13 @@ compatibility contract in executable form, so a snapshot that moves is a change
 to the wire format until shown otherwise. That file's header carries the
 convention for updating one.
 
+What the corpus pins is the *accepted set*, not the *sent set*. Its fixtures come
+from the three repos, the published docs, and our own issue trackers; links
+published outside all of those — in a paper, a lab wiki, a dataset landing page —
+have never been sampled. The contract is frozen against what the decoder takes,
+and the evidence that this matches what users send is partial by decision. See
+`test/data/wireFormatCorpus.js`'s harvest-scope note.
+
 **Wire-format adapter** — one entry in `WIRE_FORMATS` (`js/sessionCodec.js`):
 the pair of "does this input carry my format?" and "decode it into the shared
 decode context." The array is the only place a format is named, so adding a

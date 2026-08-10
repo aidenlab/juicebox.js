@@ -648,6 +648,7 @@ exports[`resolved config golden file — one browser config, through every entry
         },
         "tracks": [
           {
+            "displayMode": "COLLAPSED",
             "name": "genes",
             "url": "https://example.com/genes.bed",
           },
@@ -677,6 +678,7 @@ exports[`resolved config golden file — one browser config, through every entry
           },
           "tracks": [
             {
+              "displayMode": "COLLAPSED",
               "name": "genes",
               "url": "https://example.com/genes.bed",
             },
@@ -710,6 +712,7 @@ exports[`resolved config golden file — one browser config, through every entry
         },
         "tracks": [
           {
+            "displayMode": "COLLAPSED",
             "name": "genes",
             "url": "https://example.com/genes.bed",
           },
@@ -739,6 +742,7 @@ exports[`resolved config golden file — one browser config, through every entry
           },
           "tracks": [
             {
+              "displayMode": "COLLAPSED",
               "name": "genes",
               "url": "https://example.com/genes.bed",
             },
@@ -772,6 +776,7 @@ exports[`resolved config golden file — one browser config, through every entry
         },
         "tracks": [
           {
+            "displayMode": "COLLAPSED",
             "name": "genes",
             "url": "https://example.com/genes.bed",
           },
@@ -801,6 +806,7 @@ exports[`resolved config golden file — one browser config, through every entry
           },
           "tracks": [
             {
+              "displayMode": "COLLAPSED",
               "name": "genes",
               "url": "https://example.com/genes.bed",
             },
@@ -834,6 +840,7 @@ exports[`resolved config golden file — one browser config, through every entry
         },
         "tracks": [
           {
+            "displayMode": "COLLAPSED",
             "name": "genes",
             "url": "https://example.com/genes.bed",
           },
@@ -863,6 +870,7 @@ exports[`resolved config golden file — one browser config, through every entry
           },
           "tracks": [
             {
+              "displayMode": "COLLAPSED",
               "name": "genes",
               "url": "https://example.com/genes.bed",
             },
@@ -996,6 +1004,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
         "syncDatasets": false,
+        "synchable": false,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -1007,11 +1016,12 @@ exports[`resolved config golden file — one browser config, through every entry
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
           "syncDatasets": false,
+          "synchable": false,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
         "sameObjectAsInput": true,
-        "synchable": true,
+        "synchable": false,
       },
     ],
   },
@@ -1221,9 +1231,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showLocusGoto": true,
         "tracks": [
           {
-            "color": "rgb(22, 129, 198)",
-            "max": NaN,
-            "min": NaN,
+            "displayMode": "COLLAPSED",
             "name": "annotations",
             "url": "https://example.com/annotations.bed",
           },
@@ -1240,9 +1248,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showLocusGoto": true,
           "tracks": [
             {
-              "color": "rgb(22, 129, 198)",
-              "max": NaN,
-              "min": NaN,
+              "displayMode": "COLLAPSED",
               "name": "annotations",
               "url": "https://example.com/annotations.bed",
             },
@@ -1263,9 +1269,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showLocusGoto": true,
         "tracks": [
           {
-            "color": "rgb(22, 129, 198)",
-            "max": NaN,
-            "min": NaN,
+            "displayMode": "COLLAPSED",
             "name": "annotations",
             "url": "https://example.com/annotations.bed",
           },
@@ -1282,9 +1286,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showLocusGoto": true,
           "tracks": [
             {
-              "color": "rgb(22, 129, 198)",
-              "max": NaN,
-              "min": NaN,
+              "displayMode": "COLLAPSED",
               "name": "annotations",
               "url": "https://example.com/annotations.bed",
             },
@@ -1305,9 +1307,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showLocusGoto": true,
         "tracks": [
           {
-            "color": "rgb(22, 129, 198)",
-            "max": NaN,
-            "min": NaN,
+            "displayMode": "COLLAPSED",
             "name": "annotations",
             "url": "https://example.com/annotations.bed",
           },
@@ -1324,9 +1324,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showLocusGoto": true,
           "tracks": [
             {
-              "color": "rgb(22, 129, 198)",
-              "max": NaN,
-              "min": NaN,
+              "displayMode": "COLLAPSED",
               "name": "annotations",
               "url": "https://example.com/annotations.bed",
             },
@@ -1347,9 +1345,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showLocusGoto": true,
         "tracks": [
           {
-            "color": "rgb(22, 129, 198)",
-            "max": NaN,
-            "min": NaN,
+            "displayMode": "COLLAPSED",
             "name": "annotations",
             "url": "https://example.com/annotations.bed",
           },
@@ -1366,9 +1362,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showLocusGoto": true,
           "tracks": [
             {
-              "color": "rgb(22, 129, 198)",
-              "max": NaN,
-              "min": NaN,
+              "displayMode": "COLLAPSED",
               "name": "annotations",
               "url": "https://example.com/annotations.bed",
             },
@@ -1552,6 +1546,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showLocusGoto": true,
         "tracks": [
           {
+            "displayMode": "COLLAPSED",
             "name": "encode track",
             "url": "*enc/ENCFF000ABC.bigWig",
           },
@@ -1569,6 +1564,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showLocusGoto": true,
           "tracks": [
             {
+              "displayMode": "COLLAPSED",
               "name": "encode track",
               "url": "*enc/ENCFF000ABC.bigWig",
             },
@@ -1590,6 +1586,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showLocusGoto": true,
         "tracks": [
           {
+            "displayMode": "COLLAPSED",
             "name": "encode track",
             "url": "*enc/ENCFF000ABC.bigWig",
           },
@@ -1607,6 +1604,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showLocusGoto": true,
           "tracks": [
             {
+              "displayMode": "COLLAPSED",
               "name": "encode track",
               "url": "*enc/ENCFF000ABC.bigWig",
             },
@@ -1628,6 +1626,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showLocusGoto": true,
         "tracks": [
           {
+            "displayMode": "COLLAPSED",
             "name": "encode track",
             "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
           },
@@ -1645,6 +1644,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showLocusGoto": true,
           "tracks": [
             {
+              "displayMode": "COLLAPSED",
               "name": "encode track",
               "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
             },
@@ -1666,6 +1666,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showLocusGoto": true,
         "tracks": [
           {
+            "displayMode": "COLLAPSED",
             "name": "encode track",
             "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
           },
@@ -1683,6 +1684,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showLocusGoto": true,
           "tracks": [
             {
+              "displayMode": "COLLAPSED",
               "name": "encode track",
               "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
             },
@@ -2000,6 +2002,7 @@ exports[`resolved config golden file — session documents, through the session-
         "showLocusGoto": true,
         "tracks": [
           {
+            "displayMode": "COLLAPSED",
             "url": "*enc/ENCFF000ABC.bigWig",
           },
         ],
@@ -2026,6 +2029,7 @@ exports[`resolved config golden file — session documents, through the session-
           "showLocusGoto": true,
           "tracks": [
             {
+              "displayMode": "COLLAPSED",
               "url": "*enc/ENCFF000ABC.bigWig",
             },
           ],
@@ -2051,6 +2055,7 @@ exports[`resolved config golden file — session documents, through the session-
         "showLocusGoto": true,
         "tracks": [
           {
+            "displayMode": "COLLAPSED",
             "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
           },
         ],
@@ -2077,6 +2082,7 @@ exports[`resolved config golden file — session documents, through the session-
           "showLocusGoto": true,
           "tracks": [
             {
+              "displayMode": "COLLAPSED",
               "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
             },
           ],
@@ -2102,6 +2108,7 @@ exports[`resolved config golden file — session documents, through the session-
         "showLocusGoto": true,
         "tracks": [
           {
+            "displayMode": "COLLAPSED",
             "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
           },
         ],
@@ -2128,6 +2135,7 @@ exports[`resolved config golden file — session documents, through the session-
           "showLocusGoto": true,
           "tracks": [
             {
+              "displayMode": "COLLAPSED",
               "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
             },
           ],
@@ -2461,6 +2469,7 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
         "showLocusGoto": true,
         "tracks": [
           {
+            "displayMode": "COLLAPSED",
             "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
           },
         ],
@@ -2486,6 +2495,7 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
           "showLocusGoto": true,
           "tracks": [
             {
+              "displayMode": "COLLAPSED",
               "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
             },
           ],
@@ -5254,7 +5264,7 @@ exports[`resolved config golden file — the same input as a URL and as a config
         "showLocusGoto": true,
         "tracks": [
           {
-            "color": "rgb(22, 129, 198)",
+            "displayMode": "COLLAPSED",
             "name": "annotations",
             "url": "https://example.com/annotations.bed",
           },
@@ -5272,7 +5282,7 @@ exports[`resolved config golden file — the same input as a URL and as a config
           "showLocusGoto": true,
           "tracks": [
             {
-              "color": "rgb(22, 129, 198)",
+              "displayMode": "COLLAPSED",
               "name": "annotations",
               "url": "https://example.com/annotations.bed",
             },

@@ -54,6 +54,8 @@
  * | Date | Fixtures | Authorised by |
  * |------|----------|---------------|
  * | 2026-08-10 | all — baseline taken | #531. No production code changed; this is the gate, taken before candidate 9 moves anything. |
+ * | 2026-08-10 | `host-shaped-full-config`, `track-carrying-the-defaults-fixDefaults-strips`, `url-shortcuts-in-map-control-and-track`, `session-with-url-shortcuts-in-both-browsers` (both suites), `the-same-track-through-a-URL-and-through-a-config` | **#533**, the track-default move. `fixDefaults` ran inside the decoder, so the four config-shaped doors skipped it; it is `normalizeSession.applyTrackDefaults` now and they all meet it. Every one of these fixtures carries a track, and every moved line is one of three: a `displayMode: "COLLAPSED"` gained, the default annotation colour dropped, a `NaN` data-range bound dropped. The query columns did not move — the same defaults, one stage later. The probe is the one to read: its two sides now agree, which is what the fixture was written to expose. |
+ * | 2026-08-10 | `syncDatasets-false-on-a-single-browser-config` | **#533**, the `syncDatasets` resolution. Only the `createBrowser` column moves, and only in `synchable`: the session-level opt-out is resolved in normalize now, so the door that takes one browser config honours it as the door that takes a list always did. The three columns that already honoured it are byte-identical. |
  *
  * @see test/data/configEntryPathCorpus.js — the inputs and their divergence notes
  * @see test/testDecoderGolden.js — the same instrument, one seam upstream

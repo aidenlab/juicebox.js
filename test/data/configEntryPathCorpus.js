@@ -3,11 +3,11 @@
  * suspected, to treat differently. #531, the gate for candidate 9.
  *
  * Candidate 9 is "give the config schema one reader". There is not yet one
- * reader: `normalizeSession` (`js/normalizeSession.js`, #532) applies some
- * defaults, `sessionCodec.fixDefaults` applies others,
- * `expandSessionUrlShortcuts` runs in two places, and
- * `HICBrowser` itself reads raw fields and defaults them inline. Which of those
- * a config meets depends on which door it came in through.
+ * reader: `normalizeSession` (`js/normalizeSession.js`, #532, #533) applies most
+ * defaults, `expandSessionUrlShortcuts` runs in two places, and `HICBrowser`
+ * itself reads raw fields and defaults them inline. Which of those a config
+ * meets still depends on which door it came in through — less than it did, since
+ * #533 moved the last of the decoder's normalization behind the shared stage.
  *
  * **These fixtures carry inputs, not expected outputs** — the same rule as
  * `wireFormatCorpus.js`, and for the same reason (ADR-0006, "How we know the
@@ -73,8 +73,8 @@ export const configFixtures = [
 
     {
         id: 'track-carrying-the-defaults-fixDefaults-strips',
-        note: 'A track with the default annotation colour, NaN data limits, and no displayMode — exactly what `fixDefaults` in js/sessionCodec.js:935 exists to clean up.',
-        divergence: '**Known divergence, and it is *between suites*, not between these four columns.** `fixDefaults` runs inside `decodeSession` and nowhere else, so none of the four config-shaped doors meets it: all four keep the default colour, keep the NaN limits, and get no `displayMode`. The path that does strip them is the query one, and `divergenceProbes` below puts the two side by side in a single snapshot. #533 closes this by moving track-default fixing across the decode/normalize seam.',
+        note: 'A track with the default annotation colour, NaN data limits, and no displayMode — exactly what `normalizeSession.applyTrackDefaults` exists to clean up.',
+        divergence: '**Closed by #533.** The pass was `fixDefaults` inside `decodeSession`, so none of the four config-shaped doors met it: all four kept the default colour, kept the NaN limits, and got no `displayMode`, while the query path stripped all three. It is `normalizeSession.applyTrackDefaults` now and every door meets it, which is the snapshot movement logged in `testConfigGolden.js`. The fixture stays, and its id keeps the old function\'s name on purpose: it is what keeps the closure from reopening.',
         config: {
             url: 'https://example.com/a.hic',
             tracks: [{
@@ -155,7 +155,7 @@ export const configFixtures = [
     {
         id: 'syncDatasets-false-on-a-single-browser-config',
         note: 'The session-level sync opt-out, on a config that is also a one-browser session — which is what every one of these four paths accepts.',
-        divergence: '**Known divergence, visible between the columns below.** `createBrowserList` reads `syncDatasets` and writes `synchable: false` onto each browser config; `createBrowser` never looks at it, so the same input produces a synchable browser through one creation path and an unsynchable one through the other. One of the three divergences #533 closes.',
+        divergence: '**Closed by #533.** `createBrowserList` read `syncDatasets` and wrote `synchable: false` onto each browser config; `createBrowser` never looked at it, so the same input produced a synchable browser through one creation path and an unsynchable one through the other. The resolution is `normalizeSession`\'s now, at session level, and it honours the opt-out at every door — `createBrowser` hands its config over as the session it is, rather than as an anonymous browser inside an empty one.',
         config: {url: 'https://example.com/a.hic', syncDatasets: false},
     },
 
@@ -185,7 +185,7 @@ export const divergenceProbes = [
     {
         id: 'the-same-track-through-a-URL-and-through-a-config',
         note: 'One map, one BED track, the default annotation colour, no data range.',
-        divergence: '**The `fixDefaults` divergence, in one snapshot.** The query side loses `color` (stripped for being the default), gains `displayMode: "COLLAPSED"` forced onto every track, and carries the empty data range as the decoder leaves it; the config side keeps what the host wrote. Same track, two answers. #533.',
+        divergence: '**The `fixDefaults` divergence, closed by #533 — and this is the pair that shows it.** The query side used to lose `color` for being the default and gain `displayMode: "COLLAPSED"`, while the config side kept what the host wrote: same track, two answers. Both sides now read the same, because the pass moved to a stage they share. If this pair ever disagrees again, a default has crept back upstream of the seam.',
         url: 'http://localhost/juicebox/?hicUrl=https://example.com/a.hic&name=A&tracks=https://example.com/annotations.bed|annotations||rgb(22, 129, 198)',
         config: {
             url: 'https://example.com/a.hic',
@@ -241,7 +241,7 @@ export const sessionFixtures = [
     {
         id: 'session-with-syncDatasets-false',
         note: 'The session-level opt-out of the sync group.',
-        divergence: '**Known divergence.** `createBrowserList` translates `syncDatasets: false` into `synchable: false` on every browser config; `createBrowser` never looks at `syncDatasets` at all. A host reaching the single-browser creation path with this session gets a synchable browser. Listed in #466 as one of the three divergences #533 closes.',
+        divergence: '**Closed by #533**, and the snapshot did not move here: this fixture only reaches the session-shaped doors, which honoured the opt-out already. Its single-browser twin above is where the closure is visible. Kept because the multi-browser shape is the one the field was written for, and it has to keep agreeing with the other.',
         session: {
             syncDatasets: false,
             browsers: [

@@ -34,7 +34,8 @@ import * as hicUtils from './hicUtils.js'
 import {getLayoutDimensions} from './layoutController.js'
 import Track2D from './track2D.js'
 
-import {DEFAULT_ANNOTATION_COLOR, decodeState} from "./sessionCodec.js"
+import {decodeState} from "./sessionCodec.js"
+import {DEFAULT_ANNOTATION_COLOR} from "./normalizeSession.js"
 import {mapTrackConfig} from "./urlMapper.js"
 
 /**
@@ -364,6 +365,16 @@ class DataLoader {
                     config.type = config.format = 'sequence';
                 }
 
+                // The load-time half of the per-track defaults. The other half is
+                // `normalizeSession.applyTrackDefaults`, and the two own different
+                // questions rather than duplicating one: normalize answers what
+                // the *document* says, before anything is fetched and on every
+                // entry path; these four rules answer what the *load* discovered
+                // -- the resolved `type`, the live layout's track height, and a
+                // missing `max`. This is also the only stage a track added at
+                // runtime through the published `browser.loadTracks(configs)`
+                // meets, since such a track was never part of a session. See the
+                // ownership note on `applyTrackDefaults` (#533).
                 if (config.type === 'annotation') {
                     config.displayMode = 'COLLAPSED';
                     if (config.color === DEFAULT_ANNOTATION_COLOR) {

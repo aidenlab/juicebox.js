@@ -171,6 +171,186 @@ describe('the string coercions', () => {
 })
 
 /**
+ * The track defaults, moved here from the decoder by #533.
+ *
+ * They ran inside `decodeSession` and so reached the URL path only; a session
+ * handed straight to `restoreSession` — the documented public API — was never
+ * swept. The rules themselves are unchanged, which is why the assertions below
+ * read the same as the ones `test/testSessionRoundTrip.js` used to make about
+ * the decoder.
+ */
+describe('the track defaults', () => {
+
+    const DEFAULT_ANNOTATION_COLOR_LITERAL = 'rgb(22, 129, 198)'
+
+    const oneTrack = track => normalizeSession({url: 'a.hic', tracks: [track]}).tracks[0]
+
+    test('the default annotation colour is dropped, so the track picks up whatever the renderer defaults to', () => {
+
+        const track = oneTrack({url: 'a.bed', color: DEFAULT_ANNOTATION_COLOR_LITERAL})
+
+        expect(Object.hasOwn(track, 'color')).toBe(false)
+    })
+
+    test('any other colour is kept', () => {
+        expect(oneTrack({url: 'a.bed', color: 'rgb(1,2,3)'}).color).toBe('rgb(1,2,3)')
+    })
+
+    test('NaN data-range bounds are dropped', () => {
+
+        const track = oneTrack({url: 'a.bed', min: NaN, max: NaN})
+
+        expect(Object.hasOwn(track, 'min')).toBe(false)
+        expect(Object.hasOwn(track, 'max')).toBe(false)
+    })
+
+    test('a real data range is kept, including a zero bound', () => {
+
+        const track = oneTrack({url: 'a.bed', min: 0, max: 100})
+
+        expect(track.min).toBe(0)
+        expect(track.max).toBe(100)
+    })
+
+    test('display mode is collapsed, whatever the session asked for', () => {
+        expect(oneTrack({url: 'a.bed'}).displayMode).toBe('COLLAPSED')
+        expect(oneTrack({url: 'a.bed', displayMode: 'EXPANDED'}).displayMode).toBe('COLLAPSED')
+    })
+
+    test('a browser naming no tracks is left alone', () => {
+        expect(Object.hasOwn(normalizeSession({url: 'a.hic'}), 'tracks')).toBe(false)
+    })
+
+    test('every browser of a session is swept, not just the first', () => {
+
+        const session = {browsers: [
+            {url: 'a.hic', tracks: [{url: 'a.bed'}]},
+            {url: 'b.hic', tracks: [{url: 'b.bed'}]},
+        ]}
+
+        normalizeSession(session)
+
+        expect(session.browsers.map(b => b.tracks[0].displayMode)).toEqual(['COLLAPSED', 'COLLAPSED'])
+    })
+})
+
+/**
+ * The `selectedGene` reconciliation, #481 — its session-shaped half, moved here
+ * by #533.
+ *
+ * A gene named inside a browser config belongs to the *embed*: the registry
+ * keeps one selected gene and serializes it at the top level. Hoisting it is a
+ * reading of a session document, so it belongs to this stage. Reading the
+ * `selectedGene=` **query parameter** is format knowledge and stays in the
+ * decoder, which is why only the fold over `browsers` is tested here.
+ */
+describe('the selectedGene reconciliation', () => {
+
+    test('a gene named inside a browser is hoisted to the session', () => {
+
+        const session = {browsers: [{url: 'a.hic', selectedGene: 'MYC'}]}
+
+        normalizeSession(session)
+
+        expect(session.selectedGene).toBe('MYC')
+    })
+
+    test('the session\'s own gene wins over its browsers', () => {
+
+        const session = {selectedGene: 'ACE', browsers: [{url: 'a.hic', selectedGene: 'MYC'}]}
+
+        normalizeSession(session)
+
+        expect(session.selectedGene).toBe('ACE')
+    })
+
+    test('the last browser to name one wins, which is the order the old successive writes produced', () => {
+
+        const session = {browsers: [
+            {url: 'a.hic', selectedGene: 'MYC'},
+            {url: 'b.hic'},
+            {url: 'c.hic', selectedGene: 'EGFR'},
+        ]}
+
+        normalizeSession(session)
+
+        expect(session.selectedGene).toBe('EGFR')
+    })
+
+    test('a session naming no gene anywhere gains no member', () => {
+
+        const session = {browsers: [{url: 'a.hic'}]}
+
+        normalizeSession(session)
+
+        expect(Object.hasOwn(session, 'selectedGene')).toBe(false)
+    })
+
+    test('the gene on an inlined single-browser config is already at session level', () => {
+
+        const config = normalizeSession({url: 'a.hic', selectedGene: 'MYC'})
+
+        expect(config.selectedGene).toBe('MYC')
+    })
+})
+
+/**
+ * `syncDatasets`, resolved once at session level — the third of the three
+ * divergences #533 closes.
+ *
+ * `createBrowserList` translated it into a per-browser `synchable` and
+ * `createBrowser` never looked at it, so the same document produced a synchable
+ * browser through one creation door and an unsynchable one through the other.
+ * The behaviour kept is the one that **honours the opt-out**: a session that
+ * says `syncDatasets: false` means it wherever it is handed in.
+ */
+describe('the syncDatasets resolution', () => {
+
+    test('a session that opts out marks every browser unsynchable', () => {
+
+        const session = {syncDatasets: false, browsers: [{url: 'a.hic'}, {url: 'b.hic'}]}
+
+        normalizeSession(session)
+
+        expect(session.browsers.map(b => b.synchable)).toEqual([false, false])
+    })
+
+    test('a single-browser config opts out too, since it is a session with its browser inlined', () => {
+
+        const config = normalizeSession({url: 'a.hic', syncDatasets: false})
+
+        expect(config.synchable).toBe(false)
+    })
+
+    test('nothing is written when the session says nothing', () => {
+
+        const session = {browsers: [{url: 'a.hic'}]}
+
+        normalizeSession(session)
+
+        expect(Object.hasOwn(session.browsers[0], 'synchable')).toBe(false)
+    })
+
+    test('syncDatasets true leaves a browser that opted out on its own alone', () => {
+
+        const session = {syncDatasets: true, browsers: [{url: 'a.hic', synchable: false}]}
+
+        normalizeSession(session)
+
+        expect(session.browsers[0].synchable).toBe(false)
+    })
+
+    test('only a literal false is the opt-out', () => {
+
+        const session = {syncDatasets: 0, browsers: [{url: 'a.hic'}]}
+
+        normalizeSession(session)
+
+        expect(Object.hasOwn(session.browsers[0], 'synchable')).toBe(false)
+    })
+})
+
+/**
  * The acceptance criterion candidate 9 repeats on every ticket that could
  * violate it: the config object is the most-used public surface there is, so a
  * normalize stage that tightened validation would reject configs that work
@@ -186,6 +366,10 @@ describe('normalize rejects nothing', () => {
         ['a numeric url', {url: 42}],
         ['a browsers list holding an empty config', {browsers: [{}]}],
         ['browsers alongside inline browser members', {browsers: [{url: 'a.hic'}], url: 'b.hic'}],
+        ['a tracks member that is not a list', {url: 'a.hic', tracks: 'a.bed'}],
+        ['a track that is an empty object', {url: 'a.hic', tracks: [{}]}],
+        ['a numeric selectedGene', {url: 'a.hic', selectedGene: 42}],
+        ['syncDatasets false with no browsers at all', {syncDatasets: false}],
     ]
 
     for (const [caption, input] of hostile) {
@@ -214,4 +398,28 @@ test('normalizing an already-normalized session changes nothing further', () => 
     expect(once).toEqual(snapshot)
     expect(once.colorScale).toBe(snapshot.colorScale)
     expect(once.backgroundColor).toBe(snapshot.backgroundColor)
+})
+
+/**
+ * The same property over what #533 moved in, and it is load-bearing rather than
+ * decorative: `BrowserRegistry.restoreSession` normalizes so that the gene it
+ * reads has been hoisted, and then `createBrowserList` normalizes the same
+ * document again on its way to the browsers.
+ */
+test('normalizing an already-normalized session document changes nothing further', () => {
+
+    const session = {
+        syncDatasets: false,
+        browsers: [
+            {url: 'a.hic', selectedGene: 'MYC', tracks: [{url: 'a.bed', color: 'rgb(22, 129, 198)', min: NaN}]},
+            {url: 'b.hic'},
+        ],
+    }
+
+    normalizeSession(session)
+    const once = structuredClone(session)
+
+    normalizeSession(session)
+
+    expect(session).toEqual(once)
 })

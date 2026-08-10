@@ -170,6 +170,19 @@ applying defaults, expanding URL shortcuts, reconciling a selected gene — and 
 reached by every entry path, including a session handed straight to
 `restoreSession`. Format knowledge never crosses into normalize.
 
+**Entry path** — one of the four doors a config comes in by: `hic.init`,
+`hic.restoreSession`, `createBrowser` and `createBrowserList`. All four accept a
+single browser config, since `createBrowserList` reads `session.browsers ||
+[session]`; the query/URL form reaches `HICBrowser` through `init`.
+
+**Resolved config** — a browser config *after* every normalizer upstream of
+`HICBrowser` has had it, which is the object `browser.config` then holds. Not a
+copy: every normalizer rewrites the host's own object in place, so the host's
+config and the browser's are one object. It is an observable surface, because
+juicebox-web reads `browser.config` back (ADR-0003). Which normalizers a config
+meets depends on its entry path, and today they disagree — `test/testConfigGolden.js`
+pins the disagreements (#531, candidate 9).
+
 **Dispose** vs **reset** vs **clear dataset** — the three teardown verbs, in
 descending order of how much they destroy. See `docs/adr/0005`.
 

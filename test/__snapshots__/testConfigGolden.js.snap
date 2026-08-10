@@ -1,0 +1,5330 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`resolved config golden file — one browser config, through every entry path > background-color-as-a-string 1`] = `
+{
+  "createBrowser(container, config)": {
+    "atConstruction": [
+      {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — one browser config, through every entry path > color-scale-as-a-string 1`] = `
+{
+  "createBrowser(container, config)": {
+    "atConstruction": [
+      {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.05,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 100,
+        },
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "colorScale": {
+            "__class": "ColorScale",
+            "b": 0,
+            "binsize": 0.05,
+            "cache": [],
+            "g": 0,
+            "nbins": 2000,
+            "r": 255,
+            "threshold": 100,
+          },
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.05,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 100,
+        },
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "colorScale": {
+            "__class": "ColorScale",
+            "b": 0,
+            "binsize": 0.05,
+            "cache": [],
+            "g": 0,
+            "nbins": 2000,
+            "r": 255,
+            "threshold": 100,
+          },
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.05,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 100,
+        },
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "colorScale": {
+            "__class": "ColorScale",
+            "b": 0,
+            "binsize": 0.05,
+            "cache": [],
+            "g": 0,
+            "nbins": 2000,
+            "r": 255,
+            "threshold": 100,
+          },
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.05,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 100,
+        },
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "colorScale": {
+            "__class": "ColorScale",
+            "b": 0,
+            "binsize": 0.05,
+            "cache": [],
+            "g": 0,
+            "nbins": 2000,
+            "r": 255,
+            "threshold": 100,
+          },
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — one browser config, through every entry path > display-flags-set-explicitly-false 1`] = `
+{
+  "createBrowser(container, config)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — one browser config, through every entry path > empty-config 1`] = `
+{
+  "createBrowser(container, config)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — one browser config, through every entry path > figure-mode 1`] = `
+{
+  "createBrowser(container, config)": {
+    "atConstruction": [
+      {
+        "figureMode": true,
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "figureMode": true,
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": true,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "figureMode": true,
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "figureMode": true,
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": true,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "figureMode": true,
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "figureMode": true,
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": true,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "figureMode": true,
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "figureMode": true,
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": true,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — one browser config, through every entry path > host-shaped-full-config 1`] = `
+{
+  "createBrowser(container, config)": {
+    "atConstruction": [
+      {
+        "controlName": "Control",
+        "controlUrl": "https://example.com/control.hic",
+        "name": "A",
+        "nvi": "2851728310,36479",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 4,
+        },
+        "tracks": [
+          {
+            "name": "genes",
+            "url": "https://example.com/genes.bed",
+          },
+        ],
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "controlName": "Control",
+          "controlUrl": "https://example.com/control.hic",
+          "name": "A",
+          "nvi": "2851728310,36479",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "state": {
+            "chr1": 1,
+            "chr2": 1,
+            "normalization": "NONE",
+            "pixelSize": 1,
+            "x": 0,
+            "y": 0,
+            "zoom": 4,
+          },
+          "tracks": [
+            {
+              "name": "genes",
+              "url": "https://example.com/genes.bed",
+            },
+          ],
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "controlName": "Control",
+        "controlUrl": "https://example.com/control.hic",
+        "name": "A",
+        "nvi": "2851728310,36479",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 4,
+        },
+        "tracks": [
+          {
+            "name": "genes",
+            "url": "https://example.com/genes.bed",
+          },
+        ],
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "controlName": "Control",
+          "controlUrl": "https://example.com/control.hic",
+          "name": "A",
+          "nvi": "2851728310,36479",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "state": {
+            "chr1": 1,
+            "chr2": 1,
+            "normalization": "NONE",
+            "pixelSize": 1,
+            "x": 0,
+            "y": 0,
+            "zoom": 4,
+          },
+          "tracks": [
+            {
+              "name": "genes",
+              "url": "https://example.com/genes.bed",
+            },
+          ],
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "controlName": "Control",
+        "controlUrl": "https://example.com/control.hic",
+        "name": "A",
+        "nvi": "2851728310,36479",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 4,
+        },
+        "tracks": [
+          {
+            "name": "genes",
+            "url": "https://example.com/genes.bed",
+          },
+        ],
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "controlName": "Control",
+          "controlUrl": "https://example.com/control.hic",
+          "name": "A",
+          "nvi": "2851728310,36479",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "state": {
+            "chr1": 1,
+            "chr2": 1,
+            "normalization": "NONE",
+            "pixelSize": 1,
+            "x": 0,
+            "y": 0,
+            "zoom": 4,
+          },
+          "tracks": [
+            {
+              "name": "genes",
+              "url": "https://example.com/genes.bed",
+            },
+          ],
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "controlName": "Control",
+        "controlUrl": "https://example.com/control.hic",
+        "name": "A",
+        "nvi": "2851728310,36479",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 4,
+        },
+        "tracks": [
+          {
+            "name": "genes",
+            "url": "https://example.com/genes.bed",
+          },
+        ],
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "controlName": "Control",
+          "controlUrl": "https://example.com/control.hic",
+          "name": "A",
+          "nvi": "2851728310,36479",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "state": {
+            "chr1": 1,
+            "chr2": 1,
+            "normalization": "NONE",
+            "pixelSize": 1,
+            "x": 0,
+            "y": 0,
+            "zoom": 4,
+          },
+          "tracks": [
+            {
+              "name": "genes",
+              "url": "https://example.com/genes.bed",
+            },
+          ],
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — one browser config, through every entry path > mini-mode-the-legacy-spelling-of-figure-mode 1`] = `
+{
+  "createBrowser(container, config)": {
+    "atConstruction": [
+      {
+        "miniMode": true,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "miniMode": true,
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": true,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "miniMode": true,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "miniMode": true,
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": true,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "miniMode": true,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "miniMode": true,
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": true,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "miniMode": true,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "miniMode": true,
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": true,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — one browser config, through every entry path > syncDatasets-false-on-a-single-browser-config 1`] = `
+{
+  "createBrowser(container, config)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "syncDatasets": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "syncDatasets": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "syncDatasets": false,
+        "synchable": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "syncDatasets": false,
+          "synchable": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "syncDatasets": false,
+        "synchable": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "syncDatasets": false,
+          "synchable": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "syncDatasets": false,
+        "synchable": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "syncDatasets": false,
+          "synchable": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — one browser config, through every entry path > synchable-false-on-the-browser-config 1`] = `
+{
+  "createBrowser(container, config)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "synchable": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "synchable": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+    ],
+  },
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "synchable": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "synchable": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "synchable": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "synchable": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "synchable": false,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "synchable": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — one browser config, through every entry path > track-carrying-the-defaults-fixDefaults-strips 1`] = `
+{
+  "createBrowser(container, config)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "color": "rgb(22, 129, 198)",
+            "max": NaN,
+            "min": NaN,
+            "name": "annotations",
+            "url": "https://example.com/annotations.bed",
+          },
+        ],
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "color": "rgb(22, 129, 198)",
+              "max": NaN,
+              "min": NaN,
+              "name": "annotations",
+              "url": "https://example.com/annotations.bed",
+            },
+          ],
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "color": "rgb(22, 129, 198)",
+            "max": NaN,
+            "min": NaN,
+            "name": "annotations",
+            "url": "https://example.com/annotations.bed",
+          },
+        ],
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "color": "rgb(22, 129, 198)",
+              "max": NaN,
+              "min": NaN,
+              "name": "annotations",
+              "url": "https://example.com/annotations.bed",
+            },
+          ],
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "color": "rgb(22, 129, 198)",
+            "max": NaN,
+            "min": NaN,
+            "name": "annotations",
+            "url": "https://example.com/annotations.bed",
+          },
+        ],
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "color": "rgb(22, 129, 198)",
+              "max": NaN,
+              "min": NaN,
+              "name": "annotations",
+              "url": "https://example.com/annotations.bed",
+            },
+          ],
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "color": "rgb(22, 129, 198)",
+            "max": NaN,
+            "min": NaN,
+            "name": "annotations",
+            "url": "https://example.com/annotations.bed",
+          },
+        ],
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "color": "rgb(22, 129, 198)",
+              "max": NaN,
+              "min": NaN,
+              "name": "annotations",
+              "url": "https://example.com/annotations.bed",
+            },
+          ],
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — one browser config, through every entry path > unknown-field-a-host-invented 1`] = `
+{
+  "createBrowser(container, config)": {
+    "atConstruction": [
+      {
+        "hostPrivateField": {
+          "anything": [
+            1,
+            2,
+            3,
+          ],
+        },
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "hostPrivateField": {
+            "anything": [
+              1,
+              2,
+              3,
+            ],
+          },
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "hostPrivateField": {
+          "anything": [
+            1,
+            2,
+            3,
+          ],
+        },
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "hostPrivateField": {
+            "anything": [
+              1,
+              2,
+              3,
+            ],
+          },
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "hostPrivateField": {
+          "anything": [
+            1,
+            2,
+            3,
+          ],
+        },
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "hostPrivateField": {
+            "anything": [
+              1,
+              2,
+              3,
+            ],
+          },
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "hostPrivateField": {
+          "anything": [
+            1,
+            2,
+            3,
+          ],
+        },
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "hostPrivateField": {
+            "anything": [
+              1,
+              2,
+              3,
+            ],
+          },
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — one browser config, through every entry path > url-shortcuts-in-map-control-and-track 1`] = `
+{
+  "createBrowser(container, config)": {
+    "atConstruction": [
+      {
+        "controlUrl": "*s3e_/wapl_hic/WT.hic",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "name": "encode track",
+            "url": "*enc/ENCFF000ABC.bigWig",
+          },
+        ],
+        "url": "*s3/hiseq/gm12878/in-situ/HIC009.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "controlUrl": "*s3e_/wapl_hic/WT.hic",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "name": "encode track",
+              "url": "*enc/ENCFF000ABC.bigWig",
+            },
+          ],
+          "url": "*s3/hiseq/gm12878/in-situ/HIC009.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "controlUrl": "*s3e_/wapl_hic/WT.hic",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "name": "encode track",
+            "url": "*enc/ENCFF000ABC.bigWig",
+          },
+        ],
+        "url": "*s3/hiseq/gm12878/in-situ/HIC009.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "controlUrl": "*s3e_/wapl_hic/WT.hic",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "name": "encode track",
+              "url": "*enc/ENCFF000ABC.bigWig",
+            },
+          ],
+          "url": "*s3/hiseq/gm12878/in-situ/HIC009.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "name": "encode track",
+            "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
+          },
+        ],
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "name": "encode track",
+              "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
+            },
+          ],
+          "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "name": "encode track",
+            "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
+          },
+        ],
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "name": "encode track",
+              "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
+            },
+          ],
+          "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — session documents, through the session-shaped paths > session-with-per-browser-divergent-flags 1`] = `
+{
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "figureMode": true,
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "url": "https://example.com/a.hic",
+      },
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": false,
+        "url": "https://example.com/b.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "figureMode": true,
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": true,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": false,
+          "url": "https://example.com/b.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "figureMode": true,
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "url": "https://example.com/a.hic",
+      },
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": false,
+        "url": "https://example.com/b.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "figureMode": true,
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": true,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": false,
+          "url": "https://example.com/b.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "figureMode": true,
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "url": "https://example.com/a.hic",
+      },
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": false,
+        "url": "https://example.com/b.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "figureMode": true,
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": true,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": false,
+          "url": "https://example.com/b.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — session documents, through the session-shaped paths > session-with-syncDatasets-false 1`] = `
+{
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "name": "A",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "synchable": false,
+        "url": "https://example.com/a.hic",
+      },
+      {
+        "name": "B",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "synchable": false,
+        "url": "https://example.com/b.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "name": "A",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "synchable": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+      {
+        "config": {
+          "name": "B",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "synchable": false,
+          "url": "https://example.com/b.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "name": "A",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "synchable": false,
+        "url": "https://example.com/a.hic",
+      },
+      {
+        "name": "B",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "synchable": false,
+        "url": "https://example.com/b.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "name": "A",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "synchable": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+      {
+        "config": {
+          "name": "B",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "synchable": false,
+          "url": "https://example.com/b.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "name": "A",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "synchable": false,
+        "url": "https://example.com/a.hic",
+      },
+      {
+        "name": "B",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "synchable": false,
+        "url": "https://example.com/b.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "name": "A",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "synchable": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+      {
+        "config": {
+          "name": "B",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "synchable": false,
+          "url": "https://example.com/b.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — session documents, through the session-shaped paths > session-with-url-shortcuts-in-both-browsers 1`] = `
+{
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "*s3/hiseq/gm12878/in-situ/HIC009.hic",
+      },
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "url": "*enc/ENCFF000ABC.bigWig",
+          },
+        ],
+        "url": "*s3e/wapl_hic/WT.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "*s3/hiseq/gm12878/in-situ/HIC009.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "url": "*enc/ENCFF000ABC.bigWig",
+            },
+          ],
+          "url": "*s3e/wapl_hic/WT.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+      },
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
+          },
+        ],
+        "url": "https://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
+            },
+          ],
+          "url": "https://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+      },
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
+          },
+        ],
+        "url": "https://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
+            },
+          ],
+          "url": "https://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — session documents, through the session-shaped paths > two-browser-session 1`] = `
+{
+  "createBrowserList(container, session)": {
+    "atConstruction": [
+      {
+        "name": "A",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+      {
+        "name": "B",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/b.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "name": "A",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+      {
+        "config": {
+          "name": "B",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/b.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.init(container, config)": {
+    "atConstruction": [
+      {
+        "name": "A",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+      {
+        "name": "B",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/b.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "name": "A",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+      {
+        "config": {
+          "name": "B",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/b.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "hic.restoreSession(container, session)": {
+    "atConstruction": [
+      {
+        "name": "A",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+      {
+        "name": "B",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/b.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "name": "A",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+      {
+        "config": {
+          "name": "B",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/b.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — the Spacewalk sequence, restoring into a live embed > session-with-per-browser-divergent-flags 1`] = `
+{
+  "afterInit": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+      },
+    ],
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": undefined,
+        "synchable": true,
+      },
+    ],
+  },
+  "afterRestore": {
+    "atConstruction": [
+      {
+        "figureMode": true,
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "url": "https://example.com/a.hic",
+      },
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": false,
+        "url": "https://example.com/b.hic",
+      },
+    ],
+    "readBack": [
+      {
+        "config": {
+          "figureMode": true,
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": true,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": false,
+          "url": "https://example.com/b.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — the Spacewalk sequence, restoring into a live embed > session-with-syncDatasets-false 1`] = `
+{
+  "afterInit": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+      },
+    ],
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": undefined,
+        "synchable": true,
+      },
+    ],
+  },
+  "afterRestore": {
+    "atConstruction": [
+      {
+        "name": "A",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "synchable": false,
+        "url": "https://example.com/a.hic",
+      },
+      {
+        "name": "B",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "synchable": false,
+        "url": "https://example.com/b.hic",
+      },
+    ],
+    "readBack": [
+      {
+        "config": {
+          "name": "A",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "synchable": false,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+      {
+        "config": {
+          "name": "B",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "synchable": false,
+          "url": "https://example.com/b.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": false,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — the Spacewalk sequence, restoring into a live embed > session-with-url-shortcuts-in-both-browsers 1`] = `
+{
+  "afterInit": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+      },
+    ],
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": undefined,
+        "synchable": true,
+      },
+    ],
+  },
+  "afterRestore": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+      },
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
+          },
+        ],
+        "url": "https://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
+      },
+    ],
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
+            },
+          ],
+          "url": "https://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — the Spacewalk sequence, restoring into a live embed > two-browser-session 1`] = `
+{
+  "afterInit": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+      },
+    ],
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": undefined,
+        "synchable": true,
+      },
+    ],
+  },
+  "afterRestore": {
+    "atConstruction": [
+      {
+        "name": "A",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/a.hic",
+      },
+      {
+        "name": "B",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.com/b.hic",
+      },
+    ],
+    "readBack": [
+      {
+        "config": {
+          "name": "A",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+      {
+        "config": {
+          "name": "B",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://example.com/b.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > harvested-external-state-numeric-normalization 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 1,
+        "chr2": 1,
+        "normalization": "2000",
+        "pixelSize": 8.024052224929061,
+        "x": 0,
+        "y": 0,
+        "zoom": 0,
+      },
+      "url": "http://hicfiles.s3.amazonaws.com/external/li/mcf7-rnapii-saturated.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "2000",
+          "pixelSize": 8.024052224929061,
+          "x": 0,
+          "y": 0,
+          "zoom": 0,
+        },
+        "url": "http://hicfiles.s3.amazonaws.com/external/li/mcf7-rnapii-saturated.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > harvested-juicebox-encoded-braces 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "name": "HFFc6 DpnII",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+    },
+    {
+      "cycle": undefined,
+      "name": "H1-hESC DpnII",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/a0859349-5f06-4ad3-b56f-b1166b34a9eb/4DNFIIMZB6Y9.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "name": "HFFc6 DpnII",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+    {
+      "config": {
+        "cycle": undefined,
+        "name": "H1-hESC DpnII",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/a0859349-5f06-4ad3-b56f-b1166b34a9eb/4DNFIIMZB6Y9.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > harvested-juicebox-literal-braces 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": 0,
+        "binsize": 0.07210918707440236,
+        "cache": [],
+        "g": 0,
+        "nbins": 2000,
+        "r": 255,
+        "threshold": 144.21837414880474,
+      },
+      "cycle": undefined,
+      "name": "ADAC_30.hic",
+      "nvi": "7989194045,18679",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 2,
+        "chr2": 2,
+        "normalization": "KR",
+        "pixelSize": 1.5423280423280423,
+        "x": 1896.1562537317725,
+        "y": 1916.657181523778,
+        "zoom": 6,
+      },
+      "tracks": [
+        {
+          "color": "rgb(255,255,0)",
+          "displayMode": "COLLAPSED",
+          "name": "5000_blocks",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC/inter_30_contact_domains/5000_blocks",
+        },
+        {
+          "color": "rgb(0,36,255)",
+          "displayMode": "COLLAPSED",
+          "name": "merged_loops.bedpe",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_loops/merged_loops.bedpe",
+        },
+        {
+          "color": "rgb(0,255,36)",
+          "displayMode": "COLLAPSED",
+          "name": "differential_loops1.bedpe",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_vs_EndoC/differential_loops1.bedpe",
+        },
+      ],
+      "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC/ADAC_30.hic",
+    },
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": 0,
+        "binsize": 0.07138719710904917,
+        "cache": [],
+        "g": 0,
+        "nbins": 2000,
+        "r": 255,
+        "threshold": 142.77439421809834,
+      },
+      "cycle": undefined,
+      "name": "EndoC_30.hic",
+      "nvi": "6818528104,18679",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 2,
+        "chr2": 2,
+        "normalization": "KR",
+        "pixelSize": 1.5423280423280423,
+        "x": 1896.1562537317725,
+        "y": 1916.657181523778,
+        "zoom": 6,
+      },
+      "tracks": [
+        {
+          "color": "rgb(18,0,255)",
+          "displayMode": "COLLAPSED",
+          "name": "merged_loops.bedpe",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC_loops/merged_loops.bedpe",
+        },
+        {
+          "color": "rgb(255,255,0)",
+          "displayMode": "COLLAPSED",
+          "name": "5000_blocks",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC/inter_30_contact_domains/5000_blocks",
+        },
+        {
+          "color": "rgb(18,255,0)",
+          "displayMode": "COLLAPSED",
+          "name": "differential_loops2.bedpe",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_vs_EndoC/differential_loops2.bedpe",
+        },
+      ],
+      "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC/EndoC_30.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.07210918707440236,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 144.21837414880474,
+        },
+        "cycle": undefined,
+        "name": "ADAC_30.hic",
+        "nvi": "7989194045,18679",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 2,
+          "chr2": 2,
+          "normalization": "KR",
+          "pixelSize": 1.5423280423280423,
+          "x": 1896.1562537317725,
+          "y": 1916.657181523778,
+          "zoom": 6,
+        },
+        "tracks": [
+          {
+            "color": "rgb(255,255,0)",
+            "displayMode": "COLLAPSED",
+            "name": "5000_blocks",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC/inter_30_contact_domains/5000_blocks",
+          },
+          {
+            "color": "rgb(0,36,255)",
+            "displayMode": "COLLAPSED",
+            "name": "merged_loops.bedpe",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_loops/merged_loops.bedpe",
+          },
+          {
+            "color": "rgb(0,255,36)",
+            "displayMode": "COLLAPSED",
+            "name": "differential_loops1.bedpe",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_vs_EndoC/differential_loops1.bedpe",
+          },
+        ],
+        "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC/ADAC_30.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.07138719710904917,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 142.77439421809834,
+        },
+        "cycle": undefined,
+        "name": "EndoC_30.hic",
+        "nvi": "6818528104,18679",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 2,
+          "chr2": 2,
+          "normalization": "KR",
+          "pixelSize": 1.5423280423280423,
+          "x": 1896.1562537317725,
+          "y": 1916.657181523778,
+          "zoom": 6,
+        },
+        "tracks": [
+          {
+            "color": "rgb(18,0,255)",
+            "displayMode": "COLLAPSED",
+            "name": "merged_loops.bedpe",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC_loops/merged_loops.bedpe",
+          },
+          {
+            "color": "rgb(255,255,0)",
+            "displayMode": "COLLAPSED",
+            "name": "5000_blocks",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC/inter_30_contact_domains/5000_blocks",
+          },
+          {
+            "color": "rgb(18,255,0)",
+            "displayMode": "COLLAPSED",
+            "name": "differential_loops2.bedpe",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_vs_EndoC/differential_loops2.bedpe",
+          },
+        ],
+        "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC/EndoC_30.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > harvested-query-4dn-control-map 1`] = `
+{
+  "atConstruction": [
+    {
+      "controlName": "H1-hESC DpnII",
+      "controlUrl": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/a0859349-5f06-4ad3-b56f-b1166b34a9eb/4DNFIIMZB6Y9.hic",
+      "cycle": undefined,
+      "name": "HFFc6 DpnII",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "controlName": "H1-hESC DpnII",
+        "controlUrl": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/a0859349-5f06-4ad3-b56f-b1166b34a9eb/4DNFIIMZB6Y9.hic",
+        "cycle": undefined,
+        "name": "HFFc6 DpnII",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > harvested-query-4dn-state-colorscale-track 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": 0,
+        "binsize": 0.05,
+        "cache": [],
+        "g": 0,
+        "nbins": 2000,
+        "r": 255,
+        "threshold": 100,
+      },
+      "cycle": undefined,
+      "name": "HFFc6 DpnII",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 1,
+        "chr2": 1,
+        "normalization": "NONE",
+        "pixelSize": 1,
+        "x": 0,
+        "y": 0,
+        "zoom": 4,
+      },
+      "tracks": [
+        {
+          "displayMode": "COLLAPSED",
+          "name": "RefSeq genes",
+          "url": "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz",
+        },
+      ],
+      "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.05,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 100,
+        },
+        "cycle": undefined,
+        "name": "HFFc6 DpnII",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 4,
+        },
+        "tracks": [
+          {
+            "displayMode": "COLLAPSED",
+            "name": "RefSeq genes",
+            "url": "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz",
+          },
+        ],
+        "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > harvested-query-degron-fully-encoded 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": undefined,
+        "binsize": 0.036,
+        "cache": [],
+        "g": undefined,
+        "nbins": 2000,
+        "r": undefined,
+        "threshold": 72,
+      },
+      "cycle": undefined,
+      "name": "Rao et al. | Biorxiv 2017 Combined Untreated",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 3,
+        "chr2": 3,
+        "normalization": "KR",
+        "pixelSize": 1.55,
+        "x": 19215,
+        "y": 19215,
+        "zoom": 7,
+      },
+      "tracks": [
+        {
+          "color": "rgb(0,150,0)",
+          "displayMode": "COLLAPSED",
+          "max": 3,
+          "min": 0,
+          "name": "Untreated H3K36me3",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/degron/chipseq_data/untreated/H3K36me3_FE.bw",
+        },
+        {
+          "color": "rgb(0,150,0)",
+          "displayMode": "COLLAPSED",
+          "max": 7,
+          "min": 0,
+          "name": "Untreated H3K4me1",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/degron/chipseq_data/untreated/H3K4me1_FE.bw",
+        },
+      ],
+      "url": "https://s3.amazonaws.com/hicfiles/hiseq/degron/untreated/unsynchronized/combined.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": undefined,
+          "binsize": 0.036,
+          "cache": [],
+          "g": undefined,
+          "nbins": 2000,
+          "r": undefined,
+          "threshold": 72,
+        },
+        "cycle": undefined,
+        "name": "Rao et al. | Biorxiv 2017 Combined Untreated",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 3,
+          "chr2": 3,
+          "normalization": "KR",
+          "pixelSize": 1.55,
+          "x": 19215,
+          "y": 19215,
+          "zoom": 7,
+        },
+        "tracks": [
+          {
+            "color": "rgb(0,150,0)",
+            "displayMode": "COLLAPSED",
+            "max": 3,
+            "min": 0,
+            "name": "Untreated H3K36me3",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/degron/chipseq_data/untreated/H3K36me3_FE.bw",
+          },
+          {
+            "color": "rgb(0,150,0)",
+            "displayMode": "COLLAPSED",
+            "max": 7,
+            "min": 0,
+            "name": "Untreated H3K4me1",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/degron/chipseq_data/untreated/H3K4me1_FE.bw",
+          },
+        ],
+        "url": "https://s3.amazonaws.com/hicfiles/hiseq/degron/untreated/unsynchronized/combined.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > harvested-query-dnazoo-no-state 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": 0,
+        "binsize": 9.778,
+        "cache": [],
+        "g": 0,
+        "nbins": 2000,
+        "r": 255,
+        "threshold": 19556,
+      },
+      "cycle": undefined,
+      "name": "Draft assembly",
+      "nvi": "2592278165,834",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "https://dnazoo.s3.amazonaws.com/Ailurus_fulgens/ASM200746v1.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 9.778,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 19556,
+        },
+        "cycle": undefined,
+        "name": "Draft assembly",
+        "nvi": "2592278165,834",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://dnazoo.s3.amazonaws.com/Ailurus_fulgens/ASM200746v1.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > harvested-query-gm12878-nvi 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": undefined,
+        "binsize": 0.0145,
+        "cache": [],
+        "g": undefined,
+        "nbins": 2000,
+        "r": undefined,
+        "threshold": 29,
+      },
+      "cycle": undefined,
+      "name": "Rao and Huntley et al. | Cell 2014 GM12878 (human) in situ MboI HIC009 (95M)",
+      "nvi": "2851728310,36479",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 1,
+        "chr2": 1,
+        "normalization": "NONE",
+        "pixelSize": 1,
+        "x": 1115.253105,
+        "y": 1149.253105,
+        "zoom": 4,
+      },
+      "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": undefined,
+          "binsize": 0.0145,
+          "cache": [],
+          "g": undefined,
+          "nbins": 2000,
+          "r": undefined,
+          "threshold": 29,
+        },
+        "cycle": undefined,
+        "name": "Rao and Huntley et al. | Cell 2014 GM12878 (human) in situ MboI HIC009 (95M)",
+        "nvi": "2851728310,36479",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 1115.253105,
+          "y": 1149.253105,
+          "zoom": 4,
+        },
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > harvested-query-wapl-ko 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": undefined,
+        "binsize": 0.009448099314069635,
+        "cache": [],
+        "g": undefined,
+        "nbins": 2000,
+        "r": undefined,
+        "threshold": 18.89619862813927,
+      },
+      "cycle": undefined,
+      "name": "Haarhuis et al. | Cell 2017 Hap1 knockout WAPL clone 1",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 3,
+        "chr2": 3,
+        "normalization": "KR",
+        "pixelSize": 1,
+        "x": 5537.98746,
+        "y": 5537.749239047619,
+        "zoom": 6,
+      },
+      "tracks": [
+        {
+          "displayMode": "COLLAPSED",
+          "name": "GM12878_CTCF_orientation.bed",
+          "url": "http://hicfiles.s3.amazonaws.com/external/GM12878_CTCF_orientation.bed",
+        },
+        {
+          "displayMode": "COLLAPSED",
+          "name": "gencode.v18.collapsed.bed.gz",
+          "url": "https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.collapsed.bed.gz",
+        },
+      ],
+      "url": "https://s3.amazonaws.com/hicfiles/external/wapl_hic/WaplKO_1.14.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": undefined,
+          "binsize": 0.009448099314069635,
+          "cache": [],
+          "g": undefined,
+          "nbins": 2000,
+          "r": undefined,
+          "threshold": 18.89619862813927,
+        },
+        "cycle": undefined,
+        "name": "Haarhuis et al. | Cell 2017 Hap1 knockout WAPL clone 1",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 3,
+          "chr2": 3,
+          "normalization": "KR",
+          "pixelSize": 1,
+          "x": 5537.98746,
+          "y": 5537.749239047619,
+          "zoom": 6,
+        },
+        "tracks": [
+          {
+            "displayMode": "COLLAPSED",
+            "name": "GM12878_CTCF_orientation.bed",
+            "url": "http://hicfiles.s3.amazonaws.com/external/GM12878_CTCF_orientation.bed",
+          },
+          {
+            "displayMode": "COLLAPSED",
+            "name": "gencode.v18.collapsed.bed.gz",
+            "url": "https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.collapsed.bed.gz",
+          },
+        ],
+        "url": "https://s3.amazonaws.com/hicfiles/external/wapl_hic/WaplKO_1.14.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > harvested-query-wapl-wt 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": undefined,
+        "binsize": 0.009448099314069635,
+        "cache": [],
+        "g": undefined,
+        "nbins": 2000,
+        "r": undefined,
+        "threshold": 18.89619862813927,
+      },
+      "cycle": undefined,
+      "name": "Haarhuis et al. | Cell 2017 Hap1 control",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 3,
+        "chr2": 3,
+        "normalization": "KR",
+        "pixelSize": 1,
+        "x": 5537.98746,
+        "y": 5537.749239047619,
+        "zoom": 6,
+      },
+      "tracks": [
+        {
+          "displayMode": "COLLAPSED",
+          "name": "GM12878_CTCF_orientation.bed",
+          "url": "http://hicfiles.s3.amazonaws.com/external/GM12878_CTCF_orientation.bed",
+        },
+        {
+          "displayMode": "COLLAPSED",
+          "name": "gencode.v18.collapsed.bed.gz",
+          "url": "https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.collapsed.bed.gz",
+        },
+      ],
+      "url": "https://s3.amazonaws.com/hicfiles/external/wapl_hic/WT.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": undefined,
+          "binsize": 0.009448099314069635,
+          "cache": [],
+          "g": undefined,
+          "nbins": 2000,
+          "r": undefined,
+          "threshold": 18.89619862813927,
+        },
+        "cycle": undefined,
+        "name": "Haarhuis et al. | Cell 2017 Hap1 control",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 3,
+          "chr2": 3,
+          "normalization": "KR",
+          "pixelSize": 1,
+          "x": 5537.98746,
+          "y": 5537.749239047619,
+          "zoom": 6,
+        },
+        "tracks": [
+          {
+            "displayMode": "COLLAPSED",
+            "name": "GM12878_CTCF_orientation.bed",
+            "url": "http://hicfiles.s3.amazonaws.com/external/GM12878_CTCF_orientation.bed",
+          },
+          {
+            "displayMode": "COLLAPSED",
+            "name": "gencode.v18.collapsed.bed.gz",
+            "url": "https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.collapsed.bed.gz",
+          },
+        ],
+        "url": "https://s3.amazonaws.com/hicfiles/external/wapl_hic/WT.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > harvested-session-blob-adac-endoc 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": 0,
+        "binsize": 0.07210918707440236,
+        "cache": [],
+        "g": 0,
+        "nbins": 2000,
+        "r": 255,
+        "threshold": 144.21837414880474,
+      },
+      "name": "ADAC_30.hic",
+      "nvi": "7989194045,18679",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": "2,2,6,1896.1562537317725,1916.657181523778,1.5423280423280423,KR",
+      "tracks": [
+        {
+          "color": "rgb(255,255,0)",
+          "displayMode": "COLLAPSED",
+          "name": "5000_blocks",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC/inter_30_contact_domains/5000_blocks",
+        },
+        {
+          "color": "rgb(0,36,255)",
+          "displayMode": "COLLAPSED",
+          "name": "merged_loops.bedpe",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_loops/merged_loops.bedpe",
+        },
+        {
+          "color": "rgb(0,255,36)",
+          "displayMode": "COLLAPSED",
+          "name": "differential_loops1.bedpe",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_vs_EndoC/differential_loops1.bedpe",
+        },
+      ],
+      "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC/ADAC_30.hic",
+    },
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": 0,
+        "binsize": 0.07138719710904917,
+        "cache": [],
+        "g": 0,
+        "nbins": 2000,
+        "r": 255,
+        "threshold": 142.77439421809834,
+      },
+      "name": "EndoC_30.hic",
+      "nvi": "6818528104,18679",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": "2,2,6,1896.1562537317725,1916.657181523778,1.5423280423280423,KR",
+      "tracks": [
+        {
+          "color": "rgb(18,0,255)",
+          "displayMode": "COLLAPSED",
+          "name": "merged_loops.bedpe",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC_loops/merged_loops.bedpe",
+        },
+        {
+          "color": "rgb(255,255,0)",
+          "displayMode": "COLLAPSED",
+          "name": "5000_blocks",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC/inter_30_contact_domains/5000_blocks",
+        },
+        {
+          "color": "rgb(18,255,0)",
+          "displayMode": "COLLAPSED",
+          "name": "differential_loops2.bedpe",
+          "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_vs_EndoC/differential_loops2.bedpe",
+        },
+      ],
+      "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC/EndoC_30.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.07210918707440236,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 144.21837414880474,
+        },
+        "name": "ADAC_30.hic",
+        "nvi": "7989194045,18679",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": "2,2,6,1896.1562537317725,1916.657181523778,1.5423280423280423,KR",
+        "tracks": [
+          {
+            "color": "rgb(255,255,0)",
+            "displayMode": "COLLAPSED",
+            "name": "5000_blocks",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC/inter_30_contact_domains/5000_blocks",
+          },
+          {
+            "color": "rgb(0,36,255)",
+            "displayMode": "COLLAPSED",
+            "name": "merged_loops.bedpe",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_loops/merged_loops.bedpe",
+          },
+          {
+            "color": "rgb(0,255,36)",
+            "displayMode": "COLLAPSED",
+            "name": "differential_loops1.bedpe",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_vs_EndoC/differential_loops1.bedpe",
+          },
+        ],
+        "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC/ADAC_30.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.07138719710904917,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 142.77439421809834,
+        },
+        "name": "EndoC_30.hic",
+        "nvi": "6818528104,18679",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": "2,2,6,1896.1562537317725,1916.657181523778,1.5423280423280423,KR",
+        "tracks": [
+          {
+            "color": "rgb(18,0,255)",
+            "displayMode": "COLLAPSED",
+            "name": "merged_loops.bedpe",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC_loops/merged_loops.bedpe",
+          },
+          {
+            "color": "rgb(255,255,0)",
+            "displayMode": "COLLAPSED",
+            "name": "5000_blocks",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC/inter_30_contact_domains/5000_blocks",
+          },
+          {
+            "color": "rgb(18,255,0)",
+            "displayMode": "COLLAPSED",
+            "name": "differential_loops2.bedpe",
+            "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_vs_EndoC/differential_loops2.bedpe",
+          },
+        ],
+        "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC/EndoC_30.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-juicebox-browser-carrying-selected-gene 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "name": "A",
+      "selectedGene": "MYC",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "https://example.org/a.hic",
+    },
+    {
+      "cycle": undefined,
+      "name": "B",
+      "selectedGene": "ACE",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "https://example.org/b.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "name": "A",
+        "selectedGene": "MYC",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+    {
+      "config": {
+        "cycle": undefined,
+        "name": "B",
+        "selectedGene": "ACE",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.org/b.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-juiceboxData-compressed 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "name": "HFFc6 DpnII",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+    },
+    {
+      "cycle": undefined,
+      "name": "H1-hESC DpnII",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/a0859349-5f06-4ad3-b56f-b1166b34a9eb/4DNFIIMZB6Y9.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "name": "HFFc6 DpnII",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+    {
+      "config": {
+        "cycle": undefined,
+        "name": "H1-hESC DpnII",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/a0859349-5f06-4ad3-b56f-b1166b34a9eb/4DNFIIMZB6Y9.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-colorscale-bare-threshold 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": undefined,
+        "binsize": 0.009448099314069635,
+        "cache": [],
+        "g": undefined,
+        "nbins": 2000,
+        "r": undefined,
+        "threshold": 18.89619862813927,
+      },
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": undefined,
+          "binsize": 0.009448099314069635,
+          "cache": [],
+          "g": undefined,
+          "nbins": 2000,
+          "r": undefined,
+          "threshold": 18.89619862813927,
+        },
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-colorscale-diff 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "DiffColorScale",
+        "negativeScale": {
+          "__class": "ColorScale",
+          "b": 255,
+          "binsize": 0.0025,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 0,
+          "threshold": 5,
+        },
+        "positiveScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.0025,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 5,
+        },
+        "threshold": 2,
+      },
+      "controlUrl": "https://example.org/b.hic",
+      "cycle": undefined,
+      "displayMode": "AMB",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "DiffColorScale",
+          "negativeScale": {
+            "__class": "ColorScale",
+            "b": 255,
+            "binsize": 0.0025,
+            "cache": [],
+            "g": 0,
+            "nbins": 2000,
+            "r": 0,
+            "threshold": 5,
+          },
+          "positiveScale": {
+            "__class": "ColorScale",
+            "b": 0,
+            "binsize": 0.0025,
+            "cache": [],
+            "g": 0,
+            "nbins": 2000,
+            "r": 255,
+            "threshold": 5,
+          },
+          "threshold": 2,
+        },
+        "controlUrl": "https://example.org/b.hic",
+        "cycle": undefined,
+        "displayMode": "AMB",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-colorscale-four-token 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": 0,
+        "binsize": 0.05,
+        "cache": [],
+        "g": 0,
+        "nbins": 2000,
+        "r": 255,
+        "threshold": 100,
+      },
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.05,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 100,
+        },
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-colorscale-ratio 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "RatioColorScale",
+        "negativeScale": {
+          "__class": "ColorScale",
+          "b": 255,
+          "binsize": 0.0025,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 0,
+          "threshold": 5,
+        },
+        "positiveScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.0025,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 5,
+        },
+        "threshold": 2,
+      },
+      "controlUrl": "https://example.org/b.hic",
+      "cycle": undefined,
+      "displayMode": "AOB",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "RatioColorScale",
+          "negativeScale": {
+            "__class": "ColorScale",
+            "b": 255,
+            "binsize": 0.0025,
+            "cache": [],
+            "g": 0,
+            "nbins": 2000,
+            "r": 0,
+            "threshold": 5,
+          },
+          "positiveScale": {
+            "__class": "ColorScale",
+            "b": 0,
+            "binsize": 0.0025,
+            "cache": [],
+            "g": 0,
+            "nbins": 2000,
+            "r": 255,
+            "threshold": 5,
+          },
+          "threshold": 2,
+        },
+        "controlUrl": "https://example.org/b.hic",
+        "cycle": undefined,
+        "displayMode": "AOB",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-every-parameter 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": 0,
+        "binsize": 0.05,
+        "cache": [],
+        "g": 0,
+        "nbins": 2000,
+        "r": 255,
+        "threshold": 100,
+      },
+      "controlName": "B",
+      "controlNvi": "789,10",
+      "controlUrl": "https://example.org/b.hic",
+      "cycle": "true",
+      "displayMode": "AOB",
+      "name": "A",
+      "nvi": "123,456",
+      "selectedGene": "MYC",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 1,
+        "chr2": 1,
+        "normalization": "KR",
+        "pixelSize": 1,
+        "x": 0,
+        "y": 0,
+        "zoom": 4,
+      },
+      "tracks": [
+        {
+          "color": "rgb(255,0,0)",
+          "displayMode": "COLLAPSED",
+          "max": 50,
+          "min": 0,
+          "name": "A",
+          "url": "https://example.org/a.bed",
+        },
+      ],
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.05,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 100,
+        },
+        "controlName": "B",
+        "controlNvi": "789,10",
+        "controlUrl": "https://example.org/b.hic",
+        "cycle": "true",
+        "displayMode": "A",
+        "name": "A",
+        "nvi": "123,456",
+        "selectedGene": "MYC",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "KR",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 4,
+        },
+        "tracks": [
+          {
+            "color": "rgb(255,0,0)",
+            "displayMode": "COLLAPSED",
+            "max": 50,
+            "min": 0,
+            "name": "A",
+            "url": "https://example.org/a.bed",
+          },
+        ],
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-state-too-few-tokens 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 1,
+        "chr2": 2,
+        "normalization": "NONE",
+        "pixelSize": 1,
+        "x": NaN,
+        "y": NaN,
+        "zoom": NaN,
+      },
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 1,
+          "chr2": 2,
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": NaN,
+          "y": NaN,
+          "zoom": NaN,
+        },
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-state-transposed 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 3,
+        "chr2": 5,
+        "normalization": "KR",
+        "pixelSize": 2,
+        "x": 200,
+        "y": 100,
+        "zoom": 6,
+      },
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 3,
+          "chr2": 5,
+          "normalization": "KR",
+          "pixelSize": 2,
+          "x": 200,
+          "y": 100,
+          "zoom": 6,
+        },
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-state-v0-six-token 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 1,
+        "chr2": 2,
+        "normalization": "NONE",
+        "pixelSize": 3,
+        "x": 10,
+        "y": 20,
+        "zoom": 4,
+      },
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 1,
+          "chr2": 2,
+          "normalization": "NONE",
+          "pixelSize": 3,
+          "x": 10,
+          "y": 20,
+          "zoom": 4,
+        },
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-state-v1-eight-token 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 3,
+        "chr2": 5,
+        "normalization": "NONE",
+        "pixelSize": 2,
+        "x": 100,
+        "y": 200,
+        "zoom": 6,
+      },
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 3,
+          "chr2": 5,
+          "normalization": "NONE",
+          "pixelSize": 2,
+          "x": 100,
+          "y": 200,
+          "zoom": 6,
+        },
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-state-v1-legacy-viewport 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 3,
+        "chr2": 5,
+        "normalization": "KR",
+        "pixelSize": 2,
+        "x": 100,
+        "y": 200,
+        "zoom": 6,
+      },
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 3,
+          "chr2": 5,
+          "normalization": "KR",
+          "pixelSize": 2,
+          "x": 100,
+          "y": 200,
+          "zoom": 6,
+        },
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-state-v1-nine-token 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "__class": "State",
+        "chr1": 3,
+        "chr2": 5,
+        "normalization": "KR",
+        "pixelSize": 2,
+        "x": 100,
+        "y": 200,
+        "zoom": 6,
+      },
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 3,
+          "chr2": 5,
+          "normalization": "KR",
+          "pixelSize": 2,
+          "x": 100,
+          "y": 200,
+          "zoom": 6,
+        },
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-tracks-bare-url 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "tracks": [
+        {
+          "color": "https://example.org/a.bed",
+          "displayMode": "COLLAPSED",
+          "url": "https://example.org/a.bed",
+        },
+      ],
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "color": "https://example.org/a.bed",
+            "displayMode": "COLLAPSED",
+            "url": "https://example.org/a.bed",
+          },
+        ],
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-tracks-default-color-stripped 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "tracks": [
+        {
+          "displayMode": "COLLAPSED",
+          "max": 50,
+          "min": 0,
+          "name": "A",
+          "url": "https://example.org/a.bed",
+        },
+      ],
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "displayMode": "COLLAPSED",
+            "max": 50,
+            "min": 0,
+            "name": "A",
+            "url": "https://example.org/a.bed",
+          },
+        ],
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-tracks-empty-range 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "tracks": [
+        {
+          "color": "rgb(255,0,0)",
+          "displayMode": "COLLAPSED",
+          "name": "A",
+          "url": "https://example.org/a.bed",
+        },
+      ],
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "color": "rgb(255,0,0)",
+            "displayMode": "COLLAPSED",
+            "name": "A",
+            "url": "https://example.org/a.bed",
+          },
+        ],
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-tracks-four-field 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "tracks": [
+        {
+          "color": "rgb(255,0,0)",
+          "displayMode": "COLLAPSED",
+          "max": 50,
+          "min": 0,
+          "name": "A",
+          "url": "https://example.org/a.bed",
+        },
+      ],
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "color": "rgb(255,0,0)",
+            "displayMode": "COLLAPSED",
+            "max": 50,
+            "min": 0,
+            "name": "A",
+            "url": "https://example.org/a.bed",
+          },
+        ],
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-tracks-name-with-bar 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "tracks": [
+        {
+          "color": "rgb(255,0,0)",
+          "displayMode": "COLLAPSED",
+          "max": 50,
+          "min": 0,
+          "name": "A|B",
+          "url": "https://example.org/a.bed",
+        },
+      ],
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "color": "rgb(255,0,0)",
+            "displayMode": "COLLAPSED",
+            "max": 50,
+            "min": 0,
+            "name": "A|B",
+            "url": "https://example.org/a.bed",
+          },
+        ],
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-tracks-negative-range 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "tracks": [
+        {
+          "color": "rgb(255,0,0)",
+          "displayMode": "COLLAPSED",
+          "max": 5,
+          "min": -5,
+          "name": "A",
+          "url": "https://example.org/a.bed",
+        },
+      ],
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "color": "rgb(255,0,0)",
+            "displayMode": "COLLAPSED",
+            "max": 5,
+            "min": -5,
+            "name": "A",
+            "url": "https://example.org/a.bed",
+          },
+        ],
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-tracks-three-field 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "tracks": [
+        {
+          "color": "rgb(255,0,0)",
+          "displayMode": "COLLAPSED",
+          "name": "A",
+          "url": "https://example.org/a.bed",
+        },
+      ],
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "color": "rgb(255,0,0)",
+            "displayMode": "COLLAPSED",
+            "name": "A",
+            "url": "https://example.org/a.bed",
+          },
+        ],
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-tracks-two-field 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "tracks": [
+        {
+          "color": "rgb(255,0,0)",
+          "displayMode": "COLLAPSED",
+          "url": "https://example.org/a.bed|rgb(255,0,0)",
+        },
+      ],
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "color": "rgb(255,0,0)",
+            "displayMode": "COLLAPSED",
+            "url": "https://example.org/a.bed|rgb(255,0,0)",
+          },
+        ],
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-tracks-undefined-url 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "tracks": [],
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [],
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-url-shortcuts-http 1`] = `
+{
+  "atConstruction": [
+    {
+      "controlUrl": "http://hicfiles.s3.amazonaws.com/external/b.hic",
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "http://hicfiles.s3.amazonaws.com/hiseq/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "controlUrl": "http://hicfiles.s3.amazonaws.com/external/b.hic",
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "http://hicfiles.s3.amazonaws.com/hiseq/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-query-url-shortcuts-https 1`] = `
+{
+  "atConstruction": [
+    {
+      "controlUrl": "https://www.encodeproject.org/files/ENCFF000.hic",
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "tracks": [
+        {
+          "color": "rgb(255,0,0)",
+          "displayMode": "COLLAPSED",
+          "max": 50,
+          "min": 0,
+          "name": "B",
+          "url": "https://hicfiles.s3.amazonaws.com/external/b.bed",
+        },
+      ],
+      "url": "https://hicfiles.s3.amazonaws.com/hiseq/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "controlUrl": "https://www.encodeproject.org/files/ENCFF000.hic",
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "color": "rgb(255,0,0)",
+            "displayMode": "COLLAPSED",
+            "max": 50,
+            "min": 0,
+            "name": "B",
+            "url": "https://hicfiles.s3.amazonaws.com/external/b.bed",
+          },
+        ],
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-session-and-hic-url-together 1`] = `
+{
+  "atConstruction": [
+    {
+      "cycle": undefined,
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "url": "https://example.org/wins.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://example.org/wins.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-session-data-prefix 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": 0,
+        "binsize": 0.05,
+        "cache": [],
+        "g": 0,
+        "nbins": 2000,
+        "r": 255,
+        "threshold": 100,
+      },
+      "name": "HFFc6 DpnII",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "chr1": 1,
+        "chr2": 1,
+        "normalization": "NONE",
+        "pixelSize": 1,
+        "x": 0,
+        "y": 0,
+        "zoom": 4,
+      },
+      "tracks": [],
+      "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.05,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 100,
+        },
+        "name": "HFFc6 DpnII",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 4,
+        },
+        "tracks": [],
+        "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-session-url-blob-prefixed 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": 0,
+        "binsize": 0.05,
+        "cache": [],
+        "g": 0,
+        "nbins": 2000,
+        "r": 255,
+        "threshold": 100,
+      },
+      "name": "HFFc6 DpnII",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "chr1": 1,
+        "chr2": 1,
+        "normalization": "NONE",
+        "pixelSize": 1,
+        "x": 0,
+        "y": 0,
+        "zoom": 4,
+      },
+      "tracks": [],
+      "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.05,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 100,
+        },
+        "name": "HFFc6 DpnII",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 4,
+        },
+        "tracks": [],
+        "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-session-url-plain-json 1`] = `
+{
+  "atConstruction": [
+    {
+      "name": "A",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "chr1": 1,
+        "chr2": 1,
+        "normalization": "NONE",
+        "pixelSize": 1,
+        "x": 0,
+        "y": 0,
+        "zoom": 4,
+      },
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "name": "A",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 4,
+        },
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the query path, over the wire-format corpus > synth-session-with-selected-gene 1`] = `
+{
+  "atConstruction": [
+    {
+      "colorScale": {
+        "__class": "ColorScale",
+        "b": 0,
+        "binsize": 0.05,
+        "cache": [],
+        "g": 0,
+        "nbins": 2000,
+        "r": 255,
+        "threshold": 100,
+      },
+      "name": "HFFc6 DpnII",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "state": {
+        "chr1": 1,
+        "chr2": 1,
+        "normalization": "NONE",
+        "pixelSize": 1,
+        "x": 0,
+        "y": 0,
+        "zoom": 4,
+      },
+      "tracks": [],
+      "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "colorScale": {
+          "__class": "ColorScale",
+          "b": 0,
+          "binsize": 0.05,
+          "cache": [],
+          "g": 0,
+          "nbins": 2000,
+          "r": 255,
+          "threshold": 100,
+        },
+        "name": "HFFc6 DpnII",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 4,
+        },
+        "tracks": [],
+        "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
+exports[`resolved config golden file — the same input as a URL and as a config > the-same-locus-through-a-URL-and-through-a-config 1`] = `
+{
+  "viaHostConfig": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 4,
+        },
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "state": {
+            "chr1": 1,
+            "chr2": 1,
+            "normalization": "NONE",
+            "pixelSize": 1,
+            "x": 0,
+            "y": 0,
+            "zoom": 4,
+          },
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "viaQuery": {
+    "atConstruction": [
+      {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "state": {
+          "__class": "State",
+          "chr1": 1,
+          "chr2": 1,
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 4,
+        },
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "readBack": [
+      {
+        "config": {
+          "cycle": undefined,
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "state": {
+            "__class": "State",
+            "chr1": 1,
+            "chr2": 1,
+            "normalization": "NONE",
+            "pixelSize": 1,
+            "x": 0,
+            "y": 0,
+            "zoom": 4,
+          },
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": undefined,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — the same input as a URL and as a config > the-same-shortcut-URL-through-a-URL-and-through-a-config 1`] = `
+{
+  "viaHostConfig": {
+    "atConstruction": [
+      {
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "viaQuery": {
+    "atConstruction": [
+      {
+        "cycle": undefined,
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+      },
+    ],
+    "readBack": [
+      {
+        "config": {
+          "cycle": undefined,
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": undefined,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;
+
+exports[`resolved config golden file — the same input as a URL and as a config > the-same-track-through-a-URL-and-through-a-config 1`] = `
+{
+  "viaHostConfig": {
+    "atConstruction": [
+      {
+        "name": "A",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "color": "rgb(22, 129, 198)",
+            "name": "annotations",
+            "url": "https://example.com/annotations.bed",
+          },
+        ],
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "outcome": "builds",
+    "readBack": [
+      {
+        "config": {
+          "name": "A",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "color": "rgb(22, 129, 198)",
+              "name": "annotations",
+              "url": "https://example.com/annotations.bed",
+            },
+          ],
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": true,
+        "synchable": true,
+      },
+    ],
+  },
+  "viaQuery": {
+    "atConstruction": [
+      {
+        "cycle": undefined,
+        "name": "A",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "tracks": [
+          {
+            "displayMode": "COLLAPSED",
+            "name": "annotations",
+            "url": "https://example.com/annotations.bed",
+          },
+        ],
+        "url": "https://example.com/a.hic",
+      },
+    ],
+    "readBack": [
+      {
+        "config": {
+          "cycle": undefined,
+          "name": "A",
+          "showChromosomeSelector": true,
+          "showHicContactMapLabel": true,
+          "showLocusGoto": true,
+          "tracks": [
+            {
+              "displayMode": "COLLAPSED",
+              "name": "annotations",
+              "url": "https://example.com/annotations.bed",
+            },
+          ],
+          "url": "https://example.com/a.hic",
+        },
+        "figureMode": undefined,
+        "sameObjectAsInput": undefined,
+        "synchable": true,
+      },
+    ],
+  },
+}
+`;

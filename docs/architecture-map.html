@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Module map — juicebox.js</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose", flowchart: { curve: "basis" } });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 5 5; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .hatch { background-image: repeating-linear-gradient(45deg, #e7e5e4 0 6px, #f5f5f4 6px 12px); }
+      .mermaid { font-size: 13px; }
+      article, section { scroll-margin-top: 2rem; }
+      details > summary { cursor: pointer; list-style: none; }
+      details > summary::-webkit-details-marker { display: none; }
+      details[open] .chev { transform: rotate(90deg); }
+      .chev { transition: transform .15s ease; display: inline-block; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans antialiased">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-14">
+
+      <!-- ============================================ HEADER -->
+      <header class="space-y-6 border-b border-stone-300 pb-8">
+        <div>
+          <h1 class="font-serif text-4xl tracking-tight">Module map — juicebox.js</h1>
+          <p class="text-sm text-slate-500 mt-2 font-mono">master · snapshot 10 August 2026 · 6 of 11 candidates landed · candidate 9 underway (#531 merged, #532 in flight)</p>
+          <p class="text-sm text-slate-500 mt-1 font-mono">the shape, not the backlog — companion to <a class="underline" href="architecture-review.html">architecture-review.html</a></p>
+        </div>
+
+        <div class="rounded-lg border-2 border-slate-900 bg-white p-5 space-y-3">
+          <div class="text-xs uppercase tracking-wider text-slate-500">What this document is for</div>
+          <p class="text-sm">The review answers <strong>what to fix next</strong>. This answers <strong>what the thing is becoming</strong>: every module that is or will be deep, its interface, what it hides, and the seam it sits on. Read the review to scope a candidate; read this to know where the candidate lands.</p>
+          <p class="text-sm"><strong>It is a snapshot of a moving target, and it says so on every card.</strong> Six candidates have landed, one is underway, four are ahead. Each card carries the state of that module <em>today</em> and the delta the next candidate applies. Cards do not describe a finished architecture, and drawing them as if they did would be the lie that makes this document useless.</p>
+          <p class="text-sm text-slate-600">Vocabulary is <a class="underline" href="../CONTEXT.md">CONTEXT.md</a> § Architecture vocabulary — <strong>module</strong>, <strong>interface</strong>, <strong>depth</strong>, <strong>seam</strong>, <strong>adapter</strong>. Depth here means <em>leverage at the interface</em>: behaviour exercisable per unit of interface learned. Not a line-count ratio.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-3 text-xs uppercase tracking-wider text-slate-500">
+          <span class="flex items-center gap-2"><span class="inline-block w-6 h-4 border-2 border-emerald-600 bg-emerald-100"></span> landed</span>
+          <span class="flex items-center gap-2"><span class="inline-block w-6 h-4 border-2 border-amber-600 bg-amber-100"></span> underway</span>
+          <span class="flex items-center gap-2"><span class="inline-block w-6 h-4 border-2 border-dashed border-slate-500 bg-slate-100"></span> planned</span>
+          <span class="flex items-center gap-2"><span class="inline-block w-6 h-4 hatch border border-stone-400"></span> speculative</span>
+          <span class="flex items-center gap-2"><span class="inline-block w-6 h-4 border border-slate-400 bg-white"></span> shallow on purpose</span>
+        </div>
+      </header>
+
+      <!-- ============================================ THE MAP -->
+      <section id="map" class="space-y-6">
+        <h2 class="font-serif text-3xl border-b border-stone-300 pb-3">The map</h2>
+
+        <p class="text-sm text-slate-700">Six tiers. A box is a module; an arrow is a call, pointing at the interface being used. Colour is <em>state of the redesign</em>, not importance.</p>
+
+        <div class="rounded-lg border border-stone-300 bg-white p-6 overflow-x-auto">
+          <pre class="mermaid">
+flowchart TB
+  subgraph EMBED["① Embed — the published door"]
+    NS["hic namespace<br/><span style='font-size:11px'>js/index.js · init.js<br/>12 exports</span>"]
+    REG["BrowserRegistry<br/><span style='font-size:11px'>js/browserRegistry.js<br/>one per container element</span>"]
+  end
+
+  subgraph BROWSER["② Browser — the hub"]
+    HB["HICBrowser<br/><span style='font-size:11px'>1235 lines · undeclared public surface<br/>still the widest interface in the repo</span>"]
+    CO["BrowserCoordinator<br/><span style='font-size:11px'>fan-out + host extension point</span>"]
+    WI["Widgets ×9<br/><span style='font-size:11px'>told to refresh</span>"]
+    EB["EventBus<br/><span style='font-size:11px'>consumer surface only</span>"]
+  end
+
+  subgraph STATE["③ State — the chokepoint"]
+    ST["State<br/><span style='font-size:11px'>setView + 8 translators + getLocus</span>"]
+    SM["StateManager<br/><span style='font-size:11px'>the back door — folds into State</span>"]
+  end
+
+  subgraph SESSION["④ Session &amp; config — decode then normalize"]
+    DEC["Session codec<br/><span style='font-size:11px'>decodeSession + WIRE_FORMATS<br/>the only place a format is named</span>"]
+    NORM["normalizeSession / normalizeConfig<br/><span style='font-size:11px'>does not exist yet — candidate 9</span>"]
+  end
+
+  subgraph DATA["⑤ Data access"]
+    DL["DataLoader<br/><span style='font-size:11px'>3 near-clone paths → loadMap(source, role)</span>"]
+    DS["Dataset<br/><span style='font-size:11px'>.hic file · live map — the disguise</span>"]
+    UM["URL mapper + dev proxy<br/><span style='font-size:11px'>gated hosts · has an expiry condition</span>"]
+    NVI["nvi.js<br/><span style='font-size:11px'>1271 lines · unowned by any candidate</span>"]
+  end
+
+  subgraph RENDER["⑥ Render"]
+    ITS["ImageTileSource<br/><span style='font-size:11px'>4-method interface · cache + colour scale</span>"]
+    CMV["ContactMatrixView<br/><span style='font-size:11px'>296 lines of gesture closures still here</span>"]
+    IH["InteractionHandler<br/><span style='font-size:11px'>gestures as explicit state</span>"]
+    TP["TrackPair / TrackRenderer / Tile<br/><span style='font-size:11px'>four fields, one concept</span>"]
+  end
+
+  HOST(["host app<br/>juicebox-web · Spacewalk"]) --> NS
+  HOST -.->|"reads browser.config<br/>subscribes MapLoad"| HB
+  NS --> REG
+  REG --> HB
+  NS --> DEC
+  DEC --> NORM
+  NORM --> HB
+  HB --> CO
+  CO --> WI
+  CO --> CMV
+  HB --> EB
+  WI --> IH
+  IH --> ST
+  ST --> SM
+  HB --> DL
+  DL --> DS
+  DL --> UM
+  DS --> NVI
+  DS --> ITS
+  CMV --> ITS
+  CMV --> IH
+  CO --> TP
+  ST --> CMV
+
+  classDef landed fill:#d1fae5,stroke:#059669,stroke-width:2px;
+  classDef underway fill:#fef3c7,stroke:#d97706,stroke-width:3px;
+  classDef planned fill:#f1f5f9,stroke:#64748b,stroke-width:2px,stroke-dasharray:5 5;
+  classDef spec fill:#fafaf9,stroke:#a8a29e,stroke-width:1px,stroke-dasharray:2 4;
+  classDef plain fill:#ffffff,stroke:#94a3b8,stroke-width:1px;
+  classDef host fill:#ede9fe,stroke:#7c3aed,stroke-width:2px;
+
+  class REG,EB,ITS,DEC,UM landed;
+  class NORM underway;
+  class SM,DL,IH,CMV,ST planned;
+  class TP,NVI spec;
+  class NS,HB,CO,WI,DS plain;
+  class HOST host;
+          </pre>
+        </div>
+
+        <div class="rounded-lg border border-stone-300 bg-stone-100 p-5 space-y-2 text-sm">
+          <div class="text-xs uppercase tracking-wider text-slate-500">Reading the colours honestly</div>
+          <p><strong>State is drawn "planned" even though the chokepoint landed.</strong> The chokepoint is real and enforced; what has not landed is closing the back door beside it. A module is only green here when <em>its whole card</em> is done.</p>
+          <p><strong>HICBrowser is white, not green.</strong> Two candidates have already carved pieces off it and it is still 1235 lines with the widest interface in the repo. It is white because it is not a deep module and no single candidate makes it one — it gets smaller as 6, 9 and 10 land, and that is the plan.</p>
+        </div>
+      </section>
+
+      <!-- ============================================ TIER 1 -->
+      <section class="space-y-6">
+        <h2 class="font-serif text-3xl border-b border-stone-300 pb-3">① Embed — the published door</h2>
+
+        <article class="rounded-lg border-2 border-emerald-600 bg-white overflow-hidden">
+          <div class="bg-emerald-50 px-5 py-3 border-b-2 border-emerald-600 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">BrowserRegistry</h3>
+            <span class="text-xs uppercase tracking-wider text-emerald-800 font-semibold">Landed · candidate 4 · #476, #478–#483</span>
+          </div>
+          <div class="p-5 space-y-4 text-sm">
+            <p class="font-mono text-xs text-slate-500">js/browserRegistry.js · 429 lines · ADR-0004</p>
+
+            <div class="grid md:grid-cols-2 gap-5">
+              <div class="rounded border border-slate-300 p-4 space-y-2">
+                <div class="text-xs uppercase tracking-wider text-slate-500">Interface</div>
+                <p class="font-mono text-xs">initRegistry(container, config) → registry</p>
+                <p class="font-mono text-xs">add · select · delete · deleteAll · dispose</p>
+                <p class="font-mono text-xs">toJSON · restoreSession · presentAlert · sync</p>
+              </div>
+              <div class="rounded border border-slate-300 p-4 space-y-2">
+                <div class="text-xs uppercase tracking-wider text-slate-500">Hides</div>
+                <p>The browser list and which is current. The sync group. The selected gene. The alert dialog and its container. Slot release and reclaim. Teardown ordering across peers.</p>
+              </div>
+            </div>
+
+            <div class="rounded bg-slate-50 border border-slate-200 p-4 space-y-1">
+              <div class="text-xs uppercase tracking-wider text-slate-500">Seam</div>
+              <p><strong>One registry per container element.</strong> This is the unit of isolation that lets two embeds coexist on a page — the thing that made the old page-scoped singletons a bug rather than a simplification. Two adapters exist in practice (two containers on one page), which is what makes it a real seam rather than a hypothetical one.</p>
+            </div>
+
+            <p><strong>Depth verdict — deep.</strong> A host learns one function and gets isolation, lifecycle, selection, sync and serialization. The deletion test passes hard: remove it and all of that reappears as module-level state in <span class="font-mono">createBrowser.js</span>, which is exactly where it used to live.</p>
+            <p class="text-slate-600"><strong>Loose end:</strong> <span class="font-mono">--hic-viewport-*</span> CSS variables are still page-scoped, so two embeds cannot have different viewport sizes — <strong>#477</strong>, open. The seam holds in JS and leaks in CSS.</p>
+          </div>
+        </article>
+
+        <article class="rounded-lg border border-slate-400 bg-white overflow-hidden">
+          <div class="bg-white px-5 py-3 border-b border-slate-300 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">hic namespace</h3>
+            <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Shallow on purpose</span>
+          </div>
+          <div class="p-5 space-y-3 text-sm">
+            <p class="font-mono text-xs text-slate-500">js/index.js · js/init.js · ADR-0003</p>
+            <p>Twelve exports, almost all of them one-line delegations to a registry. <strong>This is correct and should stay that way.</strong> The namespace is a published contract, and a contract's job is to be stable, not deep. Depth belongs behind it.</p>
+            <p>The interesting fact about this tier is what it <em>does not</em> export: <span class="font-mono">HICBrowser</span>. Hosts get instances from <span class="font-mono">init()</span>, so the entire browser-instance surface is public in practice and declared nowhere except <span class="font-mono">js/publicApi.js</span>. <strong>The deletion test is not valid against <span class="font-mono">js/</span> alone</strong> — check the manifest first.</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- ============================================ TIER 2 -->
+      <section class="space-y-6">
+        <h2 class="font-serif text-3xl border-b border-stone-300 pb-3">② Browser — the hub</h2>
+
+        <article class="rounded-lg border border-slate-400 bg-white overflow-hidden">
+          <div class="bg-white px-5 py-3 border-b border-slate-300 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">HICBrowser</h3>
+            <span class="text-xs uppercase tracking-wider text-slate-600 font-semibold">Partly carved · candidates 3 &amp; 8 landed · 6, 9, 10 still to come</span>
+          </div>
+          <div class="p-5 space-y-4 text-sm">
+            <p class="font-mono text-xs text-slate-500">js/hicBrowser.js · 1235 lines · the largest module on this map after nvi.js</p>
+
+            <p><strong>This is the one module the redesign does not turn into a deep module, and it is worth being explicit about why.</strong> HICBrowser is the hub every tier reaches through. Its interface is not a set of methods anyone designed — it is the accumulated public surface two shipped host apps already depend on. You cannot shrink it by choosing to; you shrink it by moving behaviour out from under it into modules that <em>are</em> deep, and letting the members that only forwarded disappear with the thing they forwarded to.</p>
+
+            <div class="grid md:grid-cols-2 gap-5">
+              <div class="rounded border border-emerald-400 bg-emerald-50 p-4 space-y-2">
+                <div class="text-xs uppercase tracking-wider text-emerald-800">Already moved out</div>
+                <p><strong>Candidate 3</strong> — <span class="font-mono">browserUIManager.js</span> and <span class="font-mono">renderCoordinator.js</span> deleted, 14 <span class="font-mono">notify*</span> forwarders gone.</p>
+                <p><strong>Candidate 8</strong> — four teardown verbs became two; <span class="font-mono">dispose()</span> is now symmetric with the constructor at both browser and registry level (ADR-0005).</p>
+              </div>
+              <div class="rounded border border-dashed border-slate-500 bg-slate-50 p-4 space-y-2">
+                <div class="text-xs uppercase tracking-wider text-slate-600">Still to move out</div>
+                <p><strong>Candidate 6</strong> — the 10 state accessors, which the code itself documents as bypassing validation. Three plain fields survive.</p>
+                <p><strong>Candidate 9</strong> — config defaulting, currently applied in the constructor <em>and</em> in <span class="font-mono">init</span>.</p>
+                <p><strong>Candidate 10</strong> — three load paths that reach back into <span class="font-mono">browser.userInteractionShield</span>, <span class="font-mono">contactMapLabel</span>, <span class="font-mono">browser.genome</span>, <span class="font-mono">tracks2D</span> and a raw <span class="font-mono">document.querySelector</span>.</p>
+              </div>
+            </div>
+
+            <p class="text-slate-600"><strong>What "done" looks like here:</strong> not a target line count — candidate 3's member-count target was retired rather than met, on purpose. Done is when every remaining member either holds browser-scoped identity or is on the manifest because a host uses it.</p>
+          </div>
+        </article>
+
+        <article class="rounded-lg border border-slate-400 bg-white overflow-hidden">
+          <div class="bg-white px-5 py-3 border-b border-slate-300 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">BrowserCoordinator</h3>
+            <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Kept deliberately · ADR-0002</span>
+          </div>
+          <div class="p-5 space-y-3 text-sm">
+            <p class="font-mono text-xs text-slate-500">js/browserCoordinator.js · 445 lines</p>
+            <p><strong>Interface:</strong> ~17 <span class="font-mono">on*</span> methods, plus <span class="font-mono">addCallback(name, fn)</span> — the host extension point. <strong>Hides:</strong> which widgets, rulers and views need refreshing for each kind of change, and in what order.</p>
+            <p><strong>Depth verdict — medium, and that is the ceiling.</strong> The interface is wide because the set of things that can change is wide; each method is genuinely deep in the small (one call refreshes everything affected). ADR-0002 records the decision: deleting it pushes the fan-out back into HICBrowser, which is the thing this whole tier is trying to empty. <em>Not on the table.</em></p>
+          </div>
+        </article>
+
+        <article class="rounded-lg border-2 border-emerald-600 bg-white overflow-hidden">
+          <div class="bg-emerald-50 px-5 py-3 border-b-2 border-emerald-600 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">EventBus</h3>
+            <span class="text-xs uppercase tracking-wider text-emerald-800 font-semibold">Landed · candidate 2 · #414</span>
+          </div>
+          <div class="p-5 space-y-3 text-sm">
+            <p class="font-mono text-xs text-slate-500">js/eventBus.js · 135 lines</p>
+            <p><strong>The card was titled "delete the event bus" and the bus was not deleted.</strong> Spacewalk subscribes on the per-browser one. What landed instead: eight dead subscriptions, three unreachable <span class="font-mono">receiveEvent</span> methods and the forged event literals are gone, and the bus finally has an <span class="font-mono">unsubscribe</span>.</p>
+            <p><strong>Depth verdict — shallow, and correctly so.</strong> Both buses now carry <em>zero internal traffic</em>. They exist as pure consumer surface. That is a legitimate shape for a module to have, and it is only visible once you look outside <span class="font-mono">js/</span>. This card is the reason every card in the review carries a Consumer impact block.</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- ============================================ TIER 3 -->
+      <section class="space-y-6">
+        <h2 class="font-serif text-3xl border-b border-stone-300 pb-3">③ State — the chokepoint</h2>
+
+        <article class="rounded-lg border-2 border-slate-500 bg-white overflow-hidden" style="border-style: dashed;">
+          <div class="bg-slate-50 px-5 py-3 border-b-2 border-slate-500 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">State</h3>
+            <span class="text-xs uppercase tracking-wider text-slate-600 font-semibold">Chokepoint landed (#411, #499) · back door still open — candidate 6, confidence <em>strong</em></span>
+          </div>
+          <div class="p-5 space-y-4 text-sm">
+            <p class="font-mono text-xs text-slate-500">js/hicState.js · 545 lines · docs/state-manipulation.md · ADR-0006</p>
+
+            <p><strong>This is the exemplar. If you want to know what a deep module looks like in this codebase, read this one.</strong> Seven fields fully and unambiguously specify the view. Everything else the user sees is a projection computed on read.</p>
+
+            <div class="grid md:grid-cols-2 gap-5">
+              <div class="rounded border border-slate-300 p-4 space-y-2">
+                <div class="text-xs uppercase tracking-wider text-slate-500">Interface</div>
+                <p><strong>One chokepoint</strong> — <span class="font-mono">setView(chr1, chr2, x, y, zoom, pixelSize, …)</span>. Every canonical mutation goes through it.</p>
+                <p><strong>Eight translators</strong> — <span class="font-mono">panShift</span>, <span class="font-mono">updateWithLoci</span>, <span class="font-mono">setWithZoom</span>, <span class="font-mono">panWithZoom</span>, <span class="font-mono">zoomBy</span>, <span class="font-mono">recenterByPixel</span>, <span class="font-mono">setChromosomesView</span>, <span class="font-mono">sync</span>. Each converts one domain's input into chokepoint arguments.</p>
+                <p><strong>One projection</strong> — <span class="font-mono">getLocus(dataset, viewDimensions)</span>. Never stored, because view dimensions change without any mutation.</p>
+              </div>
+              <div class="rounded border border-slate-300 p-4 space-y-2">
+                <div class="text-xs uppercase tracking-wider text-slate-500">Hides</div>
+                <p>XY clamping against dataset extent. The pixelSize cap at 128. The <span class="font-mono">chr1 ≤ chr2</span> transposition — all four values atomically, which is why callers never order their arguments. Resolution- and chromosome-change detection, so change flags are honest. BP↔bin conversion.</p>
+              </div>
+            </div>
+
+            <div class="rounded bg-rose-50 border border-rose-300 p-4 space-y-1">
+              <div class="text-xs uppercase tracking-wider text-rose-900">The back door — what candidate 6 closes</div>
+              <p><span class="font-mono">StateManager.setState</span> writes canonical state without passing the chokepoint: it floors, but does not cap and does not clamp. Session and URL restore go in that way. Ten <span class="font-mono">HICBrowser</span> accessors take the same route, and the code <em>documents</em> that they bypass validation.</p>
+              <p><strong>Target shape:</strong> <span class="font-mono">StateManager</span> (220 lines, 8 of 10 methods pure get/set) folds into <span class="font-mono">State</span>; restore becomes <span class="font-mono">restoreFrom</span>, a translator like every other one, validating against the loaded dataset before it reaches <span class="font-mono">setView</span>.</p>
+            </div>
+
+            <p class="text-slate-600"><strong>Note the one deliberate exception that survives:</strong> bulk replacement. Session and URL restore replace the whole <span class="font-mono">State</span> object rather than mutating it, because at restore time there is nothing to translate relative to. The constructor transposes as belt-and-braces, which on canonical state is a no-op — and that no-op is what makes save → restore the identity.</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- ============================================ TIER 4 -->
+      <section class="space-y-6">
+        <h2 class="font-serif text-3xl border-b border-stone-300 pb-3">④ Session &amp; config — decode, then normalize</h2>
+
+        <p class="text-sm text-slate-700">Two stages, not one, and the line between them is the most carefully drawn seam in the codebase (ADR-0006 decision 8). <strong>Decoding</strong> turns a wire format into a session document and is the only stage that knows a format exists. <strong>Normalizing</strong> turns a session document into one every loader can consume. Format knowledge never crosses into normalize.</p>
+
+        <article class="rounded-lg border-2 border-emerald-600 bg-white overflow-hidden">
+          <div class="bg-emerald-50 px-5 py-3 border-b-2 border-emerald-600 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">Session codec</h3>
+            <span class="text-xs uppercase tracking-wider text-emerald-800 font-semibold">Landed · candidate 5 · #499–#509 · ADR-0006</span>
+          </div>
+          <div class="p-5 space-y-4 text-sm">
+            <p class="font-mono text-xs text-slate-500">js/sessionCodec.js · 950 lines</p>
+
+            <div class="grid md:grid-cols-2 gap-5">
+              <div class="rounded border border-slate-300 p-4 space-y-2">
+                <div class="text-xs uppercase tracking-wider text-slate-500">Interface</div>
+                <p class="font-mono text-xs">decodeSession(input, { loader }) → session document</p>
+                <p>Plus <span class="font-mono">WIRE_FORMATS</span>: an ordered array of adapters, each a pair of <em>"does this input carry my format?"</em> and <em>"decode it into the shared context."</em> <strong>Adding a fifth format is adding an entry.</strong></p>
+              </div>
+              <div class="rounded border border-slate-300 p-4 space-y-2">
+                <div class="text-xs uppercase tracking-wider text-slate-500">Hides</div>
+                <p>v0 vs v1 sniffing. Compressed prefixes. The 7-token and 9-token state ladders, the 3- and 4-token track strings. Which branch a given input takes. The <span class="font-mono">version</span> field — stamped by the encoder, taken off by the decoder, never seen by <span class="font-mono">restoreSession</span>.</p>
+              </div>
+            </div>
+
+            <div class="rounded bg-slate-50 border border-slate-200 p-4 space-y-1">
+              <div class="text-xs uppercase tracking-wider text-slate-500">Seam · and why this one is load-bearing</div>
+              <p>The wire format is a contract with <strong>users</strong>, not just host apps: a link pasted into mail or a paper years ago must still decode. <span class="font-mono">test/data/wireFormatCorpus.js</span> holds one fixture per format and per decoder branch; <span class="font-mono">test/testDecoderGolden.js</span> snapshots what today's decoder makes of each. <strong>Those snapshots are the compatibility contract in executable form</strong> — a snapshot that moves is a change to the wire format until shown otherwise.</p>
+              <p class="text-slate-600">The corpus pins the <em>accepted</em> set, not the <em>sent</em> set. Links published outside the three repos and the docs have never been sampled; that gap is a decision, not an oversight (#509, closed).</p>
+            </div>
+
+            <p><strong>Depth verdict — deep, and the network came out.</strong> The decoder is pure and driven from string literals; I/O is an injected loader (#505). That is what made it safe to change, and it is the pattern the next module inherits.</p>
+          </div>
+        </article>
+
+        <article class="rounded-lg border-4 border-amber-600 bg-white overflow-hidden">
+          <div class="bg-amber-50 px-5 py-3 border-b-4 border-amber-600 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">normalizeSession / normalizeConfig</h3>
+            <span class="text-xs uppercase tracking-wider text-amber-900 font-semibold">Underway — you are here · candidate 9 · #531 landed, #532–#536 open</span>
+          </div>
+          <div class="p-5 space-y-4 text-sm">
+            <p class="font-mono text-xs text-slate-500">no file yet · will draw from js/createBrowser.js (setDefaults), js/hicBrowser.js (constructor, init), js/dataLoader.js, js/urlUtils.js (fixDefaults)</p>
+
+            <p><strong>This is the module that does not exist yet, and the one you are building.</strong> Today no file states what a config contains. Seven modules each interpret a subset and apply their own defaults, so the four entry paths have silently diverged.</p>
+
+            <div class="grid md:grid-cols-2 gap-5">
+              <div class="rounded border border-rose-300 bg-rose-50 p-4 space-y-2">
+                <div class="text-xs uppercase tracking-wider text-rose-900">Today — seven readers, no schema</div>
+                <p><span class="font-mono">syncDatasets</span> is honoured by <span class="font-mono">createBrowserList</span> and absent from <span class="font-mono">createBrowser</span>.</p>
+                <p><span class="font-mono">fixDefaults</span> runs on the URL path only — <span class="font-mono">restoreSession</span> skips it. Live example: <strong>#525</strong>, where it forces every track to <span class="font-mono">COLLAPSED</span>, so the two paths disagree about the same session.</p>
+                <p>Normalization is applied at <span class="font-mono">init:156</span> and re-validated at <span class="font-mono">:176</span>.</p>
+                <p>URL-shortcut expansion runs <strong>twice</strong> — once on the URL path, again in <span class="font-mono">restoreSession</span>.</p>
+              </div>
+              <div class="rounded border border-emerald-400 bg-emerald-50 p-4 space-y-2">
+                <div class="text-xs uppercase tracking-wider text-emerald-800">Target — normalize once, at the entry</div>
+                <p class="font-mono text-xs">normalizeConfig(raw) → resolved config</p>
+                <p>Pure. Every default in one place, one schema, testable with object literals. Downstream consumers <em>read fields</em> — none of them default, none of them validate (<strong>#536</strong>).</p>
+                <p>All four entry paths — <span class="font-mono">hic.init</span>, <span class="font-mono">restoreSession</span>, <span class="font-mono">createBrowser</span>, <span class="font-mono">createBrowserList</span> — pass through it and agree.</p>
+              </div>
+            </div>
+
+            <div class="rounded bg-slate-50 border border-slate-200 p-4 space-y-1">
+              <div class="text-xs uppercase tracking-wider text-slate-500">Why this one is safe to do now</div>
+              <p>Candidate 5 stopped exactly at this edge on purpose — shipping the normalize move with it would have doubled the blast radius on <span class="font-mono">hic.init</span>, the most-used public surface. What 9 inherits that 5 did not have: <strong>a golden-file snapshot over the whole wire-format corpus, already built and already green</strong>, plus <span class="font-mono">test/testConfigGolden.js</span> from <strong>#531</strong>, which pins what each entry path resolves to today. Normalization changes are exactly the kind that move decoded output, so <em>every moved fixture has to be one you can explain</em>.</p>
+            </div>
+
+            <div class="rounded bg-amber-50 border border-amber-300 p-4 space-y-1">
+              <div class="text-xs uppercase tracking-wider text-amber-900">Constraint the interface has to respect</div>
+              <p>A <strong>resolved config</strong> is <em>not a copy</em>. Every normalizer rewrites the host's own object in place, so the host's config and <span class="font-mono">browser.config</span> are one object — and juicebox-web reads it back (ADR-0003). A <span class="font-mono">normalizeConfig</span> that returns a fresh object is a breaking change to an observable surface, however much cleaner it is. Decide that deliberately.</p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- ============================================ TIER 5 -->
+      <section class="space-y-6">
+        <h2 class="font-serif text-3xl border-b border-stone-300 pb-3">⑤ Data access</h2>
+
+        <article class="rounded-lg border-2 border-slate-500 bg-white overflow-hidden" style="border-style: dashed;">
+          <div class="bg-slate-50 px-5 py-3 border-b-2 border-slate-500 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">DataLoader</h3>
+            <span class="text-xs uppercase tracking-wider text-slate-600 font-semibold">Planned · candidate 10 · ports &amp; adapters · <em>this is the live-map seam</em></span>
+          </div>
+          <div class="p-5 space-y-4 text-sm">
+            <p class="font-mono text-xs text-slate-500">js/dataLoader.js · 476 lines</p>
+            <p><strong>Three near-clones today.</strong> <span class="font-mono">loadHicFile</span> (121 lines: shield · label · spinner · <span class="font-mono">Dataset.loadDataset</span> · Genome · state ladder · nvi lookup · sync · notify ×5 · try/catch/finally). <span class="font-mono">loadLiveContactMap</span> (55 lines, with the state ladder <em>duplicated</em>). <span class="font-mono">loadHicControlFile</span> (47 lines, with a <span class="font-mono">finally</span> and no <span class="font-mono">catch</span>).</p>
+            <p><strong>Target:</strong> <span class="font-mono">loadMap(source, role)</span> — one interface, with the <span class="font-mono">.hic</span> file and the live contact map as <em>source adapters</em> rather than parallel functions.</p>
+            <div class="rounded bg-amber-50 border border-amber-300 p-4 space-y-1">
+              <div class="text-xs uppercase tracking-wider text-amber-900">Why this is the hardest card on the map</div>
+              <p>The seam spans <strong>three repos</strong>. The core live-map work lives in <strong>hic-straw</strong>, not here; juicebox.js holds a thin adapter, and Spacewalk is why it exists. The live map is deliberately <em>disguised</em> as a <span class="font-mono">.hic</span> dataset — same <span class="font-mono">Dataset</span>, same render path, same canonical state — and the disguise holds everywhere except two places: <span class="font-mono">imageTileCore.autoThreshold</span> takes the 75th percentile and clamps to 1 for live maps, and <span class="font-mono">loadLiveContactMap</span> is its own load path rather than a parameter to the file path. <strong>Designing this interface means deciding which of those two is a genuine variation and which is an expediency to collapse.</strong> That is a real design question, not a mechanical refactor — it is the one candidate that would benefit from being prototyped before it is specified.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="rounded-lg border border-slate-400 bg-white overflow-hidden">
+          <div class="bg-white px-5 py-3 border-b border-slate-300 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">URL mapper + dev proxy</h3>
+            <span class="text-xs uppercase tracking-wider text-emerald-800 font-semibold">Landed · ADR-0001 · has an expiry condition</span>
+          </div>
+          <div class="p-5 space-y-3 text-sm">
+            <p class="font-mono text-xs text-slate-500">js/urlMapper.js · dev-proxy/</p>
+            <p><strong>Interface:</strong> <span class="font-mono">setUrlMapper(fn)</span>, registered once by the host, unset in production. <strong>Hides:</strong> that a URL is rewritten in three different places for three reasons — handed to hic-straw as <span class="font-mono">config.mapUrl</span> for a <span class="font-mono">.hic</span> read, applied at the fetch for a 2D annotation, and written into the config for a 1D track because igv reads those through loaders juicebox cannot reach into.</p>
+            <p><strong>The library cannot detect dev mode itself</strong> — consumers get a production-baked <span class="font-mono">dist</span>. That is why the seam is a host-registered function rather than an environment check.</p>
+            <p class="text-slate-600">Two unrelated <strong>gates</strong> sit behind this: the <em>bot challenge</em> (AWS WAF at ENCODE, a CAPTCHA under a misleading 405) and the <em>User-Agent gate</em> (S3 buckets serving 403 unless the request carries an <span class="font-mono">IGV</span>-prefixed agent, which no browser can send). A fix for one does nothing for the other. This is a workaround with an expiry condition, <strong>not architecture</strong> — do not deepen it.</p>
+          </div>
+        </article>
+
+        <article class="rounded-lg hatch border border-stone-400 overflow-hidden">
+          <div class="bg-white/80 px-5 py-3 border-b border-stone-400 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">nvi.js</h3>
+            <span class="text-xs uppercase tracking-wider text-stone-700 font-semibold">Unowned — on no candidate</span>
+          </div>
+          <div class="p-5 space-y-3 text-sm bg-white/80">
+            <p class="font-mono text-xs text-slate-500">js/nvi.js · 1271 lines · the largest file in the repo</p>
+            <p><strong>The largest module on this map has no card in the review and no plan.</strong> That is worth naming rather than leaving as an omission. It is a lookup table for normalization vector indices, and it looks half-dead since the contact-map menu became self-describing.</p>
+            <p><strong>Do not prune it.</strong> Old saved sessions and pasted URLs still hit it, silently — the same wire-format-as-user-contract argument that governs tier ④. If it ever gets a card, the gate has to come first, exactly as it did for candidate 5.</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- ============================================ TIER 6 -->
+      <section class="space-y-6">
+        <h2 class="font-serif text-3xl border-b border-stone-300 pb-3">⑥ Render</h2>
+
+        <article class="rounded-lg border-2 border-emerald-600 bg-white overflow-hidden">
+          <div class="bg-emerald-50 px-5 py-3 border-b-2 border-emerald-600 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">ImageTileSource</h3>
+            <span class="text-xs uppercase tracking-wider text-emerald-800 font-semibold">Landed · candidate 1 · PR #433</span>
+          </div>
+          <div class="p-5 space-y-4 text-sm">
+            <p class="font-mono text-xs text-slate-500">js/imageTileSource.js (364) + js/imageTileCore.js (332)</p>
+
+            <div class="grid md:grid-cols-2 gap-5">
+              <div class="rounded border border-slate-300 p-4 space-y-2">
+                <div class="text-xs uppercase tracking-wider text-slate-500">Interface — four methods</div>
+                <p class="font-mono text-xs">getColorScale(displayMode)</p>
+                <p class="font-mono text-xs">setColorScale(scale, displayMode, state)</p>
+                <p class="font-mono text-xs">setThreshold(threshold, displayMode, state)</p>
+                <p class="font-mono text-xs">invalidate({ thresholds })</p>
+                <p>Tile retrieval itself is private (<span class="font-mono">#tileAt</span>) — callers ask for a repaint, not for a tile.</p>
+              </div>
+              <div class="rounded border border-slate-300 p-4 space-y-2">
+                <div class="text-xs uppercase tracking-wider text-slate-500">Hides</div>
+                <p>Cache keying — chromosome pair, bin size, unit, grid position, normalization, display mode; <em>not</em> pan position or pixel size, which affect where a tile is painted rather than what it contains.</p>
+                <p>Effective-normalization resolution. Colour-scale derivation including the auto-threshold percentile and its live-map divergence. The five display modes and the zoom-index translation the combining modes need.</p>
+              </div>
+            </div>
+
+            <p><strong>Depth verdict — deep. This is the target shape, achieved.</strong> Four methods over two files of cache and colour logic; <span class="font-mono">contactMatrixView.js</span> went 1116 → 761 lines and the repo got its first rendering coverage, tests 65 → 164. <strong>When a later candidate asks "what am I aiming at?", the answer is this module.</strong></p>
+          </div>
+        </article>
+
+        <article class="rounded-lg border-2 border-slate-500 bg-white overflow-hidden" style="border-style: dashed;">
+          <div class="bg-slate-50 px-5 py-3 border-b-2 border-slate-500 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">InteractionHandler ← ContactMatrixView</h3>
+            <span class="text-xs uppercase tracking-wider text-slate-600 font-semibold">Planned · candidate 7</span>
+          </div>
+          <div class="p-5 space-y-4 text-sm">
+            <p class="font-mono text-xs text-slate-500">js/contactMatrixView.js (845) · js/interactionHandler.js (514) · js/sweepZoom.js</p>
+            <p><strong>Today:</strong> <span class="font-mono">addMouseHandlers</span> is 177 lines of closures and <span class="font-mono">addTouchHandlers</span> is 119. Gesture state — <span class="font-mono">startX</span>, <span class="font-mono">mouseDown</span>, <span class="font-mono">lastTouch</span>, pinch distance — lives in those closures, which means <strong>there is no test surface at all</strong>. The coordinator installs them by hand.</p>
+            <p><strong>Target:</strong> the view forwards raw pointer events and holds no gesture state. <span class="font-mono">InteractionHandler</span> — already deep and already partly tested — grows <span class="font-mono">onPointerDown/Move/Up</span>, <span class="font-mono">onWheel</span>, <span class="font-mono">onTouch*</span>, and holds drag, double-click, pinch and sweep as <em>explicit state</em>. Testable with synthetic event objects. <span class="font-mono">pinchZoom</span> and <span class="font-mono">_performWheelZoom</span> de-duplicate on the way through.</p>
+            <p class="text-slate-600">Note the direction: this is <strong>not</strong> a new module. It is behaviour moving from a shallow module into a deep one that already exists and already talks to <span class="font-mono">State</span> only through translators. That makes it one of the cheaper cards, once candidate 6 has settled what a translator call looks like.</p>
+          </div>
+        </article>
+
+        <article class="rounded-lg hatch border border-stone-400 overflow-hidden">
+          <div class="bg-white/80 px-5 py-3 border-b border-stone-400 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">TrackPair / TrackRenderer / Tile</h3>
+            <span class="text-xs uppercase tracking-wider text-stone-700 font-semibold">Speculative · candidate 11</span>
+          </div>
+          <div class="p-5 space-y-3 text-sm bg-white/80">
+            <p class="font-mono text-xs text-slate-500">js/trackPair.js (343) · js/trackRenderer.js · js/tile.js (18) · js/layoutController.js</p>
+            <p><strong>Four fields, one concept.</strong> <span class="font-mono">TrackPair</span> reads <span class="font-mono">this.tileX</span>/<span class="font-mono">tileY</span> and carries a stray <span class="font-mono">this.tile</span>; <span class="font-mono">TrackRenderer</span> writes its own <span class="font-mono">this.tile</span>. <strong>Invalidation writes the renderer's field and the read path consults the pair's</strong> — a stale cache, sitting there.</p>
+            <p><strong>Target:</strong> the pair owns tiles for both axes (<span class="font-mono">tileFor(axis, genomicState)</span>, <span class="font-mono">invalidate()</span>); the renderer becomes canvas + blit and holds no cache field; <span class="font-mono">doAutoscale</span> comes out as a pure, tested function.</p>
+            <p class="text-slate-600">Marked speculative because the bug is real but the reshape may be larger than the payoff. Remember: <em>track tile</em> here has nothing to do with the <em>image tile</em> of the card above, despite the shared word — say which one you mean.</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- ============================================ SHAPE IN A PARAGRAPH -->
+      <section class="space-y-4">
+        <h2 class="font-serif text-3xl border-b border-stone-300 pb-3">The shape, in one paragraph</h2>
+        <div class="rounded-lg border-2 border-slate-900 bg-white p-6 space-y-3 text-sm">
+          <p><strong>A host calls one function and gets a registry.</strong> Config arrives by one of four doors, is <em>decoded</em> if it carries a wire format and then <em>normalized</em> exactly once, and reaches a browser as a resolved config no downstream module reinterprets. The browser owns identity and delegates everything else: canonical state lives behind a single chokepoint with translators around it and projections computed on read; data arrives through one load path with source adapters for file and live; pixels come from a tile source with a four-method interface; gestures are explicit state in a handler that speaks only translator. A coordinator fans changes out to widgets that are told when to refresh. Two event buses survive as published consumer surface with no internal traffic.</p>
+          <p class="text-slate-600"><strong>Five of those clauses are true today.</strong> The registry, the decoder, the tile source, the URL mapper and the event buses have landed. Normalize-once is being built now. The chokepoint's back door, the single load path, and gestures-as-state are ahead — and track tiles may never be worth doing.</p>
+        </div>
+      </section>
+
+      <!-- ============================================ KEEPING IT CURRENT -->
+      <section id="update" class="space-y-4">
+        <h2 class="font-serif text-3xl border-b border-stone-300 pb-3">Keeping this current</h2>
+        <div class="rounded-lg border border-stone-300 bg-white p-6 space-y-3 text-sm">
+          <p><strong>Revise, do not regenerate</strong> — the same convention the review runs on. A regenerated map loses the reasons, and the reasons are the part that took the work.</p>
+          <p><strong>When a candidate lands:</strong> flip its card's state badge and border to <span class="text-emerald-800 font-semibold">landed</span>, flip its node's <span class="font-mono">classDef</span> in the map, replace the "target" half of the card with what actually shipped (<em>including where it differed from the plan</em> — candidate 2 kept the bus it was named for, and that is the most useful sentence on its card), and move the loose ends into a closing note with their issue numbers.</p>
+          <p><strong>When a card's shape changes before it lands:</strong> edit the target half in place. This document is allowed to be wrong about the future; it is not allowed to be wrong about the present.</p>
+          <p><strong>When a new module appears that no candidate predicted:</strong> give it a card and mark it <span class="font-mono">unowned</span>, like <span class="font-mono">nvi.js</span>. An honest gap beats a tidy omission.</p>
+          <p class="text-slate-600">The header line carries the branch and snapshot date. Update it on every edit — a map with a stale date is a map people stop trusting, and a map people stop trusting is worse than none.</p>
+        </div>
+      </section>
+
+      <footer class="border-t border-stone-300 pt-6 text-xs text-slate-500 font-mono space-y-1">
+        <p>docs/architecture-map.html · companion to docs/architecture-review.html</p>
+        <p>vocabulary: CONTEXT.md § Architecture vocabulary · decisions: docs/adr/0001–0006</p>
+      </footer>
+
+    </main>
+  </body>
+</html>

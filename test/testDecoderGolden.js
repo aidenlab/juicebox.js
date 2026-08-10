@@ -48,6 +48,7 @@
  * | Date | Fixtures | Authorised by |
  * |------|----------|---------------|
  * | 2026-08-09 | all — baseline taken | #503, after #499 (axis ordering) and #500 (empty browsers), both of which move decoded output and so had to land first |
+ * | 2026-08-10 | `harvested-external-state-numeric-normalization`, `harvested-external-juiceboxURL-undefined` — two entries **added**, none moved | **#509**, the external harvest. Additions rather than movements: a new fixture has no prior entry to disagree with, which is why widening the corpus is safe on a green suite. Logged anyway, because "two new entries and nothing else changed" is the claim a reader of the diff needs to be able to check. The numeric-normalization entry pins a live defect (#528) rather than intended behaviour — see the fixture's note. |
  * | 2026-08-09 | `harvested-juiceboxURL-bitly` — `decodes` became `throws` | **#506**, ADR-0006 decision 1: the named exception to the frozen contract. The bit.ly expansion and its embedded credential are gone, so the fixture that decoded a two-browser session through a live third-party endpoint now records the refusal that replaced it. **This is the first deliberate deviation from the baseline** — the whole point of the log is that it is written down rather than absorbed by a bare `-u`. No other fixture moved, which is the other half of the claim. |
  *
  * @see docs/adr/0006-session-wire-format-and-one-decoder.md

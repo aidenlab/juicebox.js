@@ -1,5 +1,34 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`decoder golden file — inputs the decoder takes as a string > harvested-external-juiceboxURL-undefined 1`] = `
+{
+  "error": {
+    "message": "juiceboxURL= links are no longer supported: the bit.ly expansion was removed in #506 (ADR-0006 decision 1). Open the link in a browser to read the juicebox URL it stands for, and use that. See docs/url.md.",
+    "name": "SessionDecodeError",
+  },
+  "outcome": "throws",
+}
+`;
+
+exports[`decoder golden file — inputs the decoder takes as a string > harvested-external-state-numeric-normalization 1`] = `
+{
+  "config": {
+    "cycle": undefined,
+    "state": State {
+      "chr1": 1,
+      "chr2": 1,
+      "normalization": "2000",
+      "pixelSize": 8.024052224929061,
+      "x": 0,
+      "y": 0,
+      "zoom": 0,
+    },
+    "url": "http://hicfiles.s3.amazonaws.com/external/li/mcf7-rnapii-saturated.hic",
+  },
+  "outcome": "decodes",
+}
+`;
+
 exports[`decoder golden file — inputs the decoder takes as a string > harvested-juicebox-encoded-braces 1`] = `
 {
   "config": {

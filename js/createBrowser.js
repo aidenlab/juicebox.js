@@ -2,11 +2,9 @@
  * @author Jim Robinson Dec-2020
  */
 
-import { StringUtils } from 'igv-utils';
 import HICBrowser from './hicBrowser.js';
 import {registryForContainer, getMostRecentlySelectedBrowser, currentRegistry} from './browserRegistry.js';
-import {parseColorScale} from './colorScaleParser.js';
-import ContactMatrixView from "./contactMatrixView.js";
+import {normalizeSession} from './normalizeSession.js';
 
 const defaultSize = { width: 640, height: 640 };
 
@@ -24,7 +22,12 @@ const defaultSize = { width: 640, height: 640 };
 
 async function createBrowser(hicContainer, config, callback) {
 
-    normalizeConfig(config);
+    // Wrapped rather than handed over as it is: this door takes a browser
+    // config and *only* a browser config, so a `browsers` member on it is an
+    // ordinary unread member and must not steer the stage away from the object
+    // that actually becomes `browser.config`. The wrapper is discarded;
+    // `config` is what is normalized. See js/normalizeSession.js.
+    normalizeSession({browsers: [config]});
 
     const browser = new HICBrowser(hicContainer, config);
     await browser.init(config);
@@ -39,14 +42,17 @@ async function createBrowser(hicContainer, config, callback) {
 async function createBrowserList(hicContainer, session) {
 
     const registry = registryForContainer(hicContainer);
+
+    // One call for the whole document: the stage walks the same
+    // `browsers || [session]` shape this loop does. See js/normalizeSession.js.
+    normalizeSession(session);
+
     const configList = session.browsers || [session];
     const initPromises = [];
 
     registry.clear();
 
     for (const config of configList) {
-
-        normalizeConfig(config);
 
         if (session.syncDatasets === false) {
             config.synchable = false;
@@ -118,33 +124,6 @@ function getCurrentBrowser() {
  */
 function getAllBrowsers() {
     return currentRegistry()?.browsers || [];
-}
-
-function normalizeConfig(config) {
-
-    setDefaults(config);
-
-    if (StringUtils.isString(config.colorScale)) {
-        config.colorScale = parseColorScale(config.colorScale);
-    }
-    if (StringUtils.isString(config.backgroundColor)) {
-        config.backgroundColor = ContactMatrixView.parseBackgroundColor(config.backgroundColor);
-    }
-}
-
-function setDefaults(config) {
-
-    if (config.figureMode === true) {
-        config.showLocusGoto = false;
-        config.showHicContactMapLabel = false;
-        config.showChromosomeSelector = false;
-    } else {
-
-
-        config.showLocusGoto = config.showLocusGoto ?? true;
-        config.showHicContactMapLabel = config.showHicContactMapLabel ?? true;
-        config.showChromosomeSelector = config.showChromosomeSelector ?? true;
-    }
 }
 
 export {

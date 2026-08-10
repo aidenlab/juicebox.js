@@ -1,5 +1,5 @@
 import {registryForContainer, currentRegistry} from "./browserRegistry.js"
-import {BGZip} from "igv-utils";
+import {encodeSession} from "./sessionCodec.js";
 
 /**
  * The exported session functions -- the names both known host apps import, per
@@ -45,9 +45,17 @@ function toJSON() {
     return jsonOBJ;
 }
 
+/**
+ * The share link's query parameter: `session=blob:<compressed JSON>`, which
+ * juicebox-web appends to its base href.
+ *
+ * The writing is `sessionCodec.encodeSession` -- the inverse of the same
+ * module's `decodeSession`, and the reason `decode(encode(x))` can be a property
+ * test at all (#507, ADR-0006 decision 4). It was two lines of compression here,
+ * which is one of the two halves of the format living apart from the other.
+ */
 function compressedSession() {
-    const jsonString = JSON.stringify(toJSON());
-    return `session=blob:${BGZip.compressString(jsonString)}`
+    return encodeSession(toJSON())
 }
 
 

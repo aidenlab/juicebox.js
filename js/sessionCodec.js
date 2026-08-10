@@ -1,6 +1,7 @@
 /**
- * The session wire format, decoded. Every decision about what a session URL
- * *means* lives here, and nothing here reaches the network.
+ * The session wire format, decoded and — for the one form juicebox writes —
+ * encoded. Every decision about what a session URL *means* lives here, and
+ * nothing here reaches the network.
  *
  * The decode path was a single `async` function that did its own fetching, of
  * which two lines were I/O and ninety were format logic — and because the whole
@@ -29,6 +30,21 @@
  * adapter may have produced, and `query` overwrites both when it names a map.
  * That precedence is exactly what the previous straight-line function expressed
  * by statement order, and the golden file (#503) pins it.
+ *
+ * ## The encode path
+ *
+ * {@link encodeSession} is the inverse of {@link decodeSession} for the
+ * session-JSON form — the only form juicebox emits — and `decode(encode(x))` is
+ * a property test (`test/testSessionRoundTrip.js`, #507). The other three
+ * accepted formats are **decode-only** by decision, not by omission: ADR-0006
+ * decision 4. `session.compressedSession()` is the one caller.
+ *
+ * The identity is not total, and both places it is not are asserted by that
+ * suite rather than left to be discovered: browser *count* does not survive a
+ * session saved with an empty panel (decision 6), and `fixDefaults` below —
+ * normalization, sitting inside the decoder — forces every track to `COLLAPSED`
+ * and drops the default annotation colour on the way in (decision 8, #525; the
+ * pass moves out in candidate 9, and the property gets stricter then).
  *
  * ## No I/O
  *
@@ -195,6 +211,73 @@ export function decodeSessionString(text) {
     } catch (e) {
         throw new SessionDecodeError('Session is not valid JSON', e)
     }
+}
+
+/**
+ * Raised for every session this module refuses to write.
+ *
+ * The mirror of {@link SessionDecodeError}, and for the same reason: one
+ * condition, one error, with the underlying failure kept as `cause`.
+ */
+export class SessionEncodeError extends Error {
+    constructor(message, cause) {
+        super(message)
+        this.name = 'SessionEncodeError'
+        this.cause = cause
+    }
+}
+
+/**
+ * Write a session as a session string — the inverse of
+ * {@link decodeSessionString} for the one spelling juicebox writes.
+ *
+ * **One spelling, not three.** The sniff reads `blob:`, `data:` and bare JSON;
+ * this writes `blob:` only. The other two are inbound spellings — a `data:`
+ * share link is not a thing juicebox has ever produced, and a bare-JSON
+ * *parameter* would carry braces and quotes into a query string. Taking a
+ * `format` argument here would be a live encoder for a spelling nothing emits,
+ * which is the same trade ADR-0006 decision 4 refuses at the format level.
+ *
+ * @param {object} session - a session document, as `registry.toJSON()` writes
+ *   one. A `State` instance in it encodes as the object `State.toJSON()` writes,
+ *   because that is what `JSON.stringify` does with it.
+ * @returns {string}
+ * @throws {SessionEncodeError} if the document is one JSON cannot express
+ */
+export function encodeSessionString(session) {
+
+    let json
+    try {
+        json = JSON.stringify(session)
+    } catch (e) {
+        throw new SessionEncodeError('Session cannot be written as JSON', e)
+    }
+
+    return `blob:${BGZip.compressString(json)}`
+}
+
+/**
+ * Write a session as the query parameter that carries it — the inverse of
+ * {@link decodeSession} for the one format juicebox emits.
+ *
+ * **One encoder, not four.** The other three accepted formats stay decode-only:
+ * writing encoders for them would resurrect a live encoder for formats nothing
+ * has written in years, and we would then own them forever. ADR-0006 decision 4.
+ *
+ * The return value is the parameter, not a whole URL — `session=blob:…` — which
+ * is the shape juicebox-web appends to its base href, and which
+ * {@link decodeSession} accepts directly. Nothing needs escaping on the way in:
+ * `BGZip` writes the URL-safe base64 alphabet unpadded, so the payload carries
+ * no `&`, `#` or second `=` for the query splitter to eat. That is a dependency
+ * of the round trip — the splitter reads a value only as far as its second `=` —
+ * and `test/testSessionRoundTrip.js` asserts it.
+ *
+ * @param {object} session
+ * @returns {string}
+ * @throws {SessionEncodeError}
+ */
+export function encodeSession(session) {
+    return `session=${encodeSessionString(session)}`
 }
 
 /**

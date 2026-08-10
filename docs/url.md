@@ -189,6 +189,40 @@ follow the same rules as above.
 Session JSON has no `version` field today; its absence means v1. When one is
 added (#508) it will be written but never required.
 
+### The one form juicebox writes
+
+`session=` is the only form with an **encoder**: `encodeSession` in
+`js/sessionCodec.js`, which `session.compressedSession()` calls to build the
+share link. It is the inverse of the decoder, and
+`decode(encode(session)) === session` is a property test over generated sessions
+(`test/testSessionRoundTrip.js`). The other forms above are **decode-only by
+decision** — ADR-0006 decision 4 — because writing encoders for formats nothing
+has emitted in years means owning them forever.
+
+The identity is not total. Two deviations, both asserted by that suite rather
+than left to be found:
+
+- **Browser count**, when a browser was empty. A panel with no map serializes to
+  `null` and the registry drops it, so an embed saved with an empty panel open
+  restores one panel short (ADR-0006 decision 6). Nothing in the session records
+  that a panel was dropped, so the count is not recoverable.
+- **Tracks**, which the decoder's `fixDefaults` pass sweeps: every track comes
+  back `COLLAPSED` — a field the saved form never carries, and one that overrides
+  a track that asked for something else — and a track whose colour is the default
+  annotation colour comes back with no colour at all. A session handed straight
+  to `restoreSession` is never swept, so the two entry paths disagree. Filed as
+  #525; the fix is candidate 9's `normalizeSession` stage (ADR-0006 decision 8).
+
+The parameter is written in one spelling, `blob:`. The decoder reads three —
+`blob:`, `data:` and bare JSON — but the other two are inbound only: nothing has
+emitted a `data:` share link, and a bare-JSON *parameter* would carry braces and
+quotes into a query string. There is no `format` argument to reach them with.
+
+The compressed payload is URL-safe base64, unpadded: no `+`, `/` or `=` reaches
+the query string. The decoder's query splitter takes a value only up to its
+second `=`, so a padded alphabet would truncate the payload silently. Anything
+changing the compressor has to keep that true.
+
 A fourth whole-session parameter, `juiceboxURL=`, was accepted until 2026-08-09
 — see [Removed forms](#removed-forms).
 

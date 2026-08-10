@@ -11,6 +11,14 @@
  *   `test/test_urls.md`, juicebox-web, or the published docs. These are evidence
  *   about the *real inbound population*, which is the thing ADR-0003's method
  *   tables do not measure at all. Marked `role: 'load-bearing'`.
+ * - **harvested-external** — the same, but recovered from outside our source
+ *   control: a link a user pasted into an issue tracker. Also `load-bearing`,
+ *   and for a stronger reason. A `harvested` fixture is usually a link *we*
+ *   saved because we wanted something to test with; a `harvested-external` one
+ *   is a link somebody else built and sent, which is the only direct evidence
+ *   this corpus has about the population ADR-0006 says it protects. The split
+ *   lives on `provenance` rather than `role` because both buy the suite the same
+ *   thing — real-population coverage — and only the origin differs. #509.
  * - **synthesized** — one literal per decoder branch, hand-written to cover what
  *   harvesting missed. Marked `role: 'branch-coverage'`.
  *
@@ -45,8 +53,34 @@
  * three were searched: juicebox.js (`git log`, `test/test_urls.md`,
  * `test/testURL.js`; `dev/` holds no URL literals at all), juicebox-web
  * (`test/testURLs.md`, `js/initializationHelper.js`), and Spacewalk
- * (`~/SpacewalkDevelopment/spacewalk`). External citation harvesting is a
- * separate ticket by design and blocks nothing.
+ * (`~/SpacewalkDevelopment/spacewalk`).
+ *
+ * **The external half (#509), and where it stopped.** Everything above is a
+ * string *we* saved, mostly into our own test files — evidence about what we
+ * chose to test, not about what users sent. #509 went after the second kind.
+ * Its recorded stopping rule is source-exhaustion over a fixed list, with no
+ * yield-based escape hatch: the GitHub issue trackers of `aidenlab/juicebox.js`,
+ * `aidenlab/juicebox-web` and `aidenlab/Juicebox`, searched for `hicUrl`,
+ * `session=`, `juiceboxURL`, `juiceboxData`, `state=` and `aidenlab.org/juicebox`,
+ * every hit read. 96 threads, 15 distinct parameter-bearing URLs, 2017–2018.
+ * The `aidenlab/Juicebox` (Java desktop) tracker returned no parameter-bearing
+ * URL at all.
+ *
+ * Papers, GEO and 4DN were **deliberately not searched** and #509 was closed
+ * anyway. The ticket was written to run *before* the decoder collapsed, so that
+ * a quirk found late could be designed into the refactor rather than patched on
+ * top of it. That window shut at #505. What survived the change of timing is
+ * regression insurance, and the issue trackers are where it is cheap — users
+ * paste a link into a tracker precisely when it has stopped working, which is
+ * the sample we want. An open-ended literature search buys the same insurance at
+ * an unbounded price. The external population beyond the trackers has therefore
+ * never been sampled; that is a known gap, not an oversight.
+ *
+ * Twelve of the fifteen were shapes this corpus already carried — the v0
+ * seven-token `state=` with `colorScale=` and `name=`, and the bare
+ * `hicUrl=&colorScale=` map link with no state at all. Two are new and are
+ * below, marked `provenance: 'harvested-external'`. One was ours: juicebox-web
+ * #66 quotes a `goo.gl` URL out of a source comment, not a link anyone sent.
  *
  * **Spacewalk contributes no fixture for this decoder, and the reason matters
  * more than the fixture would have.** It sets `queryParametersSupported: false`
@@ -238,6 +272,33 @@ export const wireFormatCorpus = [
         source: 'test/test_urls.md and juicebox-web js/initializationHelper.js:490',
         input: 'http://localhost/juicebox-web/index.html?juiceboxURL=http://bit.ly/2C1VSHy',
         note: 'The one format ADR-0006 decision 1 dropped deliberately, removed in #506 — and it was **not** a dead path when it went. Measured 2026-08-09, bit.ly expanded this link and the two-browser session decoded in full; both ADR-0006 and docs/url.md had predicted a 401 from the mojibake bearer token, and v4/expand accepted it for a public link. What the fixture pins now is the refusal that replaced the expansion: a SessionDecodeError naming the format and the ticket, raised before the rest of the URL is read. It no longer depends on a third party, so the corpus integrity test no longer skips it. The captured `long_url` went with the expansion rather than being kept as inert evidence — it described a decode path that no longer exists, and the removal it was evidence for is recorded in the ADR and in the golden file\'s snapshot-movement log.',
+    },
+
+    // ---------------------------------------------------------------------
+    // Harvested externally — links users built and sent, recovered from the
+    // issue trackers rather than from our own source control. #509.
+    // ---------------------------------------------------------------------
+
+    {
+        id: 'harvested-external-state-numeric-normalization',
+        format: 'query',
+        provenance: 'harvested-external',
+        role: 'load-bearing',
+        outcome: 'decodes',
+        source: 'aidenlab/juicebox.js#51, 2017-03-21 — a user-pasted link, verbatim',
+        input: '?state=1%2C1%2C0%2C0%2C0%2C8.024052224929061%2C2000&hicUrl=http%3A%2F%2Fhicfiles.s3.amazonaws.com%2Fexternal%2Fli%2Fmcf7-rnapii-saturated.hic',
+        note: 'The seventh state token is `2000`, a number, where every other link in this corpus has `KR` or `NONE`. It is not a normalization name and no `.hic` file has a vector called "2000" — it is a colour-scale threshold, from a format that predates the `colorScale=` parameter. This link is dated two days before the earliest `colorScale=` link we have (#66, 2017-03-23), which is the whole basis for reading it that way. The decoder accepts it and sets `normalization: "2000"`: no throw, no repair, a state naming a vector that cannot be loaded. Filed as #528 — pinned here first so that whatever fixes it has to move this snapshot deliberately. This is the only shape #509 found that the corpus did not already carry, and it came from outside our source control, which is exactly the argument for looking outside it.',
+    },
+
+    {
+        id: 'harvested-external-juiceboxURL-undefined',
+        format: 'juiceboxURL',
+        provenance: 'harvested-external',
+        role: 'load-bearing',
+        outcome: 'throws',
+        source: 'aidenlab/juicebox.js#283, 2018-12-21 — a bug report, the URL verbatim',
+        input: 'https://aidenlab.org/juicebox/?juiceboxURL=undefined',
+        note: 'The literal string `undefined` as the parameter value — a share link built while the URL to be shortened was still undefined, then pasted into a bug report by the user it happened to. Kept because it is evidence that the parameter arrived malformed in the wild and not only in tests. Post-#506 it is refused for being `juiceboxURL=` at all, before the value is ever looked at, so this fixture and `harvested-juiceboxURL-bitly` now pin the same refusal by different routes; that is intentional, since the two would diverge again the moment anyone reinstated the format.',
     },
 
     // ---------------------------------------------------------------------

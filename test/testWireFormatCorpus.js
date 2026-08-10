@@ -38,7 +38,7 @@ describe('wire-format corpus — shape', () => {
         for (const fixture of wireFormatCorpus) {
             expect(FORMATS, fixture.id).toContain(fixture.format)
             expect(OUTCOMES, fixture.id).toContain(fixture.outcome)
-            expect(['harvested', 'synthesized'], fixture.id).toContain(fixture.provenance)
+            expect(['harvested', 'harvested-external', 'synthesized'], fixture.id).toContain(fixture.provenance)
             expect(['load-bearing', 'branch-coverage'], fixture.id).toContain(fixture.role)
             expect(fixture.source, fixture.id).toBeTruthy()
         }
@@ -49,9 +49,14 @@ describe('wire-format corpus — shape', () => {
         // about the real inbound population; synthesizing is what makes it
         // evidence only about a branch. ADR-0006, "How we know the decoder did
         // not change".
+        //
+        // `harvested-external` (#509) is a third provenance and not a third
+        // role: a link recovered from an issue tracker is stronger evidence than
+        // one recovered from our own test files, but it buys the suite the same
+        // thing, so the distinction stays on the origin axis.
         for (const fixture of [...wireFormatCorpus, ...stateStringCorpus]) {
-            const expected = fixture.provenance === 'harvested' ? 'load-bearing' : 'branch-coverage'
-            expect(fixture.role, fixture.id).toBe(expected)
+            const harvested = fixture.provenance.startsWith('harvested')
+            expect(fixture.role, fixture.id).toBe(harvested ? 'load-bearing' : 'branch-coverage')
         }
     })
 

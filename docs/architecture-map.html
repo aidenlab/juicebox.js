@@ -322,7 +322,7 @@ flowchart TB
         <article class="rounded-lg border-4 border-amber-600 bg-white overflow-hidden">
           <div class="bg-amber-50 px-5 py-3 border-b-4 border-amber-600 flex flex-wrap items-baseline gap-x-4">
             <h3 class="font-serif text-2xl">normalizeSession / normalizeConfig</h3>
-            <span class="text-xs uppercase tracking-wider text-amber-900 font-semibold">Underway — you are here · candidate 9 · #531–#534 landed, #535–#536 open</span>
+            <span class="text-xs uppercase tracking-wider text-amber-900 font-semibold">Underway — you are here · candidate 9 · #531–#535 landed, #536 open</span>
           </div>
           <div class="p-5 space-y-4 text-sm">
             <p class="font-mono text-xs text-slate-500">js/normalizeSession.js · still to draw from js/hicBrowser.js (constructor, init), js/dataLoader.js</p>
@@ -334,14 +334,14 @@ flowchart TB
                 <div class="text-xs uppercase tracking-wider text-rose-900">Today — several readers, no schema</div>
                 <p><s><span class="font-mono">syncDatasets</span> is honoured by <span class="font-mono">createBrowserList</span> and absent from <span class="font-mono">createBrowser</span>.</s> Resolved at session level in normalize — <strong>#533</strong>.</p>
                 <p><s><span class="font-mono">fixDefaults</span> runs on the URL path only — <span class="font-mono">restoreSession</span> skips it.</s> Moved to <span class="font-mono">normalizeSession.applyTrackDefaults</span>, which every door meets — <strong>#533</strong>. What <strong>#525</strong> still asks is whether forcing every track to <span class="font-mono">COLLAPSED</span> is right at all; it is no longer a disagreement between paths.</p>
-                <p>Normalization is applied at <span class="font-mono">init:156</span> and re-validated at <span class="font-mono">:176</span>.</p>
+                <p><s>Normalization runs inside browser creation, and the same document meets the stage twice — once in <span class="font-mono">restoreSession</span>, again in <span class="font-mono">createBrowserList</span>.</s> Lifted to the entry: two doors, <span class="font-mono">BrowserRegistry.restoreSession</span> and <span class="font-mono">createBrowser</span>, and nothing below them normalizes — <strong>#535</strong>.</p>
                 <p><s>URL-shortcut expansion runs <strong>twice</strong> — once on the URL path, again in <span class="font-mono">restoreSession</span>.</s> Both copies deleted; the survivor is <span class="font-mono">normalizeSession.expandUrlShortcuts</span>, so the two doors that never expanded now do — <strong>#534</strong>.</p>
               </div>
               <div class="rounded border border-emerald-400 bg-emerald-50 p-4 space-y-2">
                 <div class="text-xs uppercase tracking-wider text-emerald-800">Target — normalize once, at the entry</div>
                 <p class="font-mono text-xs">normalizeConfig(raw) → resolved config</p>
                 <p>Pure. Every default in one place, one schema, testable with object literals. Downstream consumers <em>read fields</em> — none of them default, none of them validate (<strong>#536</strong>).</p>
-                <p>All four entry paths — <span class="font-mono">hic.init</span>, <span class="font-mono">restoreSession</span>, <span class="font-mono">createBrowser</span>, <span class="font-mono">createBrowserList</span> — pass through it and agree.</p>
+                <p>Every entry path — <span class="font-mono">hic.init</span>, the query path, <span class="font-mono">restoreSession</span>, <span class="font-mono">createBrowser</span> — passes through it <em>exactly once</em>, and they agree. <span class="font-mono">createBrowserList</span> is no longer one of them: it builds browsers from a session its caller resolved (<strong>#535</strong>).</p>
               </div>
             </div>
 

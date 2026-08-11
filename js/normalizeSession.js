@@ -40,13 +40,25 @@
  * members, so a session-level rule reaches a one-browser document handed in at
  * that door exactly as it reaches a document naming `browsers`.
  *
+ * ## Where it is called, and how often
+ *
+ * Once per session, at the entry, which is #535. There are two doors and they do
+ * not nest: `BrowserRegistry.restoreSession` for a session -- every
+ * session-shaped path arrives there, `hic.init`, the query path and
+ * `hic.restoreSession` alike -- and `createBrowser` for a single browser config.
+ * Browser creation below them normalizes nothing. `test/testNormalizeOnceAtTheEntry.js`
+ * counts the calls, because a second one is invisible in the result.
+ *
  * ## Running it twice is the identity
  *
- * `BrowserRegistry.restoreSession` normalizes -- it reads a session member the
- * stage resolves -- and then `createBrowserList` normalizes the same document
- * again on its way to the browsers. Every rule here is therefore idempotent, and
- * `test/testNormalizeSession.js` asserts it. #535 collapses the two calls into
- * one at the entry; until then the property is load-bearing.
+ * Invisible because every rule here is idempotent, which
+ * `test/testNormalizeSession.js` asserts. That property was load-bearing until
+ * #535 -- the restore normalized and then `createBrowserList` normalized the
+ * same document again -- and it is kept deliberately now that nothing in this
+ * repo depends on it: a host is free to hand the same object to `init` twice, or
+ * to `createBrowser` after `restoreSession`, and the mutation is in place, so a
+ * stage that drifted on a second pass would rewrite an object the host still
+ * holds.
  *
  * ## "Pure" here means free of the world, not free of mutation
  *

@@ -68,6 +68,7 @@ import DataLoader from '../js/dataLoader.js'
 import {init} from '../js/init.js'
 import {restoreSession} from '../js/session.js'
 import {createBrowser, createBrowserList} from '../js/createBrowser.js'
+import {normalizeSession} from '../js/normalizeSession.js'
 import {registryForContainer} from '../js/browserRegistry.js'
 import {withContainers} from './utils/browserFixture.js'
 import {withStubbedLoads} from './utils/stubbedLoads.js'
@@ -170,7 +171,12 @@ function describeBrowser(browser, input) {
 }
 
 /**
- * The four doors a config can come in by.
+ * The four ways a config reaches a browser.
+ *
+ * Three are doors -- published entry points a host calls. The fourth,
+ * `createBrowserList`, stopped being one at #535 and is now the builder the
+ * session-shaped doors end in; see its note below for why it stays in the table
+ * and what its driver has to do that the others do not.
  *
  * All four take a single browser config: `createBrowserList` reads
  * `session.browsers || [session]`, so a bare config is a one-browser session,
@@ -214,8 +220,20 @@ const ENTRY_PATHS = [
     {
         name: 'createBrowserList(container, session)',
         sessionShaped: true,
+        // **Below the seam since #535**, and the one column here that is not a
+        // door: `createBrowserList` is internal, and it no longer normalizes --
+        // its one production caller, `BrowserRegistry.restoreSession`, does that
+        // before calling it. So the driver does what that caller does, and the
+        // column goes on characterizing what it always characterized: the config
+        // the *builder* hands a browser, which is where the other three columns
+        // end too. That is why these snapshots did not move when the call did.
+        //
+        // The normalize call belongs to the driver rather than to the path list
+        // because it is not part of what is being measured. `testNormalizeOnceAtTheEntry.js`
+        // is where the count lives, and it asserts this function normalizes
+        // nothing.
         run: async (container, config) => {
-            await createBrowserList(container, config)
+            await createBrowserList(container, normalizeSession(config))
         },
     },
 ]

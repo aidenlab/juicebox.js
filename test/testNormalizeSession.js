@@ -450,9 +450,15 @@ describe('normalize rejects nothing', () => {
 })
 
 /**
- * Running the stage twice must be the identity — #535 will move the call to the
- * entry, and until then both a host's `init` and the restore it drives can reach
- * the same document.
+ * Running the stage twice must be the identity.
+ *
+ * #535 moved the call to the entry, so nothing in this repo normalizes the same
+ * document twice any more — `test/testNormalizeOnceAtTheEntry.js` counts the
+ * calls and holds that line. The property is kept for the caller this file
+ * cannot see: a host may hand the same object to `init` twice, or to
+ * `createBrowser` after a restore, and the stage rewrites the host's own object,
+ * so drift on a second pass would be a rewrite of something the host still
+ * holds.
  */
 test('normalizing an already-normalized session changes nothing further', () => {
 
@@ -467,10 +473,14 @@ test('normalizing an already-normalized session changes nothing further', () => 
 })
 
 /**
- * The same property over what #533 moved in, and it is load-bearing rather than
- * decorative: `BrowserRegistry.restoreSession` normalizes so that the gene it
- * reads has been hoisted, and then `createBrowserList` normalizes the same
- * document again on its way to the browsers.
+ * The same property over what #533 moved in — the gene hoist, the `syncDatasets`
+ * resolution and the track defaults, all of which write rather than merely
+ * default, and so are where a second pass would be most likely to show.
+ *
+ * This was the load-bearing case until #535: the restore normalized so that the
+ * gene it reads had been hoisted, and `createBrowserList` normalized the same
+ * document again on its way to the browsers. The second call is gone; the
+ * property is kept for the same reason as the one above.
  */
 test('normalizing an already-normalized session document changes nothing further', () => {
 

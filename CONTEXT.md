@@ -185,9 +185,12 @@ pins the disagreements (#531, candidate 9). Four of them are closed: #533 moved
 track defaults, the selected-gene hoist and the `syncDatasets` resolution behind
 the shared normalize stage, and #534 collapsed the URL-shortcut expansion — it
 was written twice, in the decoder and in `restoreSession`, and is written once,
-in normalize, now. What is left is *when* the stage runs: every entry path meets
-it, but `restoreSession` and `createBrowserList` each call it on the same
-document (#535), and `HICBrowser` still defaults fields inline (#536).
+in normalize, now. #535 settled *when* the stage runs: once per session, at the
+entry — `BrowserRegistry.restoreSession` for a session, `createBrowser` for a
+single browser config — and browser creation below them normalizes nothing.
+`test/testNormalizeOnceAtTheEntry.js` counts the calls, since a second one is
+invisible in the result. What is left is that `HICBrowser` still defaults fields
+inline (#536).
 
 **Dispose** vs **reset** vs **clear dataset** — the three teardown verbs, in
 descending order of how much they destroy. See `docs/adr/0005`.

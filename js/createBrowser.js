@@ -20,6 +20,24 @@ const defaultSize = { width: 640, height: 640 };
  * `docs/adr/0004-browser-registry-per-container.md`.
  */
 
+/**
+ * The published single-browser door, and one of the two places a session is
+ * resolved. #535.
+ *
+ * The two lines below are the seam: **above it a config is decided, below it a
+ * config is read.** `buildBrowser` and `createBrowserList` are the below half --
+ * neither normalizes, because by the time either runs the document it is handed
+ * has been through the stage exactly once. The other door is
+ * `BrowserRegistry.restoreSession`, which every session-shaped entry reaches:
+ * `hic.init`, the query path it delegates to, and `hic.restoreSession`.
+ *
+ * ## Why the entry has two doors rather than one function
+ *
+ * Both are published surface (`js/publicApi.js`), so neither can be hidden
+ * behind the other, and they take different shapes: a session for the restore, a
+ * single browser config here. Two calls, one stage, and no path reaching both --
+ * `createBrowser` adds a browser to a registry, it does not restore an embed.
+ */
 async function createBrowser(hicContainer, config, callback) {
 
     // A single browser config *is* a session with its one browser inlined, and
@@ -38,11 +56,19 @@ async function createBrowser(hicContainer, config, callback) {
     // So a session-level rule that writes *down* onto the browsers reaches
     // `config` -- `syncDatasets` does -- and one that writes *up* onto the
     // session lands on the discarded copy. Only the selected-gene hoist writes
-    // up, and this door has no registry to give it to: `createBrowser` adds a
-    // browser to a registry rather than restoring an embed's session, and it is
+    // up, and this door has no registry to give it to: it is
     // `BrowserRegistry.restoreSession` that owns the gene. Nothing is lost here
     // that anything reads.
     normalizeSession({...config, browsers: [config]});
+
+    return buildBrowser(hicContainer, config, callback);
+}
+
+/**
+ * Build one browser from a config that has already been resolved, and register
+ * it. Below the seam: it reads the config, it does not decide it.
+ */
+async function buildBrowser(hicContainer, config, callback) {
 
     const browser = new HICBrowser(hicContainer, config);
     await browser.init(config);
@@ -54,17 +80,19 @@ async function createBrowser(hicContainer, config, callback) {
     return browser;
 }
 
+/**
+ * Build an embed's browsers from a session that has already been resolved.
+ *
+ * Below the seam, and internal: this is not exported from `js/index.js`, and its
+ * one caller is `BrowserRegistry.restoreSession`, which is where the session
+ * this walks was normalized. It used to normalize too -- a second call over a
+ * document the restore had already resolved, harmless only because the stage is
+ * idempotent -- and #535 is the ticket that removed it. What is left is a loop
+ * that reads `browsers || [session]` and nothing that interprets a field.
+ */
 async function createBrowserList(hicContainer, session) {
 
     const registry = registryForContainer(hicContainer);
-
-    // One call for the whole document: the stage walks the same
-    // `browsers || [session]` shape this loop does, and since #533 it resolves
-    // the session-level members too -- `syncDatasets` was translated into a
-    // per-browser `synchable` here, which is why the same document opted out of
-    // the sync group through this door and not through `createBrowser`.
-    // See js/normalizeSession.js.
-    normalizeSession(session);
 
     const configList = session.browsers || [session];
     const initPromises = [];

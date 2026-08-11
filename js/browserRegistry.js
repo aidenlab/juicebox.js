@@ -320,13 +320,20 @@ class BrowserRegistry {
 
         this.deleteAll()
 
-        // Normalized here as well as inside `createBrowserList`, because this
-        // method reads a session-level member -- the selected gene -- that the
-        // stage resolves: a document naming a gene only inside one of its
+        // The session-shaped entry, and since #535 the only place a restored
+        // session is normalized: `createBrowserList` below used to do it again,
+        // over a document this line had already resolved. Every session-shaped
+        // door arrives here -- `hic.init`, the query path it delegates to,
+        // `hic.restoreSession`, and this method reached directly off a registry
+        // -- so one call here is one call per session, and everything past it
+        // reads a resolved config rather than re-interpreting a raw one.
+        //
+        // It has to run before the next line rather than inside the creation it
+        // drives, because this method *reads* a session-level member the stage
+        // resolves: a document naming a selected gene only inside one of its
         // browsers has to have been hoisted before the line below looks for one
-        // (#533, #481). The stage is idempotent and rewrites the caller's own
-        // object, so the second call inside `createBrowserList` finds its work
-        // done; #535 collapses the two into one call at the entry.
+        // (#533, #481). Resolving the session and then reading it is the order
+        // the seam is for.
         //
         // This one call is also what expands the URL shortcuts a session may
         // carry. That was a second `expandSessionUrlShortcuts(session)` line

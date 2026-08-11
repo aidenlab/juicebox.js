@@ -91,7 +91,7 @@ export const configFixtures = [
     {
         id: 'url-shortcuts-in-map-control-and-track',
         note: 'The `*s3/` and `*enc/` shortcuts, in all three places a session can carry one.',
-        divergence: '**Closed by #534.** Expansion happened in `BrowserRegistry.restoreSession`, so the two paths that go through a registry restore expanded and the two browser-creation paths reached directly did not — a host calling `hic.createBrowser` with a shortcut URL handed an unexpanded `*s3/…` straight to the loader. Both copies of the expansion are gone and `normalizeSession` is the survivor, so all four doors expand; the two that did not are the snapshot movement logged in `testConfigGolden.js`. #535 moves the normalize call itself to the entry.',
+        divergence: '**Closed by #534.** Expansion happened in `BrowserRegistry.restoreSession`, so the two paths that go through a registry restore expanded and the two browser-creation paths reached directly did not — a host calling `hic.createBrowser` with a shortcut URL handed an unexpanded `*s3/…` straight to the loader. Both copies of the expansion are gone and `normalizeSession` is the survivor, so all four doors expand; the two that did not are the snapshot movement logged in `testConfigGolden.js`. #535 then moved the normalize call itself to the entry, without moving this fixture: `createBrowserList` is below the seam now and its driver resolves the session the way its one production caller does.',
         config: {
             url: '*s3/hiseq/gm12878/in-situ/HIC009.hic',
             controlUrl: '*s3e_/wapl_hic/WT.hic',

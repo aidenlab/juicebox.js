@@ -227,6 +227,13 @@ class DataLoader {
             }
 
             const lcm = config.liveContactMap;
+
+            // The live map's counterpart to `extractName`, which the file path
+            // uses to name a map after the file behind its URL. A live map has
+            // no URL to be named after, so this is the same load-stage question
+            // with the only answer available -- not a config default the
+            // normalize stage could have applied, since a live map config is a
+            // runtime argument and never part of a session (#536).
             const name = config.name || 'Live Contact Map';
             this.browser.contactMapLabel.textContent = name;
             this.browser.contactMapLabel.title = name;

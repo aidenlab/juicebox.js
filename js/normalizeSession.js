@@ -137,11 +137,21 @@ function normalizeBrowserConfig(config) {
     expandMapUrlShortcuts(config)
     normalizeTrackConfigs(config.tracks)
 
+    resolveColorScale(config)
+    resolveBackgroundColor(config)
+}
+
+/**
+ * The colour scale, coerced out of its wire spelling.
+ *
+ * An object -- a scale a host built, or one a previous pass produced -- is left
+ * alone, which is what makes a second pass the identity.
+ */
+function resolveColorScale(config) {
+
     if (StringUtils.isString(config.colorScale)) {
         config.colorScale = parseColorScale(config.colorScale)
     }
-
-    config.backgroundColor = resolveBackgroundColor(config.backgroundColor)
 }
 
 /**
@@ -159,11 +169,17 @@ function normalizeBrowserConfig(config) {
  * written into it, so there is one field below the seam and it is the one the
  * rest of this module already reads. The three flags now go off for a `miniMode`
  * config, which is the visible half of the movement and is the reading the field
- * was named for -- a mini map is a figure.
+ * was named for -- a mini map is a figure. That is the one decision candidate 9
+ * raised that ADR-0006 did not already cover, and it has an ADR of its own:
+ * `docs/adr/0008-figuremode-absorbs-minimode.md`, including what a host that
+ * wanted the old behaviour writes instead.
  *
- * The `||` is kept rather than tightened to `=== true`, because that is what the
- * browser applied: whatever `figureMode || miniMode` yielded is what
- * `browser.figureMode` became. Only a literal `true` reaches
+ * Written as a guard rather than as `figureMode ||= miniMode`, and the
+ * difference matters: `||=` would put a `figureMode` member on every config that
+ * names neither, and a config gains nothing here it did not ask for. The
+ * truthiness is what the browser applied -- whatever `figureMode || miniMode`
+ * yielded is what `browser.figureMode` became -- so it is kept rather than
+ * tightened to `=== true`. Only a literal `true` reaches
  * `setWidgetVisibilityDefaults` below, as before.
  */
 function resolveFigureMode(config) {
@@ -219,13 +235,14 @@ function resolveDisplayMode(config) {
  * is a mutable object on a class, and handing the same one to every config would
  * make a host that edits its own config edit every other browser's.
  */
-function resolveBackgroundColor(backgroundColor) {
+function resolveBackgroundColor(config) {
 
-    if (StringUtils.isString(backgroundColor)) {
-        return ContactMatrixView.parseBackgroundColor(backgroundColor)
+    if (StringUtils.isString(config.backgroundColor)) {
+        config.backgroundColor = ContactMatrixView.parseBackgroundColor(config.backgroundColor)
+        return
     }
 
-    return backgroundColor ?? {...ContactMatrixView.defaultBackgroundColor}
+    config.backgroundColor = config.backgroundColor ?? {...ContactMatrixView.defaultBackgroundColor}
 }
 
 /**

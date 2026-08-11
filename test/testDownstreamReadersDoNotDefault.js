@@ -22,6 +22,12 @@ import {describe, expect, test} from 'vitest'
 import HICBrowser from '../js/hicBrowser.js'
 import {withContainers} from './utils/browserFixture.js'
 
+/**
+ * Spelled out rather than imported from `js/normalizeSession.js`, which exports
+ * it: the same rule `test/data/configEntryPathCorpus.js` states — a test that
+ * derives its input from the code under test moves when that code moves, and
+ * what is being asserted here is that a *particular* colour is dropped.
+ */
 const DEFAULT_ANNOTATION_COLOR_LITERAL = 'rgb(22, 129, 198)'
 
 describe('the browser constructor decides nothing about a config', () => {

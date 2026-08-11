@@ -40,14 +40,21 @@ const doLegacyTrack2DRendering = false
 class ContactMatrixView {
 
     /**
-     * `backgroundColor` defaults to this class's own default, which is the
-     * component answering for itself rather than a config default: since #536
-     * `normalizeSession` resolves `config.backgroundColor` for every browser, so
-     * `createWidgets` always passes one. The parameter default is for a view
-     * constructed directly, without a resolved config behind it.
+     * The `backgroundColor` parameter default is this class answering for
+     * itself, and is deliberately *not* the kind of default #536 took out of the
+     * readers: it never sees a config. `normalizeSession` resolves
+     * `config.backgroundColor` for every browser and `createWidgets` passes what
+     * it finds there, so in a running juicebox this default is unreachable --
+     * it stands up a view constructed without a browser config behind it, which
+     * is what the suites that build a browser from `{}` do.
+     *
+     * A copy, because `defaultBackgroundColor` is a mutable object on the class
+     * and `setBackgroundColor` would otherwise let one view edit every other
+     * view's default. `normalizeSession.resolveBackgroundColor` copies it for the
+     * same reason.
      */
     constructor(browser, viewportElement, sweepZoom, scrollbarWidget, imageTileSource,
-                backgroundColor = ContactMatrixView.defaultBackgroundColor) {
+                backgroundColor = {...ContactMatrixView.defaultBackgroundColor}) {
         this.browser = browser;
         this.viewportElement = viewportElement;
         this.sweepZoom = sweepZoom;

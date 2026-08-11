@@ -183,6 +183,12 @@ builds an embed's browsers from a session its caller has already resolved.
 `test/testConfigGolden.js` still snapshots it as a column, because what it hands
 a browser is where the other columns end too.
 
+A **track** has one door of its own: `HICBrowser.loadTracks(configs)`, which a
+host calls at runtime with track configs that were never part of a session. It
+resolves them through the same stage (#536). It is not a session entry — nothing
+about a session or a browser is decided there — so "two places a session is
+resolved" still holds.
+
 **Resolved config** — a browser config *after* the normalize stage has had it,
 which is the object `browser.config` then holds. Not a copy: the stage rewrites
 the host's own object in place, so the host's config and the browser's are one
@@ -194,10 +200,13 @@ One reader decides it: `js/normalizeSession.js`, run once per session at the
 entry (#535) — `BrowserRegistry.restoreSession` for a session,
 `createBrowser` for a single browser config, `HICBrowser.loadTracks` for tracks
 added at runtime. **Everything below that seam reads fields.** A `??`, a
-`|| default`, an `x !== false` or a string-to-object coercion appearing in the
-browser, the widgets or the loaders is a bug, not a convenience: it puts a second
-answer where there is meant to be one, and it is invisible in `browser.config`
-(#536). The stage **defaults and coerces; it never rejects** — a config is the
+`|| default`, an `x !== false` or a string-to-object coercion **applied to a
+config field** in the browser, the widgets or the loaders is a bug, not a
+convenience: it puts a second answer where there is meant to be one, and it is
+invisible in `browser.config` (#536). A component defaulting its *own*
+constructor parameter is not that — `ContactMatrixView` names a background
+colour for a view built without a config behind it, and never reads a config to
+do it. The stage **defaults and coerces; it never rejects** — a config is the
 most-used public surface juicebox has, so anything unrecognized is carried
 through untouched.
 
@@ -208,7 +217,7 @@ the object.
 | Field | Resolved to |
 |---|---|
 | `showLocusGoto`, `showHicContactMapLabel`, `showChromosomeSelector` | **Defaulted** to `true`; all three forced `false` when `figureMode === true`, which beats an explicit `true` |
-| `figureMode` | **Absorbs `miniMode`**, the legacy spelling — `figureMode ||= miniMode`. `miniMode` is left on the config, unread |
+| `figureMode` | **Absorbs `miniMode`**, the legacy spelling: a config naming `miniMode` and no `figureMode` gets `figureMode` set from it. One that names neither gains no member. `miniMode` is left on the config, unread. See ADR-0008 |
 | `synchable` | **Defaulted** to `true`. Only a literal `false` opts out. A session-level `syncDatasets: false` writes `false` here on every browser, overriding what a browser said |
 | `backgroundColor` | **Coerced** from `"r,g,b"` to `{r, g, b}`; **defaulted** to white |
 | `colorScale` | **Coerced** from its wire spelling to a `ColorScale` (or the signed scale its tag names) |
@@ -231,9 +240,19 @@ the resolved schema:
   URL (`js/nvi.js`). That is the loader answering a question about a *file*, and
   it reaches maps loaded at runtime as well as those a session named.
 
-The loaders default two more fields, and both are what the *load* discovers
-rather than what a document says: a track's `height` comes from the live layout,
-and `autoscale` is set when a track config names no `max`.
+The loaders and `init()` answer four more questions, and none of them is a
+document's to answer — each needs the load, the layout or the dataset:
+
+- a track's **`height`** comes from the live layout, and **`autoscale`** is set
+  when a track config names no `max`;
+- a map's **`name`** is extracted from the file behind its URL, and a live
+  contact map — which has no URL — falls back to `"Live Contact Map"`;
+- **`normalization`** is checked against the loaded dataset's own set of
+  normalizations and falls back to `NONE` if the map does not carry the one
+  asked for. The only field still checked below the seam, and it *cannot* move
+  up: the valid set does not exist until a dataset is loaded.
+
+Everything else below the seam is a plain field read.
 
 **Dispose** vs **reset** vs **clear dataset** — the three teardown verbs, in
 descending order of how much they destroy. See `docs/adr/0005`.

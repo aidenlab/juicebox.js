@@ -251,6 +251,12 @@ class HICBrowser {
 
             await Promise.all(promises);
 
+            // The one config field still checked below the seam, and it stays
+            // here on purpose: the set it is checked against is the loaded
+            // dataset's, so the question cannot be asked before the load. It
+            // falls back to `NONE` rather than rejecting -- a saved link naming
+            // a normalization this map does not carry still opens. Recorded in
+            // CONTEXT.md as a load-stage rule, not part of the resolved schema.
             if (config.normalization) {
                 const normalizations = await this.getNormalizationOptions();
                 const validNormalizations = new Set(normalizations);

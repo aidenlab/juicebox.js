@@ -243,8 +243,8 @@ function getCSSVariable(name) {
     return parseInt(getComputedStyle(document.documentElement).getPropertyValue(name));
 }
 
-function setCSSVariable(name, value) {
-    document.documentElement.style.setProperty(name, `${value}px`);
+function setCSSVariable(element, name, value) {
+    element.style.setProperty(name, `${value}px`);
 }
 
 function getLayoutDimensions() {
@@ -259,9 +259,27 @@ function getLayoutDimensions() {
     };
 }
 
-function setViewportSize(width, height) {
-    setCSSVariable('--hic-viewport-width', width);
-    setCSSVariable('--hic-viewport-height', height);
+/**
+ * Sizes one browser, and only that browser.
+ *
+ * These two properties are written as inline styles on the browser's own
+ * `rootElement` rather than on `document.documentElement`, because the page is
+ * not the unit being sized. `.hic-root` is the sole rule that reads them, so a
+ * property set on that element resolves exactly where it is needed and nowhere
+ * else; custom properties inherit, and the `:root` declarations in
+ * `css/juicebox.scss` remain the fallback for a browser given no dimensions.
+ *
+ * Scoped per *browser*, not per container: a registry's container holds many
+ * browsers (juicebox-web clones a second browser into the same container), so
+ * container scoping would leave last-writer-wins intact within one embed.
+ *
+ * Consequence, and it is visible: a browser constructed without `width`/`height`
+ * used to inherit whatever the last-sized browser wrote to the page. It now
+ * falls back to the stylesheet default instead. Issue #477; deferred by ADR-0004.
+ */
+function setViewportSize(rootElement, width, height) {
+    setCSSVariable(rootElement, '--hic-viewport-width', width);
+    setCSSVariable(rootElement, '--hic-viewport-height', height);
 }
 
 function createNavBar(browser, root) {

@@ -24,9 +24,11 @@ globalThis.window = mockedWindow
 globalThis.document = mockedDocument
 
 /**
- * The two page-scoped singletons that were plainly per-embed -- the selected
- * gene and the alert dialog -- now live on the registry. #481, the scope
- * section of ADR-0004.
+ * The page-scoped singletons that were plainly per-embed -- the selected gene,
+ * the alert dialog, and the viewport sizing -- no longer are. The first two
+ * moved onto the registry (#481, the scope section of ADR-0004); the third is
+ * the `--hic-viewport-*` custom properties, which ADR-0004 deferred and #477
+ * moved onto each browser's own root element.
  *
  * What each test here asserts is *which embed* a piece of state belongs to, so
  * every one of them stands up two containers. A single-embed assertion would
@@ -171,6 +173,65 @@ describe('alerts', () => {
         registryForContainer(dom.container)
 
         expect(dom.container.querySelector('.igv-ui-alert-dialog-container')).toBeNull()
+    })
+})
+
+/**
+ * `--hic-viewport-width/height` are the input to `.hic-root`'s own width and
+ * height, so whichever element carries them decides what "the viewport" means.
+ * They were written to `document.documentElement`, which made that meaning
+ * page-wide and the last browser to lay out the winner. #477.
+ */
+describe('viewport sizing', () => {
+
+    const dom = withContainers()
+
+    const sizeOf = element => ({
+        width: element.style.getPropertyValue('--hic-viewport-width'),
+        height: element.style.getPropertyValue('--hic-viewport-height')
+    })
+
+    it('is carried by the browser rather than by the page', () => {
+        const browser = new HICBrowser(dom.container, {width: 320, height: 240})
+
+        expect(sizeOf(browser.rootElement)).toEqual({width: '320px', height: '240px'})
+        expect(sizeOf(globalThis.document.documentElement)).toEqual({width: '', height: ''})
+    })
+
+    it('differs between two embeds at once', () => {
+        const mine = new HICBrowser(dom.container, {width: 320, height: 240})
+        const theirs = new HICBrowser(dom.another(), {width: 800, height: 600})
+
+        expect(sizeOf(mine.rootElement)).toEqual({width: '320px', height: '240px'})
+        expect(sizeOf(theirs.rootElement)).toEqual({width: '800px', height: '600px'})
+    })
+
+    it('differs between two browsers sharing one container', () => {
+        // Why per-browser and not per-container, which is what #477 first
+        // proposed: a container holds many browsers -- juicebox-web's clone
+        // button puts a second one in the same container it was given -- so
+        // scoping to the container would have left last-writer-wins in place
+        // inside a single embed.
+        const first = new HICBrowser(dom.container, {width: 320, height: 240})
+        const second = new HICBrowser(dom.container, {width: 800, height: 600})
+
+        expect(sizeOf(first.rootElement)).toEqual({width: '320px', height: '240px'})
+        expect(sizeOf(second.rootElement)).toEqual({width: '800px', height: '600px'})
+    })
+
+    it('is left to the stylesheet when a browser is given no dimensions', () => {
+        // The visible behaviour change. Such a browser used to inherit whatever
+        // the last sized browser wrote to the page; it now sets nothing, and
+        // the `:root` declarations in css/juicebox.scss supply the default.
+        //
+        // Both assertions are the claim: an empty inline property on the root
+        // is only a default if the page it inherits from is empty too, which is
+        // exactly what was not true before.
+        new HICBrowser(dom.container, {width: 320, height: 240})
+        const unsized = new HICBrowser(dom.container, {})
+
+        expect(sizeOf(unsized.rootElement)).toEqual({width: '', height: ''})
+        expect(sizeOf(globalThis.document.documentElement)).toEqual({width: '', height: ''})
     })
 })
 

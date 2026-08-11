@@ -235,7 +235,8 @@ the resolved schema:
   resolved by a stage that runs after that decision.
 - **`width` / `height`** are read by the browser constructor, which calls
   `setViewportSize` when both are present. Not a default — there is no default
-  size in a config — and page-scoped besides (#477).
+  size in a config. A browser given neither is sized by the stylesheet, not by
+  whatever browser was sized last (#477).
 - **`nvi`** may be filled in at load time from a lookup table keyed on the map's
   URL (`js/nvi.js`). That is the loader answering a question about a *file*, and
   it reaches maps loaded at runtime as well as those a session named.
@@ -290,6 +291,16 @@ column (`imageTileDimension`, currently 685 bins square). Cached, keyed by
 chromosome pair, bin size, unit, grid position, normalization and display mode.
 Notably *not* keyed by pan position or pixel size — those affect where a tile is
 painted, not what it contains.
+
+**Viewport** — the element the contact map is painted into
+(`contactMatrixView.viewportElement`), sized as a percentage of its container so
+that adding tracks shrinks it. Distinguish it from the `--hic-viewport-*` custom
+properties, which despite the name size `.hic-root` — the whole browser, navbar
+and axes included — with the viewport as one term in that sum. A config's
+`width`/`height` set those properties, so they name the browser's size, not the
+element's. Per browser, on its own `rootElement`: a container holds many
+browsers, so the unit of isolation (the registry's container) and the unit of
+sizing (the browser) are not the same element.
 
 **Track tile** — an unrelated concept despite the shared word: a buffered span of
 1D track features for one axis (`js/tile.js`). Has nothing to do with image

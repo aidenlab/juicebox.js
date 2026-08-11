@@ -28,14 +28,14 @@
       <header class="space-y-6 border-b border-stone-300 pb-8">
         <div>
           <h1 class="font-serif text-4xl tracking-tight">Module map — juicebox.js</h1>
-          <p class="text-sm text-slate-500 mt-2 font-mono">master · snapshot 10 August 2026 · 6 of 11 candidates landed · candidate 9 underway (#531 merged, #532 in flight)</p>
+          <p class="text-sm text-slate-500 mt-2 font-mono">master · snapshot 11 August 2026 · 7 of 11 candidates landed · candidate 9 done (#531–#536, ADR-0008) · nothing underway</p>
           <p class="text-sm text-slate-500 mt-1 font-mono">the shape, not the backlog — companion to <a class="underline" href="architecture-review.html">architecture-review.html</a></p>
         </div>
 
         <div class="rounded-lg border-2 border-slate-900 bg-white p-5 space-y-3">
           <div class="text-xs uppercase tracking-wider text-slate-500">What this document is for</div>
           <p class="text-sm">The review answers <strong>what to fix next</strong>. This answers <strong>what the thing is becoming</strong>: every module that is or will be deep, its interface, what it hides, and the seam it sits on. Read the review to scope a candidate; read this to know where the candidate lands.</p>
-          <p class="text-sm"><strong>It is a snapshot of a moving target, and it says so on every card.</strong> Six candidates have landed, one is underway, four are ahead. Each card carries the state of that module <em>today</em> and the delta the next candidate applies. Cards do not describe a finished architecture, and drawing them as if they did would be the lie that makes this document useless.</p>
+          <p class="text-sm"><strong>It is a snapshot of a moving target, and it says so on every card.</strong> Seven candidates have landed, none is underway, four are ahead. Each card carries the state of that module <em>today</em> and the delta the next candidate applies. Cards do not describe a finished architecture, and drawing them as if they did would be the lie that makes this document useless.</p>
           <p class="text-sm text-slate-600">Vocabulary is <a class="underline" href="../CONTEXT.md">CONTEXT.md</a> § Architecture vocabulary — <strong>module</strong>, <strong>interface</strong>, <strong>depth</strong>, <strong>seam</strong>, <strong>adapter</strong>. Depth here means <em>leverage at the interface</em>: behaviour exercisable per unit of interface learned. Not a line-count ratio.</p>
         </div>
 
@@ -76,7 +76,7 @@ flowchart TB
 
   subgraph SESSION["④ Session &amp; config — decode then normalize"]
     DEC["Session codec<br/><span style='font-size:11px'>decodeSession + WIRE_FORMATS<br/>the only place a format is named</span>"]
-    NORM["normalizeSession / normalizeConfig<br/><span style='font-size:11px'>does not exist yet — candidate 9</span>"]
+    NORM["normalizeSession<br/><span style='font-size:11px'>one reader of the config schema<br/>runs once, at the entry</span>"]
   end
 
   subgraph DATA["⑤ Data access"]
@@ -206,12 +206,12 @@ flowchart TB
               <div class="rounded border border-emerald-400 bg-emerald-50 p-4 space-y-2">
                 <div class="text-xs uppercase tracking-wider text-emerald-800">Already moved out</div>
                 <p><strong>Candidate 3</strong> — <span class="font-mono">browserUIManager.js</span> and <span class="font-mono">renderCoordinator.js</span> deleted, 14 <span class="font-mono">notify*</span> forwarders gone.</p>
+                <p><strong>Candidate 9</strong> — config defaulting left the constructor and <span class="font-mono">init</span> entirely. The browser reads <span class="font-mono">config.synchable</span> and <span class="font-mono">config.figureMode</span>; it decides neither. One field is still checked in <span class="font-mono">init</span> and stays there — <span class="font-mono">normalization</span>, against a set the loaded dataset owns.</p>
                 <p><strong>Candidate 8</strong> — four teardown verbs became two; <span class="font-mono">dispose()</span> is now symmetric with the constructor at both browser and registry level (ADR-0005).</p>
               </div>
               <div class="rounded border border-dashed border-slate-500 bg-slate-50 p-4 space-y-2">
                 <div class="text-xs uppercase tracking-wider text-slate-600">Still to move out</div>
                 <p><strong>Candidate 6</strong> — the 10 state accessors, which the code itself documents as bypassing validation. Three plain fields survive.</p>
-                <p><strong>Candidate 9</strong> — config defaulting, currently applied in the constructor <em>and</em> in <span class="font-mono">init</span>.</p>
                 <p><strong>Candidate 10</strong> — three load paths that reach back into <span class="font-mono">browser.userInteractionShield</span>, <span class="font-mono">contactMapLabel</span>, <span class="font-mono">browser.genome</span>, <span class="font-mono">tracks2D</span> and a raw <span class="font-mono">document.querySelector</span>.</p>
               </div>
             </div>
@@ -319,41 +319,44 @@ flowchart TB
           </div>
         </article>
 
-        <article class="rounded-lg border-4 border-amber-600 bg-white overflow-hidden">
-          <div class="bg-amber-50 px-5 py-3 border-b-4 border-amber-600 flex flex-wrap items-baseline gap-x-4">
-            <h3 class="font-serif text-2xl">normalizeSession / normalizeConfig</h3>
-            <span class="text-xs uppercase tracking-wider text-amber-900 font-semibold">Underway — you are here · candidate 9 · #531–#535 landed, #536 open</span>
+        <article class="rounded-lg border-4 border-emerald-600 bg-white overflow-hidden">
+          <div class="bg-emerald-50 px-5 py-3 border-b-4 border-emerald-600 flex flex-wrap items-baseline gap-x-4">
+            <h3 class="font-serif text-2xl">normalizeSession</h3>
+            <span class="text-xs uppercase tracking-wider text-emerald-900 font-semibold">Landed — candidate 9 · #531–#536 · ADR-0008</span>
           </div>
           <div class="p-5 space-y-4 text-sm">
-            <p class="font-mono text-xs text-slate-500">js/normalizeSession.js · still to draw from js/hicBrowser.js (constructor, init), js/dataLoader.js</p>
+            <p class="font-mono text-xs text-slate-500">js/normalizeSession.js · drawn from js/sessionCodec.js, js/createBrowser.js, js/hicBrowser.js (constructor, init), js/createWidgets.js, js/dataLoader.js</p>
 
-            <p><strong>The module now exists, and it is the one you are still building.</strong> No file yet states what a config contains: several modules each interpret a subset and apply their own defaults, which is how the four entry paths silently diverged. All three divergences below are closed.</p>
+            <p><strong>The module exists, it is the only reader of the config schema, and the schema is written down.</strong> When this card was first drawn, no file stated what a config contained: several modules each interpreted a subset and applied their own defaults, which is how the four entry paths silently diverged. <a class="underline" href="../CONTEXT.md">CONTEXT.md</a> § <em>Resolved config</em> is the prose copy — every field, what is defaulted, what is coerced — and this module is the executable one.</p>
 
             <div class="grid md:grid-cols-2 gap-5">
               <div class="rounded border border-rose-300 bg-rose-50 p-4 space-y-2">
-                <div class="text-xs uppercase tracking-wider text-rose-900">Today — several readers, no schema</div>
+                <div class="text-xs uppercase tracking-wider text-rose-900">What it was — several readers, no schema</div>
                 <p><s><span class="font-mono">syncDatasets</span> is honoured by <span class="font-mono">createBrowserList</span> and absent from <span class="font-mono">createBrowser</span>.</s> Resolved at session level in normalize — <strong>#533</strong>.</p>
                 <p><s><span class="font-mono">fixDefaults</span> runs on the URL path only — <span class="font-mono">restoreSession</span> skips it.</s> Moved to <span class="font-mono">normalizeSession.applyTrackDefaults</span>, which every door meets — <strong>#533</strong>. What <strong>#525</strong> still asks is whether forcing every track to <span class="font-mono">COLLAPSED</span> is right at all; it is no longer a disagreement between paths.</p>
                 <p><s>Normalization runs inside browser creation, and the same document meets the stage twice — once in <span class="font-mono">restoreSession</span>, again in <span class="font-mono">createBrowserList</span>.</s> Lifted to the entry: two doors, <span class="font-mono">BrowserRegistry.restoreSession</span> and <span class="font-mono">createBrowser</span>, and nothing below them normalizes — <strong>#535</strong>.</p>
                 <p><s>URL-shortcut expansion runs <strong>twice</strong> — once on the URL path, again in <span class="font-mono">restoreSession</span>.</s> Both copies deleted; the survivor is <span class="font-mono">normalizeSession.expandUrlShortcuts</span>, so the two doors that never expanded now do — <strong>#534</strong>.</p>
+                <p><s>The readers below the seam default for themselves — <span class="font-mono">HICBrowser</span> spells <span class="font-mono">config.synchable !== false</span> and <span class="font-mono">figureMode || miniMode</span>, <span class="font-mono">createWidgets</span> defaults the background colour, <span class="font-mono">init</span> writes <span class="font-mono">displayMode</span> from <span class="font-mono">cycle</span>, and <span class="font-mono">DataLoader.loadTracks</span> keeps a second copy of two track rules.</s> All of it moved up rather than being deleted, so each is a <em>field of the resolved config</em> now — <strong>#536</strong>. The one field still checked below the seam is <span class="font-mono">normalization</span>, and it cannot move: the valid set belongs to a dataset that is not loaded yet.</p>
               </div>
               <div class="rounded border border-emerald-400 bg-emerald-50 p-4 space-y-2">
-                <div class="text-xs uppercase tracking-wider text-emerald-800">Target — normalize once, at the entry</div>
-                <p class="font-mono text-xs">normalizeConfig(raw) → resolved config</p>
+                <div class="text-xs uppercase tracking-wider text-emerald-800">What it is — normalize once, at the entry</div>
+                <p class="font-mono text-xs">normalizeSession(session) → the same object, resolved<br/>normalizeTrackConfigs(tracks) → the same list, resolved</p>
                 <p>Pure. Every default in one place, one schema, testable with object literals. Downstream consumers <em>read fields</em> — none of them default, none of them validate (<strong>#536</strong>).</p>
                 <p>Every entry path — <span class="font-mono">hic.init</span>, the query path, <span class="font-mono">restoreSession</span>, <span class="font-mono">createBrowser</span> — passes through it <em>exactly once</em>, and they agree. <span class="font-mono">createBrowserList</span> is no longer one of them: it builds browsers from a session its caller resolved (<strong>#535</strong>).</p>
               </div>
             </div>
 
             <div class="rounded bg-slate-50 border border-slate-200 p-4 space-y-1">
-              <div class="text-xs uppercase tracking-wider text-slate-500">Why this one is safe to do now</div>
-              <p>Candidate 5 stopped exactly at this edge on purpose — shipping the normalize move with it would have doubled the blast radius on <span class="font-mono">hic.init</span>, the most-used public surface. What 9 inherits that 5 did not have: <strong>a golden-file snapshot over the whole wire-format corpus, already built and already green</strong>, plus <span class="font-mono">test/testConfigGolden.js</span> from <strong>#531</strong>, which pins what each entry path resolves to today. Normalization changes are exactly the kind that move decoded output, so <em>every moved fixture has to be one you can explain</em>.</p>
+              <div class="text-xs uppercase tracking-wider text-slate-500">Why it was safe to do, and what the gate cost</div>
+              <p>Candidate 5 stopped exactly at this edge on purpose — shipping the normalize move with it would have doubled the blast radius on <span class="font-mono">hic.init</span>, the most-used public surface. 9 inherited that gate and built one of its own, <span class="font-mono">test/testConfigGolden.js</span> (<strong>#531</strong>), which snapshots what every door resolves a config to. Both held. <strong>The criterion they were written with did not:</strong> every ticket asked for byte-identical snapshots, and the last one moved 63 of them — because a default moved <em>up</em> into the stage becomes a field of the very thing being snapshotted. Additive movement is forced by this kind of work; what saves you is tallying the diff by hand and logging the kinds, not the criterion.</p>
             </div>
 
             <div class="rounded bg-amber-50 border border-amber-300 p-4 space-y-1">
-              <div class="text-xs uppercase tracking-wider text-amber-900">Constraint the interface has to respect</div>
+              <div class="text-xs uppercase tracking-wider text-amber-900">Constraint the interface respects, and still has to</div>
               <p>A <strong>resolved config</strong> is <em>not a copy</em>. Every normalizer rewrites the host's own object in place, so the host's config and <span class="font-mono">browser.config</span> are one object — and juicebox-web reads it back (ADR-0003). A <span class="font-mono">normalizeConfig</span> that returns a fresh object is a breaking change to an observable surface, however much cleaner it is. Decide that deliberately.</p>
             </div>
+
+            <p><strong>Depth verdict — deep, and the interface is a document rather than a signature.</strong> One function over a session, one over a track list, and everything a config can mean behind them. The deletion test passes the way it did before the extraction, in reverse: delete this and the defaults reappear in four modules, which is exactly where they were. <strong>What it does not hide</strong> is the three fields honoured on one path only — <span class="font-mono">queryParametersSupported</span> is read before this stage runs, <span class="font-mono">width</span>/<span class="font-mono">height</span> are page-scoped (#477), and <span class="font-mono">normalization</span> needs a loaded dataset. Naming them was most of the value of writing the schema down.</p>
           </div>
         </article>
       </section>

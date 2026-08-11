@@ -163,7 +163,7 @@ tracks=http://…/GM12878_CTCF_orientation.bed|GM12878_CTCF_orientation.bed||rgb
 Empty fields are allowed and common — the example above supplies no data range.
 An empty or blank **data range** is read as *absent*: the decoder writes no
 `min`/`max` at all, so the track autoscales as though the field had never been
-written (#515). A *partly* written range (`0-`) still yields a `NaN` bound,
+written. A *partly* written range (`0-`) still yields a `NaN` bound,
 which the **normalize** stage deletes on every entry path.
 
 **Three fields** is accepted, and is the v0 layout. The colour is always the

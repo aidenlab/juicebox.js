@@ -104,8 +104,15 @@ describe('decodeSession — the query-parameter form', () => {
  * stage has to sweep up. #515.
  *
  * `js/normalizeSession.js` still deletes `NaN` bounds, because a *partly* empty
- * range (`0-`) can still produce one; what changed here is that the common shape
- * no longer needs it.
+ * range (`0-`) can still produce one.
+ *
+ * **Why here and not in `testSessionCodec.js`**, which owns the pure decisions
+ * inside the codec: `destringifyTracksV0` is not one of them from a test's side.
+ * It is a closure inside `decodeQuery`, exported nowhere, so the only way to
+ * drive it is through `decodeSession` — which is this file's subject, and which
+ * the query form reaches without a loader at all. Hand-written expectations
+ * rather than a snapshot, because the claim is about the *rule*: the golden file
+ * records that the output moved, and this records what it is now meant to be.
  */
 describe('decodeSession — the v0 track string data range', () => {
 

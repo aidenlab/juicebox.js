@@ -539,7 +539,12 @@ function decodeQuery(query, uriDecode) {
                     trackConfig.name = replaceAll(tokens[1], "$", "|");
                 }
 
-                if (tokens.length > 2) {
+                // An empty third field means *no data range*, and it is the
+                // common shape -- every harvested four-field track writes
+                // `...|name||colour`. `"".split("-")` is `[""]`, so reading one
+                // anyway gave `min: NaN, max: NaN` and handed a track that would
+                // otherwise autoscale a range it cannot use. #515.
+                if (tokens.length > 2 && tokens[2].trim().length > 0) {
                     const dataRangeString = tokens[2];
                     if (dataRangeString.startsWith("-")) {
                         const r = dataRangeString.substring(1).split("-");

@@ -96,6 +96,76 @@ describe('decodeSession — the query-parameter form', () => {
     })
 })
 
+/**
+ * The third field of a four-field track string, and the one that is routinely
+ * written empty — every harvested four-field track in `test/test_urls.md` has
+ * `…|name||rgb(22, 129, 198)`. An empty field means *no data range*, so it must
+ * leave the decoder as no `min`/`max` at all rather than as `NaN` bounds a later
+ * stage has to sweep up. #515.
+ *
+ * `js/normalizeSession.js` still deletes `NaN` bounds, because a *partly* empty
+ * range (`0-`) can still produce one; what changed here is that the common shape
+ * no longer needs it.
+ */
+describe('decodeSession — the v0 track string data range', () => {
+
+    const tracksParam = trackString =>
+        `?hicUrl=https://example.org/a.hic&tracks=${encodeURIComponent(trackString)}`
+
+    test('an empty range decodes to a config with no min and no max', async () => {
+        const config = await decodeSession(
+            tracksParam('https://example.org/a.bed|A||rgb(255,0,0)'), noIO)
+        const [track] = config.tracks
+
+        expect(track.url).toBe('https://example.org/a.bed')
+        expect(Object.hasOwn(track, 'min')).toBe(false)
+        expect(Object.hasOwn(track, 'max')).toBe(false)
+    })
+
+    test('a blank range is an absent one too', async () => {
+        const config = await decodeSession(
+            tracksParam('https://example.org/a.bed|A|  |rgb(255,0,0)'), noIO)
+        const [track] = config.tracks
+
+        expect(Object.hasOwn(track, 'min')).toBe(false)
+        expect(Object.hasOwn(track, 'max')).toBe(false)
+    })
+
+    test('0-50 decodes as it always has', async () => {
+        const config = await decodeSession(
+            tracksParam('https://example.org/a.bed|A|0-50|rgb(255,0,0)'), noIO)
+        const [track] = config.tracks
+
+        expect(track.min).toBe(0)
+        expect(track.max).toBe(50)
+    })
+
+    test('the negative form -5-5 decodes as it always has', async () => {
+        const config = await decodeSession(
+            tracksParam('https://example.org/a.bed|A|-5-5|rgb(255,0,0)'), noIO)
+        const [track] = config.tracks
+
+        expect(track.min).toBe(-5)
+        expect(track.max).toBe(5)
+    })
+
+    /**
+     * A harvested link, verbatim from `test/testURL.js` — two four-field tracks,
+     * both with an empty range. The shape the rule exists for.
+     */
+    test('a harvested link leaves both of its tracks unbounded', async () => {
+        const url = "http://www.aidenlab.org/juicebox/?state=3,3,6,5537.98746,5537.749239047619,1,KR&colorScale=18.89619862813927&hicUrl=https://s3.amazonaws.com/hicfiles/external/wapl_hic/WT.hic&name=Haarhuis%20et%20al.%20|%20Cell%202017%20Hap1%20control&tracks=http://hicfiles.s3.amazonaws.com/external/GM12878_CTCF_orientation.bed|GM12878_CTCF_orientation.bed||rgb(22,%20129,%20198)|||https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.collapsed.bed.gz|gencode.v18.collapsed.bed.gz||rgb(22,%20129,%20198)"
+
+        const config = await decodeSession(url, noIO)
+
+        expect(config.tracks.length).toBe(2)
+        for (const track of config.tracks) {
+            expect(Object.hasOwn(track, 'min')).toBe(false)
+            expect(Object.hasOwn(track, 'max')).toBe(false)
+        }
+    })
+})
+
 describe('decodeSession — the session parameter', () => {
 
     test('a compressed share link decodes from the parameter alone', async () => {

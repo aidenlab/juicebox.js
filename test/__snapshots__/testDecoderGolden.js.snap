@@ -78,22 +78,16 @@ exports[`decoder golden file — inputs the decoder takes as a string > harveste
         "tracks": [
           {
             "color": "rgb(255,255,0)",
-            "max": NaN,
-            "min": NaN,
             "name": "5000_blocks",
             "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC/inter_30_contact_domains/5000_blocks",
           },
           {
             "color": "rgb(0,36,255)",
-            "max": NaN,
-            "min": NaN,
             "name": "merged_loops.bedpe",
             "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_loops/merged_loops.bedpe",
           },
           {
             "color": "rgb(0,255,36)",
-            "max": NaN,
-            "min": NaN,
             "name": "differential_loops1.bedpe",
             "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_vs_EndoC/differential_loops1.bedpe",
           },
@@ -125,22 +119,16 @@ exports[`decoder golden file — inputs the decoder takes as a string > harveste
         "tracks": [
           {
             "color": "rgb(18,0,255)",
-            "max": NaN,
-            "min": NaN,
             "name": "merged_loops.bedpe",
             "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC_loops/merged_loops.bedpe",
           },
           {
             "color": "rgb(255,255,0)",
-            "max": NaN,
-            "min": NaN,
             "name": "5000_blocks",
             "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/EndoC/inter_30_contact_domains/5000_blocks",
           },
           {
             "color": "rgb(18,255,0)",
-            "max": NaN,
-            "min": NaN,
             "name": "differential_loops2.bedpe",
             "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC_vs_EndoC/differential_loops2.bedpe",
           },
@@ -202,8 +190,6 @@ exports[`decoder golden file — inputs the decoder takes as a string > harveste
     "tracks": [
       {
         "color": "rgb(22, 129, 198)",
-        "max": NaN,
-        "min": NaN,
         "name": "RefSeq genes",
         "url": "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz",
       },
@@ -336,15 +322,11 @@ exports[`decoder golden file — inputs the decoder takes as a string > harveste
     "tracks": [
       {
         "color": "rgb(22, 129, 198)",
-        "max": NaN,
-        "min": NaN,
         "name": "GM12878_CTCF_orientation.bed",
         "url": "http://hicfiles.s3.amazonaws.com/external/GM12878_CTCF_orientation.bed",
       },
       {
         "color": "rgb(22, 129, 198)",
-        "max": NaN,
-        "min": NaN,
         "name": "gencode.v18.collapsed.bed.gz",
         "url": "https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.collapsed.bed.gz",
       },
@@ -381,15 +363,11 @@ exports[`decoder golden file — inputs the decoder takes as a string > harveste
     "tracks": [
       {
         "color": "rgb(22, 129, 198)",
-        "max": NaN,
-        "min": NaN,
         "name": "GM12878_CTCF_orientation.bed",
         "url": "http://hicfiles.s3.amazonaws.com/external/GM12878_CTCF_orientation.bed",
       },
       {
         "color": "rgb(22, 129, 198)",
-        "max": NaN,
-        "min": NaN,
         "name": "gencode.v18.collapsed.bed.gz",
         "url": "https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.collapsed.bed.gz",
       },
@@ -844,8 +822,6 @@ exports[`decoder golden file — inputs the decoder takes as a string > synth-qu
     "tracks": [
       {
         "color": "rgb(255,0,0)",
-        "max": NaN,
-        "min": NaN,
         "name": "A",
         "url": "https://example.org/a.bed",
       },

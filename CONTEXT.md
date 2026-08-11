@@ -170,10 +170,18 @@ applying defaults, expanding URL shortcuts, reconciling a selected gene — and 
 reached by every entry path, including a session handed straight to
 `restoreSession`. Format knowledge never crosses into normalize.
 
-**Entry path** — one of the four doors a config comes in by: `hic.init`,
-`hic.restoreSession`, `createBrowser` and `createBrowserList`. All four accept a
-single browser config, since `createBrowserList` reads `session.browsers ||
-[session]`; the query/URL form reaches `HICBrowser` through `init`.
+**Entry path** — one of the doors a config comes in by: `hic.init`,
+`hic.restoreSession`, `BrowserRegistry.restoreSession` and `createBrowser`. The
+query/URL form reaches `HICBrowser` through `init`, and the three session-shaped
+doors all arrive at `BrowserRegistry.restoreSession`, so there are two places a
+session is resolved and no path meets both (#535). All of them accept a single
+browser config, since a session with its one browser inlined is the shape
+`session.browsers || [session]` reads.
+
+`createBrowserList` was a fifth door until #535 and is now *below* the seam: it
+builds an embed's browsers from a session its caller has already resolved.
+`test/testConfigGolden.js` still snapshots it as a column, because what it hands
+a browser is where the other columns end too.
 
 **Resolved config** — a browser config *after* every normalizer upstream of
 `HICBrowser` has had it, which is the object `browser.config` then holds. Not a

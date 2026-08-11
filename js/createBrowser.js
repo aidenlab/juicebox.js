@@ -67,6 +67,13 @@ async function createBrowser(hicContainer, config, callback) {
 /**
  * Build one browser from a config that has already been resolved, and register
  * it. Below the seam: it reads the config, it does not decide it.
+ *
+ * `createBrowserList` does not call this, and the near-repetition is deliberate:
+ * it registers each browser *before* initializing it, because loading a dataset
+ * consults the registry, and it initializes the whole list in parallel. This one
+ * adds an initialized browser to a registry that already has browsers in it.
+ * Folding them together would mean parameterizing the order of two calls, which
+ * is how a two-line difference becomes a flag.
  */
 async function buildBrowser(hicContainer, config, callback) {
 

@@ -18,7 +18,7 @@
  * `test/testConfigGolden.js`, snapshots what each entry path actually produces.
  *
  * Every fixture is a *single browser config*, deliberately, because all four
- * entry paths accept that shape: `createBrowserList` reads `session.browsers ||
+ * columns accept that shape: the session-shaped ones read `session.browsers ||
  * [session]`, so a bare config is a one-browser session. That is what lets one
  * snapshot hold all four paths side by side and makes a divergence a visible
  * difference between columns rather than a claim in a comment. Fixtures that are

@@ -83,6 +83,17 @@ function sessionDocument() {
  * Everything a resolved config carries that an unresolved one does not, asserted
  * beside the count so that "exactly once" cannot be satisfied by "not at all".
  */
+/**
+ * A resolved config as comparable data: the members the stage writes, and the
+ * tracks it defaults, flattened one level so a second pass shows as a diff.
+ */
+function resolvedShape(config) {
+    return {
+        ...config,
+        tracks: config.tracks.map(track => ({...track})),
+    }
+}
+
 function expectResolved(browser) {
     expect(browser.config.showLocusGoto).toBe(true)
     expect(browser.config.url).toBe('https://hicfiles.s3.amazonaws.com/aidenlab/hic/GM12878.hic')
@@ -156,6 +167,46 @@ describe('every entry path normalizes exactly once', () => {
         expect(calls).toHaveLength(2)
         expect(calls[1]).toBe(session)
     })
+
+    /**
+     * "Exactly once" is a claim about this repo's pipeline; a host has its own,
+     * and nothing stops it handing the same object through two doors. That is
+     * the case idempotence is actually kept for now that no internal caller
+     * needs it (`js/normalizeSession.js`), and it is asserted over a real object
+     * driven through real doors rather than over a literal, because the stage
+     * rewrites the host's own object *in place* -- the second pass is a rewrite
+     * of something the host still holds.
+     *
+     * `resolvedShape` is compared rather than the object itself because a
+     * browser's `init` writes to a config too, and what is being asserted is
+     * that the second trip through the stage leaves what the first one produced.
+     */
+    const sequences = [
+        ['init twice into the same embed', async (dom, config) => {
+            const container = dom.another()
+            dom.navigate('http://localhost/host.html')
+            await init(container, config)
+            return async () => { await init(container, config) }
+        }],
+        ['restoreSession, then createBrowser with the same object', async (dom, config) => {
+            await restoreSession(dom.another(), config)
+            return async () => { await createBrowser(dom.another(), config) }
+        }],
+    ]
+
+    for (const [caption, drive] of sequences) {
+        test(`a host reaching two doors with one object does not drift — ${caption}`, async () => {
+
+            const config = hostConfig()
+            const again = await drive(dom, config)
+
+            const afterFirst = resolvedShape(config)
+            await again()
+
+            expect(resolvedShape(config)).toEqual(afterFirst)
+            expect(config.colorScale).toBe(afterFirst.colorScale)
+        })
+    }
 
     test('the config a browser is built from is the resolved one', async () => {
 

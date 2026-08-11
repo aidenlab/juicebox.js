@@ -48,6 +48,14 @@ class Dataset {
 
     constructor(config) {
         this.name = config.name;
+
+        // `datasetType` is host-facing: it rides out unchanged as a field of the
+        // onMapLoaded callback payload. The vocabulary is 'live' | 'hic' |
+        // 'unknown', and this line is where 'unknown' comes from -- a subclass
+        // that names no type. That is a legitimate value hosts must handle, not
+        // a bug to throw on: a Dataset is an extension point, and a subclass
+        // that declines to classify itself is better published honestly than
+        // silently reported as one of the two kinds it is not. #471.
         this.datasetType = config.datasetType || 'unknown';
     }
 
@@ -228,6 +236,10 @@ class HiCDataset extends Dataset {
         const mapUrl = config.mapUrl || getUrlMapper()
         this.straw = new Straw(mapUrl ? {...config, mapUrl} : config)
         this.isLive = Boolean(config.liveContactMap);
+
+        // The two concrete kinds. `isLive` is the field hosts branch on (Spacewalk
+        // does); `datasetType` is the same answer spelled for the onMapLoaded
+        // payload, and the two cannot be allowed to disagree.
         this.datasetType = this.isLive ? 'live' : 'hic';
     }
 

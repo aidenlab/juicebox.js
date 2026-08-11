@@ -22,6 +22,16 @@ holds (`js/hicDataset.js`). Two kinds, distinguished by `dataset.isLive`:
 - a **live contact map** streams from hic-straw instead of reading a file. Built
   for Spacewalk, which needed contact maps generated as it runs.
 
+The same distinction has a second, host-facing spelling: **`dataset.datasetType`**,
+whose values are `'live' | 'hic' | 'unknown'`. It travels to hosts as a field of
+the `onMapLoaded` payload. It does **not** mean primary vs control — which map
+loaded is expressed by which coordinator method is called (`onMapLoaded` vs
+`onControlMapLoaded`), and a `"main"`/`"control"` reading of this field is the
+vestigial one its JSDoc carried for eight months (#471). `'unknown'` is
+legitimate, not an error: it is what a `Dataset` subclass naming no type carries,
+and hosts must handle it. Prefer `isLive` inside this repo; `datasetType` exists
+for the payload. `test/testDatasetTypeVocabulary.js` pins both.
+
 **The disguise** — a live contact map is deliberately made to *look like* a
 `.hic` dataset from juicebox.js's side: same `Dataset`, same rendering path, same
 canonical state. This was an expediency, and it mostly works. Where it does not

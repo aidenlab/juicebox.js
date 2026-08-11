@@ -87,7 +87,16 @@ class BrowserCoordinator {
      * 
      * @param {Dataset} dataset - The loaded dataset
      * @param {State} state - The current state
-     * @param {string} datasetType - Type of dataset (e.g., "main", "control")
+     * @param {('live'|'hic'|'unknown')} datasetType - Which *kind* of dataset
+     *   loaded, taken verbatim from `dataset.datasetType`. **Not** "main" vs
+     *   "control": that distinction is expressed by which method is called --
+     *   `onMapLoaded` for the primary map, `onControlMapLoaded` for the control
+     *   map -- and has been since the coordinator split. This parameter was
+     *   documented as main/control for eight months after that became untrue,
+     *   and the live-map work then reused it for a second, unrelated question.
+     *   `'unknown'` is a legitimate value, not an error: it is what any
+     *   `Dataset` subclass that names no type carries. Hosts must handle it.
+     *   Pinned by `test/testDatasetTypeVocabulary.js`. See #471.
      */
     onMapLoaded(dataset, state, datasetType) {
         // 1. Initialize contact matrix view

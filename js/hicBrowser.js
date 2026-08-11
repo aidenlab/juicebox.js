@@ -163,7 +163,7 @@ class HICBrowser {
 
 
         if (config.width && config.height) {
-            setViewportSize(config.width, config.height)
+            setViewportSize(this.rootElement, config.width, config.height)
         }
 
         this.layoutController = new LayoutController(this, this.rootElement);

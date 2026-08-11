@@ -96,6 +96,16 @@ Two embeds still cannot have different viewport sizes. Fixing that is a renderin
 change, not a lifecycle change, and folding it in here would couple two unrelated
 refactors.
 
+> **Resolved by #477.** `--hic-viewport-width/height` are now written to each
+> browser's `rootElement`. Two things that ADR was wrong about, both found by
+> reading the code rather than the issue: the scope unit is the **browser**, not
+> the container this ADR keys registries by — juicebox-web clones a second
+> browser into the container it was given, so container scoping would have left
+> last-writer-wins in place inside one embed — and no stylesheet rewrite was
+> needed, since `.hic-root` is the only rule reading them and custom properties
+> inherit. `--hic-viewport-spinner-size` shares the prefix but is a constant no
+> code writes, and stays in `:root`.
+
 Teardown lands separately as candidate 8. The registry calls today's
 `deleteBrowser` body; `dispose()` later replaces that body behind the same call
 site. Blocking this on candidate 8 would couple it to an unresolved contract

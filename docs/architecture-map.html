@@ -171,7 +171,7 @@ flowchart TB
             </div>
 
             <p><strong>Depth verdict — deep.</strong> A host learns one function and gets isolation, lifecycle, selection, sync and serialization. The deletion test passes hard: remove it and all of that reappears as module-level state in <span class="font-mono">createBrowser.js</span>, which is exactly where it used to live.</p>
-            <p class="text-slate-600"><strong>Loose end:</strong> <span class="font-mono">--hic-viewport-*</span> CSS variables are still page-scoped, so two embeds cannot have different viewport sizes — <strong>#477</strong>, open. The seam holds in JS and leaks in CSS.</p>
+            <p class="text-slate-600"><strong>Loose end, now closed:</strong> the <span class="font-mono">--hic-viewport-width/height</span> custom properties were page-scoped, so two embeds could not have different viewport sizes — <strong>#477</strong>, fixed. They are written to each browser's <span class="font-mono">rootElement</span>, one level finer than this seam: the unit of <em>isolation</em> is the container, but the unit of <em>sizing</em> is the browser, and one container holds many. The seam holds in JS and no longer leaks in CSS.</p>
           </div>
         </article>
 

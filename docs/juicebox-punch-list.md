@@ -196,15 +196,22 @@ add an Outcome box to its card. That is the only time either file is touched.
 
 | Task | Issue | Skill |
 |---|---|---|
-| `--hic-viewport-*` CSS variables are page-scoped | [#477](https://github.com/aidenlab/juicebox.js/issues/477) | `/grill-with-docs` — **not** `/implement` |
+| ~~`--hic-viewport-*` CSS variables are page-scoped~~ | [#477](https://github.com/aidenlab/juicebox.js/issues/477) | **done** — `/grill-with-docs`, no ADR |
 | Runtime click-through of the registry against juicebox-web | *not filed* | manual |
 
-**#477 is the reason "candidate 4 is done" does not mean "multi-embed works."** Two embeds
-coexist; they still cannot have different viewport sizes. It is `ready-for-human` because it has
-open questions rather than acceptance criteria — whether the properties move to each registry's
-container or the rules stop needing custom properties at all, and whether any host reads them.
-The sequence is `/grill-with-docs` → ADR-0007 → `/to-tickets` → re-label → `/implement`.
-(0005 went to candidate 8's teardown contract, 0006 to candidate 5's wire format.)
+**#477 is done, so "candidate 4 is done" now does mean two embeds can be sized independently.**
+The grilling closed all three of its open questions, and none of them landed where the issue
+guessed. The properties moved to each **browser's** `rootElement`, not to the registry's
+container — a container holds many browsers, so container scoping would have left the same bug
+inside juicebox-web's own clone-a-browser layout. The rules did **not** need rewriting: `.hic-root`
+is their only reader and custom properties inherit, so the change is which element they are
+written to and nothing else. And no host reads them — checked against both consumers per
+ADR-0003. No ADR was written; the outcome is appended to ADR-0004's scope section, which is what
+deferred it. (0007 is therefore still unclaimed; 0005 went to candidate 8's teardown contract,
+0006 to candidate 5's wire format.)
+
+One behaviour change ships with it: a browser constructed without `width`/`height` used to inherit
+whatever the last-sized browser wrote to the page, and now falls back to the stylesheet's 640px.
 
 **The click-through is candidate 4's one unverified claim.** #479 was the ticket flagged as
 carrying a manual step no skill covers, and it was verified statically only — 13 juicebox-web call

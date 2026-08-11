@@ -1,6 +1,6 @@
 # Juicebox.js — Punch List
 
-**As of 2026-08-10.** Ordered. Work top to bottom; each phase assumes the one above it.
+**As of 2026-08-11.** Ordered. Work top to bottom; each phase assumes the one above it.
 
 > **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
 > agree with it. Where the durable facts live:
@@ -53,11 +53,16 @@ ADR correction in ADR-0004's addendum, and the file is deleted (`git log` has it
 
 ---
 
-## Phase 3 — The remaining five candidates.
+## Phase 3 — The remaining four candidates.
 
-Five candidates in `docs/architecture-review.html` are open. **One is breaking as currently
-scoped** — candidate 8 was settled by ADR-0005 and candidate 5 by ADR-0006, and both have landed.
-Each card carries a Consumer impact block; read it before filing anything.
+Four candidates in `docs/architecture-review.html` are open, and **none of them is filed**. One is
+breaking as currently scoped. Candidate 8 was settled by ADR-0005, candidate 5 by ADR-0006 and
+candidate 9 by ADR-0006 decision 8 plus ADR-0008; all three have landed. Each card carries a
+Consumer impact block; read it before filing anything.
+
+**Nothing here is picked.** Candidate 9 was the frontier and is done, so the next one is a choice
+rather than a queue — the notes under each are what was known when the review was written plus
+whatever landing the last three taught. The order in the table is *not* a recommendation.
 
 | Candidate | Status |
 |---|---|
@@ -67,7 +72,9 @@ Each card carries a Consumer impact block; read it before filing anything.
 | **7 · Move the gesture state machines behind InteractionHandler** | watch |
 | **10 · One dataset-load path** — *this is the live-map seam* | watch |
 
-**9 — start here, and the first decision is whether it needs an ADR at all.** ADR-0006 decision 8
+### 9 — done. Kept because the reasoning is the template for the next one.
+
+**The first decision was whether it needed an ADR at all, and the answer moved.** ADR-0006 decision 8
 already drew the seam: decode and normalize are two stages, and 5 deliberately stopped at the line.
 What was left on the wrong side of it was `fixDefaults` and the `selectedGene`
 reconciliation (#481) — both crossed in #533 — plus **shortcut expansion running twice** — once on the URL path, once again
@@ -123,16 +130,15 @@ and the new stage is named `normalizeSession` to avoid the collision. `fixDefaul
 `sessionCodec.js`, not `urlUtils.js`. The card also lists `js/browserUIManager.js`, which candidate
 3 deleted.
 
-**9 inherits the gate 5 had to build.** The golden-file snapshot over the wire-format corpus is
-green and covers every accepted format; normalization changes are exactly the kind that move
-decoded output, so the snapshot is 9's acceptance test too, and every moved fixture must be one
-someone can explain. **#525 was a filed instance of the bug 9 exists to fix:** `fixDefaults`
-forced every track to `COLLAPSED`, so the URL path and the direct-restore path disagreed about the
-same session. #533 closed the disagreement by moving the pass to the shared stage; what #525 still
-asks — whether forcing `COLLAPSED` at all is right — is now a question about one stage rather than
-about which door you came in by.
+**9 inherited the gate 5 had to build, and built one of its own on top of it** (#531, the resolved
+config through every door). Both held: every moved fixture across the candidate is one someone can
+explain, in a table in the file that holds it. **#525 was a filed instance of the bug 9 existed to
+fix:** `fixDefaults` forced every track to `COLLAPSED`, so the URL path and the direct-restore path
+disagreed about the same session. #533 closed the disagreement by moving the pass to the shared
+stage; **#525 is still open** and now asks one question rather than two — whether forcing
+`COLLAPSED` at all is right, about one stage rather than about which door you came in by.
 
-**What candidate 5 confirmed, worth carrying into 9:** the pattern held a third time — ADR →
+**What candidate 5 confirmed, and 9 confirmed again:** the pattern held a third time — ADR →
 tickets → Outcome box — and the ADR is again where the breaking/not-breaking question got answered
 before any code moved. Three lessons specific to this kind of work:
 
@@ -145,6 +151,23 @@ before any code moved. Three lessons specific to this kind of work:
   live behaviour.
 - **File and keep refactoring worked at scale.** Eight follow-ups (#510, #514, #515, #518, #519,
   #521, #525, #528) came out of this candidate without derailing it.
+
+**What candidate 9 added, worth carrying into whichever is next:**
+
+- **A gate can have an acceptance criterion that the work makes impossible, and that is not a
+  failure of either.** Every candidate-9 ticket carried "the snapshots come back byte-identical".
+  #536 moved 63 and could not have done otherwise: **a default moved *up* into a shared stage
+  becomes a field of the thing being snapshotted.** The discipline that saved it was tallying the
+  whole diff by hand before updating, and writing the three kinds of movement into the log — not
+  the criterion.
+- **"Two stages own different questions" is a claim to re-check, not a conclusion to inherit.**
+  #533 justified keeping a duplicated track rule in the loader on the grounds that the loader knew
+  something the document did not. It did not — the field it keyed on came from the config. The real
+  gap was a *door with no stage behind it*, and finding it deleted the duplicate.
+- **The last ticket is where the deferred decision comes due.** "May not need its own ADR" survived
+  five tickets and broke on the sixth, because the question the seam does not answer is the one
+  nothing forces you to answer until the readers have to agree. Expect it, rather than treating it
+  as scope creep.
 
 **11** — the `TrackXYPairLoad` payload *is* the track pair, and juicebox-web reads its shape.
 

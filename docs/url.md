@@ -161,12 +161,10 @@ tracks=http://…/GM12878_CTCF_orientation.bed|GM12878_CTCF_orientation.bed||rgb
 ```
 
 Empty fields are allowed and common — the example above supplies no data range.
-An empty **data range** decodes to `NaN` bounds, which the **normalize** stage
-then deletes, so what reaches a browser has no range at all and the track picks
-its own. Filed as #515: the repair is real, but it is a second pass undoing the
-first. It is no longer a *path-dependent* repair — the sweep was the decoder's
-own until #533 and so skipped a session handed straight to `restoreSession`;
-`js/normalizeSession.js` now runs on every entry path.
+An empty or blank **data range** is read as *absent*: the decoder writes no
+`min`/`max` at all, so the track autoscales as though the field had never been
+written. A *partly* written range (`0-`) still yields a `NaN` bound,
+which the **normalize** stage deletes on every entry path.
 
 **Three fields** is accepted, and is the v0 layout. The colour is always the
 last field, so the three-field form decodes as `url | name | colour` with no

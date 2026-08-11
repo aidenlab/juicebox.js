@@ -549,10 +549,10 @@ export const wireFormatCorpus = [
         format: 'query',
         provenance: 'synthesized',
         role: 'branch-coverage',
-        source: 'sessionCodec.js destringifyTracksV0 — NaN bounds',
+        source: 'sessionCodec.js destringifyTracksV0 — an empty range is an absent one',
         outcome: 'decodes',
         input: '?hicUrl=https://example.org/a.hic&tracks=https%3A%2F%2Fexample.org%2Fa.bed%7CA%7C%7Crgb(255%2C0%2C0)',
-        note: 'The common harvested shape — every four-field track in test/test_urls.md has an empty range. destringifyTracksV0 sets min and max to NaN, and the decoder now leaves them that way: the pass that deleted them was `fixDefaults`, which #533 moved to `js/normalizeSession.js`, downstream of this snapshot. So what leaves the *decoder* is NaN and what reaches a *browser* has no range at all — see testConfigGolden.js. #515 is about that round trip through NaN.',
+        note: 'The common harvested shape — every four-field track in test/test_urls.md has an empty range. destringifyTracksV0 used to read the empty field anyway and set min and max to NaN, which #533 then left in place for `js/normalizeSession.js` to sweep downstream of this snapshot. #515 stopped reading it: the decoder now writes no bounds at all, and this snapshot moved once, on purpose, when it did.',
     },
 
     {

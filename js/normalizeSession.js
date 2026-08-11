@@ -402,9 +402,14 @@ function expandMapUrlShortcuts(config) {
  * The rules were moved here from `decodeSession` by #533 (the defaults) and #534
  * (the shortcut expansion), and are unchanged: a shortcut URL is expanded, the
  * default annotation colour is dropped so the renderer's own default applies,
- * `NaN` data-range bounds (which is what a v0 track string with an empty range
- * decodes to) are dropped rather than reaching a renderer, and display mode is
- * collapsed.
+ * `NaN` data-range bounds are dropped rather than reaching a renderer, and
+ * display mode is collapsed.
+ *
+ * The `NaN` sweep used to catch the common case — a v0 track string with an
+ * empty data range decoded to `NaN` bounds — and #515 moved that to the decoder,
+ * which now writes no bounds for a field it was never given. What is left here
+ * is the malformed remainder: a half-written range (`0-`) still parses to one
+ * `NaN`, and a host may hand us one directly.
  *
  * ## Which stage owns which default
  *

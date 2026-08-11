@@ -111,8 +111,8 @@ describe('parseColorScale', () => {
     })
 
     // Harvested links carry a bare threshold with no RGB components (#514). A
-    // missing component must fall back to the default color, not decode to NaN
-    // and paint rgba(NaN,NaN,NaN,alpha).
+    // missing component must fall back to the default color, not reach getColor
+    // undefined and paint rgba(undefined,undefined,undefined,alpha).
     it('falls back to the default color for a bare threshold', () => {
         const parsed = parseColorScale('18.9')
         expect(parsed.getThreshold()).toBe(18.9)
@@ -121,15 +121,24 @@ describe('parseColorScale', () => {
             g: defaultColorScaleConfig.g,
             b: defaultColorScaleConfig.b
         })
-        expect(parsed.getColor(10).rgbaString).toMatch(/^rgba\((\d+,){3} ?\d+\)$/)
+        expect(parsed.getColor(18.9).rgbaString).toBe('rgba(255,0,0, 255)')
     })
 
     it('falls back per component when only some are supplied', () => {
-        expect(parseColorScale('18.9,0').getColorComponents()).toEqual({
-            r: 0,
-            g: defaultColorScaleConfig.g,
+        expect(parseColorScale('18.9,1,2').getColorComponents()).toEqual({
+            r: 1,
+            g: 2,
             b: defaultColorScaleConfig.b
         })
+    })
+
+    // parseSingle decodes both halves of a signed scale, and the two halves do
+    // not share a default: red above the neutral point, blue below. A negative
+    // half short of components must not come back red.
+    it('defaults each half of a signed scale to that half\'s color', () => {
+        const parsed = parseColorScale('R:5:5:5')
+        expect(parsed.getColorComponents('+')).toEqual(defaultRatioColorScaleConfig.positive)
+        expect(parsed.getColorComponents('-')).toEqual(defaultRatioColorScaleConfig.negative)
     })
 
     it('round-trips a ratio color scale', () => {

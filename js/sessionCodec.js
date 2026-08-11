@@ -68,8 +68,9 @@
  * ## What is pure, and what is not
  *
  * Everything above {@link decodeSession} — the sniff, the decode ladders, the
- * query decoders — takes a string or a plain object and returns a value: no network, no DOM, no async. Only the fold and its adapters
- * are `async`, and only because a session may name a document to fetch.
+ * query decoders — takes a string or a plain object and returns a value: no
+ * network, no DOM, no async. Only the fold and its adapters are `async`, and
+ * only because a session may name a document to fetch.
  *
  * ## The error contract
  *
@@ -390,8 +391,9 @@ export function decodeState(value, config, onUnknownType = () => {}) {
 // expanded at three call sites. It is `js/normalizeSession.js`'s now (#534): a
 // `*s3/` prefix is a spelling of a URL rather than a wire format, and every
 // entry path meets the normalize stage while only this one meets the decoder.
-// So a shortcut leaves this module unexpanded and is expanded one stage later --
-// visible in `testDecoderGolden.js`, invisible in `testConfigGolden.js`.
+// So a shortcut leaves this module unexpanded and is expanded one stage later:
+// `testDecoderGolden.js` moved to record that, and `testConfigGolden.js`'s query
+// columns -- what a browser actually ends up holding -- did not move at all.
 // ---------------------------------------------------------------------------
 
 function extractQuery(uri) {

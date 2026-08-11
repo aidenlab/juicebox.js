@@ -210,7 +210,7 @@ const urlShortcuts = {
  * Non-strings pass through untouched: a config naming a local `File` carries one
  * as its `url`, and a stage that rejects nothing cannot start there.
  */
-function expandUrl(url) {
+function expandUrlShortcut(url) {
 
     if (!url || typeof url !== 'string') {
         return url
@@ -247,28 +247,38 @@ function expandUrl(url) {
  * same set: `url`, `controlUrl`, and every track's `url`. So both entry paths
  * expand exactly what they expanded before.
  *
- * What *did* move is when, and it shows in one snapshot: the decoder's own
- * golden file (`test/testDecoderGolden.js`) now records a `*s3/` URL leaving the
- * decoder unexpanded, because expansion is one stage downstream of it. The
- * resolved-config golden (`test/testConfigGolden.js`, #531) -- the file that
- * pins what actually reaches a browser -- does not move at all, which is the
- * point.
+ * What *did* move is when, and both golden files record it. `testDecoderGolden`
+ * now shows a `*s3/` URL leaving the decoder unexpanded, since expansion is one
+ * stage downstream of it. `testConfigGolden` (#531) -- the file that pins what
+ * actually reaches a browser -- moved in exactly two columns: `createBrowser`
+ * and `createBrowserList` reached directly, the two doors that never expanded at
+ * all, because the copy that did lived in `restoreSession`. That is a divergence
+ * closing rather than a behaviour change, and it is the reason a *deletion*
+ * moves a snapshot: collapsing a duplicated rule into a shared stage necessarily
+ * widens it to every caller of that stage. The probe fixture that runs the same
+ * shortcut through a URL and through a config did not move, which is the claim
+ * worth having -- one copy of the code produces what two produced.
  */
 function expandUrlShortcuts(config) {
 
     for (const key of ['url', 'controlUrl']) {
         if (config[key]) {
-            config[key] = expandUrl(config[key])
+            config[key] = expandUrlShortcut(config[key])
         }
     }
 
+    // `Array.isArray` rather than the deleted copy's `config.tracks || []`, for
+    // the reason `applyTrackDefaults` gives below: a hand-written
+    // `tracks: 'a.bed'` is a string, and iterating it walks characters. It
+    // expanded nothing either way -- a character has no `url` -- so this is the
+    // same behaviour said out loud.
     if (!Array.isArray(config.tracks)) {
         return
     }
 
     for (const track of config.tracks) {
         if (track.url) {
-            track.url = expandUrl(track.url)
+            track.url = expandUrlShortcut(track.url)
         }
     }
 }

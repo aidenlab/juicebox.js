@@ -5,7 +5,7 @@ import {HiCDataset} from '../js/hicDataset.js'
 import EventBus from '../js/eventBus.js'
 import BrowserRegistry from '../js/browserRegistry.js'
 import {initRegistry} from '../js/init.js'
-import {NAMESPACE_SURFACE, BROWSER_SURFACE, REGISTRY_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COORDINATOR_CALLBACKS, EVENTS_POSTED, EVENT_PAYLOAD_SHAPES} from '../js/publicApi.js'
+import {NAMESPACE_SURFACE, BROWSER_SURFACE, REGISTRY_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COORDINATOR_CALLBACKS, COORDINATOR_PAYLOAD_SHAPES, EVENTS_POSTED, EVENT_PAYLOAD_SHAPES} from '../js/publicApi.js'
 
 /**
  * Contract tests for the declared public surface.
@@ -167,6 +167,18 @@ describe('coordinator callbacks', () => {
     it('rejects an undeclared callback name', () => {
         expect(() => context.browser.coordinator.addCallback('onSomethingUndeclared', () => {})).toThrow()
     })
+
+    it('declares a payload shape only for callbacks it also accepts', () => {
+        for (const {callback} of COORDINATOR_PAYLOAD_SHAPES) {
+            expect(COORDINATOR_CALLBACKS, `"${callback}" has a declared payload but is not a declared callback`)
+                .toContain(callback)
+        }
+    })
+
+    // That the declared fields are actually *delivered*, and that datasetType
+    // holds a declared value, is driven against a real coordinator in
+    // test/testCoordinatorDelivery.js -- the half of #471 a name list cannot
+    // carry.
 
     it('returns an unsubscribe function', () => {
         // Hosts hold this to detach on teardown; dropping it would leak the

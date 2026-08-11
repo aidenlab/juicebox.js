@@ -1,5 +1,6 @@
 import {describe, it, expect, vi} from 'vitest'
 import {withBrowser} from './utils/browserFixture.js'
+import {COORDINATOR_PAYLOAD_SHAPES} from '../js/publicApi.js'
 
 /**
  * The coordinator is the internal notification route -- see #414.
@@ -112,6 +113,47 @@ describe('coordinator delivery', () => {
         context.browser.coordinator.onLocusChange(locusChange)
 
         expect(spies.locusGoto).toHaveBeenCalledWith(locusChange.state)
+    })
+
+    /**
+     * The host-facing half. Every test above watches an internal collaborator;
+     * this one watches the external callback, which is the coordinator's other
+     * job (CONTEXT.md, "Coordinator") and the one #471 went wrong in. A name
+     * list can say `datasetType` is delivered; only a real delivery can say
+     * what it holds.
+     */
+    it('delivers the declared onMapLoaded payload to a host callback', () => {
+        const shape = COORDINATOR_PAYLOAD_SHAPES.find(entry => 'onMapLoaded' === entry.callback)
+
+        // The fan-out arms all want a real dataset the fixture has no map to
+        // give them. Stub them so the assertion is about the payload.
+        const {browser} = context
+        vi.spyOn(browser.contactMatrixView, 'clearImageCaches').mockImplementation(() => {})
+        vi.spyOn(browser.coordinator.widgets.chromosomeSelector, 'respondToDataLoadWithDataset').mockImplementation(() => {})
+        for (const ruler of [browser.coordinator.rulers.x, browser.coordinator.rulers.y]) {
+            vi.spyOn(ruler, 'wholeGenomeLayout').mockImplementation(() => {})
+            vi.spyOn(ruler, 'update').mockImplementation(() => {})
+        }
+        vi.spyOn(browser.coordinator.widgets.resolutionSelector, 'updateResolutions').mockImplementation(() => {})
+        vi.spyOn(browser.coordinator.widgets.resolutionSelector, 'setResolutionLock').mockImplementation(() => {})
+
+        // The resolution arm reads `browser.state.zoom` to build its argument,
+        // before the stub above can intercept. The fixture browser has never
+        // loaded a map, so give it one. Fresh browser per test, so this leaks
+        // nowhere.
+        const state = {chr1: 1, chr2: 1, zoom: 0, pixelSize: 1, x: 0, y: 0}
+        browser.state = state
+
+        let received
+        browser.coordinator.addCallback('onMapLoaded', payload => { received = payload })
+
+        browser.coordinator.onMapLoaded({chromosomes: []}, state, 'hic')
+
+        for (const field of shape.payload) {
+            expect(field in received, `onMapLoaded no longer delivers "${field}"`).toBe(true)
+        }
+        expect(shape.values.datasetType, 'onMapLoaded delivered an undeclared datasetType')
+            .toContain(received.datasetType)
     })
 
     it('delivers normalization widget updates without the widget subscribing', () => {

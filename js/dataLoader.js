@@ -263,7 +263,13 @@ class DataLoader {
             const locus = config.locus || `${lcm.chromosomes[1].name}:${lcm.genomicStart}-${lcm.genomicEnd}`;
             await this.browser.parseGotoInput(locus);
 
-            this.browser.coordinator.onMapLoaded(dataset, state, 'livecontactmap');
+            // The same expression the file path uses. This said 'livecontactmap'
+            // until #471 -- a fourth value, in a third vocabulary, published on
+            // the one path where the dataset itself already says 'live'. So the
+            // coordinator told hosts one thing and `dataset.datasetType` another,
+            // about the same load. Nobody could have been reading it: no doc ever
+            // named it, and the JSDoc it contradicted named "main"/"control".
+            this.browser.coordinator.onMapLoaded(dataset, state, dataset.datasetType);
 
             return dataset;
         } catch (error) {

@@ -285,6 +285,38 @@ export const COORDINATOR_CALLBACKS = [
 ]
 
 /**
+ * Callback payload internals a host reads into, and the values a field may hold.
+ *
+ * The manifest declares *names*; #471 was a case where the name was fine and the
+ * **meaning** was wrong. `onMapLoaded`'s `datasetType` was documented as
+ * "main" / "control" -- a vocabulary the code never spoke -- while it actually
+ * carried `'live' | 'hic' | 'unknown'`, and the live loader published a fourth
+ * spelling, `'livecontactmap'`, of its own. Nothing here or anywhere else said
+ * otherwise, so a host branching on the documented values would have written a
+ * branch that silently never fired.
+ *
+ * A declared `values` list is what a name alone could not carry. Adding a value
+ * is a change to what hosts must handle; it is caught here rather than in a
+ * JSDoc nobody diffs.
+ *
+ * Declaration only, in the same sense as EVENT_PAYLOAD_SHAPES -- what the
+ * coordinator actually delivers is exercised in
+ * `test/testMapLoadedPayload.js`, which drives both load paths.
+ */
+export const COORDINATOR_PAYLOAD_SHAPES = [
+    {
+        callback: 'onMapLoaded',
+        payload: ['dataset', 'state', 'datasetType', 'browser'],
+        values: {datasetType: ['live', 'hic', 'unknown']},
+        readsInto: ['dataset', 'dataset.isLive']
+    },
+    {
+        callback: 'onControlMapLoaded',
+        payload: ['controlDataset', 'browser']
+    }
+]
+
+/**
  * Events juicebox.js posts, and the bus each travels on.
  *
  * The event bus is the sharpest case in the whole contract. Every internal

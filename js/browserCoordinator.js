@@ -87,7 +87,13 @@ class BrowserCoordinator {
      * 
      * @param {Dataset} dataset - The loaded dataset
      * @param {State} state - The current state
-     * @param {string} datasetType - Type of dataset (e.g., "main", "control")
+     * @param {('live'|'hic'|'unknown')} datasetType - Which *kind* of dataset
+     *   loaded, taken verbatim from `dataset.datasetType`. **Not** "main" vs
+     *   "control", which this said until #471: that distinction is expressed by
+     *   which method is called -- `onMapLoaded` for the primary map,
+     *   `onControlMapLoaded` for the control map. See CONTEXT.md under
+     *   "Dataset" for the vocabulary, and `COORDINATOR_PAYLOAD_SHAPES` in
+     *   `js/publicApi.js`, which declares it as published contract.
      */
     onMapLoaded(dataset, state, datasetType) {
         // 1. Initialize contact matrix view

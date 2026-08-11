@@ -68,8 +68,7 @@
  * ## What is pure, and what is not
  *
  * Everything above {@link decodeSession} — the sniff, the decode ladders, the
- * shortcut expansion, the query decoders — takes a string or a plain object and
- * returns a value: no network, no DOM, no async. Only the fold and its adapters
+ * query decoders — takes a string or a plain object and returns a value: no network, no DOM, no async. Only the fold and its adapters
  * are `async`, and only because a session may name a document to fetch.
  *
  * ## The error contract
@@ -378,80 +377,21 @@ export function decodeState(value, config, onUnknownType = () => {}) {
 }
 
 // ---------------------------------------------------------------------------
-// URL shortcuts
-//
-// Moved from `urlUtils.js` unchanged. They come here rather than staying put
-// because `decodeQuery` below expands shortcuts at three call sites, and leaving
-// the primitive behind would make `urlUtils` and this module import each other.
-// `expandSessionUrlShortcuts` follows its primitive; it is the *second* copy of
-// the expansion, the one `restoreSession` reaches, and collapsing the two is
-// candidate 9's job, not #505's (ADR-0006 decision 8).
-//
-// Everything from here to the end of `decodeQuery` is a verbatim move. Its `var`
-// and its semicolons do not match the rest of the file, deliberately: #503's
-// golden file is the only thing standing between this refactor and a silent
-// change to a format users have pasted into papers, and a verbatim move is the
-// one kind of move it can vouch for. Restyling belongs to a commit that moves
-// nothing.
-// ---------------------------------------------------------------------------
-
-const urlShortcuts = {
-    "*s3e/": "https://hicfiles.s3.amazonaws.com/external/",
-    "*s3/": "https://hicfiles.s3.amazonaws.com/",
-    "*s3e_/": "http://hicfiles.s3.amazonaws.com/external/",
-    "*s3_/": "http://hicfiles.s3.amazonaws.com/",
-    "*enc/": "https://www.encodeproject.org/files/"
-}
-
-/**
- * Expand URL shortcuts in a URL string (e.g., *s3/ -> full URL)
- * @param {string} url - URL that may contain shortcuts
- * @returns {string} - URL with shortcuts expanded
- */
-export function expandUrlShortcuts(url) {
-    if (!url || typeof url !== 'string') return url;
-    let expandedUrl = url;
-    Object.keys(urlShortcuts).forEach(function (key) {
-        const value = urlShortcuts[key];
-        if (expandedUrl.startsWith(key)) {
-            expandedUrl = expandedUrl.replace(key, value);
-        }
-    });
-    return expandedUrl;
-}
-
-/**
- * Expand the URL shortcuts everywhere a session document can carry one, in
- * place.
- *
- * Sessions handed straight to `restoreSession` never pass through
- * `decodeSession`, so a host or a saved file written with `*s3/` would reach the
- * loaders unexpanded without this. A single-browser config is a session with
- * its one browser inlined, which is why both shapes are walked.
- *
- * This is the second copy of the expansion — the first runs inside
- * {@link decodeQuery}, three call sites deep. Collapsing the two belongs to the
- * normalize stage both entry paths will pass through, which is candidate 9;
- * ADR-0006 decision 8 draws that seam and #505 deliberately does not cross it.
- */
-export function expandSessionUrlShortcuts(session) {
-
-    for (const config of session.browsers || [session]) {
-        for (const key of ['url', 'controlUrl']) {
-            if (config[key]) {
-                config[key] = expandUrlShortcuts(config[key]);
-            }
-        }
-        for (const track of config.tracks || []) {
-            if (track.url) {
-                track.url = expandUrlShortcuts(track.url);
-            }
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
 // Query strings
+//
+// Everything from here to the end of `decodeQuery` is a verbatim move from
+// `urlUtils.js`. Its `var` and its semicolons do not match the rest of the file,
+// deliberately: #503's golden file is the only thing standing between this
+// refactor and a silent change to a format users have pasted into papers, and a
+// verbatim move is the one kind of move it can vouch for. Restyling belongs to a
+// commit that moves nothing.
+//
+// The URL-shortcut expansion used to live above this line, because `decodeQuery`
+// expanded at three call sites. It is `js/normalizeSession.js`'s now (#534): a
+// `*s3/` prefix is a spelling of a URL rather than a wire format, and every
+// entry path meets the normalize stage while only this one meets the decoder.
+// So a shortcut leaves this module unexpanded and is expanded one stage later --
+// visible in `testDecoderGolden.js`, invisible in `testConfigGolden.js`.
 // ---------------------------------------------------------------------------
 
 function extractQuery(uri) {
@@ -527,7 +467,6 @@ function decodeQuery(query, uriDecode) {
 
     if (hicUrl) {
         hicUrl = paramDecode(hicUrl, uriDecode);
-        hicUrl = expandUrlShortcuts(hicUrl);
         config.url = hicUrl;
 
     }
@@ -536,7 +475,6 @@ function decodeQuery(query, uriDecode) {
     }
     if (controlUrl) {
         controlUrl = paramDecode(controlUrl, uriDecode);
-        controlUrl = expandUrlShortcuts(controlUrl);
         config.controlUrl = controlUrl;
     }
     if (controlName) {
@@ -593,7 +531,6 @@ function decodeQuery(query, uriDecode) {
             const color = tokens.pop();
             let url = tokens.length > 1 ? tokens[0] : trackString;
             if (url && url.trim().length > 0 && "undefined" !== url) {
-                url = expandUrlShortcuts(url);
                 const trackConfig = {url: url};
 
                 if (tokens.length > 1) {

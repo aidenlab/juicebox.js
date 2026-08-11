@@ -235,6 +235,72 @@ describe('the track defaults', () => {
 })
 
 /**
+ * The URL-shortcut expansion, moved here by #534.
+ *
+ * There were two copies: one three call sites deep inside `decodeQuery`, one in
+ * `BrowserRegistry.restoreSession`, because a session handed straight to the
+ * restore never met the decoder. Both are gone; this stage is the survivor, and
+ * every entry path reaches it. The assertions below are the union of what the
+ * two copies covered — `url`, `controlUrl` and track URLs, in both session
+ * shapes — because that union is what must not shrink.
+ */
+describe('the URL shortcuts', () => {
+
+    test('the map URL expands', () => {
+        expect(normalizeSession({url: '*s3/hic/file.hic'}).url)
+            .toBe('https://hicfiles.s3.amazonaws.com/hic/file.hic')
+    })
+
+    test('the control URL expands, which is the place the registry copy covered and the decoder reached separately', () => {
+        expect(normalizeSession({url: 'a.hic', controlUrl: '*s3e/ctl.hic'}).controlUrl)
+            .toBe('https://hicfiles.s3.amazonaws.com/external/ctl.hic')
+    })
+
+    test('a track URL expands', () => {
+        expect(normalizeSession({url: 'a.hic', tracks: [{url: '*enc/ENCFF000.bed'}]}).tracks[0].url)
+            .toBe('https://www.encodeproject.org/files/ENCFF000.bed')
+    })
+
+    test('the http spellings expand to http', () => {
+
+        const config = normalizeSession({url: '*s3_/one.hic', controlUrl: '*s3e_/two.hic'})
+
+        expect(config.url).toBe('http://hicfiles.s3.amazonaws.com/one.hic')
+        expect(config.controlUrl).toBe('http://hicfiles.s3.amazonaws.com/external/two.hic')
+    })
+
+    test('every browser of a session expands, not just the first', () => {
+
+        const session = {browsers: [
+            {url: '*s3/a.hic'},
+            {url: '*s3/b.hic', tracks: [{url: '*enc/b.bed'}]},
+        ]}
+
+        normalizeSession(session)
+
+        expect(session.browsers[0].url).toBe('https://hicfiles.s3.amazonaws.com/a.hic')
+        expect(session.browsers[1].url).toBe('https://hicfiles.s3.amazonaws.com/b.hic')
+        expect(session.browsers[1].tracks[0].url).toBe('https://www.encodeproject.org/files/b.bed')
+    })
+
+    test('a shortcut anywhere but the front is left alone — the expansion is a prefix rule', () => {
+        expect(normalizeSession({url: 'https://host/path/*s3/x.hic'}).url)
+            .toBe('https://host/path/*s3/x.hic')
+    })
+
+    test('a URL naming no shortcut is untouched', () => {
+        expect(normalizeSession({url: 'https://example.org/one.hic'}).url).toBe('https://example.org/one.hic')
+    })
+
+    test('a non-string URL is left as it is — a File config carries one, and this stage rejects nothing', () => {
+
+        const file = {name: 'local.hic'}
+
+        expect(normalizeSession({url: file}).url).toBe(file)
+    })
+})
+
+/**
  * The `selectedGene` reconciliation, #481 — its session-shaped half, moved here
  * by #533.
  *

@@ -61,7 +61,7 @@ Each card carries a Consumer impact block; read it before filing anything.
 
 | Candidate | Status |
 |---|---|
-| **9 · Give the config schema one reader** | **filed — #531–#536**; #531, #532 and #533 landed, frontier is #534 and #535 in parallel. Seam already drawn by ADR-0006 decision 8; no ADR opened |
+| **9 · Give the config schema one reader** | **filed — #531–#536**; #531–#534 landed, frontier is #535. Seam already drawn by ADR-0006 decision 8; no ADR opened |
 | **11 · Give the track tile one owner** | ⚠️ breaking |
 | **6 · Fold StateManager into State, and make restore use the chokepoint** | watch |
 | **7 · Move the gesture state machines behind InteractionHandler** | watch |
@@ -72,8 +72,8 @@ already drew the seam: decode and normalize are two stages, and 5 deliberately s
 What was left on the wrong side of it was `fixDefaults` and the `selectedGene`
 reconciliation (#481) — both crossed in #533 — plus **shortcut expansion running twice** — once on the URL path, once again
 in `restoreSession`, because a session handed straight to `restoreSession` bypasses the decoder
-entirely. One `normalizeSession` stage that *both* entry paths pass through makes one of those
-copies deletable. That deletion was held back from 5 on purpose: both at once doubles the blast
+entirely. One `normalizeSession` stage that *both* entry paths pass through made one of those
+copies deletable, and #534 deleted both in favour of a third that every door meets. That deletion was held back from 5 on purpose: both at once doubles the blast
 radius on `hic.init`, the most-used public surface.
 
 So the hard question — where the seam goes and why — is answered. The one genuinely open piece was
@@ -93,14 +93,18 @@ next free number.
 | #531 | Gate: snapshot the resolved config every entry path produces today | — **landed** |
 | #532 | Extract `normalizeSession`: a pure, session-shaped normalize stage | #531 — **landed** |
 | #533 | Move the remaining normalization across the seam | #532 — **landed** |
-| #534 | Delete the duplicate URL-shortcut expansion | #533 — **frontier** |
+| #534 | Delete the duplicate URL-shortcut expansion | #533 — **landed** |
 | #535 | Normalize once, at the entry | #533 — **frontier** |
 | #536 | Downstream readers stop defaulting, and the schema is written down | #535 |
 
-#534 and #535 run in parallel after #533. **#533 is the only ticket that deliberately moves
-snapshots** — it closes three divergences at once: track defaults skipped by `restoreSession`, the
+#534 and #535 run in parallel after #533. **#533 and #534 are the two tickets that deliberately move
+snapshots.** #533 closes three divergences at once: track defaults skipped by `restoreSession`, the
 `selectedGene` reconciliation, and `syncDatasets` honoured by `createBrowserList` but not
-`createBrowser`. Blocking edges are GitHub-native, so the frontier is queryable rather than read
+`createBrowser`. #534 closes the fourth — the two browser-creation doors reached directly handed an
+unexpanded `*s3/…` to the loader — and moves the *decoder's* golden file as well, since a shortcut
+now leaves the decoder as it arrived. The estimate that #534 would be snapshot-neutral was wrong for
+one reason worth remembering: deleting a duplicated rule in favour of a shared stage necessarily
+widens the rule to every caller of that stage, and widening is visible. Blocking edges are GitHub-native, so the frontier is queryable rather than read
 off this table.
 
 **Two card corrections found while decomposing**, both from candidate 5 landing — recorded here and

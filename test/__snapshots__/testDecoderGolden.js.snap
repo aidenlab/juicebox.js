@@ -960,9 +960,9 @@ exports[`decoder golden file — inputs the decoder takes as a string > synth-qu
 exports[`decoder golden file — inputs the decoder takes as a string > synth-query-url-shortcuts-http 1`] = `
 {
   "config": {
-    "controlUrl": "http://hicfiles.s3.amazonaws.com/external/b.hic",
+    "controlUrl": "*s3e_/b.hic",
     "cycle": undefined,
-    "url": "http://hicfiles.s3.amazonaws.com/hiseq/a.hic",
+    "url": "*s3_/hiseq/a.hic",
   },
   "outcome": "decodes",
 }
@@ -971,7 +971,7 @@ exports[`decoder golden file — inputs the decoder takes as a string > synth-qu
 exports[`decoder golden file — inputs the decoder takes as a string > synth-query-url-shortcuts-https 1`] = `
 {
   "config": {
-    "controlUrl": "https://www.encodeproject.org/files/ENCFF000.hic",
+    "controlUrl": "*enc/ENCFF000.hic",
     "cycle": undefined,
     "tracks": [
       {
@@ -979,10 +979,10 @@ exports[`decoder golden file — inputs the decoder takes as a string > synth-qu
         "max": 50,
         "min": 0,
         "name": "B",
-        "url": "https://hicfiles.s3.amazonaws.com/external/b.bed",
+        "url": "*s3e/b.bed",
       },
     ],
-    "url": "https://hicfiles.s3.amazonaws.com/hiseq/a.hic",
+    "url": "*s3/hiseq/a.hic",
   },
   "outcome": "decodes",
 }

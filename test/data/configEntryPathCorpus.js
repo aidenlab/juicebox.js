@@ -3,11 +3,12 @@
  * suspected, to treat differently. #531, the gate for candidate 9.
  *
  * Candidate 9 is "give the config schema one reader". There is not yet one
- * reader: `normalizeSession` (`js/normalizeSession.js`, #532, #533) applies most
- * defaults, `expandSessionUrlShortcuts` runs in two places, and `HICBrowser`
- * itself reads raw fields and defaults them inline. Which of those a config
- * meets still depends on which door it came in through — less than it did, since
- * #533 moved the last of the decoder's normalization behind the shared stage.
+ * reader: `normalizeSession` (`js/normalizeSession.js`, #532, #533, #534)
+ * applies most defaults, and `HICBrowser` itself still reads raw fields and
+ * defaults them inline. Which of those a config meets still depends on which
+ * door it came in through — less than it did, since #533 moved the last of the
+ * decoder's normalization behind the shared stage and #534 collapsed the two
+ * copies of the URL-shortcut expansion into it.
  *
  * **These fixtures carry inputs, not expected outputs** — the same rule as
  * `wireFormatCorpus.js`, and for the same reason (ADR-0006, "How we know the
@@ -90,7 +91,7 @@ export const configFixtures = [
     {
         id: 'url-shortcuts-in-map-control-and-track',
         note: 'The `*s3/` and `*enc/` shortcuts, in all three places a session can carry one.',
-        divergence: '**Known divergence.** Expansion happens in `BrowserRegistry.restoreSession`, so the two paths that go through a registry restore expand, and the two browser-creation paths reached directly do not — a host calling `hic.createBrowser` with a shortcut URL hands an unexpanded `*s3/…` straight to the loader. This is the second of the two copies ADR-0006 decision 8 left standing; #534 deletes the duplicate and #535 moves the survivor to the entry.',
+        divergence: '**Closed by #534.** Expansion happened in `BrowserRegistry.restoreSession`, so the two paths that go through a registry restore expanded and the two browser-creation paths reached directly did not — a host calling `hic.createBrowser` with a shortcut URL handed an unexpanded `*s3/…` straight to the loader. Both copies of the expansion are gone and `normalizeSession` is the survivor, so all four doors expand; the two that did not are the snapshot movement logged in `testConfigGolden.js`. #535 moves the normalize call itself to the entry.',
         config: {
             url: '*s3/hiseq/gm12878/in-situ/HIC009.hic',
             controlUrl: '*s3e_/wapl_hic/WT.hic',
@@ -212,7 +213,7 @@ export const divergenceProbes = [
     {
         id: 'the-same-shortcut-URL-through-a-URL-and-through-a-config',
         note: 'The `*s3/` shortcut, in the two forms it can arrive in.',
-        divergence: 'None expected *here*, and that is the finding: the query path expands inside `decodeQuery` and the config path expands inside `BrowserRegistry.restoreSession`, by two separate copies of the same code (ADR-0006 decision 8). The pair agrees; #534 deletes one copy and the pair must still agree afterwards.',
+        divergence: 'None expected, before or after #534, and that is the point of the probe: the pair agreed when two separate copies of the expansion produced it — one in `decodeQuery`, one in `BrowserRegistry.restoreSession` (ADR-0006 decision 8) — and it agrees now that one copy in `normalizeSession` produces both sides. The snapshot did not move, which is the strongest single statement that the deletion changed nothing a browser sees.',
         url: 'http://localhost/juicebox/?hicUrl=*s3/hiseq/gm12878/in-situ/HIC009.hic',
         config: {url: '*s3/hiseq/gm12878/in-situ/HIC009.hic'},
     },
@@ -266,7 +267,7 @@ export const sessionFixtures = [
     {
         id: 'session-with-url-shortcuts-in-both-browsers',
         note: 'The shortcut expansion, in the multi-browser shape it was written for.',
-        divergence: 'Same divergence as the single-browser shortcut fixture: the registry restore expands, `createBrowserList` reached directly does not.',
+        divergence: '**Closed by #534**, same as the single-browser shortcut fixture: the registry restore expanded and `createBrowserList` reached directly did not. One copy of the expansion is left, in `normalizeSession`, and both doors meet it.',
         session: {
             browsers: [
                 {url: '*s3/hiseq/gm12878/in-situ/HIC009.hic'},

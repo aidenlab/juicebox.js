@@ -2,7 +2,6 @@ import {AlertDialog} from 'igv-ui'
 import EventBus from './eventBus.js'
 import HICEvent from './hicEvent.js'
 import {pairSynchable} from './syncGroup.js'
-import {expandSessionUrlShortcuts} from './sessionCodec.js'
 import {normalizeSession} from './normalizeSession.js'
 // A cycle, deliberately: `createBrowser.js` resolves its registry from a
 // container, and `restoreSession` below needs browsers built. Neither module
@@ -321,8 +320,6 @@ class BrowserRegistry {
 
         this.deleteAll()
 
-        expandSessionUrlShortcuts(session)
-
         // Normalized here as well as inside `createBrowserList`, because this
         // method reads a session-level member -- the selected gene -- that the
         // stage resolves: a document naming a gene only inside one of its
@@ -330,6 +327,12 @@ class BrowserRegistry {
         // (#533, #481). The stage is idempotent and rewrites the caller's own
         // object, so the second call inside `createBrowserList` finds its work
         // done; #535 collapses the two into one call at the entry.
+        //
+        // This one call is also what expands the URL shortcuts a session may
+        // carry. That was a second `expandSessionUrlShortcuts(session)` line
+        // here until #534, written because a session handed straight to this
+        // method never meets the decoder -- which is exactly the gap the
+        // normalize stage closes.
         normalizeSession(session)
 
         if (Object.hasOwn(session, 'selectedGene')) {

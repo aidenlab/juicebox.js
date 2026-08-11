@@ -13,6 +13,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -28,6 +29,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -47,6 +49,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -62,6 +65,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -81,6 +85,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -96,6 +101,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -115,6 +121,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -130,6 +137,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -146,6 +154,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowser(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -159,6 +172,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -166,6 +180,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "colorScale": {
             "__class": "ColorScale",
             "b": 0,
@@ -179,6 +198,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -190,6 +210,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -203,6 +228,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -210,6 +236,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "colorScale": {
             "__class": "ColorScale",
             "b": 0,
@@ -223,6 +254,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -234,6 +266,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -247,6 +284,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -254,6 +292,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "colorScale": {
             "__class": "ColorScale",
             "b": 0,
@@ -267,6 +310,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -278,6 +322,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -291,6 +340,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -298,6 +348,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "colorScale": {
             "__class": "ColorScale",
             "b": 0,
@@ -311,6 +366,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -327,9 +383,15 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowser(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": false,
         "showHicContactMapLabel": false,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -337,9 +399,15 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": false,
           "showHicContactMapLabel": false,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -351,9 +419,15 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": false,
         "showHicContactMapLabel": false,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -361,9 +435,15 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": false,
           "showHicContactMapLabel": false,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -375,9 +455,15 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": false,
         "showHicContactMapLabel": false,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -385,9 +471,15 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": false,
           "showHicContactMapLabel": false,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -399,9 +491,15 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": false,
         "showHicContactMapLabel": false,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -409,9 +507,15 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": false,
           "showHicContactMapLabel": false,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -428,18 +532,30 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowser(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
       },
     ],
     "outcome": "builds",
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
         },
         "figureMode": undefined,
         "sameObjectAsInput": true,
@@ -450,18 +566,30 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
       },
     ],
     "outcome": "builds",
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
         },
         "figureMode": undefined,
         "sameObjectAsInput": true,
@@ -472,18 +600,30 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
       },
     ],
     "outcome": "builds",
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
         },
         "figureMode": undefined,
         "sameObjectAsInput": true,
@@ -494,18 +634,30 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
       },
     ],
     "outcome": "builds",
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
         },
         "figureMode": undefined,
         "sameObjectAsInput": true,
@@ -521,10 +673,16 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowser(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "figureMode": true,
         "showChromosomeSelector": false,
         "showHicContactMapLabel": false,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -532,10 +690,16 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "figureMode": true,
           "showChromosomeSelector": false,
           "showHicContactMapLabel": false,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": true,
@@ -547,10 +711,16 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "figureMode": true,
         "showChromosomeSelector": false,
         "showHicContactMapLabel": false,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -558,10 +728,16 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "figureMode": true,
           "showChromosomeSelector": false,
           "showHicContactMapLabel": false,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": true,
@@ -573,10 +749,16 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "figureMode": true,
         "showChromosomeSelector": false,
         "showHicContactMapLabel": false,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -584,10 +766,16 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "figureMode": true,
           "showChromosomeSelector": false,
           "showHicContactMapLabel": false,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": true,
@@ -599,10 +787,16 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "figureMode": true,
         "showChromosomeSelector": false,
         "showHicContactMapLabel": false,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -610,10 +804,16 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "figureMode": true,
           "showChromosomeSelector": false,
           "showHicContactMapLabel": false,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": true,
@@ -630,6 +830,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowser(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "controlName": "Control",
         "controlUrl": "https://example.com/control.hic",
         "name": "A",
@@ -646,6 +851,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "y": 0,
           "zoom": 4,
         },
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -660,6 +866,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "controlName": "Control",
           "controlUrl": "https://example.com/control.hic",
           "name": "A",
@@ -676,6 +887,7 @@ exports[`resolved config golden file — one browser config, through every entry
             "y": 0,
             "zoom": 4,
           },
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -694,6 +906,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "controlName": "Control",
         "controlUrl": "https://example.com/control.hic",
         "name": "A",
@@ -710,6 +927,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "y": 0,
           "zoom": 4,
         },
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -724,6 +942,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "controlName": "Control",
           "controlUrl": "https://example.com/control.hic",
           "name": "A",
@@ -740,6 +963,7 @@ exports[`resolved config golden file — one browser config, through every entry
             "y": 0,
             "zoom": 4,
           },
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -758,6 +982,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "controlName": "Control",
         "controlUrl": "https://example.com/control.hic",
         "name": "A",
@@ -774,6 +1003,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "y": 0,
           "zoom": 4,
         },
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -788,6 +1018,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "controlName": "Control",
           "controlUrl": "https://example.com/control.hic",
           "name": "A",
@@ -804,6 +1039,7 @@ exports[`resolved config golden file — one browser config, through every entry
             "y": 0,
             "zoom": 4,
           },
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -822,6 +1058,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "controlName": "Control",
         "controlUrl": "https://example.com/control.hic",
         "name": "A",
@@ -838,6 +1079,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "y": 0,
           "zoom": 4,
         },
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -852,6 +1094,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "controlName": "Control",
           "controlUrl": "https://example.com/control.hic",
           "name": "A",
@@ -868,6 +1115,7 @@ exports[`resolved config golden file — one browser config, through every entry
             "y": 0,
             "zoom": 4,
           },
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -891,10 +1139,17 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowser(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
+        "figureMode": true,
         "miniMode": true,
-        "showChromosomeSelector": true,
-        "showHicContactMapLabel": true,
-        "showLocusGoto": true,
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -902,10 +1157,17 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
+          "figureMode": true,
           "miniMode": true,
-          "showChromosomeSelector": true,
-          "showHicContactMapLabel": true,
-          "showLocusGoto": true,
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": true,
@@ -917,10 +1179,17 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
+        "figureMode": true,
         "miniMode": true,
-        "showChromosomeSelector": true,
-        "showHicContactMapLabel": true,
-        "showLocusGoto": true,
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -928,10 +1197,17 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
+          "figureMode": true,
           "miniMode": true,
-          "showChromosomeSelector": true,
-          "showHicContactMapLabel": true,
-          "showLocusGoto": true,
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": true,
@@ -943,10 +1219,17 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
+        "figureMode": true,
         "miniMode": true,
-        "showChromosomeSelector": true,
-        "showHicContactMapLabel": true,
-        "showLocusGoto": true,
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -954,10 +1237,17 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
+          "figureMode": true,
           "miniMode": true,
-          "showChromosomeSelector": true,
-          "showHicContactMapLabel": true,
-          "showLocusGoto": true,
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": true,
@@ -969,10 +1259,17 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
+        "figureMode": true,
         "miniMode": true,
-        "showChromosomeSelector": true,
-        "showHicContactMapLabel": true,
-        "showLocusGoto": true,
+        "showChromosomeSelector": false,
+        "showHicContactMapLabel": false,
+        "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -980,10 +1277,17 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
+          "figureMode": true,
           "miniMode": true,
-          "showChromosomeSelector": true,
-          "showHicContactMapLabel": true,
-          "showLocusGoto": true,
+          "showChromosomeSelector": false,
+          "showHicContactMapLabel": false,
+          "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": true,
@@ -1000,6 +1304,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowser(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
@@ -1012,6 +1321,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
@@ -1028,6 +1342,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
@@ -1040,6 +1359,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
@@ -1056,6 +1380,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
@@ -1068,6 +1397,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
@@ -1084,6 +1418,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
@@ -1096,6 +1435,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
@@ -1117,6 +1461,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowser(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
@@ -1128,6 +1477,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
@@ -1143,6 +1497,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
@@ -1154,6 +1513,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
@@ -1169,6 +1533,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
@@ -1180,6 +1549,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
@@ -1195,6 +1569,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
@@ -1206,6 +1585,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
@@ -1226,9 +1610,15 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowser(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -1243,9 +1633,15 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -1264,9 +1660,15 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -1281,9 +1683,15 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -1302,9 +1710,15 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -1319,9 +1733,15 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -1340,9 +1760,15 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -1357,9 +1783,15 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -1383,6 +1815,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowser(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "hostPrivateField": {
           "anything": [
             1,
@@ -1393,6 +1830,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -1400,6 +1838,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "hostPrivateField": {
             "anything": [
               1,
@@ -1410,6 +1853,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -1421,6 +1865,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "hostPrivateField": {
           "anything": [
             1,
@@ -1431,6 +1880,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -1438,6 +1888,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "hostPrivateField": {
             "anything": [
               1,
@@ -1448,6 +1903,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -1459,6 +1915,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "hostPrivateField": {
           "anything": [
             1,
@@ -1469,6 +1930,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -1476,6 +1938,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "hostPrivateField": {
             "anything": [
               1,
@@ -1486,6 +1953,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -1497,6 +1965,11 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "hostPrivateField": {
           "anything": [
             1,
@@ -1507,6 +1980,7 @@ exports[`resolved config golden file — one browser config, through every entry
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -1514,6 +1988,11 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "hostPrivateField": {
             "anything": [
               1,
@@ -1524,6 +2003,7 @@ exports[`resolved config golden file — one browser config, through every entry
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -1540,10 +2020,16 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowser(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -1558,10 +2044,16 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -1580,10 +2072,16 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -1598,10 +2096,16 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -1620,10 +2124,16 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -1638,10 +2148,16 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -1660,10 +2176,16 @@ exports[`resolved config golden file — one browser config, through every entry
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -1678,10 +2200,16 @@ exports[`resolved config golden file — one browser config, through every entry
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -1705,16 +2233,28 @@ exports[`resolved config golden file — session documents, through the session-
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "figureMode": true,
         "showChromosomeSelector": false,
         "showHicContactMapLabel": false,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/b.hic",
       },
     ],
@@ -1722,10 +2262,16 @@ exports[`resolved config golden file — session documents, through the session-
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "figureMode": true,
           "showChromosomeSelector": false,
           "showHicContactMapLabel": false,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": true,
@@ -1734,9 +2280,15 @@ exports[`resolved config golden file — session documents, through the session-
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/b.hic",
         },
         "figureMode": undefined,
@@ -1748,16 +2300,28 @@ exports[`resolved config golden file — session documents, through the session-
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "figureMode": true,
         "showChromosomeSelector": false,
         "showHicContactMapLabel": false,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/b.hic",
       },
     ],
@@ -1765,10 +2329,16 @@ exports[`resolved config golden file — session documents, through the session-
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "figureMode": true,
           "showChromosomeSelector": false,
           "showHicContactMapLabel": false,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": true,
@@ -1777,9 +2347,15 @@ exports[`resolved config golden file — session documents, through the session-
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/b.hic",
         },
         "figureMode": undefined,
@@ -1791,16 +2367,28 @@ exports[`resolved config golden file — session documents, through the session-
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "figureMode": true,
         "showChromosomeSelector": false,
         "showHicContactMapLabel": false,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/b.hic",
       },
     ],
@@ -1808,10 +2396,16 @@ exports[`resolved config golden file — session documents, through the session-
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "figureMode": true,
           "showChromosomeSelector": false,
           "showHicContactMapLabel": false,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": true,
@@ -1820,9 +2414,15 @@ exports[`resolved config golden file — session documents, through the session-
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/b.hic",
         },
         "figureMode": undefined,
@@ -1839,6 +2439,11 @@ exports[`resolved config golden file — session documents, through the session-
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "A",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -1847,6 +2452,11 @@ exports[`resolved config golden file — session documents, through the session-
         "url": "https://example.com/a.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "B",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -1859,6 +2469,11 @@ exports[`resolved config golden file — session documents, through the session-
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "A",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
@@ -1872,6 +2487,11 @@ exports[`resolved config golden file — session documents, through the session-
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "B",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
@@ -1888,6 +2508,11 @@ exports[`resolved config golden file — session documents, through the session-
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "A",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -1896,6 +2521,11 @@ exports[`resolved config golden file — session documents, through the session-
         "url": "https://example.com/a.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "B",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -1908,6 +2538,11 @@ exports[`resolved config golden file — session documents, through the session-
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "A",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
@@ -1921,6 +2556,11 @@ exports[`resolved config golden file — session documents, through the session-
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "B",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
@@ -1937,6 +2577,11 @@ exports[`resolved config golden file — session documents, through the session-
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "A",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -1945,6 +2590,11 @@ exports[`resolved config golden file — session documents, through the session-
         "url": "https://example.com/a.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "B",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -1957,6 +2607,11 @@ exports[`resolved config golden file — session documents, through the session-
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "A",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
@@ -1970,6 +2625,11 @@ exports[`resolved config golden file — session documents, through the session-
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "B",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
@@ -1991,15 +2651,27 @@ exports[`resolved config golden file — session documents, through the session-
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -2013,9 +2685,15 @@ exports[`resolved config golden file — session documents, through the session-
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
         },
         "figureMode": undefined,
@@ -2024,9 +2702,15 @@ exports[`resolved config golden file — session documents, through the session-
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -2044,15 +2728,27 @@ exports[`resolved config golden file — session documents, through the session-
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -2066,9 +2762,15 @@ exports[`resolved config golden file — session documents, through the session-
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
         },
         "figureMode": undefined,
@@ -2077,9 +2779,15 @@ exports[`resolved config golden file — session documents, through the session-
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -2097,15 +2805,27 @@ exports[`resolved config golden file — session documents, through the session-
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -2119,9 +2839,15 @@ exports[`resolved config golden file — session documents, through the session-
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
         },
         "figureMode": undefined,
@@ -2130,9 +2856,15 @@ exports[`resolved config golden file — session documents, through the session-
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -2155,17 +2887,29 @@ exports[`resolved config golden file — session documents, through the session-
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "A",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "B",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/b.hic",
       },
     ],
@@ -2173,10 +2917,16 @@ exports[`resolved config golden file — session documents, through the session-
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "A",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -2185,10 +2935,16 @@ exports[`resolved config golden file — session documents, through the session-
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "B",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/b.hic",
         },
         "figureMode": undefined,
@@ -2200,17 +2956,29 @@ exports[`resolved config golden file — session documents, through the session-
   "hic.init(container, config)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "A",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "B",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/b.hic",
       },
     ],
@@ -2218,10 +2986,16 @@ exports[`resolved config golden file — session documents, through the session-
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "A",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -2230,10 +3004,16 @@ exports[`resolved config golden file — session documents, through the session-
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "B",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/b.hic",
         },
         "figureMode": undefined,
@@ -2245,17 +3025,29 @@ exports[`resolved config golden file — session documents, through the session-
   "hic.restoreSession(container, session)": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "A",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "B",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/b.hic",
       },
     ],
@@ -2263,10 +3055,16 @@ exports[`resolved config golden file — session documents, through the session-
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "A",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -2275,10 +3073,16 @@ exports[`resolved config golden file — session documents, through the session-
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "B",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/b.hic",
         },
         "figureMode": undefined,
@@ -2295,17 +3099,29 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
   "afterInit": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
       },
     ],
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
         },
         "figureMode": undefined,
         "sameObjectAsInput": undefined,
@@ -2316,26 +3132,44 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
   "afterRestore": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "figureMode": true,
         "showChromosomeSelector": false,
         "showHicContactMapLabel": false,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": false,
+        "synchable": true,
         "url": "https://example.com/b.hic",
       },
     ],
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "figureMode": true,
           "showChromosomeSelector": false,
           "showHicContactMapLabel": false,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": true,
@@ -2344,9 +3178,15 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": false,
+          "synchable": true,
           "url": "https://example.com/b.hic",
         },
         "figureMode": undefined,
@@ -2363,17 +3203,29 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
   "afterInit": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
       },
     ],
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
         },
         "figureMode": undefined,
         "sameObjectAsInput": undefined,
@@ -2384,6 +3236,11 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
   "afterRestore": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "A",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -2392,6 +3249,11 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
         "url": "https://example.com/a.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "B",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -2403,6 +3265,11 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "A",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
@@ -2416,6 +3283,11 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "B",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
@@ -2437,17 +3309,29 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
   "afterInit": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
       },
     ],
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
         },
         "figureMode": undefined,
         "sameObjectAsInput": undefined,
@@ -2458,15 +3342,27 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
   "afterRestore": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -2479,9 +3375,15 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
         },
         "figureMode": undefined,
@@ -2490,9 +3392,15 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -2515,17 +3423,29 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
   "afterInit": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
       },
     ],
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
         },
         "figureMode": undefined,
         "sameObjectAsInput": undefined,
@@ -2536,27 +3456,45 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
   "afterRestore": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "A",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "B",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.com/b.hic",
       },
     ],
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "A",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -2565,10 +3503,16 @@ exports[`resolved config golden file — the Spacewalk sequence, restoring into 
       },
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "B",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://example.com/b.hic",
         },
         "figureMode": undefined,
@@ -2584,6 +3528,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
@@ -2598,12 +3547,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 0,
         "zoom": 0,
       },
+      "synchable": true,
       "url": "http://hicfiles.s3.amazonaws.com/external/li/mcf7-rnapii-saturated.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -2618,6 +3573,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 0,
           "zoom": 0,
         },
+        "synchable": true,
         "url": "http://hicfiles.s3.amazonaws.com/external/li/mcf7-rnapii-saturated.hic",
       },
       "figureMode": undefined,
@@ -2632,30 +3588,48 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "name": "HFFc6 DpnII",
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
     },
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "name": "H1-hESC DpnII",
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/a0859349-5f06-4ad3-b56f-b1166b34a9eb/4DNFIIMZB6Y9.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "name": "HFFc6 DpnII",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
       },
       "figureMode": undefined,
@@ -2664,11 +3638,17 @@ exports[`resolved config golden file — the query path, over the wire-format co
     },
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "name": "H1-hESC DpnII",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/a0859349-5f06-4ad3-b56f-b1166b34a9eb/4DNFIIMZB6Y9.hic",
       },
       "figureMode": undefined,
@@ -2683,6 +3663,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": 0,
@@ -2709,6 +3694,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 1916.657181523778,
         "zoom": 6,
       },
+      "synchable": true,
       "tracks": [
         {
           "color": "rgb(255,255,0)",
@@ -2732,6 +3718,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
       "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC/ADAC_30.hic",
     },
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": 0,
@@ -2758,6 +3749,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 1916.657181523778,
         "zoom": 6,
       },
+      "synchable": true,
       "tracks": [
         {
           "color": "rgb(18,0,255)",
@@ -2784,6 +3776,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -2810,6 +3807,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 1916.657181523778,
           "zoom": 6,
         },
+        "synchable": true,
         "tracks": [
           {
             "color": "rgb(255,255,0)",
@@ -2838,6 +3836,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
     },
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -2864,6 +3867,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 1916.657181523778,
           "zoom": 6,
         },
+        "synchable": true,
         "tracks": [
           {
             "color": "rgb(18,0,255)",
@@ -2898,6 +3902,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "controlName": "H1-hESC DpnII",
       "controlUrl": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/a0859349-5f06-4ad3-b56f-b1166b34a9eb/4DNFIIMZB6Y9.hic",
       "cycle": undefined,
@@ -2905,12 +3914,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "controlName": "H1-hESC DpnII",
         "controlUrl": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/a0859349-5f06-4ad3-b56f-b1166b34a9eb/4DNFIIMZB6Y9.hic",
         "cycle": undefined,
@@ -2918,6 +3933,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
       },
       "figureMode": undefined,
@@ -2932,6 +3948,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": 0,
@@ -2957,6 +3978,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 0,
         "zoom": 4,
       },
+      "synchable": true,
       "tracks": [
         {
           "displayMode": "COLLAPSED",
@@ -2970,6 +3992,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -2995,6 +4022,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 0,
           "zoom": 4,
         },
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -3016,6 +4044,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": undefined,
@@ -3041,6 +4074,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 19215,
         "zoom": 7,
       },
+      "synchable": true,
       "tracks": [
         {
           "color": "rgb(0,150,0)",
@@ -3065,6 +4099,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": undefined,
@@ -3090,6 +4129,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 19215,
           "zoom": 7,
         },
+        "synchable": true,
         "tracks": [
           {
             "color": "rgb(0,150,0)",
@@ -3122,6 +4162,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": 0,
@@ -3138,12 +4183,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "https://dnazoo.s3.amazonaws.com/Ailurus_fulgens/ASM200746v1.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -3160,6 +4211,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://dnazoo.s3.amazonaws.com/Ailurus_fulgens/ASM200746v1.hic",
       },
       "figureMode": undefined,
@@ -3174,6 +4226,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": undefined,
@@ -3200,12 +4257,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 1149.253105,
         "zoom": 4,
       },
+      "synchable": true,
       "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": undefined,
@@ -3232,6 +4295,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 1149.253105,
           "zoom": 4,
         },
+        "synchable": true,
         "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
       },
       "figureMode": undefined,
@@ -3246,6 +4310,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": undefined,
@@ -3271,6 +4340,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 5537.749239047619,
         "zoom": 6,
       },
+      "synchable": true,
       "tracks": [
         {
           "displayMode": "COLLAPSED",
@@ -3289,6 +4359,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": undefined,
@@ -3314,6 +4389,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 5537.749239047619,
           "zoom": 6,
         },
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -3340,6 +4416,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": undefined,
@@ -3365,6 +4446,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 5537.749239047619,
         "zoom": 6,
       },
+      "synchable": true,
       "tracks": [
         {
           "displayMode": "COLLAPSED",
@@ -3383,6 +4465,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": undefined,
@@ -3408,6 +4495,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 5537.749239047619,
           "zoom": 6,
         },
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -3434,6 +4522,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": 0,
@@ -3450,6 +4543,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
       "state": "2,2,6,1896.1562537317725,1916.657181523778,1.5423280423280423,KR",
+      "synchable": true,
       "tracks": [
         {
           "color": "rgb(255,255,0)",
@@ -3473,6 +4567,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
       "url": "https://s3.amazonaws.com/hicfiles/hiseq/nSxhJZHdDRQ0kGDR/12.31.17/ADAC/ADAC_30.hic",
     },
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": 0,
@@ -3489,6 +4588,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
       "state": "2,2,6,1896.1562537317725,1916.657181523778,1.5423280423280423,KR",
+      "synchable": true,
       "tracks": [
         {
           "color": "rgb(18,0,255)",
@@ -3515,6 +4615,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -3531,6 +4636,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
         "state": "2,2,6,1896.1562537317725,1916.657181523778,1.5423280423280423,KR",
+        "synchable": true,
         "tracks": [
           {
             "color": "rgb(255,255,0)",
@@ -3559,6 +4665,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
     },
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -3575,6 +4686,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
         "state": "2,2,6,1896.1562537317725,1916.657181523778,1.5423280423280423,KR",
+        "synchable": true,
         "tracks": [
           {
             "color": "rgb(18,0,255)",
@@ -3609,33 +4721,51 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "name": "A",
       "selectedGene": "MYC",
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "https://example.org/a.hic",
     },
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "name": "B",
       "selectedGene": "ACE",
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "https://example.org/b.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "name": "A",
         "selectedGene": "MYC",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.org/a.hic",
       },
       "figureMode": undefined,
@@ -3644,12 +4774,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
     },
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "name": "B",
         "selectedGene": "ACE",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.org/b.hic",
       },
       "figureMode": undefined,
@@ -3664,30 +4800,48 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "name": "HFFc6 DpnII",
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
     },
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "name": "H1-hESC DpnII",
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/a0859349-5f06-4ad3-b56f-b1166b34a9eb/4DNFIIMZB6Y9.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "name": "HFFc6 DpnII",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
       },
       "figureMode": undefined,
@@ -3696,11 +4850,17 @@ exports[`resolved config golden file — the query path, over the wire-format co
     },
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "name": "H1-hESC DpnII",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/a0859349-5f06-4ad3-b56f-b1166b34a9eb/4DNFIIMZB6Y9.hic",
       },
       "figureMode": undefined,
@@ -3715,6 +4875,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": undefined,
@@ -3729,12 +4894,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "https://example.org/a.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": undefined,
@@ -3749,6 +4920,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.org/a.hic",
       },
       "figureMode": undefined,
@@ -3763,6 +4935,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "DiffColorScale",
         "negativeScale": {
@@ -3793,12 +4970,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "https://example.org/a.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "DiffColorScale",
           "negativeScale": {
@@ -3829,6 +5012,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.org/a.hic",
       },
       "figureMode": undefined,
@@ -3843,6 +5027,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": 0,
@@ -3857,12 +5046,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "https://example.org/a.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -3877,6 +5072,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.org/a.hic",
       },
       "figureMode": undefined,
@@ -3891,6 +5087,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "RatioColorScale",
         "negativeScale": {
@@ -3921,12 +5122,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "https://example.org/a.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "RatioColorScale",
           "negativeScale": {
@@ -3957,6 +5164,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.org/a.hic",
       },
       "figureMode": undefined,
@@ -3971,6 +5179,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": 0,
@@ -3985,7 +5198,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
       "controlNvi": "789,10",
       "controlUrl": "https://example.org/b.hic",
       "cycle": "true",
-      "displayMode": "AOB",
+      "displayMode": "A",
       "name": "A",
       "nvi": "123,456",
       "selectedGene": "MYC",
@@ -4002,6 +5215,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 0,
         "zoom": 4,
       },
+      "synchable": true,
       "tracks": [
         {
           "color": "rgb(255,0,0)",
@@ -4018,6 +5232,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -4049,6 +5268,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 0,
           "zoom": 4,
         },
+        "synchable": true,
         "tracks": [
           {
             "color": "rgb(255,0,0)",
@@ -4073,6 +5293,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
@@ -4087,12 +5312,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": NaN,
         "zoom": NaN,
       },
+      "synchable": true,
       "url": "https://example.org/a.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -4107,6 +5338,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": NaN,
           "zoom": NaN,
         },
+        "synchable": true,
         "url": "https://example.org/a.hic",
       },
       "figureMode": undefined,
@@ -4121,6 +5353,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
@@ -4135,12 +5372,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 100,
         "zoom": 6,
       },
+      "synchable": true,
       "url": "https://example.org/a.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -4155,6 +5398,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 100,
           "zoom": 6,
         },
+        "synchable": true,
         "url": "https://example.org/a.hic",
       },
       "figureMode": undefined,
@@ -4169,6 +5413,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
@@ -4183,12 +5432,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 20,
         "zoom": 4,
       },
+      "synchable": true,
       "url": "https://example.org/a.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -4203,6 +5458,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 20,
           "zoom": 4,
         },
+        "synchable": true,
         "url": "https://example.org/a.hic",
       },
       "figureMode": undefined,
@@ -4217,6 +5473,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
@@ -4231,12 +5492,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 200,
         "zoom": 6,
       },
+      "synchable": true,
       "url": "https://example.org/a.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -4251,6 +5518,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 200,
           "zoom": 6,
         },
+        "synchable": true,
         "url": "https://example.org/a.hic",
       },
       "figureMode": undefined,
@@ -4265,6 +5533,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
@@ -4279,12 +5552,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 200,
         "zoom": 6,
       },
+      "synchable": true,
       "url": "https://example.org/a.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -4299,6 +5578,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 200,
           "zoom": 6,
         },
+        "synchable": true,
         "url": "https://example.org/a.hic",
       },
       "figureMode": undefined,
@@ -4313,6 +5593,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
@@ -4327,12 +5612,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 200,
         "zoom": 6,
       },
+      "synchable": true,
       "url": "https://example.org/a.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -4347,6 +5638,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 200,
           "zoom": 6,
         },
+        "synchable": true,
         "url": "https://example.org/a.hic",
       },
       "figureMode": undefined,
@@ -4361,10 +5653,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "tracks": [
         {
           "color": "https://example.org/a.bed",
@@ -4378,10 +5676,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "color": "https://example.org/a.bed",
@@ -4403,10 +5707,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "tracks": [
         {
           "displayMode": "COLLAPSED",
@@ -4422,10 +5732,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -4449,10 +5765,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "tracks": [
         {
           "color": "rgb(255,0,0)",
@@ -4467,10 +5789,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "color": "rgb(255,0,0)",
@@ -4493,10 +5821,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "tracks": [
         {
           "color": "rgb(255,0,0)",
@@ -4513,10 +5847,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "color": "rgb(255,0,0)",
@@ -4541,10 +5881,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "tracks": [
         {
           "color": "rgb(255,0,0)",
@@ -4561,10 +5907,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "color": "rgb(255,0,0)",
@@ -4589,10 +5941,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "tracks": [
         {
           "color": "rgb(255,0,0)",
@@ -4609,10 +5967,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "color": "rgb(255,0,0)",
@@ -4637,10 +6001,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "tracks": [
         {
           "color": "rgb(255,0,0)",
@@ -4655,10 +6025,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "color": "rgb(255,0,0)",
@@ -4681,10 +6057,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "tracks": [
         {
           "color": "rgb(255,0,0)",
@@ -4698,10 +6080,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "color": "rgb(255,0,0)",
@@ -4723,10 +6111,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "tracks": [],
       "url": "https://example.org/a.hic",
     },
@@ -4734,10 +6128,16 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [],
         "url": "https://example.org/a.hic",
       },
@@ -4753,22 +6153,34 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "controlUrl": "http://hicfiles.s3.amazonaws.com/external/b.hic",
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "http://hicfiles.s3.amazonaws.com/hiseq/a.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "controlUrl": "http://hicfiles.s3.amazonaws.com/external/b.hic",
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "http://hicfiles.s3.amazonaws.com/hiseq/a.hic",
       },
       "figureMode": undefined,
@@ -4783,11 +6195,17 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "controlUrl": "https://www.encodeproject.org/files/ENCFF000.hic",
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "tracks": [
         {
           "color": "rgb(255,0,0)",
@@ -4804,11 +6222,17 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "controlUrl": "https://www.encodeproject.org/files/ENCFF000.hic",
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "color": "rgb(255,0,0)",
@@ -4833,20 +6257,32 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "cycle": undefined,
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
       "showLocusGoto": true,
+      "synchable": true,
       "url": "https://example.org/wins.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://example.org/wins.hic",
       },
       "figureMode": undefined,
@@ -4861,6 +6297,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": 0,
@@ -4884,6 +6325,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 0,
         "zoom": 4,
       },
+      "synchable": true,
       "tracks": [],
       "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
     },
@@ -4891,6 +6333,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -4914,6 +6361,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 0,
           "zoom": 4,
         },
+        "synchable": true,
         "tracks": [],
         "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
       },
@@ -4929,6 +6377,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": 0,
@@ -4952,6 +6405,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 0,
         "zoom": 4,
       },
+      "synchable": true,
       "tracks": [],
       "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
     },
@@ -4959,6 +6413,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -4982,6 +6441,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 0,
           "zoom": 4,
         },
+        "synchable": true,
         "tracks": [],
         "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
       },
@@ -4997,6 +6457,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "name": "A",
       "showChromosomeSelector": true,
       "showHicContactMapLabel": true,
@@ -5010,12 +6475,18 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 0,
         "zoom": 4,
       },
+      "synchable": true,
       "url": "https://example.org/a.hic",
     },
   ],
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "A",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -5029,6 +6500,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 0,
           "zoom": 4,
         },
+        "synchable": true,
         "url": "https://example.org/a.hic",
       },
       "figureMode": undefined,
@@ -5043,6 +6515,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
 {
   "atConstruction": [
     {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
       "colorScale": {
         "__class": "ColorScale",
         "b": 0,
@@ -5066,6 +6543,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
         "y": 0,
         "zoom": 4,
       },
+      "synchable": true,
       "tracks": [],
       "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
     },
@@ -5073,6 +6551,11 @@ exports[`resolved config golden file — the query path, over the wire-format co
   "readBack": [
     {
       "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "colorScale": {
           "__class": "ColorScale",
           "b": 0,
@@ -5096,6 +6579,7 @@ exports[`resolved config golden file — the query path, over the wire-format co
           "y": 0,
           "zoom": 4,
         },
+        "synchable": true,
         "tracks": [],
         "url": "https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/8f064770-6008-4f74-bfca-268d4a22d745/4DNFIMROE6N4.hic",
       },
@@ -5112,6 +6596,11 @@ exports[`resolved config golden file — the same input as a URL and as a config
   "viaHostConfig": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
@@ -5124,6 +6613,7 @@ exports[`resolved config golden file — the same input as a URL and as a config
           "y": 0,
           "zoom": 4,
         },
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
@@ -5131,6 +6621,11 @@ exports[`resolved config golden file — the same input as a URL and as a config
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
@@ -5143,6 +6638,7 @@ exports[`resolved config golden file — the same input as a URL and as a config
             "y": 0,
             "zoom": 4,
           },
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -5154,6 +6650,11 @@ exports[`resolved config golden file — the same input as a URL and as a config
   "viaQuery": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
@@ -5168,12 +6669,18 @@ exports[`resolved config golden file — the same input as a URL and as a config
           "y": 0,
           "zoom": 4,
         },
+        "synchable": true,
         "url": "https://example.com/a.hic",
       },
     ],
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "cycle": undefined,
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
@@ -5188,6 +6695,7 @@ exports[`resolved config golden file — the same input as a URL and as a config
             "y": 0,
             "zoom": 4,
           },
+          "synchable": true,
           "url": "https://example.com/a.hic",
         },
         "figureMode": undefined,
@@ -5204,9 +6712,15 @@ exports[`resolved config golden file — the same input as a URL and as a config
   "viaHostConfig": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
       },
     ],
@@ -5214,9 +6728,15 @@ exports[`resolved config golden file — the same input as a URL and as a config
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
         },
         "figureMode": undefined,
@@ -5228,20 +6748,32 @@ exports[`resolved config golden file — the same input as a URL and as a config
   "viaQuery": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
       },
     ],
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "cycle": undefined,
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
         },
         "figureMode": undefined,
@@ -5258,10 +6790,16 @@ exports[`resolved config golden file — the same input as a URL and as a config
   "viaHostConfig": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "name": "A",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -5276,10 +6814,16 @@ exports[`resolved config golden file — the same input as a URL and as a config
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "name": "A",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",
@@ -5298,11 +6842,17 @@ exports[`resolved config golden file — the same input as a URL and as a config
   "viaQuery": {
     "atConstruction": [
       {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
         "cycle": undefined,
         "name": "A",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
+        "synchable": true,
         "tracks": [
           {
             "displayMode": "COLLAPSED",
@@ -5316,11 +6866,17 @@ exports[`resolved config golden file — the same input as a URL and as a config
     "readBack": [
       {
         "config": {
+          "backgroundColor": {
+            "b": 255,
+            "g": 255,
+            "r": 255,
+          },
           "cycle": undefined,
           "name": "A",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
+          "synchable": true,
           "tracks": [
             {
               "displayMode": "COLLAPSED",

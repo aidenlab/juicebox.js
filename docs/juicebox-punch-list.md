@@ -61,7 +61,7 @@ Each card carries a Consumer impact block; read it before filing anything.
 
 | Candidate | Status |
 |---|---|
-| **9 · Give the config schema one reader** | **filed — #531–#536**; #531–#535 landed, frontier is #536. Seam already drawn by ADR-0006 decision 8; no ADR opened |
+| **9 · Give the config schema one reader** | ✅ **done — #531–#536 all landed.** One reader (`js/normalizeSession.js`), run once at the entry, with the schema written down in `CONTEXT.md`. Seam drawn by ADR-0006 decision 8. One ADR opened after all — **ADR-0008**, for the single decision the seam did not settle: `figureMode` absorbs `miniMode` |
 | **11 · Give the track tile one owner** | ⚠️ breaking |
 | **6 · Fold StateManager into State, and make restore use the chokepoint** | watch |
 | **7 · Move the gesture state machines behind InteractionHandler** | watch |
@@ -83,8 +83,12 @@ consumer-facing, so it might have been worth an ADR.
 **Decided: no ADR.** The answer is "no change to what is *accepted*" — normalize **defaults and
 coerces, never rejects**, which is an acceptance criterion on every ticket that could violate it.
 What *does* change is what `restoreSession` *produces*, and only for the three divergences #533
-closes deliberately. That is `/to-tickets` against decision 8, not a fresh ADR. ADR-0008 stays the
-next free number.
+closes deliberately. That is `/to-tickets` against decision 8, not a fresh ADR.
+
+**Amended at #536, the last ticket:** one decision did come up that decision 8 does not cover —
+`HICBrowser` read `miniMode` as a figure mode and the normalize stage did not, so the two readers
+disagreed about the same config and the fix had to pick a winner. That is consumer-visible and is
+**ADR-0008**. ADR-0009 is the next free number.
 
 **Filed as six tickets, gate first** — the shape candidate 5 proved:
 
@@ -95,10 +99,15 @@ next free number.
 | #533 | Move the remaining normalization across the seam | #532 — **landed** |
 | #534 | Delete the duplicate URL-shortcut expansion | #533 — **landed** |
 | #535 | Normalize once, at the entry | #533 — **landed** |
-| #536 | Downstream readers stop defaulting, and the schema is written down | #535 — **frontier** |
+| #536 | Downstream readers stop defaulting, and the schema is written down | #535 — **landed** |
 
-#534 and #535 run in parallel after #533. **#533 and #534 are the two tickets that deliberately move
-snapshots.** #533 closes three divergences at once: track defaults skipped by `restoreSession`, the
+#534 and #535 ran in parallel after #533. **#533, #534 and #536 are the tickets that deliberately move
+snapshots** — #536 was expected to be neutral and was not, for a reason worth carrying: a default
+moved *up* into the stage becomes a **field of the resolved config**, and the config is snapshotted.
+Every fixture gained `synchable` and `backgroundColor` with no behaviour change at all, one fixture
+(`mini-mode`) moved behaviourally because that is the divergence it was written to expose, and one
+query fixture moved `displayMode` at construction only because the write it records happened a stage
+earlier. #533 closes three divergences at once: track defaults skipped by `restoreSession`, the
 `selectedGene` reconciliation, and `syncDatasets` honoured by `createBrowserList` but not
 `createBrowser`. #534 closes the fourth — the two browser-creation doors reached directly handed an
 unexpanded `*s3/…` to the loader — and moves the *decoder's* golden file as well, since a shortcut
@@ -151,8 +160,9 @@ session before any ticket existed.
 
 **Skill:** `/to-tickets` when you pick one up. Full routing rules, and the reason to file tickets
 *before* the blocker clears, are in `docs/agents/triage-labels.md`. **ADR-0005 went to candidate 8
-and ADR-0006 to candidate 5. ADR-0007 is claimed by #477, so ADR-0008 is the next free number** —
-and candidate 9 does not need one, per above.
+and ADR-0006 to candidate 5. ADR-0007 is still claimed by #477, and candidate 9 took ADR-0008 for
+the one decision it raised (`figureMode` absorbs `miniMode`), so ADR-0009 is the next free
+number.**
 
 When a candidate lands: tick it in [#466](https://github.com/aidenlab/juicebox.js/issues/466) and
 add an Outcome box to its card. That is the only time either file is touched.

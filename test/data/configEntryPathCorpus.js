@@ -2,13 +2,14 @@
  * The config fixtures — one input per thing an entry path is known, or
  * suspected, to treat differently. #531, the gate for candidate 9.
  *
- * Candidate 9 is "give the config schema one reader". There is not yet one
- * reader: `normalizeSession` (`js/normalizeSession.js`, #532, #533, #534)
- * applies most defaults, and `HICBrowser` itself still reads raw fields and
- * defaults them inline. Which of those a config meets still depends on which
- * door it came in through — less than it did, since #533 moved the last of the
- * decoder's normalization behind the shared stage and #534 collapsed the two
- * copies of the URL-shortcut expansion into it.
+ * Candidate 9 is "give the config schema one reader". There is one now:
+ * `normalizeSession` (`js/normalizeSession.js`, #532–#536), reached once per
+ * session at the entry, with `CONTEXT.md` recording in prose what it resolves a
+ * config to. When these fixtures were written there were four normalizers and
+ * which of them a config met depended on the door it came in through; #533 moved
+ * the last of the decoder's normalization behind the shared stage, #534 collapsed
+ * the two copies of the URL-shortcut expansion into it, #535 lifted the call to
+ * the entry, and #536 took the defaults out of the readers below it.
  *
  * **These fixtures carry inputs, not expected outputs** — the same rule as
  * `wireFormatCorpus.js`, and for the same reason (ADR-0006, "How we know the
@@ -108,8 +109,8 @@ export const configFixtures = [
 
     {
         id: 'mini-mode-the-legacy-spelling-of-figure-mode',
-        note: '`miniMode: true`, the backward-compatible spelling `HICBrowser` still reads at hicBrowser.js:103.',
-        divergence: '**Known divergence, and not between paths — between readers.** `normalizeSession` tests `config.figureMode === true` only, so `miniMode` leaves the three display flags defaulted to `true` while `browser.figureMode` is `true`. Every path agrees, and every path is inconsistent with itself. The snapshot pins the resolved flags; `browser.figureMode` is snapshotted beside the config because that disagreement is invisible in the config alone. #536 is where the schema says which spelling wins.',
+        note: '`miniMode: true`, the backward-compatible spelling `HICBrowser` read inline until #536.',
+        divergence: '**Closed by #536, and it is the one fixture whose behaviour moved.** The divergence was not between paths but between readers: `HICBrowser` read `config.figureMode || config.miniMode` while `normalizeSession` tested `figureMode === true`, so every path agreed with the others and none agreed with itself — `browser.figureMode` true, the three display flags defaulted on. **`figureMode` wins**, by absorbing the other spelling in `resolveFigureMode`: the config now carries `figureMode: true` and the three flags go off, because a mini map is a figure. The browser reads one field and defaults nothing.',
         config: {url: 'https://example.com/a.hic', miniMode: true},
     },
 
@@ -135,14 +136,14 @@ export const configFixtures = [
     {
         id: 'background-color-as-a-string',
         note: 'The other in-place string→object rewrite in `normalizeSession`.',
-        divergence: 'None expected between paths. Same reason as the colour scale.',
+        divergence: 'None expected between paths. Same reason as the colour scale. Since #536 the *absence* of this field is resolved too — every other fixture here carries the white default the contact matrix view used to supply for itself — so this one pins that a colour the host did name still wins.',
         config: {url: 'https://example.com/a.hic', backgroundColor: '255,255,255'},
     },
 
     {
         id: 'synchable-false-on-the-browser-config',
-        note: '`synchable` set per browser, which is where `HICBrowser` reads it (hicBrowser.js:127).',
-        divergence: 'None expected — this is the field the *session-level* `syncDatasets` is translated into, and it is the half that behaves the same everywhere.',
+        note: '`synchable` set per browser, which is the field the *session-level* `syncDatasets` is translated into.',
+        divergence: 'None expected — this is the half that behaves the same everywhere. It moved in #536 all the same, in the fixtures that say *nothing*: `synchable` was defaulted by `HICBrowser` (`config.synchable !== false`) and is defaulted by `normalizeSession` now, so a config that opts out reads the same and one that says nothing carries `synchable: true` rather than nothing at all. Kept as the fixture that pins the opt-out surviving that move.',
         config: {url: 'https://example.com/a.hic', synchable: false},
     },
 

@@ -117,7 +117,9 @@ function createWidgets(browser) {
         }
     });
 
-    const backgroundColor = browser.config.backgroundColor || ContactMatrixView.defaultBackgroundColor;
+    // Read, not defaulted: `normalizeSession` resolves `backgroundColor` to an
+    // {r, g, b} in every config, including the one that names no colour (#536).
+    const backgroundColor = browser.config.backgroundColor;
     const contactMatrixView = new ContactMatrixView(
         browser,
         browser.layoutController.getContactMatrixViewport(),

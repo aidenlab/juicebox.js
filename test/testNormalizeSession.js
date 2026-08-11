@@ -17,7 +17,7 @@
  * @see docs/juicebox-punch-list.md — candidate 9
  */
 import {describe, expect, test} from 'vitest'
-import {normalizeSession} from '../js/normalizeSession.js'
+import {normalizeSession, normalizeTrackConfigs} from '../js/normalizeSession.js'
 import ColorScale from '../js/colorScale.js'
 import RatioColorScale from '../js/ratioColorScale.js'
 
@@ -109,16 +109,31 @@ describe('the widget-visibility defaults', () => {
         }
     })
 
-    test('miniMode is not figureMode here — the browser reads it, normalize does not', () => {
+    /**
+     * #536 closes the disagreement #531 pinned: `HICBrowser` read `miniMode` as
+     * a figure mode and this stage did not, so `browser.figureMode` was true
+     * while the three flags defaulted on. `miniMode` is resolved into
+     * `figureMode` here now, and the browser reads the one field.
+     */
+    test('miniMode is the legacy spelling of figureMode, and resolves into it', () => {
 
-        // `HICBrowser` treats `miniMode` as a figure mode; this stage keys on
-        // `figureMode` alone, so the flags default on. The disagreement is real
-        // and pinned in the golden file; it is not this ticket's to close.
         const config = normalizeSession({miniMode: true})
 
+        expect(config.figureMode).toBe(true)
         for (const flag of WIDGET_FLAGS) {
-            expect(config[flag], flag).toBe(true)
+            expect(config[flag], flag).toBe(false)
         }
+    })
+
+    test('an explicit figureMode wins over miniMode, which is the order the browser read them in', () => {
+
+        const config = normalizeSession({figureMode: 'yes', miniMode: true})
+
+        expect(config.figureMode).toBe('yes')
+    })
+
+    test('a config naming neither gains no figureMode member', () => {
+        expect(Object.hasOwn(normalizeSession({url: 'a.hic'}), 'figureMode')).toBe(false)
     })
 
     test('only a literal true is figure mode', () => {
@@ -167,6 +182,63 @@ describe('the string coercions', () => {
         const config = normalizeSession({backgroundColor})
 
         expect(config.backgroundColor).toBe(backgroundColor)
+    })
+})
+
+/**
+ * The two defaults #536 moved up out of the browser: the background colour,
+ * which `createWidgets` defaulted with a `||` as it built the contact matrix
+ * view, and `synchable`, which the constructor defaulted with a `!== false`.
+ * Both are fields of the resolved config now, so the readers below the seam read
+ * them rather than deciding them.
+ */
+describe('the defaults moved up out of the browser', () => {
+
+    test('a config naming no backgroundColor gets white, which is what createWidgets used to supply', () => {
+        expect(normalizeSession({url: 'a.hic'}).backgroundColor).toEqual({r: 255, g: 255, b: 255})
+    })
+
+    test('the default is a copy, so two configs cannot share one mutable colour', () => {
+
+        const first = normalizeSession({url: 'a.hic'})
+        const second = normalizeSession({url: 'b.hic'})
+
+        expect(first.backgroundColor).not.toBe(second.backgroundColor)
+    })
+
+    test('synchable defaults on', () => {
+        expect(normalizeSession({url: 'a.hic'}).synchable).toBe(true)
+    })
+
+    test('a browser that opted out on its own stays out', () => {
+        expect(normalizeSession({url: 'a.hic', synchable: false}).synchable).toBe(false)
+    })
+
+    test('only a literal false is the opt-out, matching what the browser read', () => {
+        expect(normalizeSession({url: 'a.hic', synchable: 0}).synchable).toBe(true)
+    })
+})
+
+/**
+ * `cycle` is the control-map display cycle, and it implies a display mode: the
+ * browser's `init` wrote `config.displayMode = "A"` onto the host's own object
+ * before reading it back one line later. That is a resolution of one field into
+ * another, so #536 moved it here — `init` reads `displayMode` now.
+ */
+describe('the display-mode cycle', () => {
+
+    test('cycle resolves to display mode A', () => {
+        expect(normalizeSession({url: 'a.hic', cycle: true}).displayMode).toBe('A')
+    })
+
+    test('cycle overrides a display mode the host asked for, as the browser did', () => {
+        expect(normalizeSession({url: 'a.hic', cycle: true, displayMode: 'B'}).displayMode).toBe('A')
+    })
+
+    test('a config with no cycle keeps its display mode, and gains none when it names none', () => {
+
+        expect(normalizeSession({url: 'a.hic', displayMode: 'B'}).displayMode).toBe('B')
+        expect(Object.hasOwn(normalizeSession({url: 'a.hic'}), 'displayMode')).toBe(false)
     })
 })
 
@@ -388,13 +460,13 @@ describe('the syncDatasets resolution', () => {
         expect(config.synchable).toBe(false)
     })
 
-    test('nothing is written when the session says nothing', () => {
+    test('a session that says nothing leaves the browser synchable, which is the default', () => {
 
         const session = {browsers: [{url: 'a.hic'}]}
 
         normalizeSession(session)
 
-        expect(Object.hasOwn(session.browsers[0], 'synchable')).toBe(false)
+        expect(session.browsers[0].synchable).toBe(true)
     })
 
     test('syncDatasets true leaves a browser that opted out on its own alone', () => {
@@ -412,7 +484,53 @@ describe('the syncDatasets resolution', () => {
 
         normalizeSession(session)
 
-        expect(Object.hasOwn(session.browsers[0], 'synchable')).toBe(false)
+        expect(session.browsers[0].synchable).toBe(true)
+    })
+})
+
+/**
+ * `normalizeTrackConfigs` — the same track rules, reached by the one door a
+ * track can arrive at outside a session: `browser.loadTracks(configs)`, which a
+ * host calls at runtime with configs no session ever carried. #536.
+ *
+ * It exists so that `DataLoader.loadTracks` can stop defaulting: the loader used
+ * to apply a second, annotation-conditioned copy of the colour and display-mode
+ * rules precisely because a runtime track met no normalize stage. Now it does,
+ * at the published door, and the loader is left with what the *load* discovers.
+ */
+describe('the runtime track door', () => {
+
+    test('a runtime track gets the document defaults a session-borne one gets', () => {
+
+        const [track] = normalizeTrackConfigs([
+            {url: 'a.bed', color: 'rgb(22, 129, 198)', min: NaN, displayMode: 'EXPANDED'},
+        ])
+
+        expect(Object.hasOwn(track, 'color')).toBe(false)
+        expect(Object.hasOwn(track, 'min')).toBe(false)
+        expect(track.displayMode).toBe('COLLAPSED')
+    })
+
+    test('a runtime track URL expands its shortcut, as a session-borne one does', () => {
+        expect(normalizeTrackConfigs([{url: '*enc/ENCFF000.bed'}])[0].url)
+            .toBe('https://www.encodeproject.org/files/ENCFF000.bed')
+    })
+
+    test('it hands back what it was given, and rejects nothing', () => {
+
+        const tracks = [{url: 'a.bed'}]
+
+        expect(normalizeTrackConfigs(tracks)).toBe(tracks)
+        expect(() => normalizeTrackConfigs(undefined)).not.toThrow()
+        expect(() => normalizeTrackConfigs('a.bed')).not.toThrow()
+    })
+
+    test('the session path and the runtime path agree about the same track', () => {
+
+        const viaSession = normalizeSession({url: 'a.hic', tracks: [{url: '*enc/x.bed', min: NaN}]}).tracks[0]
+        const viaRuntime = normalizeTrackConfigs([{url: '*enc/x.bed', min: NaN}])[0]
+
+        expect(viaRuntime).toEqual(viaSession)
     })
 })
 

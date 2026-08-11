@@ -35,7 +35,6 @@ import {getLayoutDimensions} from './layoutController.js'
 import Track2D from './track2D.js'
 
 import {decodeState} from "./sessionCodec.js"
-import {DEFAULT_ANNOTATION_COLOR} from "./normalizeSession.js"
 import {mapTrackConfig} from "./urlMapper.js"
 
 /**
@@ -365,23 +364,17 @@ class DataLoader {
                     config.type = config.format = 'sequence';
                 }
 
-                // The load-time half of the per-track defaults. The other half is
-                // `normalizeSession.applyTrackDefaults`, and the two own different
-                // questions rather than duplicating one: normalize answers what
-                // the *document* says, before anything is fetched and on every
-                // entry path; these four rules answer what the *load* discovered
-                // -- the resolved `type`, the live layout's track height, and a
-                // missing `max`. This is also the only stage a track added at
-                // runtime through the published `browser.loadTracks(configs)`
-                // meets, since such a track was never part of a session. See the
-                // ownership note on `applyTrackDefaults` (#533).
-                if (config.type === 'annotation') {
-                    config.displayMode = 'COLLAPSED';
-                    if (config.color === DEFAULT_ANNOTATION_COLOR) {
-                        delete config.color;
-                    }
-                }
-
+                // What the *load* discovers, and only that: a missing `max` means
+                // autoscale, and the height comes from the live layout. Neither
+                // is a question a session document can answer.
+                //
+                // The annotation colour and display mode used to be defaulted
+                // here too, conditioned on `config.type === 'annotation'`. They
+                // were a second copy of two `normalizeTrackConfigs` rules, kept
+                // through #533 because a track added at runtime met no normalize
+                // stage. It meets one at `HICBrowser.loadTracks` now, so the copy
+                // is gone and this loader defaults nothing a config carries
+                // (#536).
                 if (config.max === undefined) {
                     config.autoscale = true;
                 }

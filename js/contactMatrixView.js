@@ -39,7 +39,15 @@ const doLegacyTrack2DRendering = false
 
 class ContactMatrixView {
 
-    constructor(browser, viewportElement, sweepZoom, scrollbarWidget, imageTileSource, backgroundColor) {
+    /**
+     * `backgroundColor` defaults to this class's own default, which is the
+     * component answering for itself rather than a config default: since #536
+     * `normalizeSession` resolves `config.backgroundColor` for every browser, so
+     * `createWidgets` always passes one. The parameter default is for a view
+     * constructed directly, without a resolved config behind it.
+     */
+    constructor(browser, viewportElement, sweepZoom, scrollbarWidget, imageTileSource,
+                backgroundColor = ContactMatrixView.defaultBackgroundColor) {
         this.browser = browser;
         this.viewportElement = viewportElement;
         this.sweepZoom = sweepZoom;

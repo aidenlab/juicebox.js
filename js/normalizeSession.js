@@ -18,6 +18,12 @@
  * which was written twice — once in the decoder, once in
  * `BrowserRegistry.restoreSession` — and is written once, here, now.
  *
+ * #536 closed the stage: the readers below the seam stopped defaulting, and the
+ * defaults they held came up here rather than being deleted -- `synchable`, the
+ * background colour, `miniMode` as a spelling of `figureMode`, and `cycle` as a
+ * display mode. What a resolved config carries is written down in `CONTEXT.md`
+ * under *Resolved config*; this module is the executable copy of it.
+ *
  * ## Session-level and browser-level, in that order
  *
  * Two of the three moved rules are *session*-level: they read a member of the
@@ -93,9 +99,10 @@ import ContactMatrixView from './contactMatrixView.js'
  * carrying it is not really asking for.
  *
  * It lives here rather than in `js/sessionCodec.js` because it is a *track
- * default*, not a wire format: `applyTrackDefaults` below and
- * `DataLoader.loadTracks` are its two readers, and neither is a decoder. It sat
- * in the codec only because the pass that reads it did (#533).
+ * default*, not a wire format: it sat in the codec only because the pass that
+ * reads it did (#533). `normalizeTrackConfigs` below is its one reader now --
+ * `DataLoader.loadTracks` was the second until #536 -- and it stays exported for
+ * `test/testSessionRoundTrip.js`, which builds tracks carrying it.
  */
 export const DEFAULT_ANNOTATION_COLOR = "rgb(22, 129, 198)"
 
@@ -123,16 +130,102 @@ export function normalizeSession(session) {
 
 function normalizeBrowserConfig(config) {
 
+    resolveFigureMode(config)
     setWidgetVisibilityDefaults(config)
-    expandUrlShortcuts(config)
-    applyTrackDefaults(config)
+    resolveSynchable(config)
+    resolveDisplayMode(config)
+    expandMapUrlShortcuts(config)
+    normalizeTrackConfigs(config.tracks)
 
     if (StringUtils.isString(config.colorScale)) {
         config.colorScale = parseColorScale(config.colorScale)
     }
-    if (StringUtils.isString(config.backgroundColor)) {
-        config.backgroundColor = ContactMatrixView.parseBackgroundColor(config.backgroundColor)
+
+    config.backgroundColor = resolveBackgroundColor(config.backgroundColor)
+}
+
+/**
+ * `miniMode` is the legacy spelling of `figureMode`, resolved into it here.
+ *
+ * `HICBrowser` read `this.figureMode = config.figureMode || config.miniMode`
+ * while this stage keyed on `figureMode` alone, so a config saying `miniMode`
+ * produced a browser that called itself a figure and three display flags
+ * defaulted on as though it were not. Every entry path agreed and every one of
+ * them was inconsistent with itself -- the divergence `test/testConfigGolden.js`
+ * pinned as `mini-mode-the-legacy-spelling-of-figure-mode` and named #536 as the
+ * ticket that would say which spelling wins.
+ *
+ * **`figureMode` wins**, and it wins by absorbing the other: `miniMode` is
+ * written into it, so there is one field below the seam and it is the one the
+ * rest of this module already reads. The three flags now go off for a `miniMode`
+ * config, which is the visible half of the movement and is the reading the field
+ * was named for -- a mini map is a figure.
+ *
+ * The `||` is kept rather than tightened to `=== true`, because that is what the
+ * browser applied: whatever `figureMode || miniMode` yielded is what
+ * `browser.figureMode` became. Only a literal `true` reaches
+ * `setWidgetVisibilityDefaults` below, as before.
+ */
+function resolveFigureMode(config) {
+
+    if (!config.figureMode && config.miniMode) {
+        config.figureMode = config.miniMode
     }
+}
+
+/**
+ * The per-browser sync flag, defaulted here rather than by the browser.
+ *
+ * `HICBrowser` read `this.synchable = config.synchable !== false`, which is a
+ * default -- and the only reader of the field, so a host asking `browser.config`
+ * what it resolved to got no answer. The rule is unchanged and moved verbatim,
+ * including that only a literal `false` opts out.
+ *
+ * It runs after `resolveSyncDatasets`, which is the session-level half: a
+ * document saying `syncDatasets: false` has already written `false` onto every
+ * browser by the time this asks, so the two agree rather than racing.
+ */
+function resolveSynchable(config) {
+    config.synchable = config.synchable !== false
+}
+
+/**
+ * `cycle` implies display mode `A`.
+ *
+ * `HICBrowser.init` wrote `config.displayMode = "A"` onto the host's own object
+ * and read it back one line later -- a resolution of one config field into
+ * another, done below the seam and observable to a host holding the config
+ * (`readBack` in the golden file recorded it). It is a document-level rule and
+ * belongs here; `init` reads `displayMode` now.
+ */
+function resolveDisplayMode(config) {
+
+    if (config.cycle) {
+        config.displayMode = 'A'
+    }
+}
+
+/**
+ * The background colour, as an `{r, g, b}` in every resolved config.
+ *
+ * Two rules in one, because they answer one question: the string form is
+ * coerced, and a config naming no colour gets the default. The default was
+ * `createWidgets`'s -- `browser.config.backgroundColor ||
+ * ContactMatrixView.defaultBackgroundColor`, applied as the contact matrix view
+ * was built -- so "what colour is behind the map?" had no answer in the config
+ * a host reads back. It has one now (#536).
+ *
+ * A copy of the default, not the default itself: `ContactMatrixView.defaultBackgroundColor`
+ * is a mutable object on a class, and handing the same one to every config would
+ * make a host that edits its own config edit every other browser's.
+ */
+function resolveBackgroundColor(backgroundColor) {
+
+    if (StringUtils.isString(backgroundColor)) {
+        return ContactMatrixView.parseBackgroundColor(backgroundColor)
+    }
+
+    return backgroundColor ?? {...ContactMatrixView.defaultBackgroundColor}
 }
 
 /**
@@ -271,36 +364,26 @@ function expandUrlShortcut(url) {
  * shortcut through a URL and through a config did not move, which is the claim
  * worth having -- one copy of the code produces what two produced.
  */
-function expandUrlShortcuts(config) {
+function expandMapUrlShortcuts(config) {
 
     for (const key of ['url', 'controlUrl']) {
         if (config[key]) {
             config[key] = expandUrlShortcut(config[key])
         }
     }
-
-    // `Array.isArray` rather than the deleted copy's `config.tracks || []`, for
-    // the reason `applyTrackDefaults` gives below: a hand-written
-    // `tracks: 'a.bed'` is a string, and iterating it walks characters. It
-    // expanded nothing either way -- a character has no `url` -- so this is the
-    // same behaviour said out loud.
-    if (!Array.isArray(config.tracks)) {
-        return
-    }
-
-    for (const track of config.tracks) {
-        if (track.url) {
-            track.url = expandUrlShortcut(track.url)
-        }
-    }
 }
 
 /**
- * The defaults a track carries in a session, applied on the way in.
+ * Everything a track config is resolved to, whichever door it came in by.
  *
- * Moved here from `decodeSession` by #533. It ran inside the decoder, so it
- * reached a session that arrived as a URL and skipped one handed straight to
- * `restoreSession` -- the documented public API. The rules are unchanged: the
+ * Exported, unlike the rest of this module's rules, because a track has a door of
+ * its own: `browser.loadTracks(configs)` is published surface and takes track
+ * configs that were never part of a session. It takes a *list* rather than a
+ * browser config for that reason -- there is no browser config at that door, only
+ * the tracks.
+ *
+ * The rules were moved here from `decodeSession` by #533 (the defaults) and #534
+ * (the shortcut expansion), and are unchanged: a shortcut URL is expanded, the
  * default annotation colour is dropped so the renderer's own default applies,
  * `NaN` data-range bounds (which is what a v0 track string with an empty range
  * decodes to) are dropped rather than reaching a renderer, and display mode is
@@ -308,25 +391,25 @@ function expandUrlShortcuts(config) {
  *
  * ## Which stage owns which default
  *
- * `DataLoader.loadTracks` defaults per track too, and three of its rules look
- * like these. They are not duplicates to be collapsed -- the two stages own
- * different questions, and the split is where the answer comes from:
+ * `DataLoader.loadTracks` used to default per track too, with an
+ * annotation-conditioned copy of the colour and display-mode rules below. #533
+ * kept both copies and justified the split by where the answer comes from; #536
+ * removed the reason for it. The rules were never really about the load -- the
+ * `type` they keyed on is a field of the config, not something the fetch
+ * discovered -- and the one thing the loader's copy reached that this did not was
+ * a track added at runtime through the published `browser.loadTracks(configs)`,
+ * because such a track was never part of a session and so met no normalize stage.
  *
- * - **This stage owns what the *document* says.** It sees a track config exactly
- *   as a session spells it, before anything has been fetched, and it is reached
- *   by every entry path -- including a config a host passes to `init` in code,
- *   which never goes near a wire format.
- * - **`loadTracks` owns what the *load* discovers**: the filename behind the URL,
- *   and so the track's `type`, which is why its colour and display-mode rules are
- *   conditioned on `type === 'annotation'` and these are not. It also applies
- *   `height` from the live layout and `autoscale` from a missing `max`, neither
- *   of which a document can answer. And it is the only stage a track added at
- *   runtime through the published `browser.loadTracks(configs)` meets, since such
- *   a track was never part of a session.
+ * It meets one now: `HICBrowser.loadTracks` is a door, and it resolves its
+ * argument through `normalizeTrackConfigs` below before handing it down. So this
+ * stage owns **what the document says** for every track from either direction,
+ * and the loader is left with what the *load* discovers -- `height` from the live
+ * layout and `autoscale` from a missing `max`, neither of which a document can
+ * answer.
  *
- * So a session-borne annotation track meets both, and agrees with itself: this
- * stage has already done what `loadTracks` would do for it. A runtime-added one
- * meets only the loader. Neither rule is safe to delete in favour of the other.
+ * The widening that follows is the same one #533 made and is deliberate for the
+ * same reason: a runtime-added track that is not an annotation now has its colour
+ * and display mode resolved as a session-borne one does. Two doors, one answer.
  *
  * ## The display mode is an override, not a default, and it is kept as one
  *
@@ -348,17 +431,22 @@ function expandUrlShortcuts(config) {
  *   came in by. Softening this to `??=` is that ticket's call, and it would move
  *   the query path's snapshot too.
  */
-function applyTrackDefaults(config) {
+export function normalizeTrackConfigs(tracks) {
 
     // `Array.isArray` rather than a truthiness test: the decoder's copy walked
     // whatever it found, so a hand-written `tracks: 'a.bed'` reached it as a
     // string and threw on the first character. A stage that never rejects cannot
-    // do that, and there is nothing here to default a string into.
-    if (!Array.isArray(config.tracks)) {
-        return
+    // do that, and there is nothing here to default a string into. The shortcut
+    // expansion walked the same list and expanded nothing for the same input --
+    // a character has no `url` -- so one guard now covers both rules.
+    if (!Array.isArray(tracks)) {
+        return tracks
     }
 
-    for (const track of config.tracks) {
+    for (const track of tracks) {
+        if (track.url) {
+            track.url = expandUrlShortcut(track.url)
+        }
         if (track.color === DEFAULT_ANNOTATION_COLOR) {
             delete track.color
         }
@@ -370,6 +458,8 @@ function applyTrackDefaults(config) {
         }
         track.displayMode = "COLLAPSED"
     }
+
+    return tracks
 }
 
 /**
@@ -378,9 +468,9 @@ function applyTrackDefaults(config) {
  *
  * `figureMode` forces all three off rather than defaulting them, which is why
  * this is not three `??`s: a host asking for `figureMode` *and* a locus box gets
- * figure mode. Note that `HICBrowser` reads `miniMode` as a figure mode too and
- * this stage does not -- a live disagreement, pinned in the golden file, and
- * candidate 9's to close later rather than here.
+ * figure mode. `miniMode` reaches this through `resolveFigureMode`, which runs
+ * first: the two spellings were read by different readers until #536 and are one
+ * field by the time this asks.
  */
 function setWidgetVisibilityDefaults(config) {
 

@@ -183,22 +183,57 @@ builds an embed's browsers from a session its caller has already resolved.
 `test/testConfigGolden.js` still snapshots it as a column, because what it hands
 a browser is where the other columns end too.
 
-**Resolved config** — a browser config *after* every normalizer upstream of
-`HICBrowser` has had it, which is the object `browser.config` then holds. Not a
-copy: every normalizer rewrites the host's own object in place, so the host's
-config and the browser's are one object. It is an observable surface, because
-juicebox-web reads `browser.config` back (ADR-0003). Which normalizers a config
-meets depends on its entry path, and they still disagree — `test/testConfigGolden.js`
-pins the disagreements (#531, candidate 9). Four of them are closed: #533 moved
-track defaults, the selected-gene hoist and the `syncDatasets` resolution behind
-the shared normalize stage, and #534 collapsed the URL-shortcut expansion — it
-was written twice, in the decoder and in `restoreSession`, and is written once,
-in normalize, now. #535 settled *when* the stage runs: once per session, at the
-entry — `BrowserRegistry.restoreSession` for a session, `createBrowser` for a
-single browser config — and browser creation below them normalizes nothing.
-`test/testNormalizeOnceAtTheEntry.js` counts the calls, since a second one is
-invisible in the result. What is left is that `HICBrowser` still defaults fields
-inline (#536).
+**Resolved config** — a browser config *after* the normalize stage has had it,
+which is the object `browser.config` then holds. Not a copy: the stage rewrites
+the host's own object in place, so the host's config and the browser's are one
+object. It is an observable surface, because juicebox-web reads `browser.config`
+back (ADR-0003), and `test/testConfigGolden.js` snapshots it at every door
+(#531).
+
+One reader decides it: `js/normalizeSession.js`, run once per session at the
+entry (#535) — `BrowserRegistry.restoreSession` for a session,
+`createBrowser` for a single browser config, `HICBrowser.loadTracks` for tracks
+added at runtime. **Everything below that seam reads fields.** A `??`, a
+`|| default`, an `x !== false` or a string-to-object coercion appearing in the
+browser, the widgets or the loaders is a bug, not a convenience: it puts a second
+answer where there is meant to be one, and it is invisible in `browser.config`
+(#536). The stage **defaults and coerces; it never rejects** — a config is the
+most-used public surface juicebox has, so anything unrecognized is carried
+through untouched.
+
+**The schema** — what a resolved browser config carries. Fields not listed are
+carried through unread, which is deliberate: a host may keep its own members on
+the object.
+
+| Field | Resolved to |
+|---|---|
+| `showLocusGoto`, `showHicContactMapLabel`, `showChromosomeSelector` | **Defaulted** to `true`; all three forced `false` when `figureMode === true`, which beats an explicit `true` |
+| `figureMode` | **Absorbs `miniMode`**, the legacy spelling — `figureMode ||= miniMode`. `miniMode` is left on the config, unread |
+| `synchable` | **Defaulted** to `true`. Only a literal `false` opts out. A session-level `syncDatasets: false` writes `false` here on every browser, overriding what a browser said |
+| `backgroundColor` | **Coerced** from `"r,g,b"` to `{r, g, b}`; **defaulted** to white |
+| `colorScale` | **Coerced** from its wire spelling to a `ColorScale` (or the signed scale its tag names) |
+| `displayMode` | Set to `"A"` when `cycle` is truthy — the cycle starts on the primary map |
+| `url`, `controlUrl`, every track's `url` | **Coerced**: a `*s3/`, `*s3e/`, `*s3_/`, `*s3e_/` or `*enc/` prefix expands to the URL it stands for. Non-strings (a local `File`) pass through |
+| `tracks[]` | Each track: the default annotation colour `rgb(22, 129, 198)` dropped so the renderer's own applies, `NaN` data-range bounds dropped, `displayMode` forced to `"COLLAPSED"` (an override, not a default — see #525). A `tracks` that is not an array is left alone |
+| `selectedGene` | Session-level. Hoisted up from a browser that names one, last writer winning, unless the session names its own |
+| `state` | **Not** resolved here: it arrives as a `State` from the query path and as a plain object from a host config, and `DataLoader` decodes it at load time. A known type divergence, pinned as a probe in the corpus |
+
+Three things a config carries are honoured on one path only, and are not part of
+the resolved schema:
+
+- **`queryParametersSupported`** is read by `initRegistry` *before* normalize, to
+  decide whether the address bar replaces the config it was passed. It cannot be
+  resolved by a stage that runs after that decision.
+- **`width` / `height`** are read by the browser constructor, which calls
+  `setViewportSize` when both are present. Not a default — there is no default
+  size in a config — and page-scoped besides (#477).
+- **`nvi`** may be filled in at load time from a lookup table keyed on the map's
+  URL (`js/nvi.js`). That is the loader answering a question about a *file*, and
+  it reaches maps loaded at runtime as well as those a session named.
+
+The loaders default two more fields, and both are what the *load* discovers
+rather than what a document says: a track's `height` comes from the live layout,
+and `autoscale` is set when a track config names no `max`.
 
 **Dispose** vs **reset** vs **clear dataset** — the three teardown verbs, in
 descending order of how much they destroy. See `docs/adr/0005`.

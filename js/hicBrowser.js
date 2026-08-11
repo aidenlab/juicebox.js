@@ -37,6 +37,7 @@ import BrowserCoordinator from "./browserCoordinator.js"
 import StateManager from "./stateManager.js"
 import InteractionHandler from "./interactionHandler.js"
 import DataLoader from "./dataLoader.js"
+import {normalizeTrackConfigs} from "./normalizeSession.js"
 import {unmappedUrl} from "./urlMapper.js"
 
 const DEFAULT_PIXEL_SIZE = 1
@@ -99,8 +100,12 @@ class HICBrowser {
         // including during `init()`, which loads a dataset and so consults it.
         this.registry = registryForContainer(appContainer);
 
+        // Read, not decided: everything below the entry seam takes the config as
+        // `normalizeSession` resolved it. `figureMode` absorbed the legacy
+        // `miniMode` spelling there in #536; this line used to be the `||` that
+        // did it, and was the only reader that thought a mini map was a figure.
         this.config = config;
-        this.figureMode = config.figureMode || config.miniMode; // Mini mode for backward compatibility
+        this.figureMode = config.figureMode;
         this.resolutionLocked = false;
         this.eventBus = new EventBus();
 
@@ -124,7 +129,10 @@ class HICBrowser {
             "N": "rgb( 80,  80,  80)", "n": "rgb( 80,  80,  80)",
         };
 
-        this.synchable = config.synchable !== false;
+        // `config.synchable !== false` until #536, which is a default and so
+        // belongs to the stage that defaults. The session-level `syncDatasets`
+        // opt-out is resolved into this same field up there.
+        this.synchable = config.synchable;
         this.synchedBrowsers = new Set();
 
         // Initialize state manager for dataset/state management
@@ -213,10 +221,9 @@ class HICBrowser {
                 }, true);
             }
 
-            if (config.cycle) {
-                config.displayMode = "A";
-            }
-
+            // No `if (config.cycle) config.displayMode = "A"` here since #536:
+            // writing one config field from another is the normalize stage's,
+            // and this one wrote it onto the host's own object mid-init.
             if (config.displayMode) {
                 this.contactMatrixView.displayMode = config.displayMode;
                 this.coordinator.onDisplayMode(config.displayMode);
@@ -469,11 +476,18 @@ class HICBrowser {
      *
      * NOTE: public API function
      *
+     * A track's own entry, and so the one place a track config that was never
+     * part of a session is resolved: `normalizeTrackConfigs` is the same stage a
+     * session's tracks meet, so a shortcut URL expands and the document defaults
+     * apply whichever direction a track arrives from (#536). Tracks that *were*
+     * part of a session reach `DataLoader.loadTracks` from `init()` below,
+     * already resolved and not through here.
+     *
      * @param configs
      */
     async loadTracks(configs) {
         this.#assertNotDisposed('loadTracks');
-        return this.dataLoader.loadTracks(configs);
+        return this.dataLoader.loadTracks(normalizeTrackConfigs(configs));
     }
 
     async loadNormalizationFile(url) {

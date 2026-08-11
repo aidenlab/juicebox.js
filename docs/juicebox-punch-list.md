@@ -61,7 +61,7 @@ Each card carries a Consumer impact block; read it before filing anything.
 
 | Candidate | Status |
 |---|---|
-| **9 · Give the config schema one reader** | **filed — #531–#536**; #531–#535 landed, frontier is #536. Seam already drawn by ADR-0006 decision 8; no ADR opened |
+| **9 · Give the config schema one reader** | ✅ **done — #531–#536 all landed.** One reader (`js/normalizeSession.js`), run once at the entry, with the schema written down in `CONTEXT.md`. Seam drawn by ADR-0006 decision 8; no ADR opened |
 | **11 · Give the track tile one owner** | ⚠️ breaking |
 | **6 · Fold StateManager into State, and make restore use the chokepoint** | watch |
 | **7 · Move the gesture state machines behind InteractionHandler** | watch |
@@ -95,10 +95,15 @@ next free number.
 | #533 | Move the remaining normalization across the seam | #532 — **landed** |
 | #534 | Delete the duplicate URL-shortcut expansion | #533 — **landed** |
 | #535 | Normalize once, at the entry | #533 — **landed** |
-| #536 | Downstream readers stop defaulting, and the schema is written down | #535 — **frontier** |
+| #536 | Downstream readers stop defaulting, and the schema is written down | #535 — **landed** |
 
-#534 and #535 run in parallel after #533. **#533 and #534 are the two tickets that deliberately move
-snapshots.** #533 closes three divergences at once: track defaults skipped by `restoreSession`, the
+#534 and #535 ran in parallel after #533. **#533, #534 and #536 are the tickets that deliberately move
+snapshots** — #536 was expected to be neutral and was not, for a reason worth carrying: a default
+moved *up* into the stage becomes a **field of the resolved config**, and the config is snapshotted.
+Every fixture gained `synchable` and `backgroundColor` with no behaviour change at all, one fixture
+(`mini-mode`) moved behaviourally because that is the divergence it was written to expose, and one
+query fixture moved `displayMode` at construction only because the write it records happened a stage
+earlier. #533 closes three divergences at once: track defaults skipped by `restoreSession`, the
 `selectedGene` reconciliation, and `syncDatasets` honoured by `createBrowserList` but not
 `createBrowser`. #534 closes the fourth — the two browser-creation doors reached directly handed an
 unexpanded `*s3/…` to the loader — and moves the *decoder's* golden file as well, since a shortcut

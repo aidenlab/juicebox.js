@@ -1540,7 +1540,7 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowser(container, config)": {
     "atConstruction": [
       {
-        "controlUrl": "*s3e_/wapl_hic/WT.hic",
+        "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
@@ -1548,17 +1548,17 @@ exports[`resolved config golden file — one browser config, through every entry
           {
             "displayMode": "COLLAPSED",
             "name": "encode track",
-            "url": "*enc/ENCFF000ABC.bigWig",
+            "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
           },
         ],
-        "url": "*s3/hiseq/gm12878/in-situ/HIC009.hic",
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
       },
     ],
     "outcome": "builds",
     "readBack": [
       {
         "config": {
-          "controlUrl": "*s3e_/wapl_hic/WT.hic",
+          "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
@@ -1566,10 +1566,10 @@ exports[`resolved config golden file — one browser config, through every entry
             {
               "displayMode": "COLLAPSED",
               "name": "encode track",
-              "url": "*enc/ENCFF000ABC.bigWig",
+              "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
             },
           ],
-          "url": "*s3/hiseq/gm12878/in-situ/HIC009.hic",
+          "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
         },
         "figureMode": undefined,
         "sameObjectAsInput": true,
@@ -1580,7 +1580,7 @@ exports[`resolved config golden file — one browser config, through every entry
   "createBrowserList(container, session)": {
     "atConstruction": [
       {
-        "controlUrl": "*s3e_/wapl_hic/WT.hic",
+        "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
@@ -1588,17 +1588,17 @@ exports[`resolved config golden file — one browser config, through every entry
           {
             "displayMode": "COLLAPSED",
             "name": "encode track",
-            "url": "*enc/ENCFF000ABC.bigWig",
+            "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
           },
         ],
-        "url": "*s3/hiseq/gm12878/in-situ/HIC009.hic",
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
       },
     ],
     "outcome": "builds",
     "readBack": [
       {
         "config": {
-          "controlUrl": "*s3e_/wapl_hic/WT.hic",
+          "controlUrl": "http://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
@@ -1606,10 +1606,10 @@ exports[`resolved config golden file — one browser config, through every entry
             {
               "displayMode": "COLLAPSED",
               "name": "encode track",
-              "url": "*enc/ENCFF000ABC.bigWig",
+              "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
             },
           ],
-          "url": "*s3/hiseq/gm12878/in-situ/HIC009.hic",
+          "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
         },
         "figureMode": undefined,
         "sameObjectAsInput": true,
@@ -1994,7 +1994,7 @@ exports[`resolved config golden file — session documents, through the session-
         "showChromosomeSelector": true,
         "showHicContactMapLabel": true,
         "showLocusGoto": true,
-        "url": "*s3/hiseq/gm12878/in-situ/HIC009.hic",
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
       },
       {
         "showChromosomeSelector": true,
@@ -2003,10 +2003,10 @@ exports[`resolved config golden file — session documents, through the session-
         "tracks": [
           {
             "displayMode": "COLLAPSED",
-            "url": "*enc/ENCFF000ABC.bigWig",
+            "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
           },
         ],
-        "url": "*s3e/wapl_hic/WT.hic",
+        "url": "https://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
       },
     ],
     "outcome": "builds",
@@ -2016,7 +2016,7 @@ exports[`resolved config golden file — session documents, through the session-
           "showChromosomeSelector": true,
           "showHicContactMapLabel": true,
           "showLocusGoto": true,
-          "url": "*s3/hiseq/gm12878/in-situ/HIC009.hic",
+          "url": "https://hicfiles.s3.amazonaws.com/hiseq/gm12878/in-situ/HIC009.hic",
         },
         "figureMode": undefined,
         "sameObjectAsInput": true,
@@ -2030,10 +2030,10 @@ exports[`resolved config golden file — session documents, through the session-
           "tracks": [
             {
               "displayMode": "COLLAPSED",
-              "url": "*enc/ENCFF000ABC.bigWig",
+              "url": "https://www.encodeproject.org/files/ENCFF000ABC.bigWig",
             },
           ],
-          "url": "*s3e/wapl_hic/WT.hic",
+          "url": "https://hicfiles.s3.amazonaws.com/external/wapl_hic/WT.hic",
         },
         "figureMode": undefined,
         "sameObjectAsInput": true,

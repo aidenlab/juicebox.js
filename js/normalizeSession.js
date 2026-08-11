@@ -14,8 +14,9 @@
  * half of the **`selectedGene` reconciliation** (#481), and the **`syncDatasets`
  * resolution** that `createBrowserList` did and `createBrowser` did not. All
  * three ran on one entry path and were skipped on another; they run here now, so
- * every door agrees. The second copy of the URL-shortcut expansion is still on
- * the decoder's side; #534 collapses it.
+ * every door agrees. #534 finished the job with the **URL-shortcut expansion**,
+ * which was written twice — once in the decoder, once in
+ * `BrowserRegistry.restoreSession` — and is written once, here, now.
  *
  * ## Session-level and browser-level, in that order
  *
@@ -25,9 +26,9 @@
  *
  * ## Session-shaped, not browser-shaped
  *
- * A single-browser config is a session with its one browser inlined -- the same
- * shape convention `expandSessionUrlShortcuts` (`js/sessionCodec.js`) already
- * uses, and the shape `createBrowserList` has always read. Walking
+ * A single-browser config is a session with its one browser inlined -- the shape
+ * `createBrowserList` has always read, and the one the deleted
+ * `expandSessionUrlShortcuts` walked too. Walking
  * `session.browsers || [session]` is what lets both browser-creation entry
  * points delegate to one call rather than one call per browser.
  *
@@ -111,6 +112,7 @@ export function normalizeSession(session) {
 function normalizeBrowserConfig(config) {
 
     setWidgetVisibilityDefaults(config)
+    expandUrlShortcuts(config)
     applyTrackDefaults(config)
 
     if (StringUtils.isString(config.colorScale)) {
@@ -179,6 +181,105 @@ function reconcileSelectedGene(session, configs) {
 
     if (fromBrowsers) {
         session.selectedGene = fromBrowsers
+    }
+}
+
+/**
+ * The URL abbreviations juicebox has always accepted in place of a full URL, and
+ * the prefixes they stand for.
+ *
+ * Moved here from `js/sessionCodec.js` by #534, unchanged. They were in the codec
+ * because the decoder expanded, and the decoder expanded because the query form
+ * is where a hand-typed `*s3/` is most often seen -- but a shortcut is not a wire
+ * format. It is a spelling of a *URL*, and it is legal in every place a session
+ * document can carry one, including a config a host writes in code and hands to
+ * `hic.createBrowser`, which never goes near a query string. So the rule belongs
+ * to the stage every entry path meets, and this is that stage.
+ */
+const urlShortcuts = {
+    "*s3e/": "https://hicfiles.s3.amazonaws.com/external/",
+    "*s3/": "https://hicfiles.s3.amazonaws.com/",
+    "*s3e_/": "http://hicfiles.s3.amazonaws.com/external/",
+    "*s3_/": "http://hicfiles.s3.amazonaws.com/",
+    "*enc/": "https://www.encodeproject.org/files/"
+}
+
+/**
+ * Expand a shortcut prefix, if the URL opens with one.
+ *
+ * Non-strings pass through untouched: a config naming a local `File` carries one
+ * as its `url`, and a stage that rejects nothing cannot start there.
+ */
+function expandUrlShortcut(url) {
+
+    if (!url || typeof url !== 'string') {
+        return url
+    }
+
+    for (const [shortcut, expansion] of Object.entries(urlShortcuts)) {
+        if (url.startsWith(shortcut)) {
+            return url.replace(shortcut, expansion)
+        }
+    }
+
+    return url
+}
+
+/**
+ * Expand the shortcuts everywhere a browser config can carry a URL: the map, the
+ * control map, and each track.
+ *
+ * ## Why there is one of these and there used to be two
+ *
+ * The expansion was written twice: once three call sites deep inside
+ * `decodeQuery`, once as `expandSessionUrlShortcuts` reached by
+ * `BrowserRegistry.restoreSession`. The second existed because of the first --
+ * a session handed straight to the restore never passes through the decoder, so
+ * without it a saved document spelling `*s3/` reached the loaders unexpanded.
+ * ADR-0006 fact 6 recorded the duplication and decision 8 named the condition
+ * for ending it: once a normalize stage exists that *both* entry paths pass
+ * through, one copy is deletable. #533 met that condition and #534 deleted both,
+ * leaving this.
+ *
+ * ## What moved, and what did not
+ *
+ * The set of fields is the union of what the two copies covered, which is the
+ * same set: `url`, `controlUrl`, and every track's `url`. So both entry paths
+ * expand exactly what they expanded before.
+ *
+ * What *did* move is when, and both golden files record it. `testDecoderGolden`
+ * now shows a `*s3/` URL leaving the decoder unexpanded, since expansion is one
+ * stage downstream of it. `testConfigGolden` (#531) -- the file that pins what
+ * actually reaches a browser -- moved in exactly two columns: `createBrowser`
+ * and `createBrowserList` reached directly, the two doors that never expanded at
+ * all, because the copy that did lived in `restoreSession`. That is a divergence
+ * closing rather than a behaviour change, and it is the reason a *deletion*
+ * moves a snapshot: collapsing a duplicated rule into a shared stage necessarily
+ * widens it to every caller of that stage. The probe fixture that runs the same
+ * shortcut through a URL and through a config did not move, which is the claim
+ * worth having -- one copy of the code produces what two produced.
+ */
+function expandUrlShortcuts(config) {
+
+    for (const key of ['url', 'controlUrl']) {
+        if (config[key]) {
+            config[key] = expandUrlShortcut(config[key])
+        }
+    }
+
+    // `Array.isArray` rather than the deleted copy's `config.tracks || []`, for
+    // the reason `applyTrackDefaults` gives below: a hand-written
+    // `tracks: 'a.bed'` is a string, and iterating it walks characters. It
+    // expanded nothing either way -- a character has no `url` -- so this is the
+    // same behaviour said out loud.
+    if (!Array.isArray(config.tracks)) {
+        return
+    }
+
+    for (const track of config.tracks) {
+        if (track.url) {
+            track.url = expandUrlShortcut(track.url)
+        }
     }
 }
 

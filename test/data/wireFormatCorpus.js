@@ -582,10 +582,10 @@ export const wireFormatCorpus = [
         format: 'query',
         provenance: 'synthesized',
         role: 'branch-coverage',
-        source: 'urlUtils.js urlShortcuts — *s3/, *s3e/, *enc/',
+        source: 'normalizeSession.js urlShortcuts — *s3/, *s3e/, *enc/',
         outcome: 'decodes',
         input: '?hicUrl=*s3%2Fhiseq%2Fa.hic&controlUrl=*enc%2FENCFF000.hic&tracks=*s3e%2Fb.bed%7CB%7C0-50%7Crgb(255%2C0%2C0)',
-        note: 'Shortcuts expand in hicUrl, controlUrl and track URLs — three separate call sites. A session handed straight to restoreSession reaches a fourth, expandSessionUrlShortcuts, which is the duplication ADR-0006 decision 8 hands to candidate 9.',
+        note: 'Shortcuts in hicUrl, controlUrl and track URLs — the three places a browser config can carry one. They leave the decoder unexpanded: #534 deleted the decoder\'s three call sites and the second copy in restoreSession, and the survivor is js/normalizeSession.js, downstream of this snapshot. So what leaves the decoder is *s3/… and what reaches a browser is the full URL — see testConfigGolden.js.',
     },
 
     {
@@ -593,10 +593,10 @@ export const wireFormatCorpus = [
         format: 'query',
         provenance: 'synthesized',
         role: 'branch-coverage',
-        source: 'urlUtils.js urlShortcuts — the trailing-underscore http variants',
+        source: 'normalizeSession.js urlShortcuts — the trailing-underscore http variants',
         outcome: 'decodes',
         input: '?hicUrl=*s3_%2Fhiseq%2Fa.hic&controlUrl=*s3e_%2Fb.hic',
-        note: '*s3_/ and *s3e_/ expand to http rather than https. Both hosts now answer 403 to a browser regardless of scheme (the User-Agent gate), so these expand successfully and then fail to load — a decode fixture, not a load one.',
+        note: '*s3_/ and *s3e_/ expand to http rather than https — one stage downstream of this snapshot since #534, so they pass through the decoder unexpanded. Both hosts now answer 403 to a browser regardless of scheme (the User-Agent gate), so these expand successfully and then fail to load — a decode fixture, not a load one.',
     },
 
     {

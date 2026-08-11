@@ -55,6 +55,7 @@
  * |------|----------|---------------|
  * | 2026-08-10 | all — baseline taken | #531. No production code changed; this is the gate, taken before candidate 9 moves anything. |
  * | 2026-08-10 | `host-shaped-full-config`, `track-carrying-the-defaults-fixDefaults-strips`, `url-shortcuts-in-map-control-and-track`, `session-with-url-shortcuts-in-both-browsers` (both suites), `the-same-track-through-a-URL-and-through-a-config` | **#533**, the track-default move. `fixDefaults` ran inside the decoder, so the four config-shaped doors skipped it; it is `normalizeSession.applyTrackDefaults` now and they all meet it. Every one of these fixtures carries a track, and every moved line is one of three: a `displayMode: "COLLAPSED"` gained, the default annotation colour dropped, a `NaN` data-range bound dropped. The query columns did not move — the same defaults, one stage later. The probe is the one to read: its two sides now agree, which is what the fixture was written to expose. |
+ * | 2026-08-11 | `url-shortcuts-in-map-control-and-track`, `session-with-url-shortcuts-in-both-browsers` (session suite only) | **#534**, the duplicate shortcut expansion. Only the two doors that never expanded move — `createBrowser` and `createBrowserList` reached directly — and every moved line is a `*s3/`, `*s3e_/`, `*s3e/` or `*enc/` prefix becoming the URL it always stood for. The two registry-restore columns and the whole Spacewalk suite are byte-identical, because they expanded already; `the-same-shortcut-URL-through-a-URL-and-through-a-config` is byte-identical too, which is the probe saying the two sides still agree with one copy of the code producing both. **This is a divergence closing, not a behaviour change**: the fixture's note has said since #531 that these two columns hand an unexpanded `*s3/…` to the loader, and #534 is the ticket that stops them. |
  * | 2026-08-10 | `syncDatasets-false-on-a-single-browser-config` | **#533**, the `syncDatasets` resolution. Only the `createBrowser` column moves, and only in `synchable`: the session-level opt-out is resolved in normalize now, so the door that takes one browser config honours it as the door that takes a list always did. The three columns that already honoured it are byte-identical. |
  *
  * @see test/data/configEntryPathCorpus.js — the inputs and their divergence notes
@@ -457,8 +458,8 @@ describe('resolved config golden file — the Spacewalk sequence, restoring into
  * invented here.
  *
  * #503 pins what `decodeSession` *returns*; what this pins is what happens to
- * that value on its way to a browser -- the registry's shortcut expansion, the
- * per-browser defaults, and the fields `HICBrowser` reads. The two golden files
+ * that value on its way to a browser -- the normalize stage's shortcut expansion
+ * and per-browser defaults, and the fields `HICBrowser` reads. The two golden files
  * meet at `init.js:50`, and the corpus is deliberately the same one so that a
  * fixture added there is covered on both sides of the seam.
  *

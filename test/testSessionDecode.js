@@ -74,9 +74,16 @@ describe('decodeSession — the query-parameter form', () => {
         expect(config.state).toBeInstanceOf(State)
     })
 
-    test('expands a URL shortcut', async () => {
+    /**
+     * A shortcut leaves the decoder as it arrived. It used to be expanded here —
+     * the decoder held one of the two copies #534 collapsed — and the expansion
+     * is `js/normalizeSession.js`'s now, one stage downstream and on every entry
+     * path. `test/testNormalizeSession.js` owns the rule itself; this pins the
+     * seam, so a shortcut quietly reappearing on the decoder's side fails here.
+     */
+    test('a URL shortcut is left for the normalize stage to expand', async () => {
         const config = await decodeSession('?hicUrl=*s3/hic/file.hic', noIO)
-        expect(config.url).toBe('https://hicfiles.s3.amazonaws.com/hic/file.hic')
+        expect(config.url).toBe('*s3/hic/file.hic')
     })
 
     test('a URL naming nothing of ours decodes to no config at all', async () => {

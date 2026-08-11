@@ -21,7 +21,7 @@
  *
  */
 
-import ColorScale from './colorScale.js'
+import ColorScale, {defaultColorScaleConfig} from './colorScale.js'
 import RatioColorScale from './ratioColorScale.js'
 import DiffColorScale from './diffColorScale.js'
 
@@ -60,9 +60,24 @@ function parseColorScale(string) {
     return parseSingle(string)
 }
 
+/**
+ * A bare threshold with no color components -- "18.89619862813927" -- is common
+ * in harvested links. Read it as "this threshold, default color" rather than
+ * letting the missing components reach getColor and paint rgba(undefined,...).
+ * See issue #514.
+ */
 function parseSingle(string) {
     const [threshold, r, g, b] = string.split(",").map(Number.parseFloat)
-    return new ColorScale({threshold, r, g, b})
+    return new ColorScale({
+        threshold,
+        r: component(r, defaultColorScaleConfig.r),
+        g: component(g, defaultColorScaleConfig.g),
+        b: component(b, defaultColorScaleConfig.b)
+    })
+}
+
+function component(value, fallback) {
+    return Number.isFinite(value) ? value : fallback
 }
 
 export {parseColorScale}

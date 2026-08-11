@@ -127,9 +127,9 @@ full colour).
 | 4 | blue component (0–255) |
 
 A bare threshold with no RGB components is accepted and common in harvested
-links (`colorScale=18.89619862813927`). It is **not** a request for the default
-colour: the missing components decode to `NaN` and the map renders
-`rgba(NaN,NaN,NaN,α)`. Filed as #514 — write all four tokens until it is fixed.
+links (`colorScale=18.89619862813927`). It reads as "this threshold, default
+colour" — any component the string omits falls back to the default scale's, so
+the bare form paints red. No encoder writes it; it is a decode-only form.
 
 A **signed** scale — used for ratio and difference maps, which need one colour
 above the midpoint and another below — is written as a tag, then the threshold,

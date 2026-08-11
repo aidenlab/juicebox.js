@@ -173,7 +173,7 @@ export const wireFormatCorpus = [
         source: 'www.aidenlab.org/juicebox published link, Haarhuis et al. Cell 2017; test/test_urls.md',
         outcome: 'decodes',
         input: 'http://www.aidenlab.org/juicebox/?state=3,3,6,5537.98746,5537.749239047619,1,KR&colorScale=18.89619862813927&hicUrl=https://s3.amazonaws.com/hicfiles/external/wapl_hic/WT.hic&name=Haarhuis%20et%20al.%20|%20Cell%202017%20Hap1%20control&tracks=http://hicfiles.s3.amazonaws.com/external/GM12878_CTCF_orientation.bed|GM12878_CTCF_orientation.bed||rgb(22,%20129,%20198)|||https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.collapsed.bed.gz|gencode.v18.collapsed.bed.gz||rgb(22,%20129,%20198)',
-        note: 'v0 seven-token state, bare-threshold colorScale (#514), two four-field tracks with empty data ranges (#515), and the default annotation colour the normalize stage strips downstream of this snapshot (#533). Unencoded bars and braces in a real published URL.',
+        note: 'v0 seven-token state, bare-threshold colorScale (decodes to the default colour, #514), two four-field tracks with empty data ranges (#515), and the default annotation colour the normalize stage strips downstream of this snapshot (#533). Unencoded bars and braces in a real published URL.',
     },
 
     {
@@ -456,7 +456,7 @@ export const wireFormatCorpus = [
         source: 'colorScaleParser.js parseSingle — RGB components absent',
         outcome: 'decodes',
         input: '?hicUrl=https://example.org/a.hic&colorScale=18.89619862813927',
-        note: 'Common in harvested links (see harvested-query-wapl-wt and harvested-query-degron-fully-encoded) and broken: the absent components are not a request for the default colour, they are NaN. #514. The fixture is here so the bug is *in* the snapshot rather than quietly absent from it — ADR-0006 is explicit that the corpus captures bugs as well as behaviour.',
+        note: 'Common in harvested links (see harvested-query-wapl-wt and harvested-query-degron-fully-encoded). The absent components used to decode to undefined and paint rgba(undefined,undefined,undefined,alpha); since #514 each missing component falls back to defaultColorScaleConfig, so the bare form means "this threshold, default colour". The fixture pins that fallback.',
     },
 
     {

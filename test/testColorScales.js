@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest'
-import ColorScale from '../js/colorScale.js'
+import ColorScale, {defaultColorScaleConfig} from '../js/colorScale.js'
 import {parseColorScale} from '../js/colorScaleParser.js'
 import RatioColorScale, {defaultRatioColorScaleConfig} from '../js/ratioColorScale.js'
 import DiffColorScale, {defaultDiffColorScaleConfig} from '../js/diffColorScale.js'
@@ -108,6 +108,28 @@ describe('parseColorScale', () => {
         expect(parsed).toBeInstanceOf(ColorScale)
         expect(parsed.threshold).toBe(2000)
         expect(parsed.getColorComponents()).toEqual({r: 255, g: 0, b: 0})
+    })
+
+    // Harvested links carry a bare threshold with no RGB components (#514). A
+    // missing component must fall back to the default color, not decode to NaN
+    // and paint rgba(NaN,NaN,NaN,alpha).
+    it('falls back to the default color for a bare threshold', () => {
+        const parsed = parseColorScale('18.9')
+        expect(parsed.getThreshold()).toBe(18.9)
+        expect(parsed.getColorComponents()).toEqual({
+            r: defaultColorScaleConfig.r,
+            g: defaultColorScaleConfig.g,
+            b: defaultColorScaleConfig.b
+        })
+        expect(parsed.getColor(10).rgbaString).toMatch(/^rgba\((\d+,){3} ?\d+\)$/)
+    })
+
+    it('falls back per component when only some are supplied', () => {
+        expect(parseColorScale('18.9,0').getColorComponents()).toEqual({
+            r: 0,
+            g: defaultColorScaleConfig.g,
+            b: defaultColorScaleConfig.b
+        })
     })
 
     it('round-trips a ratio color scale', () => {

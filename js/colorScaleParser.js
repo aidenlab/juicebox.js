@@ -21,7 +21,7 @@
  *
  */
 
-import ColorScale from './colorScale.js'
+import ColorScale, {defaultColorScaleConfig} from './colorScale.js'
 import RatioColorScale from './ratioColorScale.js'
 import DiffColorScale from './diffColorScale.js'
 
@@ -52,17 +52,41 @@ function parseColorScale(string) {
     if (signed) {
         const [threshold, positive, negative] = string.substring(signed.tag.length).split(":")
         const scale = new signed(Number.parseFloat(threshold))
-        scale.positiveScale = parseSingle(positive)
-        scale.negativeScale = parseSingle(negative)
+        // The two sides default apart -- red above the neutral point, blue below
+        // -- so each half falls back to the color the scale was built with, read
+        // off the scale before it is overwritten.
+        const positiveDefaults = scale.getColorComponents('+')
+        const negativeDefaults = scale.getColorComponents('-')
+        scale.positiveScale = parseSingle(positive, positiveDefaults)
+        scale.negativeScale = parseSingle(negative, negativeDefaults)
         return scale
     }
 
     return parseSingle(string)
 }
 
-function parseSingle(string) {
+/**
+ * A bare threshold with no color components -- "18.89619862813927" -- is common
+ * in harvested links. Read it as "this threshold, default color" rather than
+ * letting the missing components reach getColor and paint rgba(undefined,...).
+ * See issue #514.
+ *
+ * @param {string} string
+ * @param {{r: number, g: number, b: number}} defaults the color a component the
+ *        string does not supply falls back to. A signed scale passes the
+ *        defaults of the side being parsed, which are not the single-sided ones.
+ */
+function parseSingle(string, defaults = defaultColorScaleConfig) {
     const [threshold, r, g, b] = string.split(",").map(Number.parseFloat)
-    return new ColorScale({threshold, r, g, b})
+    return new ColorScale({threshold, ...componentsOrDefault({r, g, b}, defaults)})
+}
+
+function componentsOrDefault({r, g, b}, defaults) {
+    return {
+        r: Number.isFinite(r) ? r : defaults.r,
+        g: Number.isFinite(g) ? g : defaults.g,
+        b: Number.isFinite(b) ? b : defaults.b
+    }
 }
 
 export {parseColorScale}

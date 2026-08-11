@@ -218,12 +218,12 @@ exports[`decoder golden file — inputs the decoder takes as a string > harveste
 {
   "config": {
     "colorScale": ColorScale {
-      "b": undefined,
+      "b": 0,
       "binsize": 0.036,
       "cache": [],
-      "g": undefined,
+      "g": 0,
       "nbins": 2000,
-      "r": undefined,
+      "r": 255,
       "threshold": 72,
     },
     "cycle": undefined,
@@ -284,12 +284,12 @@ exports[`decoder golden file — inputs the decoder takes as a string > harveste
 {
   "config": {
     "colorScale": ColorScale {
-      "b": undefined,
+      "b": 0,
       "binsize": 0.0145,
       "cache": [],
-      "g": undefined,
+      "g": 0,
       "nbins": 2000,
-      "r": undefined,
+      "r": 255,
       "threshold": 29,
     },
     "cycle": undefined,
@@ -314,12 +314,12 @@ exports[`decoder golden file — inputs the decoder takes as a string > harveste
 {
   "config": {
     "colorScale": ColorScale {
-      "b": undefined,
+      "b": 0,
       "binsize": 0.009448099314069635,
       "cache": [],
-      "g": undefined,
+      "g": 0,
       "nbins": 2000,
-      "r": undefined,
+      "r": 255,
       "threshold": 18.89619862813927,
     },
     "cycle": undefined,
@@ -359,12 +359,12 @@ exports[`decoder golden file — inputs the decoder takes as a string > harveste
 {
   "config": {
     "colorScale": ColorScale {
-      "b": undefined,
+      "b": 0,
       "binsize": 0.009448099314069635,
       "cache": [],
-      "g": undefined,
+      "g": 0,
       "nbins": 2000,
-      "r": undefined,
+      "r": 255,
       "threshold": 18.89619862813927,
     },
     "cycle": undefined,
@@ -544,12 +544,12 @@ exports[`decoder golden file — inputs the decoder takes as a string > synth-qu
 {
   "config": {
     "colorScale": ColorScale {
-      "b": undefined,
+      "b": 0,
       "binsize": 0.009448099314069635,
       "cache": [],
-      "g": undefined,
+      "g": 0,
       "nbins": 2000,
-      "r": undefined,
+      "r": 255,
       "threshold": 18.89619862813927,
     },
     "cycle": undefined,

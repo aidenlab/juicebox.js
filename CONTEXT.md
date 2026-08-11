@@ -22,15 +22,17 @@ holds (`js/hicDataset.js`). Two kinds, distinguished by `dataset.isLive`:
 - a **live contact map** streams from hic-straw instead of reading a file. Built
   for Spacewalk, which needed contact maps generated as it runs.
 
-The same distinction has a second, host-facing spelling: **`dataset.datasetType`**,
-whose values are `'live' | 'hic' | 'unknown'`. It travels to hosts as a field of
-the `onMapLoaded` payload. It does **not** mean primary vs control — which map
-loaded is expressed by which coordinator method is called (`onMapLoaded` vs
-`onControlMapLoaded`), and a `"main"`/`"control"` reading of this field is the
-vestigial one its JSDoc carried for eight months (#471). `'unknown'` is
-legitimate, not an error: it is what a `Dataset` subclass naming no type carries,
-and hosts must handle it. Prefer `isLive` inside this repo; `datasetType` exists
-for the payload. `test/testDatasetTypeVocabulary.js` pins both.
+**`datasetType`** — the same distinction spelled for hosts, as `'live' | 'hic' |
+'unknown'`. It rides out as a field of the `onMapLoaded` payload. It does **not**
+mean primary vs control: which map loaded is expressed by *which coordinator
+method is called*, and a `"main"`/`"control"` reading is the vestigial one its
+JSDoc carried for eight months. `'unknown'` is legitimate rather than an error —
+a `Dataset` is an extension point, and a subclass declining to classify itself is
+better published honestly than reported as one of the two kinds it is not. Prefer
+`isLive` inside this repo; `datasetType` exists for the payload, and the two must
+not be able to disagree. The vocabulary is declared in `COORDINATOR_PAYLOAD_SHAPES`
+and pinned by `test/testMapLoadedPayload.js`, which drives both load paths — the
+live path published a fourth spelling of its own until #471.
 
 **The disguise** — a live contact map is deliberately made to *look like* a
 `.hic` dataset from juicebox.js's side: same `Dataset`, same rendering path, same

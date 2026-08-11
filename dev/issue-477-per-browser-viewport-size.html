@@ -1,0 +1,335 @@
+<!--
+  ~  The MIT License (MIT)
+  ~
+  ~ Copyright (c) 2016-2017 The Regents of the University of California
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  ~ associated documentation files (the "Software"), to deal in the Software without restriction, including
+  ~ without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the
+  ~ following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all copies or substantial
+  ~ portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+  ~ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A PARTICULAR PURPOSE AND
+  ~ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  ~ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+  ~ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  ~ THE SOFTWARE.
+  ~
+  -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Juicebox — per-browser viewport size (#477)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+
+    <!-- Juicebox CSS-->
+    <link rel="stylesheet" type="text/css" href="../css/juicebox.css">
+
+    <style>
+
+        /* Deliberately plain. The embed containers are left as ordinary blocks --
+           no flex, no grid -- because a flex item can be shrunk below the width
+           it asked for, and that would corrupt the very measurement this page
+           makes. The browsers stack vertically; scroll. */
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            margin: 16px;
+        }
+
+        h1 {
+            font-size: 18px;
+        }
+
+        h2 {
+            font-size: 14px;
+            margin-top: 28px;
+        }
+
+        p.prose {
+            font-size: 13px;
+            max-width: 60em;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        table.report {
+            border-collapse: collapse;
+            font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+            margin: 8px 0 16px 0;
+        }
+
+        table.report th,
+        table.report td {
+            border: 1px solid #ccc;
+            padding: 4px 8px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        table.report th {
+            background: #f2f2f2;
+        }
+
+        .pass {
+            color: #0a7a2f;
+            font-weight: 600;
+        }
+
+        .fail {
+            color: #b3261e;
+            font-weight: 600;
+        }
+
+        #verdict {
+            font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            display: inline-block;
+        }
+
+        .embed {
+            border: 1px dashed #999;
+            padding: 8px;
+            margin-bottom: 16px;
+        }
+
+        .embed-label {
+            font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<h1>Per-browser viewport size — issue #477</h1>
+
+<p class="prose">
+    The unchecked <b>per-browser scoping</b> box on
+    <a href="https://github.com/aidenlab/juicebox.js/issues/549">#549</a>. Before #477,
+    <code>--hic-viewport-width/height</code> were written to <code>document.documentElement</code>,
+    so every browser on the page shared one size and the last one to lay out won. They are now
+    written to each browser's own <code>rootElement</code>
+    (<code>js/layoutController.js</code> <code>setViewportSize</code>), from
+    <code>config.width/height</code> at construction time
+    (<code>js/hicBrowser.js</code>). Nothing in the app resizes a browser afterwards —
+    there is no resize gesture, which is why this page and not a click-through in juicebox-web.
+</p>
+
+<p class="prose">
+    Four browsers are built <b>in order, one at a time</b>, because the old bug was
+    order-dependent: whoever wrote last won. Three go into embed A — the juicebox-web shape,
+    several browsers in one container — and the fourth into a second embed, which is how #477
+    was originally framed. The unsized browser is built <b>last</b>, so under the old behaviour
+    it would have inherited 400px from the browser before it; it must fall back to the 640px
+    stylesheet default instead.
+</p>
+
+<div id="verdict">building…</div>
+
+<h2>Report</h2>
+
+<p class="prose">
+    The gate is the <b>resolved custom property</b> on each browser's <code>rootElement</code> —
+    that is literally what #477 moved. Measured viewport width is gated with it: with no 1D
+    tracks loaded, <code>viewportElement</code>'s width works out to exactly the viewport
+    width. Measured height is reported but <b>not</b> gated, because the viewport's height is
+    handed out by the surrounding flex layout rather than set from the variable directly.
+</p>
+
+<button id="remeasure">Re-measure</button>
+
+<table class="report" id="report">
+    <thead>
+    <tr>
+        <th>Browser</th>
+        <th>config w×h</th>
+        <th>expected</th>
+        <th>resolved --hic-viewport-*</th>
+        <th>measured viewport (w×h)</th>
+        <th>root (w×h)</th>
+        <th>gate</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<h2>Embed A — three browsers, one container</h2>
+
+<div class="embed">
+    <div class="embed-label">#embed-a — 800×800, then 400×400, then no width/height</div>
+    <div id="embed-a"></div>
+</div>
+
+<h2>Embed B — a second, independent embed</h2>
+
+<div class="embed">
+    <div class="embed-label">#embed-b — 300×300</div>
+    <div id="embed-b"></div>
+</div>
+
+<script type="module">
+
+    import hic from '../js/index.js';
+    import { devMapUrl } from '../dev-proxy/map-url.js'
+
+    // Dev-only: routes .hic reads on hosts that answer localhost with a bot challenge
+    // (encodeproject.org today) through the dev server's proxy. In a host app this is
+    // guarded by import.meta.env.DEV; these pages only run under the dev server. See the
+    // README, "Loading maps from hosts that serve a bot challenge".
+    hic.setUrlMapper(devMapUrl)
+
+    // Same map on all four, and the same one dev/big_viewport.html uses. Do not repoint
+    // this at hicfiles.s3.amazonaws.com -- that host gates on User-Agent and serves 403
+    // to any browser. See the note in dev/big_viewport.html.
+    const map = {
+        url: 'https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/r.hic',
+        name: 'GM12878 diploid (r)',
+        nvi: '43762184328,25419'
+    }
+
+    // The stylesheet fallback in css/juicebox.scss, and what a browser given no
+    // dimensions must land on.
+    const STYLESHEET_DEFAULT = 640
+
+    const cases = [
+        { label: 'A1', containerId: 'embed-a', width: 800, height: 800 },
+        { label: 'A2', containerId: 'embed-a', width: 400, height: 400 },
+        { label: 'A3', containerId: 'embed-a' },                          // no width/height, built last
+        { label: 'B1', containerId: 'embed-b', width: 300, height: 300 }
+    ]
+
+    const verdictElement = document.getElementById('verdict')
+    const tbody = document.querySelector('#report tbody')
+
+    const built = []
+
+    try {
+
+        // Sequential and awaited, not Promise.all: the failure being tested for is
+        // last-writer-wins, so construction order has to be the one this page claims.
+        for (const testCase of cases) {
+
+            const config = { ...map }
+
+            if (undefined !== testCase.width) {
+                config.width = testCase.width
+                config.height = testCase.height
+            }
+
+            const container = document.getElementById(testCase.containerId)
+            const browser = await hic.createBrowser(container, config)
+
+            built.push({ ...testCase, browser })
+        }
+
+        measure()
+
+    } catch (e) {
+        verdictElement.className = 'fail'
+        verdictElement.textContent = `FAILED TO BUILD: ${ e.message || e }`
+        console.error(e)
+    }
+
+    document.getElementById('remeasure').addEventListener('click', measure)
+
+    function measure() {
+
+        tbody.innerHTML = ''
+
+        let failures = 0
+
+        for (const { label, browser, width, height } of built) {
+
+            const expectedWidth = undefined === width ? STYLESHEET_DEFAULT : width
+            const expectedHeight = undefined === height ? STYLESHEET_DEFAULT : height
+
+            const style = getComputedStyle(browser.rootElement)
+            const resolvedWidth = parseFloat(style.getPropertyValue('--hic-viewport-width'))
+            const resolvedHeight = parseFloat(style.getPropertyValue('--hic-viewport-height'))
+
+            const viewportRect = browser.contactMatrixView.viewportElement.getBoundingClientRect()
+            const rootRect = browser.rootElement.getBoundingClientRect()
+
+            const ok =
+                resolvedWidth === expectedWidth &&
+                resolvedHeight === expectedHeight &&
+                Math.round(viewportRect.width) === expectedWidth
+
+            if (!ok) {
+                failures++
+            }
+
+            appendRow([
+                label,
+                undefined === width ? '(none)' : `${ width }×${ height }`,
+                `${ expectedWidth }×${ expectedHeight }`,
+                `${ resolvedWidth }×${ resolvedHeight }`,
+                `${ Math.round(viewportRect.width) }×${ Math.round(viewportRect.height) }`,
+                `${ Math.round(rootRect.width) }×${ Math.round(rootRect.height) }`
+            ], ok)
+        }
+
+        // The regression guard proper. Pre-#477 these were written as inline styles on
+        // the page's root element; nothing should write them there now, so the page must
+        // still be resolving the stylesheet's own :root declaration.
+        const pageInlineWidth = document.documentElement.style.getPropertyValue('--hic-viewport-width')
+        const pageInlineHeight = document.documentElement.style.getPropertyValue('--hic-viewport-height')
+        const pageClean = '' === pageInlineWidth && '' === pageInlineHeight
+
+        if (!pageClean) {
+            failures++
+        }
+
+        appendRow([
+            'document root',
+            '—',
+            'no inline --hic-viewport-*',
+            `${ pageInlineWidth || '(none)' } / ${ pageInlineHeight || '(none)' }`,
+            '—',
+            '—'
+        ], pageClean)
+
+        verdictElement.className = 0 === failures ? 'pass' : 'fail'
+        verdictElement.textContent = 0 === failures
+            ? `PASS — ${ built.length } browsers, each at its own size, page root untouched`
+            : `FAIL — ${ failures } of ${ built.length + 1 } checks. See the table.`
+    }
+
+    function appendRow(cells, ok) {
+
+        const tr = document.createElement('tr')
+
+        for (const cell of cells) {
+            const td = document.createElement('td')
+            td.textContent = cell
+            tr.appendChild(td)
+        }
+
+        const td = document.createElement('td')
+        td.className = ok ? 'pass' : 'fail'
+        td.textContent = ok ? 'pass' : 'FAIL'
+        tr.appendChild(td)
+
+        tbody.appendChild(tr)
+    }
+
+</script>
+
+</body>
+
+</html>

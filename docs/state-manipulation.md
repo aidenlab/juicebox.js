@@ -187,17 +187,23 @@ There are also two **bulk replacement** APIs that bypass the translator layer (s
 
 ## Bulk replacement (session and URL restoration)
 
-These paths replace the entire `State` object rather than mutate it field-by-field. They do not go through `setView`. Used at startup and during session restore.
+These paths replace the entire `State` object rather than mutate it field-by-field. Since #558 they **do** go through `setView` — restore is a translator like any other. Used at startup and during session restore.
 
 | Entry point | Path |
 |---|---|
-| `browser.setState(state)` | `stateManager.setState(state)`: clones the incoming state, applies a `minPixelSize` floor on `pixelSize`. No translator involved. |
+| `browser.setState(state)` | `stateManager.setState(state)`: clones the incoming state and hands the canonical six to `setView`, so a restored state gets the same `MAX_PIXEL_SIZE` cap and x/y clamp as every gesture path. |
 | Loading a session JSON | `dataLoader` → `State.fromJSON(json)` → `browser.setState(state)`. Old payloads with a `locus` field are read-and-ignored (backward compatibility). |
 | Loading via URL with `?session=...` | Same as above; URL → JSON → `fromJSON` → `setState`. |
 | Loading via URL with a config-level `locus` string | After the dataset loads, `dataLoader` calls `browser.parseGotoInput(config.locus)` — i.e. translator path, not bulk replacement. |
 | Loading via URL with a `state` token (legacy compact form) | `State.parse(string)` → `browser.setState(state)`. |
 
-Bulk replacement is a deliberate exception to the chokepoint discipline: at startup or restore, the new state is the *only* state that exists, so there's nothing to "translate" relative to. The replacement is followed by a render and the application continues normally — subsequent mutations go through translators as usual.
+Bulk replacement used to be a deliberate exception to the chokepoint discipline, on the reasoning that at startup or restore the new state is the *only* state that exists, so there is nothing to "translate" relative to. [ADR-0009](adr/0009-restore-is-a-translator.md) retired that reasoning: an invariant with an exception has no enforcer, and `clampXY` was reachable from `updateLayout()` as well, which runs only when tracks change — so a restored session carrying a track was clamped and a bare map restore was not. The same saved session opened two ways.
+
+**A restored state is clamped silently, never rejected** (ADR-0009 decision 2) — the same "coerce, never reject" rule the normalize stage one seam over follows. A saved view at `pixelSize=1e9`, or with an origin past the end of its chromosome, opens somewhere different rather than failing to open.
+
+The replacement is followed by a render and the application continues normally — subsequent mutations go through translators as usual.
+
+> The rest of this section, and "Where to look in code" below, are rewritten when candidate 6 lands whole (#563). What is above is true today.
 
 ## What is NOT a state mutation
 

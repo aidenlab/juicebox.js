@@ -76,23 +76,53 @@ class StateManager {
     }
 
     /**
-     * Set the active state with validation and adjustment.
-     * Clones the source state, applies a minPixelSize floor.
-     * Locus is no longer cached — consumers derive it via state.getLocus().
+     * Restore a saved view. **A translator, like every other mutation path**
+     * (#558, ADR-0009 decisions 2 and 4).
+     *
+     * The six canonical fields arrive off the incoming state and are handed to
+     * `State.setView`, the one chokepoint. Restore used to clone and apply a
+     * bare `Math.max(pixelSize, minPixelSize)` floor of its own, which meant a
+     * saved view skipped the `MAX_PIXEL_SIZE` cap and the x/y clamp that every
+     * gesture path gets. It no longer does.
+     *
+     * **A restored state is clamped silently, never rejected.** That is the same
+     * rule the normalize stage one seam over follows (ADR-0006, #466): defaults
+     * and coerces, never refuses. The cost is deliberate and is in the release
+     * notes — a saved view at `pixelSize=1e9`, or with an origin past the end of
+     * the chromosome, now opens somewhere different. Rejecting instead would
+     * turn a link that renders something into a link that renders nothing.
+     *
+     * The clone is what is mutated, so the caller's state object is left alone:
+     * `dataLoader` hands the same instance to `coordinator.onMapLoaded`.
+     *
+     * The dataset must already be installed — `clampXY` reads its chromosome
+     * table and resolution ladder. All three production callers set it first,
+     * one line earlier; #559 makes that ordering explicit at the call sites.
+     *
+     * `resolutionChanged: true` is unconditional and stays that way here: making
+     * it honest is #560, deliberately a ticket of its own so its snapshot
+     * movement has exactly one explanation.
+     *
+     * Locus is not cached — consumers derive it via state.getLocus().
      */
     async setState(state) {
         const chrChanged = !this.activeState ||
             this.activeState.chr1 !== state.chr1 ||
             this.activeState.chr2 !== state.chr2;
 
-        this.activeState = state.clone();
+        const restored = state.clone();
 
-        const minPS = await this.browser.minPixelSize(
-            this.activeState.chr1,
-            this.activeState.chr2,
-            this.activeState.zoom
+        // The clone carries the incoming chr1/chr2/zoom before `setView` runs,
+        // so `_adjustPixelSize` consults `browser.minPixelSize` with the same
+        // arguments the hand-rolled floor above it used to.
+        await restored.setView(
+            state.chr1, state.chr2, state.x, state.y, state.zoom, state.pixelSize,
+            this.browser,
+            this.activeDataset,
+            this.browser.contactMatrixView.getViewDimensions()
         );
-        this.activeState.pixelSize = Math.max(state.pixelSize, minPS);
+
+        this.activeState = restored;
 
         return {
             chrChanged,

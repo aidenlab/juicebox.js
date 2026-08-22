@@ -894,11 +894,18 @@ class HICBrowser {
 
     /**
      * Called on loading tracks
+     *
+     * It does **not** clamp. The `clampXY` call that stood here was the clamp's
+     * second enforcer, and `updateLayout` runs only when tracks change — so a
+     * restored session carrying a track was clamped incidentally and a bare map
+     * restore never was, and the same saved session opened two ways depending on
+     * whether it had a track. Restore goes through the chokepoint now, which
+     * clamps every time; this call would only be able to disagree with it.
+     * #558, ADR-0009 decision 4.
+     *
      * @returns {Promise<void>}
      */
     async updateLayout() {
-
-        this.state.clampXY(this.dataset, this.contactMatrixView.getViewDimensions())
 
         for (const trackXYPair of this.trackPairs) {
 

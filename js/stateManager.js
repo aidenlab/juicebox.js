@@ -111,9 +111,12 @@ class StateManager {
      * table and resolution ladder. All three production callers set it first,
      * one line earlier; #559 makes that ordering explicit at the call sites.
      *
-     * `resolutionChanged: true` is unconditional and stays that way here: making
-     * it honest is #560, deliberately a ticket of its own so its snapshot
-     * movement has exactly one explanation.
+     * `resolutionChanged` is computed against the state going out of force, the
+     * same comparison `chrChanged` beside it makes, and for the same reason
+     * (#560, ADR-0009 decision 3). It used to be `true` unconditionally, so
+     * every restore announced a resolution change and released the resolution
+     * lock whether or not the resolution moved. A restore onto the current zoom
+     * now reports `false` and no longer fires that repaint.
      *
      * Locus is not cached — consumers derive it via state.getLocus().
      */
@@ -122,14 +125,17 @@ class StateManager {
             this.activeState.chr1 !== state.chr1 ||
             this.activeState.chr2 !== state.chr2;
 
+        // No state in force is a change: there is nothing to have been unchanged
+        // from, and a freshly loaded map must repaint.
+        const resolutionChanged = !this.activeState || this.activeState.zoom !== state.zoom;
+
         const restored = state.clone();
 
         // `setView`'s return is deliberately discarded. It runs on the clone,
-        // which already holds the incoming chromosomes, so its `chrChanged` is
-        // always false and its `resolutionChanged` always false — the comparison
-        // that means anything is against the outgoing value of
-        // `this.activeState`, which is the one computed above.
-        // `resolutionChanged` is #560's to make honest.
+        // which already holds the incoming chromosomes and the incoming zoom, so
+        // its `chrChanged` and its `resolutionChanged` are both always false —
+        // the comparisons that mean anything are against the outgoing value of
+        // `this.activeState`, which are the ones computed above.
         //
         // The clone carries the incoming chr1/chr2 before `setView` runs, so
         // `_adjustPixelSize` consults `browser.minPixelSize` with the same
@@ -145,7 +151,7 @@ class StateManager {
 
         return {
             chrChanged,
-            resolutionChanged: true
+            resolutionChanged
         };
     }
 

@@ -1,6 +1,6 @@
 # Juicebox.js — Punch List
 
-**As of 2026-08-22 — candidate 6 is picked.** Ordered. Work top to bottom; each phase assumes the one above it.
+**As of 2026-08-22 — candidate 6 is filed, #557–#563.** Ordered. Work top to bottom; each phase assumes the one above it.
 
 > **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
 > agree with it. Where the durable facts live:
@@ -79,17 +79,18 @@ breaking as currently scoped. Candidate 8 was settled by ADR-0005, candidate 5 b
 candidate 9 by ADR-0006 decision 8 plus ADR-0008; all three have landed. Each card carries a
 Consumer impact block; read it before filing anything.
 
-**Candidate 6 is picked, and ADR-0009 is written.** The choice was open — 9 was the frontier and is
-done, so nothing queued behind it — and 6 was taken on its merits: it is the smallest of the four,
-it inherits 9's chokepoint reasoning directly, and #510 plus the y-axis defect both sit in code it
-moves anyway. **Next step is `/to-tickets` against ADR-0009.** The other three are still unpicked and
-the order in the table below is *not* a recommendation.
+**Candidate 6 is picked, scoped by ADR-0009 and filed as #557–#563.** The choice was open — 9 was
+the frontier and is done, so nothing queued behind it — and 6 was taken on its merits: it is the
+smallest of the four, it inherits 9's chokepoint reasoning directly, and #510 plus the y-axis defect
+both sit in code it moves anyway. **The frontier is #510**, and blocking edges are GitHub-native, so
+query them rather than reading them off a table here. The other three candidates are still unpicked
+and the order in the table below is *not* a recommendation.
 
 | Candidate | Status |
 |---|---|
 | **9 · Give the config schema one reader** | ✅ **done — #531–#536 all landed.** One reader (`js/normalizeSession.js`), run once at the entry, with the schema written down in `CONTEXT.md`. Seam drawn by ADR-0006 decision 8. One ADR opened after all — **ADR-0008**, for the single decision the seam did not settle: `figureMode` absorbs `miniMode` |
 | **11 · Give the track tile one owner** | ⚠️ breaking |
-| **6 · Fold StateManager into State, and make restore use the chokepoint** | 🔵 **picked — ADR-0009.** Seven tickets planned, gated by #510. Not yet filed |
+| **6 · Fold StateManager into State, and make restore use the chokepoint** | 🔵 **in progress — ADR-0009, #557–#563 filed.** Frontier is #510 |
 | **7 · Move the gesture state machines behind InteractionHandler** | watch |
 | **10 · One dataset-load path** — *this is the live-map seam* | watch |
 
@@ -218,7 +219,22 @@ clamp is not decorative — but it reads `0` in the harness, so the gate's fixtu
 Probe output is in the ADR.
 
 **#510 lands first, alone, before the gate.** Third time that rule applies (#499/#500 before #503,
-#531 before #532). It has been re-briefed to say so.
+#531 before #532). It has been re-briefed to say so, and it is the frontier.
+
+**Filed as seven tickets** — #557 (gate), #558 (chokepoint + one enforcer), #559 (`setActiveDataset`
+loses its state parameter), #560 (honest `resolutionChanged`), #561 (normalization validated), #562
+(the sync split), #563 (the fold, and the doc). **#560, #561 and #562 are a parallel branch** off
+#559; #563 is the join. The per-ticket detail is in the issues and in
+[#466](https://github.com/aidenlab/juicebox.js/issues/466) — not here, and not in a second punch
+list.
+
+**One split against ADR-0009's own sequencing, found while decomposing.** The ADR treats restore
+through the chokepoint as one ticket; it is two. Three of the five `setActiveDataset` call sites are
+immediately followed by `browser.setState`, which overwrites the unvalidated assignment — so #558
+fixes those three by itself. The other two, the config-level `locus` branch and the `synchState`
+branch, leave the unvalidated state standing and need #559. **The ADR was right about the decision
+and wrong about the ticket boundary**, which is the ordinary way round: decomposition finds call
+sites, ADRs find decisions.
 
 **The one release-note consequence:** clamping silently means a saved view at `pixelSize=1e9` now
 opens somewhere different. That is phase 4's **fifth** note and the second an end user can hit.

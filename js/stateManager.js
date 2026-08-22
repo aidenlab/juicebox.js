@@ -124,7 +124,7 @@ class StateManager {
      * The seventh field, `normalization`, is settled after `setView` rather than
      * through it (#561, ADR-0009 decision 5): it is not one of the canonical six
      * and it is validated against the dataset rather than against the view. See
-     * `#resolveNormalization` for why restore is the only place the question can
+     * `resolveNormalization` for why restore is the only place the question can
      * be asked.
      *
      * Locus is not cached — consumers derive it via state.getLocus().
@@ -161,7 +161,7 @@ class StateManager {
             this.browser.contactMatrixView.getViewDimensions()
         );
 
-        restored.normalization = await this.#resolveNormalization(restored.normalization);
+        restored.normalization = await this.resolveNormalization(restored.normalization);
 
         this.activeState = restored;
 
@@ -209,10 +209,18 @@ class StateManager {
      * all, and the requested value stands there rather than being coerced
      * against a set that was never consulted.
      *
-     * @param {string|undefined} requested - The saved state's normalization
+     * Public rather than private because it is **the** enforcer, and the load
+     * stage has a second thing to ask it: `hicBrowser.init` resolves a
+     * top-level `config.normalization` here too. That field is not part of any
+     * saved state -- it is a config field a host sets alongside a map -- so it
+     * cannot arrive through `setState`, but it is the same question against the
+     * same set, and candidate 6's premise is that an invariant has one enforcer
+     * or none.
+     *
+     * @param {string|undefined} requested - The normalization asked for
      * @returns {Promise<string>} - A normalization the loaded dataset offers
      */
-    async #resolveNormalization(requested) {
+    async resolveNormalization(requested) {
 
         if (undefined === requested || 'NONE' === requested) {
             return 'NONE';
@@ -224,7 +232,22 @@ class StateManager {
 
         const available = await this.browser.getNormalizationOptions();
 
-        return available.includes(requested) ? requested : 'NONE';
+        if (available.includes(requested)) {
+            return requested;
+        }
+
+        // The fallback is read out of the offered set rather than assumed to be
+        // `NONE`. Every `.hic` file seeds its normalization list with `NONE`, so
+        // on a single map the two are the same answer -- but with a control map
+        // loaded this set is an *intersection* of two files' lists, and an
+        // intersection is an expression rather than a guarantee. Where it does
+        // hold `NONE`, or where it is empty and there is nothing to name, `NONE`
+        // is both the answer and what the render path would have drawn anyway.
+        if (0 === available.length || available.includes('NONE')) {
+            return 'NONE';
+        }
+
+        return available[0];
     }
 
     /**

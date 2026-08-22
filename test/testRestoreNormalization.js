@@ -24,6 +24,14 @@
  *    and `getNormalizationOptions` reads the normalization vector index off the
  *    file -- so asking would put a network read on every restore to buy an
  *    answer that is already known.
+ * 4. The fallback is read out of the offered set rather than assumed. With a
+ *    control map loaded the set is an intersection of two files' lists, and an
+ *    intersection is an expression rather than a guarantee.
+ * 5. A top-level `config.normalization` is resolved by the **same** enforcer.
+ *    `hicBrowser.init` used to answer the same question in its own words, with
+ *    its own `Set` and its own fallback, and it ran *after* restore -- so of the
+ *    two enforcers the duplicate was the one that won. Candidate 6's premise is
+ *    that an invariant has one enforcer or none.
  *
  * **No error surface is asserted here, because none is added here.** #372 is
  * "a normalization that is not available renders without one and the user is
@@ -172,6 +180,18 @@ describe('normalization is validated against the loaded dataset at restore (#561
         expect(browser.state.normalization).toBe('NONE')
     })
 
+    test('the fallback is read out of the offered set, not assumed to be NONE', async () => {
+
+        // With a control map loaded the offered set is an *intersection* of two
+        // files' lists, and an intersection is an expression rather than a
+        // guarantee -- so the coercion cannot name `NONE` on faith.
+        offered = ['VC', 'VC_SQRT']
+
+        const browser = await restore(savedWith('KR'))
+
+        expect(offered).toContain(browser.state.normalization)
+    })
+
     test('NONE is settled without reading the dataset', async () => {
 
         offered = ['NONE', 'KR']
@@ -185,5 +205,37 @@ describe('normalization is validated against the loaded dataset at restore (#561
 
         expect(browser.state.normalization).toBe('NONE')
         expect(asked).not.toHaveBeenCalled()
+    })
+
+    test('a top-level config.normalization is resolved by the same enforcer', async () => {
+
+        // `config.normalization` is not part of any saved state -- it is a field
+        // a host sets alongside a map -- so it cannot arrive through `setState`.
+        // It is the same question against the same set, though, and `init` used
+        // to answer it a second time in its own words, *after* restore, so the
+        // duplicate was the copy that won. Driving it here is what says the two
+        // now agree by construction rather than by coincidence.
+        offered = ['NONE', 'VC']
+
+        const browser = new HICBrowser(dom.another(), {})
+        vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({...VIEWPORT})
+        const resolve = vi.spyOn(browser.stateManager, 'resolveNormalization')
+
+        await browser.init({url: HIC_URL, state: savedWith('NONE'), normalization: 'KR'})
+
+        expect(resolve).toHaveBeenCalledWith('KR')
+        expect(browser.state.normalization).toBe('NONE')
+    })
+
+    test('a top-level config.normalization the dataset offers survives init', async () => {
+
+        offered = ['NONE', 'VC', 'KR']
+
+        const browser = new HICBrowser(dom.another(), {})
+        vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({...VIEWPORT})
+
+        await browser.init({url: HIC_URL, state: savedWith('NONE'), normalization: 'KR'})
+
+        expect(browser.state.normalization).toBe('KR')
     })
 })

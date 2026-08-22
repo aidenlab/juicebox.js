@@ -284,7 +284,11 @@ document's to answer — each needs the load, the layout or the dataset:
 - **`normalization`** is checked against the loaded dataset's own set of
   normalizations and falls back to `NONE` if the map does not carry the one
   asked for. The only field still checked below the seam, and it *cannot* move
-  up: the valid set does not exist until a dataset is loaded.
+  up: the valid set does not exist until a dataset is loaded. Since #561 the
+  rule is written once, in `stateManager.resolveNormalization`, and the same
+  enforcer coerces the `normalization` a restored *state* carries — which is a
+  different field arriving by a different door, asked the same question at the
+  same moment (ADR-0009 decision 5).
 
 Everything else below the seam is a plain field read.
 

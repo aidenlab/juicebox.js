@@ -147,6 +147,7 @@
  * | 2026-08-22 | all — baseline taken | #557. No production code changed; this is the gate, taken before candidate 6 moves anything. #510 landed first, so the fallback door records a y-origin of 0 rather than baking that defect in. |
  * | 2026-08-22 | `harvested-query-degron-fully-encoded`, `harvested-query-gm12878-nvi` — the `config.state` door, `1600x400` column only | #558. Restore goes through `setView`, so the clamp reaches it. Tally below. |
  * | 2026-08-22 | all — the `rungs` field only, on every door | #559. `setActiveDataset` loses its `state` parameter, so the count of calls carrying one leaves the file, and the `config.locus` door reaches `setState` where it did not before. Tally below. |
+ * | 2026-08-22 | 10 fixtures — the `normalization` field only, on the `config.state` and live doors, both columns | #561. A restored normalization is coerced against the loaded dataset. Tally below. |
  *
  * ### The #558 tally
  *
@@ -226,6 +227,46 @@
  * raw state no longer *stands*, which is a claim about the state between two
  * calls and therefore not a claim a snapshot can make.
  * `test/testRestoreBackDoor.js` makes it, by trapping the field.
+ *
+ * ### The #561 tally
+ *
+ * **48 records of 450 moved, and only the `normalization` field moved** -- not
+ * one of the canonical six, in either column, on any door. Every movement is
+ * from a named normalization to `NONE`:
+ *
+ * - **The `config.state` door -- 24 records, 12 browser configs x 2 columns.**
+ *   These are the fixtures whose saved state carries a normalization at all;
+ *   the rest of the corpus already read `NONE` and had nothing to coerce.
+ * - **The live door -- 24 records, the same 12 configs x 2 columns.**
+ *   `loadLiveContactMap` decodes the same `config.state` and calls the same
+ *   chokepoint, so it inherits the coercion without being touched. That it moved
+ *   in step with the file path is the answer to #504's lesson: the two doors
+ *   agree here, which is exactly what the fifth column exists to show.
+ * - **Both columns moved by the same amount, and that is the point.** A clamp
+ *   moves one viewport column and not the other (the #558 tally above); a
+ *   normalization is not a function of the viewport, so a movement that
+ *   *differed* between the columns would be the bug report. Symmetry is the
+ *   evidence here, where asymmetry was the evidence there.
+ * - **Nothing moved on the `config.locus`, `config.synchState` or
+ *   `State.default()` doors.** All three hand the chokepoint a state whose
+ *   normalization is already `NONE`, which short-circuits ahead of the dataset.
+ *
+ * The dataset behind every record is `test/utils/restoreDataset.js`, which
+ * carries no `getNormalizationOptions` -- so `browser.getNormalizationOptions`
+ * takes its `['NONE']` fallback and every named normalization in the corpus is
+ * unavailable. That makes this column of the gate blind to the *preserving*
+ * half of the rule: it can show a coercion happening but not a valid
+ * normalization surviving one. `test/testRestoreNormalization.js` is where that
+ * half is pinned, against a dataset that answers with a real set.
+ *
+ * `harvested-external-state-numeric-normalization` is the fixture worth reading
+ * twice: its saved normalization is the string `"2000"`, a legacy nine-token
+ * state whose sixth field was never a normalization name. It used to be carried
+ * into the render path verbatim; it now resolves to `NONE`, which is what it
+ * always drew.
+ *
+ * Nothing was rejected -- every record still reads `"outcome": "restores"`.
+ * Coerced, never refused (ADR-0009 decisions 2 and 5).
  *
  * @see docs/adr/0009-restore-is-a-translator.md — the decisions this gate guards
  * @see test/data/wireFormatCorpus.js — the inputs

@@ -1,6 +1,6 @@
 # Juicebox.js — Punch List
 
-**As of 2026-08-11.** Ordered. Work top to bottom; each phase assumes the one above it.
+**As of 2026-08-22.** Ordered. Work top to bottom; each phase assumes the one above it.
 
 > **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
 > agree with it. Where the durable facts live:
@@ -50,6 +50,23 @@ block caught it before any code was written. Candidate 4 also spawned a second p
 own; that was the mistake. The decomposition belonged in the issue bodies, where it would not
 have needed keeping in sync. Its reusable parts now live in `docs/agents/triage-labels.md`, its
 ADR correction in ADR-0004's addendum, and the file is deleted (`git log` has it if needed).
+
+### Landed after this list was last written
+
+Everything below closed on 11 August, after the previous revision of this file was written, so it
+read as open here while being done in the tracker. **No candidate work has happened since 9
+landed** — the four remaining candidates are exactly as they were.
+
+| # | What | Commit |
+|---|---|---|
+| #549 | Runtime click-through of the registry — candidate 4's last unverified claim | manual run, plus `dev/issue-477-per-browser-viewport-size.html` (`4d53391`) |
+| #477 | `--hic-viewport-*` scoped to each browser's `rootElement` | `461535a` |
+| #471 | `onMapLoaded` documented a `datasetType` vocabulary the code never spoke | `ca22bd6`, `7c333f8` |
+| #514 | A bare-threshold `colorScale` decoded to `NaN` colour components | `6a70dc3`, `13bdc3e` |
+| #515 | An empty data-range field decoded to `NaN` bounds | `aeef59e`, `d326658` |
+
+**Two of candidate 5's eight follow-ups are therefore closed.** Six are still open and none of them
+blocks anything: **#510**, **#518**, **#519**, **#521**, **#525**, **#528**.
 
 ---
 
@@ -150,7 +167,9 @@ before any code moved. Three lessons specific to this kind of work:
   stood on other grounds, but the ADR's consequences section had to be corrected — #506 removed
   live behaviour.
 - **File and keep refactoring worked at scale.** Eight follow-ups (#510, #514, #515, #518, #519,
-  #521, #525, #528) came out of this candidate without derailing it.
+  #521, #525, #528) came out of this candidate without derailing it. Two — #514 and #515 — have
+  since been fixed on their own, which is the rest of the rule working: filed work does get done,
+  just not on the refactor's critical path.
 
 **What candidate 9 added, worth carrying into whichever is next:**
 
@@ -197,7 +216,7 @@ add an Outcome box to its card. That is the only time either file is touched.
 | Task | Issue | Skill |
 |---|---|---|
 | ~~`--hic-viewport-*` CSS variables are page-scoped~~ | [#477](https://github.com/aidenlab/juicebox.js/issues/477) | **done** — `/grill-with-docs`, no ADR |
-| Runtime click-through of the registry against juicebox-web | *not filed* | manual |
+| ~~Runtime click-through of the registry against juicebox-web~~ | [#549](https://github.com/aidenlab/juicebox.js/issues/549) | **done** — manual, run 2026-08-11 |
 
 **#477 is done, so "candidate 4 is done" now does mean two embeds can be sized independently.**
 The grilling closed all three of its open questions, and none of them landed where the issue
@@ -213,11 +232,21 @@ deferred it. (0007 is therefore still unclaimed; 0005 went to candidate 8's tear
 One behaviour change ships with it: a browser constructed without `width`/`height` used to inherit
 whatever the last-sized browser wrote to the page, and now falls back to the stylesheet's 640px.
 
-**The click-through is candidate 4's one unverified claim.** #479 was the ticket flagged as
-carrying a manual step no skill covers, and it was verified statically only — 13 juicebox-web call
-sites read, all resolving one registry, no headless browser available. Browser panel
-add/delete/select and session save against a running juicebox-web. Do it before the release, and
-add it to #466's checklist so it is not carried in someone's head.
+**The click-through is done, so candidate 4 has no unverified claim left.** It was filed as #549
+rather than carried in someone's head, run against `npm run dev` on 2026-08-11, and all six boxes
+passed. Nothing misbehaved, so no follow-ups came out of it. The result is recorded on #466's
+pre-release checklist, which is where phase 4 reads it.
+
+**One thing the run changed, and it is a lesson rather than a defect.** The box originally read
+"while two panels exist, confirm they now size independently", and that cannot be clicked: nothing
+in the app resizes a browser — there is no resize gesture — and juicebox-web's clone copies the
+source browser's dimensions (`initializationHelper.js:387`), so both panels are the same size by
+construction and pre-/post-#477 look identical there. The box was split in two: juicebox-web can
+only confirm the weak version (clone sizing), and #477's actual claim needed a harness —
+`dev/issue-477-per-browser-viewport-size.html`, four browsers at three sizes plus one unsized built
+*last*, so the old last-writer-wins behaviour would show. Its real gate is the assertion that
+`document.documentElement` carries no inline `--hic-viewport-*` at all. **A manual box that names
+no gesture is a box nobody can check** — that is worth catching at filing time on the next one.
 
 ---
 
@@ -230,10 +259,12 @@ Before releasing:
 1. Re-measure the consumer surface — `docs/adr/0003-public-api-contract.md` goes stale the moment
    either app changes. It already under-counted once, and candidate 8 added two members to it
    (`browser.dispose`, `registry.dispose`). #474 proposes making that re-runnable.
-2. Run #466's pre-release consumer verification checklist, **plus the registry click-through above**.
+2. Run #466's pre-release consumer verification checklist. The registry click-through it carried
+   over from candidate 4 is **already checked off** (#549, 11 August); what remains unchecked there
+   is the 20-member consumer surface and the four release notes below.
 3. Bump / tag / `gh release create` / repoint both consumers.
 
-**The release notes owed so far — three, from candidates 8 and 5:**
+**The release notes owed so far — four, from candidates 8, 5 and 9:**
 
 1. **A disposed browser now throws `DisposedBrowserError`** rather than silently no-op'ing
    (candidate 8). Neither known host can reach it — nothing called `dispose()` before it existed —
@@ -248,8 +279,15 @@ Before releasing:
    5, #500), where before it produced a session that could not be reloaded at all. Strictly an
    improvement, but browser *count* no longer survives that round trip, which is worth saying out
    loud rather than letting a host discover it.
+4. **A config saying `miniMode: true` now turns the locus box, map label and chromosome selector
+   off** (candidate 9, #536, [ADR-0008](adr/0008-figuremode-absorbs-minimode.md)). `figureMode`
+   absorbs `miniMode` and a mini map is a figure. Before, such a config produced a browser that
+   called itself a figure and kept all three chrome elements — every entry path agreeing with the
+   others and none with itself. `miniMode` is not deleted or rejected; it is carried through unread.
+   Only reachable from a config a host passes in code — no wire format encodes `miniMode`.
 
-Note that 2 is the only one that can affect an end user rather than an embedder.
+Note that 2 is the only one that can affect an end user rather than an embedder; 4 is the only one
+either known host could plausibly hit, and neither passes `miniMode` today.
 
 ---
 

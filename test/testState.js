@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'vitest'
 import State from '../js/hicState.js'
 import InteractionHandler from '../js/interactionHandler.js'
+import {DEFAULT_PIXEL_SIZE} from '../js/hicBrowser.js'
 
 /**
  * Mock helpers for State characterization tests.
@@ -1163,5 +1164,33 @@ describe('Wire format — the `state` query parameter (docs/url.md)', () => {
 
         expect(State.parse('5,3,6,100,200,0,0,2,KR').toJSON())
             .toEqual(State.parse('3,5,6,200,100,0,0,2,KR').toJSON())
+    })
+})
+
+describe('State.default — the fall-back view', () => {
+
+    // The constructor takes seven parameters and coerces most of them, so an
+    // argument list that is one short still yields a valid State — it is just
+    // the wrong one. #510: six arguments shifted everything right of the zoom,
+    // and the default view opened one bin below the origin on the y axis with
+    // no test to notice. These assertions name every field, so a future shift
+    // fails loudly instead of being absorbed by the coercions.
+
+    test('every field of the default state has its intended value', () => {
+        const state = State.default()
+
+        expect(state.chr1).toBe(0)
+        expect(state.chr2).toBe(0)
+        expect(state.zoom).toBe(0)
+        expect(state.x).toBe(0)
+        expect(state.y).toBe(0)
+        expect(state.pixelSize).toBe(DEFAULT_PIXEL_SIZE)
+        expect(state.normalization).toBe('NONE')
+    })
+
+    test('the default pixel size is the browser-wide DEFAULT_PIXEL_SIZE', () => {
+        // Stated, not inferred: one pixel per bin is the whole-genome starting
+        // scale hicBrowser already names, not a value the shift left behind.
+        expect(State.default().pixelSize).toBe(DEFAULT_PIXEL_SIZE)
     })
 })

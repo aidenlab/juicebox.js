@@ -346,22 +346,22 @@ export function encodeSession(session) {
  * original copy raised an `alert`, which is exactly the kind of thing that
  * makes a decoder untestable.
  *
+ * The default view is config-independent, so nothing about the config reaches
+ * it. The `config` this used to take and thread through to `State.default` was
+ * ignored there, and is gone from both (#510).
+ *
  * @param {string|object|undefined} value - `config.state`. Absent or empty
  *   yields the default view, which is the truthiness guard both call sites
  *   wrote around the ladder; delegating it here keeps `''` and `0` out of
  *   `State.parse`, where they decode to a view of `NaN`.
- * @param {object} [config] - passed through to `State.default`, which **ignores
- *   it** — a known defect (`hicState.js`, `State.default(configOrUndefined)`),
- *   filed separately per ADR-0006's consequences. Threaded anyway so that
- *   fixing it there fixes it for both call sites at once.
  * @param {function(*): void} [onUnknownType] - called with `value` when it is
  *   neither a string nor an object; the default view is returned either way
  * @returns {State}
  */
-export function decodeState(value, config, onUnknownType = () => {}) {
+export function decodeState(value, onUnknownType = () => {}) {
 
     if (!value) {
-        return State.default(config)
+        return State.default()
     }
 
     if (typeof value === 'string') {
@@ -374,7 +374,7 @@ export function decodeState(value, config, onUnknownType = () => {}) {
 
     onUnknownType(value)
 
-    return State.default(config)
+    return State.default()
 }
 
 // ---------------------------------------------------------------------------

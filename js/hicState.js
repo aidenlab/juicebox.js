@@ -536,8 +536,25 @@ class State {
         );
     }
 
-    static default(configOrUndefined) {
-        return new State(0, 0, 0, 0, 1, "NONE")
+    /**
+     * The fall-back view: the whole genome at the origin, one pixel per bin,
+     * unnormalized. It does not vary with the config, so it takes no argument.
+     *
+     * Every parameter is supplied explicitly because the previous form passed
+     * six arguments and the constructor's coercions hid the shift entirely —
+     * see #510 for the defect and ADR-0009's sequencing for why it landed
+     * before candidate 6's gate.
+     */
+    static default() {
+        return new State(
+            0,                      // chr1: whole genome
+            0,                      // chr2: whole genome
+            0,                      // zoom: coarsest resolution index
+            0,                      // x: bin origin
+            0,                      // y: bin origin
+            DEFAULT_PIXEL_SIZE,     // one pixel per bin, the browser-wide default
+            'NONE'                  // normalization
+        )
     }
 
 }

@@ -217,15 +217,15 @@ describe('decodeState', () => {
 
         test('the caller is told, and is handed the offending value', () => {
             const seen = []
-            decodeState(42, undefined, value => seen.push(value))
+            decodeState(42, value => seen.push(value))
             expect(seen).toEqual([42])
         })
 
         test('the reporter is not called for the types the ladder handles', () => {
             const seen = []
-            decodeState('1,2,4,10,20,3', undefined, v => seen.push(v))
-            decodeState({chr1: 0, chr2: 0}, undefined, v => seen.push(v))
-            decodeState(undefined, undefined, v => seen.push(v))
+            decodeState('1,2,4,10,20,3', v => seen.push(v))
+            decodeState({chr1: 0, chr2: 0}, v => seen.push(v))
+            decodeState(undefined, v => seen.push(v))
             expect(seen).toEqual([])
         })
     })

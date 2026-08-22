@@ -424,6 +424,28 @@ class State {
         )
     }
 
+    /**
+     * The view as a sibling browser can read it: chromosomes by name and a bin
+     * size rather than a zoom index, because the sibling's dataset may order
+     * its chromosomes differently and offer a different resolution array.
+     *
+     * A projection through a dataset, like `getLocus` -- so the dataset is a
+     * parameter, not a remembered field (ADR-0009 decision 6, #562).
+     *
+     * @param {Object} dataset
+     * @returns {Object} the sync state `State.sync` consumes on the other side
+     */
+    getSyncState(dataset) {
+        return {
+            chr1Name: dataset.chromosomes[this.chr1].name,
+            chr2Name: dataset.chromosomes[this.chr2].name,
+            binSize: dataset.bpResolutions[this.zoom],
+            binX: this.x,
+            binY: this.y,
+            pixelSize: this.pixelSize
+        }
+    }
+
     async sync(targetState, browser, genome, dataset) {
         const chr1 = genome.getChromosome(targetState.chr1Name)
         const chr2 = genome.getChromosome(targetState.chr2Name)

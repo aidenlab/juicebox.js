@@ -4,14 +4,17 @@
  *
  * Restore used to return `resolutionChanged: true` unconditionally, so every
  * restore announced a resolution change whether or not the resolution moved.
- * The flag is not decoration: `browserCoordinator.onLocusChange` clears the
- * resolution lock when it is set, and `interactionHandler` drives cache
- * clearing off the same word elsewhere. A restore that lands on the current
- * zoom now says so.
+ * The flag is not decoration: `browserCoordinator.onLocusChange` releases the
+ * resolution lock when it is set, and hands the flag on to external
+ * `onLocusChange` callbacks as declared payload. A restore that lands on the
+ * current zoom now leaves a locked resolution locked. The repaint is not at
+ * stake — `hicBrowser.setState` calls `update()` on every restore, flag or no
+ * — so the lock is the observable half, and claim 4 is where this file earns
+ * its keep.
  *
  * This is deliberately a ticket — and a file — of its own. The change belongs
  * to the invisible-failure-mode class: nothing throws and nothing logs when a
- * repaint that used to fire stops firing, so bundled with #558's clamp a moved
+ * notification that used to fire stops firing, so bundled with #558's clamp a moved
  * snapshot would have had two possible causes and could have been attributed to
  * neither. #536's lesson inverted.
  *
@@ -30,9 +33,10 @@
  * 1. A restore onto the same zoom reports `false`.
  * 2. A restore onto a different zoom reports `true`.
  * 3. The first restore of a load, with no state yet in force, reports `true`.
- *    There is nothing to have been unchanged from, and a fresh map must repaint.
+ *    There is nothing to have been unchanged from, and `clearDataset()` nulls
+ *    the state at the top of every load, so every load lands there.
  * 4. The flag survives the trip to the coordinator, and a same-zoom restore no
- *    longer clears the resolution lock. Claims 1 and 2 read the chokepoint's
+ *    longer releases the resolution lock. Claims 1 and 2 read the chokepoint's
  *    return; this one reads what a widget sees, which is where the behaviour
  *    change is actually visible.
  *

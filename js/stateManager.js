@@ -114,20 +114,28 @@ class StateManager {
      * `resolutionChanged` is computed against the state going out of force, the
      * same comparison `chrChanged` beside it makes, and for the same reason
      * (#560, ADR-0009 decision 3). It used to be `true` unconditionally, so
-     * every restore announced a resolution change and released the resolution
-     * lock whether or not the resolution moved. A restore onto the current zoom
-     * now reports `false` and no longer fires that repaint.
+     * every restore announced a resolution change whether or not the resolution
+     * moved. What that announcement costs is the resolution lock: the
+     * coordinator releases it whenever the flag is set
+     * (`browserCoordinator.onLocusChange`), and it is handed on to external
+     * `onLocusChange` callbacks as contract. The repaint itself is not at stake
+     * — `hicBrowser.setState` calls `update()` on every restore, flag or no.
      *
      * Locus is not cached — consumers derive it via state.getLocus().
      */
     async setState(state) {
+        // Both flags are asked of the state going out of force, in its own
+        // vocabulary: `_detectChromosomeChange` and `_detectResolutionChange`
+        // are the predicates `setView` itself uses, so the answer here and the
+        // answer on every gesture path cannot drift apart. No state in force is
+        // a change on both counts — there is nothing to have been unchanged
+        // from, and `clearDataset()` nulls the state at the top of every load,
+        // so the first restore of a load lands there.
         const chrChanged = !this.activeState ||
-            this.activeState.chr1 !== state.chr1 ||
-            this.activeState.chr2 !== state.chr2;
+            this.activeState._detectChromosomeChange(state.chr1, state.chr2);
 
-        // No state in force is a change: there is nothing to have been unchanged
-        // from, and a freshly loaded map must repaint.
-        const resolutionChanged = !this.activeState || this.activeState.zoom !== state.zoom;
+        const resolutionChanged = !this.activeState ||
+            this.activeState._detectResolutionChange(state.zoom);
 
         const restored = state.clone();
 

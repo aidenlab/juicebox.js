@@ -1,6 +1,6 @@
 # Juicebox.js — Punch List
 
-**As of 2026-08-22.** Ordered. Work top to bottom; each phase assumes the one above it.
+**As of 2026-08-22 — candidate 6 is picked.** Ordered. Work top to bottom; each phase assumes the one above it.
 
 > **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
 > agree with it. Where the durable facts live:
@@ -54,8 +54,8 @@ ADR correction in ADR-0004's addendum, and the file is deleted (`git log` has it
 ### Landed after this list was last written
 
 Everything below closed on 11 August, after the previous revision of this file was written, so it
-read as open here while being done in the tracker. **No candidate work has happened since 9
-landed** — the four remaining candidates are exactly as they were.
+read as open here while being done in the tracker. **No candidate work had happened since 9
+landed** when this section was written; candidate 6 was picked on 22 August, below.
 
 | # | What | Commit |
 |---|---|---|
@@ -65,27 +65,31 @@ landed** — the four remaining candidates are exactly as they were.
 | #514 | A bare-threshold `colorScale` decoded to `NaN` colour components | `6a70dc3`, `13bdc3e` |
 | #515 | An empty data-range field decoded to `NaN` bounds | `aeef59e`, `d326658` |
 
-**Two of candidate 5's eight follow-ups are therefore closed.** Six are still open and none of them
-blocks anything: **#510**, **#518**, **#519**, **#521**, **#525**, **#528**.
+**Two of candidate 5's eight follow-ups are therefore closed.** Six are still open: **#510**,
+**#518**, **#519**, **#521**, **#525**, **#528**. Five of them block nothing. **#510 now does** —
+ADR-0009 promoted it from a loose follow-up to candidate 6's prerequisite, and it lands before any
+candidate-6 ticket exists.
 
 ---
 
-## Phase 3 — The remaining four candidates.
+## Phase 3 — The remaining four candidates. **6 is picked.**
 
-Four candidates in `docs/architecture-review.html` are open, and **none of them is filed**. One is
-breaking as currently scoped. Candidate 8 was settled by ADR-0005, candidate 5 by ADR-0006 and
+Four candidates in `docs/architecture-review.html` are open and **none of them is filed yet**. One is
+breaking as currently scoped. Candidate 8 was settled by ADR-0005, candidate 5 by ADR-0006, and
 candidate 9 by ADR-0006 decision 8 plus ADR-0008; all three have landed. Each card carries a
 Consumer impact block; read it before filing anything.
 
-**Nothing here is picked.** Candidate 9 was the frontier and is done, so the next one is a choice
-rather than a queue — the notes under each are what was known when the review was written plus
-whatever landing the last three taught. The order in the table is *not* a recommendation.
+**Candidate 6 is picked, and ADR-0009 is written.** The choice was open — 9 was the frontier and is
+done, so nothing queued behind it — and 6 was taken on its merits: it is the smallest of the four,
+it inherits 9's chokepoint reasoning directly, and #510 plus the y-axis defect both sit in code it
+moves anyway. **Next step is `/to-tickets` against ADR-0009.** The other three are still unpicked and
+the order in the table below is *not* a recommendation.
 
 | Candidate | Status |
 |---|---|
 | **9 · Give the config schema one reader** | ✅ **done — #531–#536 all landed.** One reader (`js/normalizeSession.js`), run once at the entry, with the schema written down in `CONTEXT.md`. Seam drawn by ADR-0006 decision 8. One ADR opened after all — **ADR-0008**, for the single decision the seam did not settle: `figureMode` absorbs `miniMode` |
 | **11 · Give the track tile one owner** | ⚠️ breaking |
-| **6 · Fold StateManager into State, and make restore use the chokepoint** | watch |
+| **6 · Fold StateManager into State, and make restore use the chokepoint** | 🔵 **picked — ADR-0009.** Seven tickets planned, gated by #510. Not yet filed |
 | **7 · Move the gesture state machines behind InteractionHandler** | watch |
 | **10 · One dataset-load path** — *this is the live-map seam* | watch |
 
@@ -112,7 +116,7 @@ closes deliberately. That is `/to-tickets` against decision 8, not a fresh ADR.
 **Amended at #536, the last ticket:** one decision did come up that decision 8 does not cover —
 `HICBrowser` read `miniMode` as a figure mode and the normalize stage did not, so the two readers
 disagreed about the same config and the fix had to pick a winner. That is consumer-visible and is
-**ADR-0008**. ADR-0009 is the next free number.
+**ADR-0008**. (ADR-0009 has since gone to candidate 6.)
 
 **Filed as six tickets, gate first** — the shape candidate 5 proved:
 
@@ -190,8 +194,37 @@ before any code moved. Three lessons specific to this kind of work:
 
 **11** — the `TrackXYPairLoad` payload *is* the track pair, and juicebox-web reads its shape.
 
-**6** — accessor names are load-bearing; #468 already settled the vocabulary. Pairs naturally with
-9: both are about restore going through the chokepoint rather than around it.
+### 6 — picked 22 August. ADR-0009 is written; tickets are next.
+
+**Grilled before filing, and the card lost four claims.** Read
+[ADR-0009](adr/0009-restore-is-a-translator.md) before the tickets — the short version:
+
+- **The card points at the wrong back door.** `browser.state = x` and `browser.activeState = x`
+  carry the "bypasses validation" comment and have **zero production callers** — only tests. The
+  live bypass is `setActiveDataset(dataset, state)`: five `dataLoader` sites, unvalidated, no
+  comment. Decision 1 drops the parameter.
+- **The defect is intermittent.** `clampXY` is reachable from `updateLayout()`, which runs only
+  when tracks change. A restored session carrying a track is clamped incidentally; a bare map
+  restore never is. Same session, two behaviours — and it is why the gate states *two* viewports:
+  with one it cannot tell a clamp from a coincidence.
+- **The sync trio is not one group.** Moving `canBeSynched` onto `State`, as the card says, would
+  make a *fourth* copy of the `synchable` rule rather than removing the third. It splits three
+  ways instead.
+- **Counts moved.** `StateManager` is twelve methods, not ten; `testState.js` is 70 tests, not 54,
+  and **none of them drives a restore**.
+
+**Measured, not assumed:** the viewport *is* sized before restore runs in a real browser, so the
+clamp is not decorative — but it reads `0` in the harness, so the gate's fixture must state one.
+Probe output is in the ADR.
+
+**#510 lands first, alone, before the gate.** Third time that rule applies (#499/#500 before #503,
+#531 before #532). It has been re-briefed to say so.
+
+**The one release-note consequence:** clamping silently means a saved view at `pixelSize=1e9` now
+opens somewhere different. That is phase 4's **fifth** note and the second an end user can hit.
+
+Accessor names remain load-bearing — #468 settled the vocabulary and decision 7 keeps the getters,
+deleting only the setters.
 
 **7** — must keep both crosshair paths firing for Spacewalk. Largest remaining deepening, ~300
 lines of closures with no test surface. **The one candidate that may want `/wayfinder`** rather
@@ -200,11 +233,11 @@ session before any ticket existed.
 
 **10** — three named load methods must survive.
 
-**Skill:** `/to-tickets` when you pick one up. Full routing rules, and the reason to file tickets
-*before* the blocker clears, are in `docs/agents/triage-labels.md`. **ADR-0005 went to candidate 8
-and ADR-0006 to candidate 5. ADR-0007 is still claimed by #477, and candidate 9 took ADR-0008 for
-the one decision it raised (`figureMode` absorbs `miniMode`), so ADR-0009 is the next free
-number.**
+**Skill:** `/to-tickets` against ADR-0009 for candidate 6; the same when you pick another up. Full routing rules, and the reason to file tickets
+*before* the blocker clears, are in `docs/agents/triage-labels.md`. **ADR-0005 went to candidate 8, ADR-0006 to
+candidate 5, ADR-0008 to candidate 9 (`figureMode` absorbs `miniMode`) and ADR-0009 to candidate 6.
+ADR-0007 was reserved for #477 and never written — #477 landed without one — so the number is a
+deliberate gap, not a missing file. ADR-0010 is the next free number.**
 
 When a candidate lands: tick it in [#466](https://github.com/aidenlab/juicebox.js/issues/466) and
 add an Outcome box to its card. That is the only time either file is touched.

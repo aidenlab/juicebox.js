@@ -36,6 +36,7 @@ import Track2D from './track2D.js'
 
 import {decodeState} from "./sessionCodec.js"
 import {mapTrackConfig} from "./urlMapper.js"
+import {canBeSynched} from "./syncGroup.js"
 
 /**
  * How this module reports a `config.state` that is neither a state token nor a
@@ -140,7 +141,7 @@ class DataLoader {
             } else if (config.state) {
                 this.browser.setActiveDataset(dataset);
                 await this.browser.setState(decodeState(config.state, reportUnknownStateType));
-            } else if (config.synchState && this.browser.canBeSynched(config.synchState)) {
+            } else if (canBeSynched(this.browser, config.synchState)) {
                 await this.browser.syncState(config.synchState);
                 // syncState already sets the dataset, but ensure it's set with current dataset
                 if (this.browser.dataset !== dataset) {
@@ -188,14 +189,19 @@ class DataLoader {
 
             registry.sync(); // Sync browsers to ensure all browsers are updated with the new dataset
 
-            // Find a browser to sync with, if any
-            const compatibleBrowsers = registry.browsers.filter(
+            // Find a browser to sync with, if any. `canBeSynched` is the guard
+            // that keeps a browser opted out of syncing out of it -- it used to
+            // be `syncState`'s own, and #562 left `synchable` one reader.
+            const peer = registry.browsers.find(
                 b => b !== this.browser &&
                      b.dataset &&
                      b.dataset.isCompatible(this.browser.dataset)
             );
-            if (compatibleBrowsers.length > 0) {
-                await this.browser.syncState(compatibleBrowsers[0].getSyncState());
+            if (peer) {
+                const peerSyncState = peer.getSyncState();
+                if (canBeSynched(this.browser, peerSyncState)) {
+                    await this.browser.syncState(peerSyncState);
+                }
             }
 
             return dataset;

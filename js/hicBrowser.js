@@ -951,30 +951,34 @@ class HICBrowser {
 
     /**
      * Return a modified state object used for synching.  Other datasets might have different chromosome ordering
-     * and resolution arrays
+     * and resolution arrays.
+     *
+     * The projection itself is `State.getSyncState(dataset)`; what is here is
+     * the "is there anything to publish yet" question, which is about the
+     * browser rather than about the view.
      */
     getSyncState() {
-        return this.stateManager.getSyncState();
+        if (!this.dataset || !this.state) {
+            return undefined;
+        }
+        return this.state.getSyncState(this.dataset);
     }
 
     /**
-     * Return true if this browser can be synced to the given state
-     * @param syncState
+     * Take a sync state published by a sibling browser.
+     *
+     * Whether this browser *may* take it is `canBeSynched` in `syncGroup.js`,
+     * and every caller has already asked: `syncToOtherBrowsers` walks
+     * `synchedBrowsers`, which `pairSynchable` built, and `dataLoader` guards
+     * both of its calls. So no `synchable` check here -- #562 left the flag one
+     * reader.
      */
-    canBeSynched(syncState) {
-        return this.stateManager.canBeSynched(syncState);
-    }
-
     async syncState(targetState) {
-        if (!targetState || false === this.synchable) {
+        if (!targetState || !this.dataset || !this.state) {
             return;
         }
 
-        if (!this.dataset) {
-            return;
-        }
-
-        const { zoomChanged, chrChanged } = await this.stateManager.syncState(targetState);
+        const { zoomChanged, chrChanged } = await this.state.sync(targetState, this, this.genome, this.dataset);
 
         // For sync, we don't want to propagate back to other browsers (would cause infinite loop)
         // So we update without syncing

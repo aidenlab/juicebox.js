@@ -95,7 +95,7 @@
  *    therefore **baseline**, not a regression -- it is finding 1 showing through,
  *    since no door clamps.
  * 3. **The `config.synchState` rung is unreachable.** Its guard is
- *    `config.synchState && browser.canBeSynched(...)`, and `canBeSynched`
+ *    `canBeSynched(browser, config.synchState)`, and `canBeSynched`
  *    returns false without an `activeDataset` -- which `loadHicFile` has just
  *    cleared, four lines earlier, by calling `clearDataset()`. So a config
  *    carrying a `synchState` silently takes the fallback rung instead. The door
@@ -424,7 +424,7 @@ function renderState(state, dataset, viewport) {
 }
 
 /**
- * `StateManager.getSyncState`, computed off a state that has not been restored
+ * `State.getSyncState`, computed off a state that has not been restored
  * yet.
  *
  * This is the one door whose input does not exist in any wire format: a
@@ -479,7 +479,7 @@ const RESTORE_DOORS = [
     {
         id: 'config.synchState — the sibling rung',
         // **Primed, because the rung is unreachable cold.** The ladder's guard is
-        // `config.synchState && browser.canBeSynched(...)`, and `canBeSynched`
+        // `canBeSynched(browser, config.synchState)`, and `canBeSynched`
         // returns false when `activeDataset` is undefined -- which it is, because
         // the ladder does not set the dataset until *inside* one of its branches.
         // So a first load carrying a `synchState` silently takes the fallback rung

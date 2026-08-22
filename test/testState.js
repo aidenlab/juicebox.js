@@ -1194,3 +1194,49 @@ describe('State.default — the fall-back view', () => {
         expect(State.default().pixelSize).toBe(DEFAULT_PIXEL_SIZE)
     })
 })
+
+/**
+ * `getSyncState` is the outbound half of syncing: the projection a browser
+ * publishes so a sibling with a different chromosome ordering and a different
+ * resolution array can still find the same view. It names chromosomes rather
+ * than indexing them and carries a bin size rather than a zoom index, for
+ * exactly that reason. It reads the dataset, so the dataset is a parameter --
+ * the convention `setView` established (#562, ADR-0009 decision 6).
+ */
+describe('State.getSyncState — pure projection through a dataset', () => {
+
+    test('names the chromosomes and resolves the zoom index to a bin size', () => {
+        const dataset = createMockDataset()
+        const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 100, y: 50, pixelSize: 2 })
+
+        expect(state.getSyncState(dataset)).toEqual({
+            chr1Name: 'chr1',
+            chr2Name: 'chr2',
+            binSize: 250000,   // bpResolutions[3]
+            binX: 100,
+            binY: 50,
+            pixelSize: 2,
+        })
+    })
+
+    test('reads names and bin size from the dataset it is handed, not from a remembered one', () => {
+        const state = createState({ chr1: 1, chr2: 1, zoom: 0, x: 7, y: 9, pixelSize: 3 })
+
+        const other = createMockDataset({
+            chromosomes: [
+                { index: 0, name: 'all', size: 3000000000 },
+                { index: 1, name: 'I', size: 230218 },
+            ],
+            bpResolutions: [5000, 1000],
+        })
+
+        expect(state.getSyncState(other)).toEqual({
+            chr1Name: 'I',
+            chr2Name: 'I',
+            binSize: 5000,
+            binX: 7,
+            binY: 9,
+            pixelSize: 3,
+        })
+    })
+})

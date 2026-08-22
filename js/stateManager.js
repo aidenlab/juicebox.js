@@ -27,8 +27,13 @@
  * This class manages:
  * - Active dataset and state
  * - State transitions and validation
- * - Cross-browser synchronization state
  * - State normalization and pixel size adjustments
+ *
+ * It no longer manages synchronization. #562 sent the three sync methods to the
+ * two places they belong: `canBeSynched` to `syncGroup.js`, where the rest of
+ * the group-membership rule lives, `getSyncState` to `State`, which is what
+ * projects a state through a dataset, and `syncState` nowhere -- it was a
+ * pass-through to `State.sync` whose guard its caller already carried.
  */
 class StateManager {
 
@@ -275,74 +280,6 @@ class StateManager {
         this.activeDataset = undefined;
         this.activeState = undefined;
         this.controlDataset = undefined;
-    }
-
-    /**
-     * Return a modified state object used for synching.
-     * Other datasets might have different chromosome ordering and resolution arrays.
-     * 
-     * @returns {Object} - Sync state object with chromosome names and bin coordinates
-     */
-    getSyncState() {
-        if (!this.activeDataset || !this.activeState) {
-            return undefined;
-        }
-
-        return {
-            chr1Name: this.activeDataset.chromosomes[this.activeState.chr1].name,
-            chr2Name: this.activeDataset.chromosomes[this.activeState.chr2].name,
-            binSize: this.activeDataset.bpResolutions[this.activeState.zoom],
-            binX: this.activeState.x,
-            binY: this.activeState.y,
-            pixelSize: this.activeState.pixelSize
-        };
-    }
-
-    /**
-     * Return true if this browser can be synced to the given state.
-     * 
-     * @param {Object} syncState - The sync state to check compatibility with
-     * @returns {boolean} - True if browser can sync to the given state
-     */
-    canBeSynched(syncState) {
-        if (false === this.browser.synchable) {
-            return false; // Explicitly not synchable
-        }
-
-        if (!this.activeDataset) {
-            return false;
-        }
-
-        return (
-            this.activeDataset.getChrIndexFromName(syncState.chr1Name) !== undefined &&
-            this.activeDataset.getChrIndexFromName(syncState.chr2Name) !== undefined
-        );
-    }
-
-    /**
-     * Sync this browser's state to match a target sync state.
-     * This method updates the state to match another browser's state for synchronization.
-     * 
-     * @param {Object} targetState - The target sync state to sync to
-     * @returns {Promise<{zoomChanged: boolean, chrChanged: boolean}>} - Change flags
-     */
-    async syncState(targetState) {
-        if (!targetState || false === this.browser.synchable) {
-            return { zoomChanged: false, chrChanged: false };
-        }
-
-        if (!this.activeDataset || !this.activeState) {
-            return { zoomChanged: false, chrChanged: false };
-        }
-
-        const { zoomChanged, chrChanged } = await this.activeState.sync(
-            targetState, 
-            this.browser, 
-            this.browser.genome, 
-            this.activeDataset
-        );
-
-        return { zoomChanged, chrChanged };
     }
 
     /**

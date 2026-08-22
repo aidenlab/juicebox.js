@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest'
-import {pairSynchable} from '../js/syncGroup.js'
+import {pairSynchable, canBeSynched} from '../js/syncGroup.js'
 
 /**
  * The sync-group pairing rule -- see #476, decision 6 of ADR-0004.
@@ -10,11 +10,15 @@ import {pairSynchable} from '../js/syncGroup.js'
  * flag and a `dataset` that can answer `isCompatible`.
  */
 
-function fakeDataset(genomeId) {
+function fakeDataset(genomeId, chromosomeNames = ['all', 'chr1', 'chr2']) {
     return {
         genomeId,
         isCompatible(other) {
             return other.genomeId === genomeId
+        },
+        getChrIndexFromName(name) {
+            const index = chromosomeNames.indexOf(name)
+            return index === -1 ? undefined : index
         }
     }
 }
@@ -84,5 +88,49 @@ describe('pairSynchable', () => {
         const empty = fakeBrowser('empty')
 
         expect(pairSynchable([a, other, b, optedOut, empty, c])).toEqual([[a, b], [a, c], [b, c]])
+    })
+})
+
+/**
+ * `canBeSynched` is the inbound half of the same rule: not "which browsers pair
+ * with which" but "may this one browser take that published state". It lives
+ * here because it asks the same two questions the pairing filter asks -- has
+ * this browser opted out, and does it have a dataset -- and then one more, that
+ * the dataset knows the chromosomes the state names. Keeping it beside
+ * `pairSynchable` is what lets `synchable` be read in exactly one expression
+ * (#562, ADR-0009 decision 6).
+ */
+describe('canBeSynched', () => {
+
+    const syncState = {chr1Name: 'chr1', chr2Name: 'chr2', binSize: 100000, binX: 0, binY: 0, pixelSize: 1}
+
+    it('accepts a browser whose dataset knows both chromosomes', () => {
+        const browser = fakeBrowser('a', {dataset: fakeDataset('hg38')})
+
+        expect(canBeSynched(browser, syncState)).toBe(true)
+    })
+
+    it('keeps a browser that opted out of syncing out, even when its dataset would fit', () => {
+        const browser = fakeBrowser('opted-out', {dataset: fakeDataset('hg38'), synchable: false})
+
+        expect(canBeSynched(browser, syncState)).toBe(false)
+    })
+
+    it('refuses a browser with no dataset', () => {
+        const browser = fakeBrowser('empty')
+
+        expect(canBeSynched(browser, syncState)).toBe(false)
+    })
+
+    it('refuses a state naming a chromosome the dataset does not have', () => {
+        const browser = fakeBrowser('a', {dataset: fakeDataset('hg38', ['all', 'chr1'])})
+
+        expect(canBeSynched(browser, syncState)).toBe(false)
+    })
+
+    it('refuses a missing state rather than throwing', () => {
+        const browser = fakeBrowser('a', {dataset: fakeDataset('hg38')})
+
+        expect(canBeSynched(browser, undefined)).toBe(false)
     })
 })

@@ -62,7 +62,6 @@ function stubBrowser(recorded) {
             recorded.push(state)
         },
         parseGotoInput: async () => undefined,
-        canBeSynched: () => false,
         syncState: async () => undefined
     }
     return browser

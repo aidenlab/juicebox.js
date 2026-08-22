@@ -501,13 +501,14 @@ class HICBrowser {
     }
 
     /**
-     * Set the primary dataset and, optionally, the state to view it with.
+     * Set the primary dataset. The dataset only: a state reaches the browser
+     * through `setState`, the chokepoint, and never alongside the dataset
+     * (#559, ADR-0009 decision 1).
      *
      * @param {Dataset} dataset - The dataset to activate
-     * @param {State} state - The state to use with this dataset
      */
-    setActiveDataset(dataset, state) {
-        this.stateManager.setActiveDataset(dataset, state);
+    setActiveDataset(dataset) {
+        this.stateManager.setActiveDataset(dataset);
     }
 
     /**
@@ -526,7 +527,7 @@ class HICBrowser {
     }
 
     set dataset(value) {
-        this.stateManager.setActiveDataset(value, undefined);
+        this.stateManager.setActiveDataset(value);
     }
 
     /**
@@ -555,7 +556,7 @@ class HICBrowser {
 
     /** Alias for `dataset`. Retained for host apps -- Spacewalk reads it (juicebox/juiceboxPanel.js, 4 sites). */
     set activeDataset(value) {
-        this.stateManager.setActiveDataset(value, undefined);
+        this.stateManager.setActiveDataset(value);
     }
 
     /** Alias for `state`. Kept as published surface alongside `activeDataset`: no host we can measure reads it, and this repo cannot see the ones it cannot measure. */

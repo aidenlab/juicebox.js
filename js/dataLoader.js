@@ -114,26 +114,34 @@ class DataLoader {
                 EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
             }
 
+            // Every rung of the ladder has the same two steps in the same
+            // order: install the dataset, then hand the state to `setState`,
+            // the chokepoint. Until #559 the first step carried the state with
+            // it, unvalidated. Two rungs hid that -- `config.locus` went on to
+            // `parseGotoInput` and `config.synchState` to a sync, and neither
+            // reached `setState`, so the raw state stood. ADR-0009 decision 1.
             let state;
             if (config.locus) {
                 state = State.default();
-                this.browser.setActiveDataset(dataset, state);
+                this.browser.setActiveDataset(dataset);
+                await this.browser.setState(state);
                 await this.browser.parseGotoInput(config.locus);
             } else if (config.state) {
                 state = decodeState(config.state, reportUnknownStateType);
 
-                this.browser.setActiveDataset(dataset, state);
+                this.browser.setActiveDataset(dataset);
                 await this.browser.setState(state);
             } else if (config.synchState && this.browser.canBeSynched(config.synchState)) {
                 await this.browser.syncState(config.synchState);
                 state = this.browser.state;
                 // syncState already sets the dataset, but ensure it's set with current dataset
                 if (this.browser.dataset !== dataset) {
-                    this.browser.setActiveDataset(dataset, state);
+                    this.browser.setActiveDataset(dataset);
+                    await this.browser.setState(state);
                 }
             } else {
                 state = State.default();
-                this.browser.setActiveDataset(dataset, state);
+                this.browser.setActiveDataset(dataset);
                 await this.browser.setState(state);
             }
 
@@ -256,7 +264,7 @@ class DataLoader {
             // default view on the other. #504.
             const state = decodeState(config.state, reportUnknownStateType);
 
-            this.browser.setActiveDataset(dataset, state);
+            this.browser.setActiveDataset(dataset);
             await this.browser.setState(state);
 
             // Navigate to the data region so it fills the viewport

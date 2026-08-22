@@ -51,11 +51,16 @@ function stubBrowser(recorded) {
             onMapLoaded: () => undefined
         },
         registry: { presentAlert: () => undefined, sync: () => undefined, browsers: [] },
-        setActiveDataset: (dataset, state) => {
+        setActiveDataset: (dataset) => {
             browser.dataset = dataset
+        },
+        // The default view is observed where it now arrives: at the chokepoint.
+        // It used to be read off `setActiveDataset`'s second parameter, which
+        // #559 deleted -- the ladder installs the dataset and then hands the
+        // state to `setState`, so this is the same state one call later.
+        setState: async (state) => {
             recorded.push(state)
         },
-        setState: async () => undefined,
         parseGotoInput: async () => undefined,
         canBeSynched: () => false,
         syncState: async () => undefined

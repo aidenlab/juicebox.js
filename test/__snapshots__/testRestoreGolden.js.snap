@@ -11,7 +11,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -37,7 +36,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -67,7 +65,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -94,7 +92,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -131,7 +129,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -167,7 +164,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -204,7 +200,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -239,7 +234,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -283,7 +277,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -325,7 +318,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -360,7 +352,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -386,7 +377,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -416,7 +406,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -443,7 +433,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -471,7 +461,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -498,7 +487,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -535,7 +523,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -570,7 +557,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -605,7 +591,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -638,7 +623,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -668,7 +652,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -694,7 +677,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -724,7 +706,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -751,7 +733,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -779,7 +761,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -806,7 +787,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -843,7 +823,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -878,7 +857,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -913,7 +891,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -946,7 +923,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -981,7 +957,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1007,7 +982,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1037,7 +1011,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -1064,7 +1038,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -1101,7 +1075,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1137,7 +1110,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1174,7 +1146,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1209,7 +1180,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1253,7 +1223,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1295,7 +1264,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1325,7 +1293,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1351,7 +1318,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1381,7 +1347,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -1408,7 +1374,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -1445,7 +1411,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1481,7 +1446,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1518,7 +1482,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1553,7 +1516,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1597,7 +1559,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1639,7 +1600,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1674,7 +1634,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1700,7 +1659,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1730,7 +1688,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -1757,7 +1715,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -1785,7 +1743,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1812,7 +1769,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1849,7 +1805,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1884,7 +1839,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1919,7 +1873,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1952,7 +1905,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -1987,7 +1939,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2013,7 +1964,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2043,7 +1993,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -2070,7 +2020,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -2107,7 +2057,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2143,7 +2092,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2180,7 +2128,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2215,7 +2162,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2259,7 +2205,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2301,7 +2246,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2336,7 +2280,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2362,7 +2305,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2392,7 +2334,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -2419,7 +2361,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -2456,7 +2398,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2492,7 +2433,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2529,7 +2469,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2564,7 +2503,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2608,7 +2546,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2650,7 +2587,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2685,7 +2621,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2711,7 +2646,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2741,7 +2675,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -2768,7 +2702,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -2796,7 +2730,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2823,7 +2756,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2860,7 +2792,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2895,7 +2826,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2930,7 +2860,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2963,7 +2892,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -2998,7 +2926,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3024,7 +2951,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3054,7 +2980,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -3081,7 +3007,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -3118,7 +3044,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3154,7 +3079,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3191,7 +3115,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3226,7 +3149,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3270,7 +3192,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3312,7 +3233,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3347,7 +3267,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3373,7 +3292,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3403,7 +3321,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -3430,7 +3348,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -3467,7 +3385,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3503,7 +3420,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3540,7 +3456,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3575,7 +3490,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3619,7 +3533,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3661,7 +3574,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3696,7 +3608,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3722,7 +3633,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3752,7 +3662,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -3779,7 +3689,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -3816,7 +3726,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3852,7 +3761,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3889,7 +3797,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3924,7 +3831,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -3968,7 +3874,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4010,7 +3915,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4045,7 +3949,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4071,7 +3974,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4101,7 +4003,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -4128,7 +4030,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -4156,7 +4058,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4183,7 +4084,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4220,7 +4120,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4255,7 +4154,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4290,7 +4188,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4323,7 +4220,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4353,7 +4249,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4379,7 +4274,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4409,7 +4303,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -4436,7 +4330,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -4464,7 +4358,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4491,7 +4384,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4528,7 +4420,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4563,7 +4454,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4598,7 +4488,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4631,7 +4520,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4666,7 +4554,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4692,7 +4579,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4722,7 +4608,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -4749,7 +4635,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -4777,7 +4663,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4804,7 +4689,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4841,7 +4725,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4876,7 +4759,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4911,7 +4793,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4944,7 +4825,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -4974,7 +4854,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5000,7 +4879,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5030,7 +4908,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -5057,7 +4935,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -5085,7 +4963,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5112,7 +4989,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5149,7 +5025,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5184,7 +5059,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5219,7 +5093,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5252,7 +5125,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5287,7 +5159,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5313,7 +5184,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5343,7 +5213,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -5370,7 +5240,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -5398,7 +5268,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5425,7 +5294,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5462,7 +5330,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5497,7 +5364,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5532,7 +5398,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5565,7 +5430,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5595,7 +5459,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5621,7 +5484,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5651,7 +5513,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -5678,7 +5540,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -5706,7 +5568,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5733,7 +5594,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5770,7 +5630,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5805,7 +5664,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5840,7 +5698,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5873,7 +5730,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5908,7 +5764,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5934,7 +5789,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -5964,7 +5818,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -5991,7 +5845,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -6019,7 +5873,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6046,7 +5899,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6083,7 +5935,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6118,7 +5969,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6153,7 +6003,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6186,7 +6035,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6221,7 +6069,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6247,7 +6094,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6277,7 +6123,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -6304,7 +6150,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -6332,7 +6178,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6359,7 +6204,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6396,7 +6240,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6431,7 +6274,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6466,7 +6308,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6499,7 +6340,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6534,7 +6374,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6560,7 +6399,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6590,7 +6428,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -6617,7 +6455,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -6645,7 +6483,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6672,7 +6509,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6709,7 +6545,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6744,7 +6579,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6779,7 +6613,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6812,7 +6645,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6847,7 +6679,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6873,7 +6704,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6903,7 +6733,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -6930,7 +6760,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -6958,7 +6788,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -6985,7 +6814,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7022,7 +6850,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7057,7 +6884,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7092,7 +6918,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7125,7 +6950,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7160,7 +6984,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7186,7 +7009,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7216,7 +7038,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -7243,7 +7065,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -7280,7 +7102,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7316,7 +7137,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7353,7 +7173,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7388,7 +7207,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7432,7 +7250,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7474,7 +7291,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7509,7 +7325,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7535,7 +7350,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7565,7 +7379,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -7592,7 +7406,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -7629,7 +7443,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7665,7 +7478,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7702,7 +7514,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7737,7 +7548,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7781,7 +7591,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7823,7 +7632,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7858,7 +7666,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7884,7 +7691,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -7914,7 +7720,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -7941,7 +7747,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -7978,7 +7784,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8014,7 +7819,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8051,7 +7855,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8086,7 +7889,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8130,7 +7932,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8172,7 +7973,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8207,7 +8007,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8233,7 +8032,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8263,7 +8061,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -8290,7 +8088,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -8327,7 +8125,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8363,7 +8160,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8400,7 +8196,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8435,7 +8230,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8479,7 +8273,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8521,7 +8314,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8556,7 +8348,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8582,7 +8373,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8612,7 +8402,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -8639,7 +8429,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -8676,7 +8466,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8712,7 +8501,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8749,7 +8537,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8784,7 +8571,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8828,7 +8614,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8870,7 +8655,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8905,7 +8689,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8931,7 +8714,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -8961,7 +8743,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -8988,7 +8770,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -9025,7 +8807,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9061,7 +8842,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9098,7 +8878,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9133,7 +8912,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9177,7 +8955,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9219,7 +8996,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9254,7 +9030,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9280,7 +9055,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9310,7 +9084,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -9337,7 +9111,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -9374,7 +9148,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9410,7 +9183,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9447,7 +9219,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9482,7 +9253,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9526,7 +9296,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9568,7 +9337,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9603,7 +9371,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9629,7 +9396,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9659,7 +9425,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -9686,7 +9452,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -9714,7 +9480,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9741,7 +9506,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9778,7 +9542,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9813,7 +9576,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9848,7 +9610,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9881,7 +9642,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9916,7 +9676,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9942,7 +9701,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -9972,7 +9730,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -9999,7 +9757,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -10027,7 +9785,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10054,7 +9811,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10091,7 +9847,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10126,7 +9881,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10161,7 +9915,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10194,7 +9947,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10229,7 +9981,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10255,7 +10006,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10285,7 +10035,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -10312,7 +10062,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -10340,7 +10090,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10367,7 +10116,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10404,7 +10152,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10439,7 +10186,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10474,7 +10220,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10507,7 +10252,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10542,7 +10286,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10568,7 +10311,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10598,7 +10340,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -10625,7 +10367,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -10653,7 +10395,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10680,7 +10421,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10717,7 +10457,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10752,7 +10491,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10787,7 +10525,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10820,7 +10557,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10855,7 +10591,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10881,7 +10616,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10911,7 +10645,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -10938,7 +10672,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -10966,7 +10700,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -10993,7 +10726,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11030,7 +10762,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11065,7 +10796,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11100,7 +10830,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11133,7 +10862,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11168,7 +10896,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11194,7 +10921,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11224,7 +10950,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -11251,7 +10977,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -11279,7 +11005,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11306,7 +11031,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11343,7 +11067,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11378,7 +11101,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11413,7 +11135,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11446,7 +11167,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11481,7 +11201,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11507,7 +11226,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11537,7 +11255,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -11564,7 +11282,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -11592,7 +11310,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11619,7 +11336,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11656,7 +11372,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11691,7 +11406,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11726,7 +11440,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11759,7 +11472,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11794,7 +11506,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11820,7 +11531,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11850,7 +11560,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -11877,7 +11587,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -11905,7 +11615,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11932,7 +11641,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -11969,7 +11677,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12004,7 +11711,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12039,7 +11745,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12072,7 +11777,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12107,7 +11811,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12133,7 +11836,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12163,7 +11865,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -12190,7 +11892,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -12218,7 +11920,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12245,7 +11946,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12282,7 +11982,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12317,7 +12016,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12352,7 +12050,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12385,7 +12082,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12420,7 +12116,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12446,7 +12141,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12476,7 +12170,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -12503,7 +12197,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -12531,7 +12225,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12558,7 +12251,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12595,7 +12287,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12630,7 +12321,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12665,7 +12355,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12698,7 +12387,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12733,7 +12421,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12759,7 +12446,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12789,7 +12475,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -12816,7 +12502,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -12844,7 +12530,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12871,7 +12556,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12908,7 +12592,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12943,7 +12626,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -12978,7 +12660,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13011,7 +12692,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13046,7 +12726,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13072,7 +12751,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13102,7 +12780,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -13129,7 +12807,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -13157,7 +12835,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13184,7 +12861,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13221,7 +12897,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13256,7 +12931,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13291,7 +12965,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13324,7 +12997,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13359,7 +13031,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13385,7 +13056,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13415,7 +13085,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -13442,7 +13112,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -13478,7 +13148,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13513,7 +13182,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13550,7 +13218,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13585,7 +13252,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13628,7 +13294,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13669,7 +13334,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13704,7 +13368,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13730,7 +13393,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13760,7 +13422,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -13787,7 +13449,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -13823,7 +13485,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13858,7 +13519,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13895,7 +13555,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13930,7 +13589,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -13973,7 +13631,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14014,7 +13671,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14049,7 +13705,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14075,7 +13730,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14105,7 +13759,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -14132,7 +13786,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -14168,7 +13822,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14203,7 +13856,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14240,7 +13892,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14275,7 +13926,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14318,7 +13968,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14359,7 +14008,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14394,7 +14042,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14420,7 +14067,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14450,7 +14096,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -14477,7 +14123,7 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
+          "setState": 1,
         },
         "state": {
           "__class": "State",
@@ -14513,7 +14159,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14548,7 +14193,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         },
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14585,7 +14229,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14620,7 +14263,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
         "rungs": {
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14663,7 +14305,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {
@@ -14704,7 +14345,6 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
         "rungs": {
           "parseGotoInput": 1,
           "setActiveDataset": 1,
-          "setActiveDataset(state)": 1,
           "setState": 1,
         },
         "state": {

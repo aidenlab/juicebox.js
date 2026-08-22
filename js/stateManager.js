@@ -50,7 +50,7 @@ class StateManager {
      * decision 1).
      *
      * This took a second `state` parameter until #559, and assigned it to
-     * `activeState` with no validation at all, from five `dataLoader` call
+     * `this.activeState` with no validation at all, from five `dataLoader` call
      * sites. That was the live bypass of the mutation invariant -- not the
      * `browser.state = x` setters the review card names, which have no
      * production callers -- and it carried no warning comment while running on

@@ -96,6 +96,14 @@ branch was fixed but cannot be exercised in production: the rung is unreachable 
 third acceptance criterion is narrowed to a test that pins both the unreachability and the branch's
 correctness for when #566 lifts it.**
 
+**One thing #558 broke quietly and #559 had to finish.** The chokepoint installs a *clone*, so the
+state a rung hands it stops being the state in force the moment it is accepted — and `onMapLoaded`
+was publishing the handed-over object. Harmless while the rung's state was the installed one; a
+whole-genome default published to hosts for a `?locus=` load once the `config.locus` rung went
+through the chokepoint. Both paths now read the payload back off the browser. **The gate cannot see
+this class of defect** — it records `browser.state`, never the callback's argument — which is worth
+remembering for #560, #561 and #562, all three of which move the same seam.
+
 **One split found while decomposing, against the ADR's own sequencing.** The ADR treats restore
 through the chokepoint as one ticket; it is two. Three of the five `setActiveDataset` call sites are
 immediately followed by `browser.setState`, which overwrites the unvalidated assignment — so #558

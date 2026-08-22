@@ -39,6 +39,15 @@
  * no production restore via `synchState` to validate, and this file says so
  * with a test rather than with a comment that could quietly go stale.
  *
+ * A fourth claim is here because closing the door moved what a *host* sees. The
+ * chokepoint installs a clone (#558), so the state a rung hands it stops being
+ * the state in force the moment it is accepted -- and once the `config.locus`
+ * rung goes through the chokepoint, the object it handed over is a whole-genome
+ * default while the browser sits at the requested locus. `onMapLoaded` publishes
+ * that object, and `COORDINATOR_PAYLOAD_SHAPES` in `js/publicApi.js` declares
+ * the payload as contract, so it is now read back off the browser. The gate
+ * cannot see this: it records `browser.state`, never the callback's argument.
+ *
  * The dataset, the viewport and the stubs are `testRestoreClamp.js`'s, for the
  * reason it gives: a stated 800x800, because JSDOM does no layout (ADR-0009
  * fact 5).
@@ -177,6 +186,25 @@ describe('the state parameter is gone from setActiveDataset (#559)', () => {
         // `parseGotoInput` mutates the state in place rather than installing a
         // new one, so the state left standing is the chokepoint's own clone.
         expect(browser.state).toBe(installed(writes).at(-1).state)
+    })
+
+    test('onMapLoaded publishes the state in force, not the one handed to the chokepoint', async () => {
+
+        const browser = embed()
+        const published = []
+        vi.spyOn(browser.coordinator, 'onMapLoaded').mockImplementation((dataset, state) => {
+            published.push(state)
+        })
+
+        await browser.loadHicFile({url: HIC_URL, locus: 'chr1:1000000-2000000'}, true)
+
+        expect(published).toHaveLength(1)
+
+        // The identity, and then the view: a host that reads the payload sees
+        // where the browser actually is, not the default it started from.
+        expect(published[0]).toBe(browser.state)
+        expect(published[0].chr1).toBe(CHR1)
+        expect(published[0].chr2).toBe(CHR1)
     })
 
     test('the config.synchState rung is unreachable, so no restore takes it (#566)', async () => {

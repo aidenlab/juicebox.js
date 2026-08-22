@@ -67,11 +67,8 @@ describe('internal call sites', () => {
         ['hicBrowser.js', [/^\s*(get|set) active(Dataset|State)\(/, /^\s*this\.stateManager\.activeState\b/, /^\s*(\*|\/\/|\/\*)/]],
         // StateManager's own fields, not the browser accessor. Collapsing
         // StateManager is its own candidate; until then its internal spelling
-        // is its business, but reaching for the browser's alias is not. Prose is
-        // exempt here for the same reason it is in hicBrowser.js -- a doc
-        // comment naming the field it documents is not a read, and #559's
-        // `setActiveDataset` comment is one.
-        ['stateManager.js', [/\bthis\.active(Dataset|State)\b/, /^\s*(\*|\/\/|\/\*)/]],
+        // is its business, but reaching for the browser's alias is not.
+        ['stateManager.js', [/\bthis\.active(Dataset|State)\b/]],
         // The declaration of the aliases as public surface.
         ['publicApi.js', [/active(Dataset|State)/]]
     ])

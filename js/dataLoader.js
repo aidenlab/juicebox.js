@@ -114,38 +114,47 @@ class DataLoader {
                 EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
             }
 
-            // Every rung of the ladder has the same two steps in the same
-            // order: install the dataset, then hand the state to `setState`,
-            // the chokepoint. Until #559 the first step carried the state with
+            // A rung installs the dataset and then hands its state to
+            // `setState`, the chokepoint -- in that order, because `clampXY`
+            // reads the dataset. Until #559 the install carried the state with
             // it, unvalidated. Two rungs hid that -- `config.locus` went on to
             // `parseGotoInput` and `config.synchState` to a sync, and neither
             // reached `setState`, so the raw state stood. ADR-0009 decision 1.
-            let state;
+            //
+            // The `synchState` rung is the one that does not read in that order:
+            // it syncs against the outgoing dataset first and re-validates
+            // against the incoming one only if they differ. It is also the rung
+            // nothing takes -- `clearDataset()` above it means `canBeSynched` is
+            // never true (#566) -- so it is left in the shape it had.
+            //
+            // No rung keeps hold of what it handed over. The chokepoint installs
+            // a *clone* (#558), so the object passed in stops being the state in
+            // force the moment it is accepted -- and on the `locus` rung it is a
+            // whole-genome default while the browser sits at the requested
+            // locus. What `onMapLoaded` publishes is read back off the browser
+            // for that reason.
             if (config.locus) {
-                state = State.default();
                 this.browser.setActiveDataset(dataset);
-                await this.browser.setState(state);
+                await this.browser.setState(State.default());
                 await this.browser.parseGotoInput(config.locus);
             } else if (config.state) {
-                state = decodeState(config.state, reportUnknownStateType);
-
                 this.browser.setActiveDataset(dataset);
-                await this.browser.setState(state);
+                await this.browser.setState(decodeState(config.state, reportUnknownStateType));
             } else if (config.synchState && this.browser.canBeSynched(config.synchState)) {
                 await this.browser.syncState(config.synchState);
-                state = this.browser.state;
                 // syncState already sets the dataset, but ensure it's set with current dataset
                 if (this.browser.dataset !== dataset) {
+                    const synched = this.browser.state;
                     this.browser.setActiveDataset(dataset);
-                    await this.browser.setState(state);
+                    await this.browser.setState(synched);
                 }
             } else {
-                state = State.default();
                 this.browser.setActiveDataset(dataset);
-                await this.browser.setState(state);
+                await this.browser.setState(State.default());
             }
 
-            this.browser.coordinator.onMapLoaded(dataset, state, dataset.datasetType);
+            // The state in force, not the one handed to the chokepoint.
+            this.browser.coordinator.onMapLoaded(dataset, this.browser.state, dataset.datasetType);
 
             // Initiate loading of the norm vector index, but don't block if the "nvi" parameter is not available.
             // Let it load in the background
@@ -262,10 +271,8 @@ class DataLoader {
             // differently here and had lost the unknown-type rung, so a numeric
             // `state` crashed in `State.parse` on this path and opened the
             // default view on the other. #504.
-            const state = decodeState(config.state, reportUnknownStateType);
-
             this.browser.setActiveDataset(dataset);
-            await this.browser.setState(state);
+            await this.browser.setState(decodeState(config.state, reportUnknownStateType));
 
             // Navigate to the data region so it fills the viewport
             const locus = config.locus || `${lcm.chromosomes[1].name}:${lcm.genomicStart}-${lcm.genomicEnd}`;
@@ -277,7 +284,11 @@ class DataLoader {
             // coordinator told hosts one thing and `dataset.datasetType` another,
             // about the same load. Nobody could have been reading it: no doc ever
             // named it, and the JSDoc it contradicted named "main"/"control".
-            this.browser.coordinator.onMapLoaded(dataset, state, dataset.datasetType);
+            //
+            // And the same state expression, for the same reason the file path
+            // gives: `parseGotoInput` above has just moved the browser off the
+            // decoded state, which was a clone ago in any case.
+            this.browser.coordinator.onMapLoaded(dataset, this.browser.state, dataset.datasetType);
 
             return dataset;
         } catch (error) {

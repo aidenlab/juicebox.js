@@ -1,6 +1,6 @@
 # Juicebox.js — Punch List
 
-**As of 2026-08-22. Candidate 6 is the active work; the gate (#557), the behaviour change behind it (#558), the back door beside it (#559) and the honest change flag (#560) are in, so the frontier is what is left of the parallel branch — [#561](https://github.com/aidenlab/juicebox.js/issues/561) and [#562](https://github.com/aidenlab/juicebox.js/issues/562), both unblocked.**
+**As of 2026-08-22. Candidate 6 is the active work; the gate (#557), the behaviour change behind it (#558), the back door beside it (#559), the honest change flag (#560) and both halves of the parallel branch (#561, #562) are in, so the frontier is the join — [#563](https://github.com/aidenlab/juicebox.js/issues/563), the fold, now unblocked.**
 
 > **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
 > agree with it. Where the durable facts live:
@@ -46,11 +46,11 @@ what is actually unblocked.
 | ~~**#558**~~ | Restore routes through the chokepoint, and the clamp gets one enforcer | ✅ **landed** — `StateManager.setState` delegates to `setView`, `updateLayout`'s `clampXY` is gone, **2 of the gate's 450 records moved** |
 | ~~**#559**~~ | `setActiveDataset` loses its `state` parameter | ✅ **landed** — the parameter is gone from all five `dataLoader` sites, the `config.locus` door now reaches `setState`, and **the gate's `rungs` field moved on all 450 records while not one `state` field did** |
 | ~~**#560**~~ | `resolutionChanged` tells the truth on restore | ✅ **landed** — the flag is computed against the state going out of force, and **not one of the gate's 450 records moved** |
-| **#561** | Normalization is validated against the loaded dataset at restore | — **frontier** |
-| **#562** | The sync trio splits three ways | — **frontier** |
-| #563 | `StateManager` folds into `State`, the setters go, and the discipline is written down | #560, #561, #562 |
+| ~~**#561**~~ | Normalization is validated against the loaded dataset at restore | ✅ **landed** — a normalization the loaded dataset does not offer is coerced to `NONE` in the chokepoint, `NONE` short-circuiting ahead of the dataset |
+| ~~**#562**~~ | The sync trio splits three ways | ✅ **landed** — `canBeSynched` to `syncGroup.js`, `getSyncState` to `State`, `StateManager.syncState` deleted; **the `synchable` guard on `HICBrowser.syncState` stayed**, see below |
+| **#563** | `StateManager` folds into `State`, the setters go, and the discipline is written down | — **frontier**, all three blockers closed |
 
-**#560, #561 and #562 are a parallel branch** off #559; #563 is the join. This is the first
+**#560, #561 and #562 were a parallel branch** off #559; #563 is the join, and all three legs are in. This is the first
 candidate with real fan-out rather than a linear chain — which is exactly why the edges are native
 rather than read off a table here.
 
@@ -91,7 +91,9 @@ Read ADR-0009 before touching a ticket. Four of the card's claims did not surviv
   restore never is. Same session, two behaviours — and it is why the gate states *two* viewports:
   at one, a golden cannot tell a clamp from a coincidence.
 - **The sync trio is not one group.** Moving `canBeSynched` onto `State`, as the card says, would
-  make a *fourth* copy of the `synchable` rule rather than removing the third.
+  make a *fourth* copy of the `synchable` rule rather than removing the third. ✅ Held up in #562:
+  the three copies collapsed to one `isSynchable` in `syncGroup.js`, and `State` gained only
+  `getSyncState`, which is a projection through a dataset like `getLocus`.
 - **Counts moved.** `StateManager` is twelve methods, not ten; `testState.js` is 70 tests, not 54,
   and **none of them drives a restore**.
 
@@ -118,6 +120,16 @@ through the chokepoint. Both paths now read the payload back off the browser. **
 this class of defect** — it records `browser.state`, never the callback's argument — which is worth
 remembering for #560, #561 and #562, all three of which move the same seam.
 
+**What #562 could not delete: `HICBrowser.syncState`'s `synchable` guard.** The ticket named it as
+one of the three copies and expected the callers to carry the question. Both review axes found the
+same seam from opposite sides: the load-end sync step in `dataLoader` filters peers on
+`isCompatible` and **never looked at `synchable`**, so that guard was its only opt-out — and
+`synchedBrowsers` is a snapshot from the last `registry.sync()`, so a host flipping `synchable`
+afterwards was caught by the guard too. Deleting it strengthened one path and weakened the other,
+which "moves code, does not change what syncing does" does not allow. The guard stayed, written as
+`isSynchable(this)` — **one statement of the rule, three readers**, which is what the acceptance
+criterion was actually protecting. `test/testSyncOptOut.js` pins both paths and fails without it.
+
 **One split found while decomposing, against the ADR's own sequencing.** The ADR treats restore
 through the chokepoint as one ticket; it is two. Three of the five `setActiveDataset` call sites are
 immediately followed by `browser.setState`, which overwrites the unvalidated assignment — so #558
@@ -136,7 +148,7 @@ than rediscovered one at a time.
 | ~~**#510**~~ | Aug 2026 | Was the frontier. Promoted from a candidate-5 follow-up by ADR-0009 | ✅ **fixed**, before the gate, exactly as ADR-0009 sequenced it |
 | **#372** | Jul 2026 | Its **validation half is #561**. Restore is the first moment a valid normalization set exists | leave open; it narrows to notification |
 | **#528** | Aug 2026 | **Answered by ADR-0009.** It asked whether a numeric seventh state token (`normalization: "2000"`) should be rejected or coerced; decisions 2 and 5 say coerce, at restore, against the dataset | ✅ re-labelled `ready-for-agent` and pointed at #561; use it as #561's fixture |
-| **#280** | 2018 | **Plausibly this candidate's bug.** See the hypothesis below | ✅ linked both ways with #562; do **not** close on the reading |
+| **#280** | 2018 | **Hypothesis weakened by #566** — the rung it blames is unreachable, not racy. See below | linked both ways with #562; still open, needs the repro, do **not** close on the reading |
 | **#473** | Aug 2026 | Same in-flight hazard as #469, on `TrackPair` rather than `ContactMatrixView`. Candidate 6 changes who owns state mutation, so it may get easier or harder | watch during #563 |
 | ~~**#125**~~ | 2020 | Asked how `state` should be encoded for `loadHicFile`. The syntax in the question was always right; `docs/url.md` now documents v0 and v1 per ADR-0006 decision 2 | ✅ **answered and closed** |
 | ~~**#283**~~ | 2018 | Share produced `?juiceboxURL=undefined`. Moot — nothing writes that format since #506; only the adapter that refuses it remains | ✅ **closed as moot** |
@@ -150,9 +162,16 @@ assigned, and `canBeSynched` returns false when `activeDataset` is undefined. So
 two-map URL, whichever browser loses the load race falls through to the `else` branch and opens at
 `State.default` instead of synced. A race would produce exactly the reported intermittency.
 
-**Not reproduced.** It is a reading, not a diagnosis — but it is the kind of reading #557's golden
-can settle cheaply, because `synchState` is one of the five doors it pins. If the hypothesis holds,
-#559 and #562 close a bug that has been open for eight years, and that belongs in the Outcome box.
+**Not reproduced, and the mechanism is now doubtful.** #566 found the `config.synchState` rung
+*unreachable* rather than racy: `clearDataset()` runs four lines above it, so `canBeSynched` is
+never true and every first load carrying a `synchState` takes the fallback — not 30% of the time,
+always. A rung nothing takes cannot produce intermittency, so either #280 is a different bug or the
+reading is wrong about which door it comes through.
+
+**#562 landed without testing it**, deliberately: the check needs the repro, not another reading,
+and #562 moved `canBeSynched` without changing what it answers. **#280 stays open and stays linked.**
+The next honest move is to run its repro against a build with #566 lifted; until then it does not
+belong in candidate 6's Outcome box.
 
 ## The release note this candidate owes
 

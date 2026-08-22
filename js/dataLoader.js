@@ -116,11 +116,11 @@ class DataLoader {
 
             let state;
             if (config.locus) {
-                state = State.default(config);
+                state = State.default();
                 this.browser.setActiveDataset(dataset, state);
                 await this.browser.parseGotoInput(config.locus);
             } else if (config.state) {
-                state = decodeState(config.state, config, reportUnknownStateType);
+                state = decodeState(config.state, reportUnknownStateType);
 
                 this.browser.setActiveDataset(dataset, state);
                 await this.browser.setState(state);
@@ -132,7 +132,7 @@ class DataLoader {
                     this.browser.setActiveDataset(dataset, state);
                 }
             } else {
-                state = State.default(config);
+                state = State.default();
                 this.browser.setActiveDataset(dataset, state);
                 await this.browser.setState(state);
             }
@@ -254,7 +254,7 @@ class DataLoader {
             // differently here and had lost the unknown-type rung, so a numeric
             // `state` crashed in `State.parse` on this path and opened the
             // default view on the other. #504.
-            const state = decodeState(config.state, config, reportUnknownStateType);
+            const state = decodeState(config.state, reportUnknownStateType);
 
             this.browser.setActiveDataset(dataset, state);
             await this.browser.setState(state);

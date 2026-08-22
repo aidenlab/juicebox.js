@@ -26,7 +26,7 @@ export function withStubbedLoads() {
         vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined)
         vi.spyOn(DataLoader.prototype, 'loadHicFile').mockImplementation(async function (config) {
             this.browser.dataset = stubDataset(config)
-            this.browser.state = config.state ? State.fromJSON(config.state) : State.default(config)
+            this.browser.state = config.state ? State.fromJSON(config.state) : State.default()
         })
         vi.spyOn(DataLoader.prototype, 'loadTracks').mockImplementation(async () => undefined)
     })

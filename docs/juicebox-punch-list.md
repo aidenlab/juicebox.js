@@ -1,6 +1,6 @@
 # Juicebox.js — Punch List
 
-**As of 2026-08-22. Candidate 6 is the active work; the gate (#557), the behaviour change behind it (#558) and the back door beside it (#559) are in, so the frontier is the parallel branch — [#560](https://github.com/aidenlab/juicebox.js/issues/560), [#561](https://github.com/aidenlab/juicebox.js/issues/561) and [#562](https://github.com/aidenlab/juicebox.js/issues/562), all three now unblocked.**
+**As of 2026-08-22. Candidate 6 is the active work; the gate (#557), the behaviour change behind it (#558), the back door beside it (#559) and the honest change flag (#560) are in, so the frontier is what is left of the parallel branch — [#561](https://github.com/aidenlab/juicebox.js/issues/561) and [#562](https://github.com/aidenlab/juicebox.js/issues/562), both unblocked.**
 
 > **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
 > agree with it. Where the durable facts live:
@@ -45,7 +45,7 @@ what is actually unblocked.
 | ~~**#557**~~ | Gate: snapshot the resolved state every restore door produces today | ✅ **landed** — 450 records, five doors, two viewports |
 | ~~**#558**~~ | Restore routes through the chokepoint, and the clamp gets one enforcer | ✅ **landed** — `StateManager.setState` delegates to `setView`, `updateLayout`'s `clampXY` is gone, **2 of the gate's 450 records moved** |
 | ~~**#559**~~ | `setActiveDataset` loses its `state` parameter | ✅ **landed** — the parameter is gone from all five `dataLoader` sites, the `config.locus` door now reaches `setState`, and **the gate's `rungs` field moved on all 450 records while not one `state` field did** |
-| **#560** | `resolutionChanged` tells the truth on restore | — **frontier** |
+| ~~**#560**~~ | `resolutionChanged` tells the truth on restore | ✅ **landed** — the flag is computed against the state going out of force, and **not one of the gate's 450 records moved** |
 | **#561** | Normalization is validated against the loaded dataset at restore | — **frontier** |
 | **#562** | The sync trio splits three ways | — **frontier** |
 | #563 | `StateManager` folds into `State`, the setters go, and the discipline is written down | #560, #561, #562 |
@@ -54,8 +54,22 @@ what is actually unblocked.
 candidate with real fan-out rather than a linear chain — which is exactly why the edges are native
 rather than read off a table here.
 
-**#558 is the ticket that deliberately moves snapshots.** #560 moves them for a second, separately
-attributable reason, which is why it is not bundled into #558.
+**#558 is the ticket that deliberately moves snapshots.** #560 was expected to move them for a
+second, separately attributable reason, which is why it was not bundled into #558.
+
+**#560 moved nothing, and the separation still earned its keep.** ADR-0009 decision 3 predicted a
+snapshot move; the gate records the resolved `State` after restore, and a change flag is not a
+resolved state, so there was nothing there to move. The prediction was wrong about the mechanism and
+right about the discipline: had the flag been bundled into #558, the two records that *did* move
+would have had two candidate explanations and no way to choose between them. A separation that costs
+one ticket and buys an unambiguous attribution is worth making even when the movement it guards
+against does not arrive.
+
+The behaviour did change, where a snapshot cannot see it. `resolutionChanged` is what releases the
+resolution lock in `browserCoordinator.onLocusChange`, and it is handed to external `onLocusChange`
+callbacks as declared payload — so a restore onto the current zoom now leaves a locked resolution
+locked. The repaint was never at stake: `hicBrowser.setState` calls `update()` on every restore,
+flag or no. `test/testRestoreResolutionChanged.js` pins the lock, which is the observable half.
 
 **What #558 actually moved: two records of 450**, both the `config.state` door in the `1600x400`
 column, both an `x` clamp on a saved origin too near the end of its chromosome for a wide viewport —

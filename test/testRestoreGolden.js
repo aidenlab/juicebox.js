@@ -82,7 +82,8 @@
  *    live extent -- so the state a live session carries never survives its own
  *    load. And because `parseLocusString` converts to 0-based by subtracting one,
  *    an extent starting at 0 becomes `-1` bp, which nothing clamps: every live
- *    record in this file has a **negative** origin. Recorded, not fixed.
+ *    record in this file has a **negative** origin. Recorded, not fixed; filed
+ *    as #567.
  * 3. **The `config.synchState` rung is unreachable.** Its guard is
  *    `config.synchState && browser.canBeSynched(...)`, and `canBeSynched`
  *    returns false without an `activeDataset` -- which `loadHicFile` has just
@@ -92,7 +93,8 @@
  *    precisely so the snapshot shows that priming does not help: the record says
  *    `primedWith`, and still reports the fallback. Sync between browsers works;
  *    it goes through `registry.sync()` and `browser.syncState()` and never
- *    through this rung.
+ *    through this rung. Recorded, not fixed; filed as #566, which also names the
+ *    two candidate 6 tickets that assume the rung is live.
  *
  * ## Updating a snapshot — the convention
  *

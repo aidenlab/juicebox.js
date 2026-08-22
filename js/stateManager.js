@@ -121,6 +121,12 @@ class StateManager {
      * `onLocusChange` callbacks as contract. The repaint itself is not at stake
      * — `hicBrowser.setState` calls `update()` on every restore, flag or no.
      *
+     * The seventh field, `normalization`, is settled after `setView` rather than
+     * through it (#561, ADR-0009 decision 5): it is not one of the canonical six
+     * and it is validated against the dataset rather than against the view. See
+     * `resolveNormalization` for why restore is the only place the question can
+     * be asked.
+     *
      * Locus is not cached — consumers derive it via state.getLocus().
      */
     async setState(state) {
@@ -155,12 +161,93 @@ class StateManager {
             this.browser.contactMatrixView.getViewDimensions()
         );
 
+        restored.normalization = await this.resolveNormalization(restored.normalization);
+
         this.activeState = restored;
 
         return {
             chrChanged,
             resolutionChanged
         };
+    }
+
+    /**
+     * The normalization a restored state can actually be rendered with (#561,
+     * ADR-0009 decision 5).
+     *
+     * **Restore is the first moment this question can be asked, and the last
+     * moment it can be asked cheaply.** The set of valid normalizations does not
+     * exist until a dataset is loaded -- which is why candidate 9 found
+     * `config.normalization` to be one of exactly three fields the normalize
+     * stage provably cannot resolve, and left it alone. Downstream of here the
+     * answer is still knowable but no longer actionable: `imageTileSource`
+     * discovers the missing vector per tile, mid-render, and draws `NONE`
+     * without the canonical state ever admitting it changed. So the state that
+     * comes out of the chokepoint names a normalization the dataset has, and the
+     * render path stops being where the substitution silently happens.
+     *
+     * It is the same invariant as the clamp, at the same moment, and it follows
+     * the same rule: **coerce, never reject.** A saved link naming a
+     * normalization this map does not carry still opens, on `NONE` -- the
+     * fallback every `.hic` file offers. Refusing would turn a link that renders
+     * something into a link that renders nothing.
+     *
+     * **This is validation only.** #372 -- "a normalization that is not
+     * available renders without one and the user is not told" -- narrows to its
+     * notification half and stays open; no error surface belongs here.
+     *
+     * `NONE` short-circuits, and not merely as an optimization: on a real
+     * `.hic` file `getNormalizationOptions` reads the normalization vector index
+     * off the wire, so asking would put a network read on every restore to buy
+     * an answer that is already known. A state with no normalization at all is
+     * `NONE` for the same reason `State`'s constructor defaults it there.
+     *
+     * A dataset that cannot answer is not a licence to skip the check:
+     * `browser.getNormalizationOptions` already answers `['NONE']` for a dataset
+     * without the method, and that is a sincere answer -- such a dataset offers
+     * nothing else. The one case that genuinely cannot be asked is no dataset at
+     * all, and the requested value stands there rather than being coerced
+     * against a set that was never consulted.
+     *
+     * Public rather than private because it is **the** enforcer, and the load
+     * stage has a second thing to ask it: `hicBrowser.init` resolves a
+     * top-level `config.normalization` here too. That field is not part of any
+     * saved state -- it is a config field a host sets alongside a map -- so it
+     * cannot arrive through `setState`, but it is the same question against the
+     * same set, and candidate 6's premise is that an invariant has one enforcer
+     * or none.
+     *
+     * @param {string|undefined} requested - The normalization asked for
+     * @returns {Promise<string>} - A normalization the loaded dataset offers
+     */
+    async resolveNormalization(requested) {
+
+        if (undefined === requested || 'NONE' === requested) {
+            return 'NONE';
+        }
+
+        if (!this.activeDataset) {
+            return requested;
+        }
+
+        const available = await this.browser.getNormalizationOptions();
+
+        if (available.includes(requested)) {
+            return requested;
+        }
+
+        // The fallback is read out of the offered set rather than assumed to be
+        // `NONE`. Every `.hic` file seeds its normalization list with `NONE`, so
+        // on a single map the two are the same answer -- but with a control map
+        // loaded this set is an *intersection* of two files' lists, and an
+        // intersection is an expression rather than a guarantee. Where it does
+        // hold `NONE`, or where it is empty and there is nothing to name, `NONE`
+        // is both the answer and what the render path would have drawn anyway.
+        if (0 === available.length || available.includes('NONE')) {
+            return 'NONE';
+        }
+
+        return available[0];
     }
 
     /**

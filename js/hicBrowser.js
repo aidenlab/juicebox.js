@@ -257,10 +257,16 @@ class HICBrowser {
             // falls back to `NONE` rather than rejecting -- a saved link naming
             // a normalization this map does not carry still opens. Recorded in
             // CONTEXT.md as a load-stage rule, not part of the resolved schema.
+            //
+            // The rule itself lives in `stateManager.resolveNormalization` and
+            // is spelled out once (#561, ADR-0009 decision 5). It used to be
+            // written out a second time here, as its own `Set` and its own
+            // fallback, and this copy ran *after* restore -- so of the two
+            // enforcers the duplicate was the one that won. What stays here is
+            // the question, not the answer: which field is being asked about,
+            // and when.
             if (config.normalization) {
-                const normalizations = await this.getNormalizationOptions();
-                const validNormalizations = new Set(normalizations);
-                this.state.normalization = validNormalizations.has(config.normalization) ? config.normalization : 'NONE';
+                this.state.normalization = await this.stateManager.resolveNormalization(config.normalization);
             }
 
             if (config.cycle) {

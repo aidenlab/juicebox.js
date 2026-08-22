@@ -195,6 +195,23 @@ builds an embed's browsers from a session its caller has already resolved.
 `test/testConfigGolden.js` still snapshots it as a column, because what it hands
 a browser is where the other columns end too.
 
+**Restore door** — a *different* set of doors from the entry paths above, and
+the word is overloaded on purpose because ADR-0009 uses it that way. An entry
+path is where a **config** comes in; a restore door is where a **state** comes
+in, one stage further down. There are five, and they are branches rather than
+published methods: `dataLoader.loadHicFile` walks a four-**rung** ladder — a
+config-level `locus`, a `state` token, a `synchState`, and the `State.default()`
+fallback — and `dataLoader.loadLiveContactMap` is a fifth door walking its own
+copy of the middle of that ladder. Only two rungs reach `browser.setState`.
+`test/testRestoreGolden.js` snapshots all five (#557); the `synchState` rung is
+unreachable today (#566).
+
+A **stated viewport** is a `{width, height}` a fixture declares rather than
+measures. The test environment is `node`, JSDOM is opt-in per suite and does no
+layout regardless, so `getViewDimensions()` in a test answers `{0, 0}` — and a
+clamp measured against zero is not a clamp. Stating it is the only honest option;
+ADR-0009 fact 5.
+
 A **track** has one door of its own: `HICBrowser.loadTracks(configs)`, which a
 host calls at runtime with track configs that were never part of a session. It
 resolves them through the same stage (#536). It is not a session entry — nothing

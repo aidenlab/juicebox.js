@@ -81,9 +81,16 @@
  *    calls `setState`, and then unconditionally calls `parseGotoInput` on the
  *    live extent -- so the state a live session carries never survives its own
  *    load. And because `parseLocusString` converts to 0-based by subtracting one,
- *    an extent starting at 0 becomes `-1` bp, which nothing clamps: every live
+ *    an extent starting at 0 becomes `-1` bp, which nothing clamps, so every live
  *    record in this file has a **negative** origin. Recorded, not fixed; filed
  *    as #567.
+ *
+ *    The live door is the worst case, not the only one: the same subtraction
+ *    reaches the file path's `locus` door whenever the projected locus starts at
+ *    bp 0, and roughly a sixth of the `config.locus` records here carry a small
+ *    negative `x` for that reason. A negative origin outside the live column is
+ *    therefore **baseline**, not a regression -- it is finding 1 showing through,
+ *    since no door clamps.
  * 3. **The `config.synchState` rung is unreachable.** Its guard is
  *    `config.synchState && browser.canBeSynched(...)`, and `canBeSynched`
  *    returns false without an `activeDataset` -- which `loadHicFile` has just
@@ -112,8 +119,8 @@
  * - A **door changing which rung it takes** -- ADR-0009 decision 1 routes every
  *   door through the chokepoint, so `rungs` moves for the doors that skipped it.
  * - A **clamp arriving** -- an `x` or `y` outside `[0, chromosome/binSize]`
- *   coming back inside it. Every live-door record is negative today, so those
- *   are the ones to read first. Expect a clamp to move one viewport column and
+ *   coming back inside it. Every live-door record is negative today and some
+ *   `config.locus` records are too, so those are the ones to read first. Expect a clamp to move one viewport column and
  *   not the other; that asymmetry is the evidence it is a clamp and not a
  *   coincidence, and it is the whole reason there are two columns.
  * - A **`pixelSize` cap arriving** -- a value above `MAX_PIXEL_SIZE` coming down
@@ -147,8 +154,8 @@ import {decodeState} from '../js/sessionCodec.js'
 import {normalizeSession} from '../js/normalizeSession.js'
 import ContactMatrixView from '../js/contactMatrixView.js'
 import StateManager from '../js/stateManager.js'
-import {selfContained, viaLoader} from './data/wireFormatCorpus.js'
-import {withDOM} from './utils/browserFixture.js'
+import {selfContained, viaLoader, wireFormatCorpus} from './data/wireFormatCorpus.js'
+import {withContainers} from './utils/browserFixture.js'
 import {restoreDataset} from './utils/restoreDataset.js'
 
 /**
@@ -432,23 +439,22 @@ function rungCounter() {
 /**
  * A JSDOM, the two stubs every restore needs, and the rung counter.
  *
+ * `withContainers()` is composed rather than re-implemented, the same way
+ * `testConfigGolden.js`'s `goldenSuite()` composes it: this file needs the
+ * `another()` container factory for the reason that helper exists -- one embed
+ * per drive -- and nothing else about the DOM. It does not navigate, because no
+ * door here reads `window.location`.
+ *
  * `update` is stubbed on both the browser and the view for the reason
  * `stubbedLoads` gives: every route out of a repaint ends at the network or a
  * pixel, and rendering has its own tests. `getViewDimensions` is stubbed per
- * test rather than here, because its value is the column.
+ * drive rather than here, because its value is the column.
  */
 function restoreSuite() {
 
-    const context = {}
-    let fixture
+    const dom = withContainers()
 
     beforeEach(() => {
-        fixture = withDOM()
-        context.another = () => {
-            const element = fixture.window.document.createElement('div')
-            fixture.window.document.body.appendChild(element)
-            return element
-        }
         vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined)
         vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined)
         // A tripwire, as in #503 and #531: nothing on this path should reach the
@@ -459,11 +465,10 @@ function restoreSuite() {
     })
 
     afterEach(() => {
-        fixture.restore()
         vi.restoreAllMocks()
     })
 
-    return {dom: context, rungs: rungCounter()}
+    return {dom, rungs: rungCounter()}
 }
 
 /**
@@ -578,6 +583,50 @@ test('two viewports are stated, and they differ on both axes', () => {
         expect(Number.isFinite(viewport.width) && viewport.width > 0).toBe(true)
         expect(Number.isFinite(viewport.height) && viewport.height > 0).toBe(true)
     }
+})
+
+/**
+ * The corpus's other half has to be accounted for, not merely absent.
+ *
+ * `testDecoderGolden.js` guards this with a partition check, and the same
+ * failure mode applies here one seam down: a fixture that silently stops being
+ * driven leaves a green suite measuring less than it says. This file drives
+ * strictly fewer fixtures than that one, so it states which and why rather than
+ * letting the `filter` above be the only record.
+ *
+ * Two exclusions, both structural:
+ *
+ * - **`throws` and `no-config`** never produce a config, so there is no state
+ *   for a restore door to resolve. #503 is where those outcomes are pinned.
+ * - **The three `sessionFile` fixtures**, whose `outcome` says `decodes` but
+ *   whose arm is not reachable: `extractConfig` rejects with
+ *   `uri.indexOf is not a function` before any of them produces a config, which
+ *   is exactly what `testDecoderGolden.js`'s "the File arm is not reachable"
+ *   suite pins. Their declared outcome was measured by hand rather than
+ *   re-measured on every run -- the corpus header says to distrust those three
+ *   first -- so this suite trusts the driven measurement over the declaration
+ *   and leaves them out.
+ */
+test('every corpus fixture is either driven or excluded for a stated reason', () => {
+
+    const driven = new Set(DECODING_FIXTURES.map(fixture => fixture.id))
+    const excluded = wireFormatCorpus.filter(fixture => !driven.has(fixture.id))
+
+    expect(driven.size + excluded.length).toBe(wireFormatCorpus.length)
+    expect(driven.size).toBeGreaterThan(0)
+
+    for (const fixture of excluded) {
+        const reason = fixture.format === 'sessionFile' ? 'the File arm is not reachable' : fixture.outcome
+        expect(['the File arm is not reachable', 'throws', 'no-config'], fixture.id).toContain(reason)
+    }
+
+    // Named, so that a fixture leaving the File arm -- because the arm was fixed
+    // -- fails here and gets driven rather than staying excluded by format.
+    expect(wireFormatCorpus.filter(f => f.format === 'sessionFile').map(f => f.id)).toEqual([
+        'synth-session-file-plain-json',
+        'synth-session-file-blob-prefixed',
+        'reject-session-file-invalid-json',
+    ])
 })
 
 describe('resolved state golden file — every restore door, at two stated viewports', () => {

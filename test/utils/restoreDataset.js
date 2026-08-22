@@ -36,7 +36,7 @@ const HG19 = [
 ]
 
 /** The standard juicer resolution ladder, coarsest first — `zoom` indexes this. */
-export const BP_RESOLUTIONS = [2500000, 1000000, 500000, 250000, 100000, 50000, 25000, 10000, 5000]
+const BP_RESOLUTIONS = [2500000, 1000000, 500000, 250000, 100000, 50000, 25000, 10000, 5000]
 
 function chromosomes() {
     const named = HG19.map(([name, size], i) => ({index: i + 1, name, size}))

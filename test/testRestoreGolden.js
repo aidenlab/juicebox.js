@@ -169,14 +169,22 @@
  *   the cap this ticket adds is unreachable from any harvested link. That is why
  *   #558's acceptance criteria ask for a written test rather than a snapshot:
  *   `test/testRestoreClamp.js` drives `pixelSize=1e9` through the door and pins
- *   the coercion, which no fixture here can.
+ *   the coercion, which no fixture here can. The cap is not the only pixelSize
+ *   coercion restore now inherits — `_adjustPixelSize` opens with
+ *   `Math.max(1, target)`, so a saved `pixelSize` below 1 would come up to 1
+ *   even where `minPixelSize` is lower. No record here exercises that either;
+ *   the corpus's smallest saved `pixelSize` is 1. It is named so that "no
+ *   `pixelSize` moved" is not read as "no `pixelSize` could have".
  * - **No `rungs` moved, and `setActiveDataset(state)` is still 1 on the doors
  *   that call it.** #558 is decisions 2 and 4 only; the parameter goes in #559.
  * - **The live door's negative origins are unchanged** — all still negative.
  *   Finding 2 above is `parseGotoInput` running *after* `setState`, and
  *   `updateWithLoci` passes `{clampXY: false}`, so routing restore through the
  *   chokepoint cannot reach it. #567 is still the ticket for that, and the same
- *   is true of the `config.locus` door's small negative `x` values.
+ *   is true of the `config.locus` door's small negative `x` values, and of the
+ *   two `config.locus` records that resolve to `NaN` throughout: a clamp cannot
+ *   repair a `NaN` — `Math.min(Math.max(0, NaN), maxX)` is `NaN` — and that door
+ *   does not reach `setState` in any case.
  * - **Nothing moved on the `State.default()` fallback door** (its origin is
  *   `0, 0` and its `pixelSize` `1`, all in range) or on the `config.synchState`
  *   door (still unreachable, still recording the fallback — #566).

@@ -14,11 +14,22 @@
  * 2. A restored origin past the end of the chromosome is pulled back inside it,
  *    and **the load still succeeds**. Coerced, never rejected: the same rule
  *    ADR-0006 and #466 fixed for the normalize stage one seam over.
- * 3. `updateLayout` no longer clamps, and a session that carries a track lands
- *    in the same place as the same session without one. Before #558 `clampXY`
- *    had two reachable callers and `updateLayout` ran only when tracks changed,
- *    so the same saved session opened two ways depending on whether it had a
- *    track (ADR-0009 fact 6).
+ * 3. `updateLayout` no longer clamps, and a restored session carrying a track
+ *    ends up in the same place as the same session without one. Before #558
+ *    `clampXY` had two reachable callers, and `updateLayout` runs only when
+ *    tracks change — so the track-carrying session was clamped incidentally and
+ *    the bare one was not, and the same saved session opened two ways
+ *    (ADR-0009 fact 6).
+ *
+ *    The comparison is driven, not argued: the same saved state is restored
+ *    twice, one browser is given a track pair and taken through the layout pass
+ *    a track change triggers, and the two origins are asserted equal. The track
+ *    pair is a stub (`stubTrackPair`) rather than a loaded track, because what
+ *    reaches `State` from a track is `updateLayout` and nothing else — the igv
+ *    parsing and the renderer behind a real track never touch the canonical
+ *    six. Every caller of `updateLayout` is a track add, remove or reorder:
+ *    `dataLoader.js:433`, `layoutController.js:168` and `:187`,
+ *    `annotationWidget.js:233` and `:247`.
  *
  * The dataset behind the load is `test/utils/restoreDataset.js` — the same hg19
  * chromosome table and juicer resolution ladder the gate reads its numbers off,
@@ -53,7 +64,7 @@ vi.mock('../js/hicDataset.js', async () => {
 const {default: HICBrowser} = await import('../js/hicBrowser.js')
 
 const VIEWPORT = {width: 800, height: 800}
-const URL = 'https://example.org/restore-clamp.hic'
+const HIC_URL = 'https://example.org/restore-clamp.hic'
 
 /** chr1 x chr1 at 250kb bins — a zoom the corpus's harvested states also use. */
 const CHR1 = 1
@@ -68,6 +79,23 @@ const ZOOM = 3
 function maxOrigin(dataset, chr, extent, pixelSize) {
     const binSize = dataset.bpResolutions[ZOOM]
     return Math.max(0, dataset.chromosomes[chr].size / binSize - extent / pixelSize)
+}
+
+/**
+ * The least a `trackPair` can be and still survive `updateLayout`: two elements
+ * whose `style.order` it writes and whose reorder arrows
+ * `setTrackReorderArrowColors` colours, and a `syncCanvas` it calls. Real
+ * elements, so `querySelector` answers as it does in a page.
+ */
+function stubTrackPair(window) {
+
+    const side = () => {
+        const viewportElement = window.document.createElement('div')
+        viewportElement.innerHTML = '<i class="fa-arrow-up"></i><i class="fa-arrow-down"></i>'
+        return {viewportElement, syncCanvas: () => undefined}
+    }
+
+    return {x: side(), y: side()}
 }
 
 describe('restore routes through the chokepoint (#558)', () => {
@@ -90,7 +118,7 @@ describe('restore routes through the chokepoint (#558)', () => {
     async function restore(state) {
         const browser = new HICBrowser(dom.another(), {})
         vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({...VIEWPORT})
-        await browser.loadHicFile({url: URL, state}, true)
+        await browser.loadHicFile({url: HIC_URL, state}, true)
         return browser
     }
 
@@ -122,7 +150,7 @@ describe('restore routes through the chokepoint (#558)', () => {
         expect(browser.state.y).toBe(0)
     })
 
-    test('updateLayout does not clamp, and the track-carrying session lands where the bare one does', async () => {
+    test('the session that carries a track lands where the bare one does, and updateLayout does not clamp', async () => {
 
         const saved = new State(CHR1, CHR1, ZOOM, 999_999, 999_999, 2, 'NONE')
 
@@ -130,6 +158,10 @@ describe('restore routes through the chokepoint (#558)', () => {
         const {x, y, pixelSize} = bare.state
 
         const withTrack = await restore(saved.clone())
+        withTrack.trackPairs = [stubTrackPair(dom.window)]
+
+        // The layout pass a track add, remove or reorder triggers — the whole of
+        // what a track brings to this seam.
         const clamp = vi.spyOn(State.prototype, 'clampXY')
         await withTrack.updateLayout()
 
@@ -139,5 +171,9 @@ describe('restore routes through the chokepoint (#558)', () => {
         expect(withTrack.state.x).toBe(x)
         expect(withTrack.state.y).toBe(y)
         expect(withTrack.state.pixelSize).toBe(pixelSize)
+
+        // Both sides of the equality are inside the chromosome, so it is not two
+        // browsers agreeing on an unclamped origin.
+        expect(x).toBeLessThan(999_999)
     })
 })

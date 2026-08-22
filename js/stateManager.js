@@ -112,8 +112,15 @@ class StateManager {
 
         const restored = state.clone();
 
-        // The clone carries the incoming chr1/chr2/zoom before `setView` runs,
-        // so `_adjustPixelSize` consults `browser.minPixelSize` with the same
+        // `setView`'s return is deliberately discarded. It runs on the clone,
+        // which already holds the incoming chromosomes, so its `chrChanged` is
+        // always false and its `resolutionChanged` always false — the comparison
+        // that means anything is against the outgoing value of
+        // `this.activeState`, which is the one computed above.
+        // `resolutionChanged` is #560's to make honest.
+        //
+        // The clone carries the incoming chr1/chr2 before `setView` runs, so
+        // `_adjustPixelSize` consults `browser.minPixelSize` with the same
         // arguments the hand-rolled floor above it used to.
         await restored.setView(
             state.chr1, state.chr2, state.x, state.y, state.zoom, state.pixelSize,

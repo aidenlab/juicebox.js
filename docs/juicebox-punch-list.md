@@ -1,6 +1,6 @@
 # Juicebox.js — Punch List
 
-**As of 2026-08-22. Candidate 6 is the active work; the frontier is [#510](https://github.com/aidenlab/juicebox.js/issues/510).**
+**As of 2026-08-22. Candidate 6 is the active work; #510 is fixed, so the frontier is [#557](https://github.com/aidenlab/juicebox.js/issues/557) — the gate.**
 
 > **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
 > agree with it. Where the durable facts live:
@@ -41,8 +41,8 @@ what is actually unblocked.
 
 | # | Ticket | Blocked by |
 |---|---|---|
-| **#510** | `State.default()` passes six arguments to a seven-parameter constructor | — **frontier** |
-| #557 | Gate: snapshot the resolved state every restore door produces today | #510 |
+| ~~**#510**~~ | `State.default()` passes six arguments to a seven-parameter constructor | ✅ **fixed** — the default view opens at the origin, and the ignored `config` parameter is gone from `State.default` and `decodeState` |
+| **#557** | Gate: snapshot the resolved state every restore door produces today | — **frontier** |
 | #558 | Restore routes through the chokepoint, and the clamp gets one enforcer | #557 |
 | #559 | `setActiveDataset` loses its `state` parameter | #558 |
 | #560 | `resolutionChanged` tells the truth on restore | #559 |
@@ -94,7 +94,7 @@ than rediscovered one at a time.
 
 | Issue | Open since | Relationship | Do what |
 |---|---|---|---|
-| **#510** | Aug 2026 | Already the frontier. Promoted from a candidate-5 follow-up by ADR-0009 | wired |
+| ~~**#510**~~ | Aug 2026 | Was the frontier. Promoted from a candidate-5 follow-up by ADR-0009 | ✅ **fixed**, before the gate, exactly as ADR-0009 sequenced it |
 | **#372** | Jul 2026 | Its **validation half is #561**. Restore is the first moment a valid normalization set exists | leave open; it narrows to notification |
 | **#528** | Aug 2026 | **Answered by ADR-0009.** It asked whether a numeric seventh state token (`normalization: "2000"`) should be rejected or coerced; decisions 2 and 5 say coerce, at restore, against the dataset | ✅ re-labelled `ready-for-agent` and pointed at #561; use it as #561's fixture |
 | **#280** | 2018 | **Plausibly this candidate's bug.** See the hypothesis below | ✅ linked both ways with #562; do **not** close on the reading |
@@ -183,9 +183,9 @@ Two lessons from 3b worth carrying, because both cost a re-run:
 ## Candidate 5's follow-ups
 
 Eight were filed rather than fixed, per the standing file-and-keep-refactoring rule. **Two are
-fixed** (#514, #515). Six remain: **#510** (now candidate 6's frontier), **#518**, **#519**,
-**#521**, **#525**, **#528** (now answered by ADR-0009 — see the table above). Only #510 blocks
-anything.
+fixed** (#514, #515), and **#510** makes three — it landed ahead of candidate 6's gate.
+Five remain: **#518**, **#519**, **#521**, **#525**, **#528** (now answered by ADR-0009
+— see the table above). None of the five blocks anything.
 
 ---
 

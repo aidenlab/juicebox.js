@@ -1,10 +1,10 @@
 /**
  * Has this browser opted out of syncing, and does it have a dataset to sync?
  *
- * The single reading of `synchable` in the codebase. It was read three times
+ * The single statement of the `synchable` rule. It was written out three times
  * until #562 -- here, in `HICBrowser.syncState`, and in
- * `StateManager.canBeSynched` -- and the two rules that need it now share this
- * one expression rather than restating it.
+ * `StateManager.canBeSynched` -- and its three readers now share this one
+ * expression rather than each restating it.
  *
  * @param {Object} browser
  * @returns {boolean}
@@ -73,4 +73,4 @@ function pairSynchable(browsers) {
     return pairs
 }
 
-export {pairSynchable, canBeSynched}
+export {pairSynchable, canBeSynched, isSynchable}

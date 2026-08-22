@@ -189,19 +189,16 @@ class DataLoader {
 
             registry.sync(); // Sync browsers to ensure all browsers are updated with the new dataset
 
-            // Find a browser to sync with, if any. `canBeSynched` is the guard
-            // that keeps a browser opted out of syncing out of it -- it used to
-            // be `syncState`'s own, and #562 left `synchable` one reader.
+            // Find a browser to sync with, if any. The opt-out is `syncState`'s
+            // own guard, as it was before #562 -- this filter has never looked
+            // at `synchable`.
             const peer = registry.browsers.find(
                 b => b !== this.browser &&
                      b.dataset &&
                      b.dataset.isCompatible(this.browser.dataset)
             );
             if (peer) {
-                const peerSyncState = peer.getSyncState();
-                if (canBeSynched(this.browser, peerSyncState)) {
-                    await this.browser.syncState(peerSyncState);
-                }
+                await this.browser.syncState(peer.getSyncState());
             }
 
             return dataset;

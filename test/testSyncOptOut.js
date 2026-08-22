@@ -20,6 +20,7 @@ vi.mock('../js/hicDataset.js', () => ({
 }))
 
 const { default: DataLoader } = await import('../js/dataLoader.js')
+const { default: HICBrowser } = await import('../js/hicBrowser.js')
 
 const CHROMOSOMES = [
     { name: 'All', size: 2000, index: 0 },
@@ -47,10 +48,23 @@ function stubPeer() {
     }
 }
 
+/**
+ * The stub takes `HICBrowser`'s real `syncState` -- the guard under test is in
+ * it, so a hand-written stand-in would test nothing. Everything that method
+ * touches beyond the guard is stubbed: `state.sync` records the call, `update`
+ * and the coordinator do nothing.
+ */
 function stubBrowser({ synchable, peer, synched }) {
     const browser = {
         synchable,
-        genome: undefined,
+        genome: { getChromosome: name => CHROMOSOMES.find(c => c.name === name) },
+        state: {
+            sync: async targetState => {
+                synched.push(targetState)
+                return { zoomChanged: false, chrChanged: false }
+            }
+        },
+        update: async () => undefined,
         dataset: undefined,
         clearDataset: () => undefined,
         stopSpinner: () => undefined,
@@ -59,6 +73,7 @@ function stubBrowser({ synchable, peer, synched }) {
         userInteractionShield: { style: {} },
         controlDataset: undefined,
         coordinator: {
+            onLocusChange: () => undefined,
             onNormalizationExternalChange: () => undefined,
             onGenomeChange: () => undefined,
             onNormVectorIndexLoad: () => undefined,
@@ -68,7 +83,7 @@ function stubBrowser({ synchable, peer, synched }) {
         setActiveDataset: dataset => { browser.dataset = dataset },
         setState: async () => undefined,
         parseGotoInput: async () => undefined,
-        syncState: async targetState => { synched.push(targetState) }
+        syncState: targetState => HICBrowser.prototype.syncState.call(browser, targetState)
     }
     browser.registry.browsers.push(browser)
     return browser
@@ -98,5 +113,36 @@ describe('the sync step at the end of a map load', () => {
 
         expect(synched).toHaveLength(1)
         expect(synched[0]).toMatchObject({ chr1Name: 'chr1', binX: 3, binY: 4 })
+    })
+})
+
+/**
+ * `synchedBrowsers` is a snapshot: `registry.sync()` rebuilds it with
+ * `pairSynchable`, and it stands until the next rebuild. A host that flips
+ * `synchable` in between leaves a browser in a set it no longer belongs to, and
+ * the only thing that catches it is `syncState`'s own guard -- which is why
+ * #562 kept that guard rather than leaving the question to the callers.
+ */
+describe('the sync a browser pushes to the browsers it is linked with', () => {
+
+    test('a browser that opted out after the group was built does not take the state', async () => {
+        const synched = []
+        const recipient = stubBrowser({ synchable: undefined, peer: undefined, synched })
+        recipient.dataset = stubDataset()
+
+        const source = {
+            synchedBrowsers: new Set([recipient]),
+            getSyncState: () => ({
+                chr1Name: 'chr1', chr2Name: 'chr1', binSize: 1000, binX: 3, binY: 4, pixelSize: 2
+            })
+        }
+
+        // The host flips the flag; nothing rebuilds the group.
+        recipient.synchable = false
+
+        HICBrowser.prototype.syncToOtherBrowsers.call(source)
+        await Promise.resolve()
+
+        expect(synched).toEqual([])
     })
 })

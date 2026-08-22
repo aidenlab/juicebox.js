@@ -39,6 +39,7 @@ import InteractionHandler from "./interactionHandler.js"
 import DataLoader from "./dataLoader.js"
 import {normalizeTrackConfigs} from "./normalizeSession.js"
 import {unmappedUrl} from "./urlMapper.js"
+import {isSynchable} from "./syncGroup.js"
 
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
@@ -967,14 +968,16 @@ class HICBrowser {
     /**
      * Take a sync state published by a sibling browser.
      *
-     * Whether this browser *may* take it is `canBeSynched` in `syncGroup.js`,
-     * and every caller has already asked: `syncToOtherBrowsers` walks
-     * `synchedBrowsers`, which `pairSynchable` built, and `dataLoader` guards
-     * both of its calls. So no `synchable` check here -- #562 left the flag one
-     * reader.
+     * The guard is `isSynchable` from `syncGroup.js` -- the same expression
+     * `pairSynchable` and `canBeSynched` read, so #562 left the `synchable`
+     * rule written down once. The guard itself stays here rather than being
+     * left to the callers: `syncToOtherBrowsers` walks `synchedBrowsers`, a set
+     * `registry.sync()` last rebuilt, so a browser whose host flipped
+     * `synchable` since then is still in it. That was master's behaviour and
+     * the ticket does not change what syncing does.
      */
     async syncState(targetState) {
-        if (!targetState || !this.dataset || !this.state) {
+        if (!targetState || !isSynchable(this) || !this.state) {
             return;
         }
 

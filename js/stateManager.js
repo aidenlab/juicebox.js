@@ -45,16 +45,28 @@ class StateManager {
     }
 
     /**
-     * Set the active dataset and optionally the state.
-     * 
+     * Install the active dataset. **The dataset and nothing else** -- state
+     * arrives only through `setState`, the chokepoint (#559, ADR-0009
+     * decision 1).
+     *
+     * This took a second `state` parameter until #559, and assigned it to
+     * `this.activeState` with no validation at all, from five `dataLoader` call
+     * sites. That was the live bypass of the mutation invariant -- not the
+     * `browser.state = x` setters the review card names, which have no
+     * production callers -- and it carried no warning comment while running on
+     * every load.
+     *
+     * Routing the assignment through the chokepoint *inside* this setter was
+     * the rejected alternative: it hides a chokepoint call in a method named
+     * for something else, which is how the door was built the first time.
+     * Dropping the parameter makes the ordering explicit at each call site --
+     * install the dataset, then hand the state to `setState`, which needs the
+     * dataset already in place because `clampXY` reads its chromosome table.
+     *
      * @param {Dataset} dataset - The dataset to set as active
-     * @param {State} state - Optional state to set
      */
-    setActiveDataset(dataset, state) {
+    setActiveDataset(dataset) {
         this.activeDataset = dataset;
-        if (state) {
-            this.activeState = state;
-        }
     }
 
     /**

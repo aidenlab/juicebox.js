@@ -1,6 +1,6 @@
 # Juicebox.js — Punch List
 
-**As of 2026-08-22. Candidate 6 is the active work; the gate (#557) and the behaviour change behind it (#558) are in, so the frontier is [#559](https://github.com/aidenlab/juicebox.js/issues/559) — `setActiveDataset` loses its `state` parameter.**
+**As of 2026-08-22. Candidate 6 is the active work; the gate (#557), the behaviour change behind it (#558) and the back door beside it (#559) are in, so the frontier is the parallel branch — [#560](https://github.com/aidenlab/juicebox.js/issues/560), [#561](https://github.com/aidenlab/juicebox.js/issues/561) and [#562](https://github.com/aidenlab/juicebox.js/issues/562), all three now unblocked.**
 
 > **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
 > agree with it. Where the durable facts live:
@@ -44,10 +44,10 @@ what is actually unblocked.
 | ~~**#510**~~ | `State.default()` passes six arguments to a seven-parameter constructor | ✅ **fixed** — the default view opens at the origin, and the ignored `config` parameter is gone from `State.default` and `decodeState` |
 | ~~**#557**~~ | Gate: snapshot the resolved state every restore door produces today | ✅ **landed** — 450 records, five doors, two viewports |
 | ~~**#558**~~ | Restore routes through the chokepoint, and the clamp gets one enforcer | ✅ **landed** — `StateManager.setState` delegates to `setView`, `updateLayout`'s `clampXY` is gone, **2 of the gate's 450 records moved** |
-| **#559** | `setActiveDataset` loses its `state` parameter | — **frontier** |
-| #560 | `resolutionChanged` tells the truth on restore | #559 |
-| #561 | Normalization is validated against the loaded dataset at restore | #559 |
-| #562 | The sync trio splits three ways | #559 |
+| ~~**#559**~~ | `setActiveDataset` loses its `state` parameter | ✅ **landed** — the parameter is gone from all five `dataLoader` sites, the `config.locus` door now reaches `setState`, and **the gate's `rungs` field moved on all 450 records while not one `state` field did** |
+| **#560** | `resolutionChanged` tells the truth on restore | — **frontier** |
+| **#561** | Normalization is validated against the loaded dataset at restore | — **frontier** |
+| **#562** | The sync trio splits three ways | — **frontier** |
 | #563 | `StateManager` folds into `State`, the setters go, and the discipline is written down | #560, #561, #562 |
 
 **#560, #561 and #562 are a parallel branch** off #559; #563 is the join. This is the first
@@ -85,6 +85,24 @@ Read ADR-0009 before touching a ticket. Four of the card's claims did not surviv
 (`rootElement` is appended in the constructor), so the clamp is not decorative — but it reads
 `{width: 0, height: 0}` in the harness, so the gate's fixture must state one. Probe output is in the
 ADR.
+
+**What #559 actually moved: the `rungs` field on all 450 records, and no `state` field at all.**
+`setActiveDataset(state)` — the count of states installed without the chokepoint seeing them — left
+the file entirely, and `setState` arrived on the `config.locus` door in both viewport columns. The
+`locus` door's validated state is overwritten by `parseGotoInput` a line later, so what the door
+gained is not visible in a snapshot; `test/testRestoreBackDoor.js` traps `activeState` itself and
+asserts every state installed during that load came out of the chokepoint. **The `synchState`
+branch was fixed but cannot be exercised in production: the rung is unreachable (#566), so #559's
+third acceptance criterion is narrowed to a test that pins both the unreachability and the branch's
+correctness for when #566 lifts it.**
+
+**One thing #558 broke quietly and #559 had to finish.** The chokepoint installs a *clone*, so the
+state a rung hands it stops being the state in force the moment it is accepted — and `onMapLoaded`
+was publishing the handed-over object. Harmless while the rung's state was the installed one; a
+whole-genome default published to hosts for a `?locus=` load once the `config.locus` rung went
+through the chokepoint. Both paths now read the payload back off the browser. **The gate cannot see
+this class of defect** — it records `browser.state`, never the callback's argument — which is worth
+remembering for #560, #561 and #562, all three of which move the same seam.
 
 **One split found while decomposing, against the ADR's own sequencing.** The ADR treats restore
 through the chokepoint as one ticket; it is two. Three of the five `setActiveDataset` call sites are

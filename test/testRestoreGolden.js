@@ -51,9 +51,12 @@
  *   exists to catch, and it would otherwise show up only as a state that moved.
  * - **`state`** -- the resolved `State` off the live browser, field by field,
  *   plus `getLocus` projected at the same stated viewport.
- *   `setActiveDataset(state)` counts only the calls that carry a state -- the
- *   second parameter ADR-0009 decision 1 deletes, and so the number that should
- *   reach zero. It is not a rung; it is the back door beside the ladder.
+ *   `setActiveDataset` counts the dataset installs. It is not a rung; it is the
+ *   back door beside the ladder, and until #559 a companion count --
+ *   `setActiveDataset(state)` -- said how many states each door installed
+ *   through it. That parameter is gone, so the companion count is gone with it;
+ *   `test/testRestoreBackDoor.js` is where the door being *closed* is asserted,
+ *   which a count of zero could never say.
  *
  * A fixture that differs from another only in its tracks or its colour scale
  * produces an identical record here, and that is correct: restore reads the
@@ -126,8 +129,8 @@
  * - A **`pixelSize` cap arriving** -- a value above `MAX_PIXEL_SIZE` coming down
  *   to it, once restore runs `_adjustPixelSize`.
  * - A **normalization coerced against the dataset** (ADR-0009 decision 5).
- * - **`setActiveDataset(state)` falling to zero**, as decision 1 removes the
- *   parameter. It should reach zero on every door in the file.
+ * - **`setActiveDataset(state)` disappearing**, as decision 1 removes the
+ *   parameter. It went from every door at once, in #559.
  *
  * And what does **not**: a `locus` projection moving without its `state` moving
  * -- `getLocus` is a pure function of the fields above it, so that combination
@@ -143,6 +146,7 @@
  * |------|----------|---------------|
  * | 2026-08-22 | all — baseline taken | #557. No production code changed; this is the gate, taken before candidate 6 moves anything. #510 landed first, so the fallback door records a y-origin of 0 rather than baking that defect in. |
  * | 2026-08-22 | `harvested-query-degron-fully-encoded`, `harvested-query-gm12878-nvi` — the `config.state` door, `1600x400` column only | #558. Restore goes through `setView`, so the clamp reaches it. Tally below. |
+ * | 2026-08-22 | all — the `rungs` field only, on every door | #559. `setActiveDataset` loses its `state` parameter, so the count of calls carrying one leaves the file, and the `config.locus` door reaches `setState` where it did not before. Tally below. |
  *
  * ### The #558 tally
  *
@@ -176,7 +180,8 @@
  *   the corpus's smallest saved `pixelSize` is 1. It is named so that "no
  *   `pixelSize` moved" is not read as "no `pixelSize` could have".
  * - **No `rungs` moved, and `setActiveDataset(state)` is still 1 on the doors
- *   that call it.** #558 is decisions 2 and 4 only; the parameter goes in #559.
+ *   that call it.** #558 is decisions 2 and 4 only; the parameter goes in #559,
+ *   which is the row below this tally.
  * - **The live door's negative origins are unchanged** — all still negative.
  *   Finding 2 above is `parseGotoInput` running *after* `setState`, and
  *   `updateWithLoci` passes `{clampXY: false}`, so routing restore through the
@@ -192,6 +197,35 @@
  * A second movement class the ticket authorised did **not** appear: nothing was
  * rejected, and every record still reads `"outcome": "restores"`. Coerced,
  * never refused (ADR-0009 decision 2).
+ *
+ * ### The #559 tally
+ *
+ * Every record moved, and **only `rungs` moved** -- not one field of one
+ * `state`, in either column, on any of the five doors. Two line shapes account
+ * for the whole diff:
+ *
+ * - **`setActiveDataset(state)` removed -- 450 records, i.e. all of them.** The
+ *   parameter is gone, so the count that only ever meant "states installed
+ *   without the chokepoint seeing them" has nothing left to count and is no
+ *   longer emitted. `setActiveDataset` itself is unchanged at 1 everywhere the
+ *   ladder installs a dataset, which is the check the update convention names:
+ *   the door closing must not look like the dataset ceasing to be installed.
+ * - **`setState` added -- 90 records: the `config.locus` door, both columns.**
+ *   45 browser configs x 2 viewports x 1 door. That door used to install
+ *   `State.default()` through the back door and go straight on to
+ *   `parseGotoInput`; it now hands the default to the chokepoint first. The
+ *   `config.synchState` door is the other rung #558 could not reach, and it
+ *   does not appear here because it is still unreachable (#566) and still
+ *   recording the fallback.
+ *
+ * **No `state` moved, and that is the expected shape rather than a null
+ * result.** The three doors that already called `setState` were handing it the
+ * same state before and after. On the `config.locus` door the validated default
+ * is overwritten a line later by `parseGotoInput`, so what the chokepoint now
+ * produces there is not what the record shows -- the door's value is that the
+ * raw state no longer *stands*, which is a claim about the state between two
+ * calls and therefore not a claim a snapshot can make.
+ * `test/testRestoreBackDoor.js` makes it, by trapping the field.
  *
  * @see docs/adr/0009-restore-is-a-translator.md — the decisions this gate guards
  * @see test/data/wireFormatCorpus.js — the inputs
@@ -462,18 +496,17 @@ function rungCounter() {
         for (const method of ['parseGotoInput', 'setState', 'syncState']) {
             count(HICBrowser.prototype, method)
         }
-        // Not a rung: the back door beside the ladder. `setActiveDataset`'s
-        // second parameter is what lets a caller install a state without the
-        // chokepoint seeing it, and ADR-0009 decision 1 deletes it. Counting the
-        // calls that carry one says, per door, how many states this load
-        // installed that way -- which is the number that should reach zero.
+        // Not a rung: the back door beside the ladder. It took a second `state`
+        // parameter until #559, and this counted the calls that carried one --
+        // per door, the states a load installed without the chokepoint seeing
+        // them. The parameter is gone (ADR-0009 decision 1), so what is left to
+        // count is the dataset install itself, which the update convention reads
+        // alongside the state: a door losing this call while its state stays put
+        // would mean the dataset stopped being installed.
         const original = StateManager.prototype.setActiveDataset
-        vi.spyOn(StateManager.prototype, 'setActiveDataset').mockImplementation(function (dataset, state) {
+        vi.spyOn(StateManager.prototype, 'setActiveDataset').mockImplementation(function (dataset) {
             counts['setActiveDataset'] = (counts['setActiveDataset'] || 0) + 1
-            if (state) {
-                counts['setActiveDataset(state)'] = (counts['setActiveDataset(state)'] || 0) + 1
-            }
-            return original.call(this, dataset, state)
+            return original.call(this, dataset)
         })
     })
 

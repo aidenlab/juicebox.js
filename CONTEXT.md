@@ -80,9 +80,13 @@ directly.
 (screen pixel deltas, BP loci, a peer browser's state) into canonical arguments
 for the chokepoint. `panShift`, `updateWithLoci`, `setWithZoom` and friends.
 
-**Bulk replacement** — the deliberate exception to the chokepoint: session and
-URL restore replace the whole `State` object rather than mutating it, because at
-restore time there is nothing to translate relative to.
+**Bulk replacement** — session and URL restore replacing the whole `State`
+object rather than mutating it field by field. It used to be the chokepoint's
+deliberate exception, on the reasoning that at restore time there is nothing to
+translate relative to; #558 retired that. `StateManager.setState` hands the
+canonical six to `setView` like any other translator, so a restored view is
+clamped and capped exactly as a gesture is — silently, never rejected
+(ADR-0009 decision 2).
 
 ## Browser wiring
 

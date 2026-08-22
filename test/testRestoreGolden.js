@@ -142,6 +142,56 @@
  * | Date | Fixtures | Authorised by |
  * |------|----------|---------------|
  * | 2026-08-22 | all — baseline taken | #557. No production code changed; this is the gate, taken before candidate 6 moves anything. #510 landed first, so the fallback door records a y-origin of 0 rather than baking that defect in. |
+ * | 2026-08-22 | `harvested-query-degron-fully-encoded`, `harvested-query-gm12878-nvi` — the `config.state` door, `1600x400` column only | #558. Restore goes through `setView`, so the clamp reaches it. Tally below. |
+ *
+ * ### The #558 tally
+ *
+ * **Two records of 450 moved** (45 browser configs x 5 doors x 2 viewports),
+ * and both movements are of one kind:
+ *
+ * - **A clamp arriving on x, in the wide column only — 2 records.** Both are the
+ *   `config.state` door at `1600x400`, and in both the saved origin sits inside
+ *   the chromosome but too close to its end for a 1600px-wide viewport to fit.
+ *   `degron`: chr3 is `198022430 / 10000 = 19802.243` bins at zoom 7, so
+ *   `maxX = 19802.243 - 1600/1.55 = 18769.985` and the saved `19215` comes back
+ *   to it. `gm12878`: chr1 is `249250621 / 100000 = 2492.506` bins at zoom 4, so
+ *   `maxX = 2492.506 - 1600/1 = 892.506` and the saved `1115.253` comes back to
+ *   it. Each `locus` moved with its `state`, as a projection must. **Neither
+ *   moved in the `800x800` column** — at 800px the bound is 516 and 800 bins
+ *   looser respectively, and both origins fit. That asymmetry is the evidence
+ *   this is a clamp and not a coincidence, and it is what the second viewport
+ *   was added for.
+ * - **No `y` moved.** Both fixtures are intrachromosomal with the y origin at or
+ *   below the x origin, and the wide column is only 400px tall, so `maxY` never
+ *   binds. A clamp that bit on one axis and not the other is the expected shape.
+ * - **No `pixelSize` moved, and no `MAX_PIXEL_SIZE` cap fired.** The corpus's
+ *   largest saved `pixelSize` is `8.02`, two orders below the cap of `128`, so
+ *   the cap this ticket adds is unreachable from any harvested link. That is why
+ *   #558's acceptance criteria ask for a written test rather than a snapshot:
+ *   `test/testRestoreClamp.js` drives `pixelSize=1e9` through the door and pins
+ *   the coercion, which no fixture here can. The cap is not the only pixelSize
+ *   coercion restore now inherits — `_adjustPixelSize` opens with
+ *   `Math.max(1, target)`, so a saved `pixelSize` below 1 would come up to 1
+ *   even where `minPixelSize` is lower. No record here exercises that either;
+ *   the corpus's smallest saved `pixelSize` is 1. It is named so that "no
+ *   `pixelSize` moved" is not read as "no `pixelSize` could have".
+ * - **No `rungs` moved, and `setActiveDataset(state)` is still 1 on the doors
+ *   that call it.** #558 is decisions 2 and 4 only; the parameter goes in #559.
+ * - **The live door's negative origins are unchanged** — all still negative.
+ *   Finding 2 above is `parseGotoInput` running *after* `setState`, and
+ *   `updateWithLoci` passes `{clampXY: false}`, so routing restore through the
+ *   chokepoint cannot reach it. #567 is still the ticket for that, and the same
+ *   is true of the `config.locus` door's small negative `x` values, and of the
+ *   two `config.locus` records that resolve to `NaN` throughout: a clamp cannot
+ *   repair a `NaN` — `Math.min(Math.max(0, NaN), maxX)` is `NaN` — and that door
+ *   does not reach `setState` in any case.
+ * - **Nothing moved on the `State.default()` fallback door** (its origin is
+ *   `0, 0` and its `pixelSize` `1`, all in range) or on the `config.synchState`
+ *   door (still unreachable, still recording the fallback — #566).
+ *
+ * A second movement class the ticket authorised did **not** appear: nothing was
+ * rejected, and every record still reads `"outcome": "restores"`. Coerced,
+ * never refused (ADR-0009 decision 2).
  *
  * @see docs/adr/0009-restore-is-a-translator.md — the decisions this gate guards
  * @see test/data/wireFormatCorpus.js — the inputs

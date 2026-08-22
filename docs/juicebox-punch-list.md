@@ -1,6 +1,6 @@
 # Juicebox.js — Punch List
 
-**As of 2026-08-22. Candidate 6 is the active work; #510 is fixed, so the frontier is [#557](https://github.com/aidenlab/juicebox.js/issues/557) — the gate.**
+**As of 2026-08-22. Candidate 6 is the active work; the gate (#557) and the behaviour change behind it (#558) are in, so the frontier is [#559](https://github.com/aidenlab/juicebox.js/issues/559) — `setActiveDataset` loses its `state` parameter.**
 
 > **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
 > agree with it. Where the durable facts live:
@@ -42,9 +42,9 @@ what is actually unblocked.
 | # | Ticket | Blocked by |
 |---|---|---|
 | ~~**#510**~~ | `State.default()` passes six arguments to a seven-parameter constructor | ✅ **fixed** — the default view opens at the origin, and the ignored `config` parameter is gone from `State.default` and `decodeState` |
-| **#557** | Gate: snapshot the resolved state every restore door produces today | — **frontier** |
-| #558 | Restore routes through the chokepoint, and the clamp gets one enforcer | #557 |
-| #559 | `setActiveDataset` loses its `state` parameter | #558 |
+| ~~**#557**~~ | Gate: snapshot the resolved state every restore door produces today | ✅ **landed** — 450 records, five doors, two viewports |
+| ~~**#558**~~ | Restore routes through the chokepoint, and the clamp gets one enforcer | ✅ **landed** — `StateManager.setState` delegates to `setView`, `updateLayout`'s `clampXY` is gone, **2 of the gate's 450 records moved** |
+| **#559** | `setActiveDataset` loses its `state` parameter | — **frontier** |
 | #560 | `resolutionChanged` tells the truth on restore | #559 |
 | #561 | Normalization is validated against the loaded dataset at restore | #559 |
 | #562 | The sync trio splits three ways | #559 |
@@ -56,6 +56,13 @@ rather than read off a table here.
 
 **#558 is the ticket that deliberately moves snapshots.** #560 moves them for a second, separately
 attributable reason, which is why it is not bundled into #558.
+
+**What #558 actually moved: two records of 450**, both the `config.state` door in the `1600x400`
+column, both an `x` clamp on a saved origin too near the end of its chromosome for a wide viewport —
+and neither moved in the `800x800` column, which is the asymmetry that proves it is a clamp and not
+a coincidence. The tally is in `test/testRestoreGolden.js`'s log. The `MAX_PIXEL_SIZE` cap fired on
+nothing: the corpus's largest saved `pixelSize` is 8.02 against a cap of 128, so the cap is pinned by
+a written test (`test/testRestoreClamp.js`) rather than by a snapshot.
 
 ## What the grilling cost the card
 
@@ -118,7 +125,8 @@ can settle cheaply, because `synchState` is one of the five doors it pins. If th
 ## The release note this candidate owes
 
 **A saved view whose `pixelSize` or origin violates an invariant now opens clamped rather than as
-written.** That is phase 4's **fifth** note and the **second** an end user can hit. Clamping
+written.** ✅ True as of #558. That is phase 4's **fifth** note and the **second** an end user can
+hit. Clamping
 silently is decision 2 — the same "coerce, never reject" rule the normalize stage already follows.
 
 ---

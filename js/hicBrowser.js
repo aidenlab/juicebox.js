@@ -34,7 +34,6 @@ import {registryForContainer} from "./browserRegistry.js"
 import {setTrackReorderArrowColors} from "./trackPair.js"
 import createWidgets from "./createWidgets.js"
 import BrowserCoordinator from "./browserCoordinator.js"
-import StateManager from "./stateManager.js"
 import InteractionHandler from "./interactionHandler.js"
 import DataLoader from "./dataLoader.js"
 import {normalizeTrackConfigs} from "./normalizeSession.js"
@@ -70,6 +69,18 @@ class HICBrowser {
      * host that wants to know is a host that has kept a zombie.
      */
     #disposed = false
+
+    /**
+     * The view in force -- chromosomes, zoom, bin origin, pixel size.
+     *
+     * Private, and that is the whole of #563's behaviour change: the field is
+     * readable through `state` and its `activeState` alias, and writable only
+     * by `setState`, the chokepoint. The setters that used to stand beside
+     * those getters were commented "direct assignment bypasses validation" and
+     * had no production caller (ADR-0009 fact 2); reading is plausible host
+     * behaviour and stays, writing is not and goes (decision 7).
+     */
+    #state
 
     constructor(appContainer, config) {
         this.#construct(appContainer, config);
@@ -136,8 +147,20 @@ class HICBrowser {
         this.synchable = config.synchable;
         this.synchedBrowsers = new Set();
 
-        // Initialize state manager for dataset/state management
-        this.stateManager = new StateManager(this);
+        // The three fields `StateManager` used to hold, held plainly (#563,
+        // ADR-0009 decisions 7 and 8). It was twelve methods, eight of them
+        // field get/set re-wrapped by ten accessors here; the four that carried
+        // behaviour left in #559 through #562, and what is left is a dataset, a
+        // state and a control dataset.
+        //
+        // `dataset` and `controlDataset` are writable fields because they were
+        // writable accessors; `#state` is private because the state is written
+        // in exactly one place, `setState`, the chokepoint. Declared here rather
+        // than only on first write so that `'state' in browser` is true from
+        // construction -- the public surface test asserts presence, not value.
+        this.dataset = undefined;
+        this.controlDataset = undefined;
+        this.#state = undefined;
 
         this.isMobile = hicUtils.isMobile();
 
@@ -259,7 +282,7 @@ class HICBrowser {
             // a normalization this map does not carry still opens. Recorded in
             // CONTEXT.md as a load-stage rule, not part of the resolved schema.
             //
-            // The rule itself lives in `stateManager.resolveNormalization` and
+            // The rule itself lives in `resolveNormalization` and
             // is spelled out once (#561, ADR-0009 decision 5). It used to be
             // written out a second time here, as its own `Set` and its own
             // fallback, and this copy ran *after* restore -- so of the two
@@ -267,7 +290,7 @@ class HICBrowser {
             // the question, not the answer: which field is being asked about,
             // and when.
             if (config.normalization) {
-                this.state.normalization = await this.stateManager.resolveNormalization(config.normalization);
+                this.state.normalization = await this.resolveNormalization(config.normalization);
             }
 
             if (config.cycle) {
@@ -515,83 +538,47 @@ class HICBrowser {
      * @param {Dataset} dataset - The dataset to activate
      */
     setActiveDataset(dataset) {
-        this.stateManager.setActiveDataset(dataset);
+        this.dataset = dataset;
     }
 
     /**
-     * The primary dataset -- the "A" map, as opposed to `controlDataset`.
+     * The primary dataset -- the "A" map, as opposed to `controlDataset` -- and
+     * the view in force.
      *
      * `dataset`/`state` is the vocabulary internal code reads; `activeDataset`
      * and `activeState` below are aliases for it. See #468.
      *
-     * Both names are load-bearing outside this repo: juicebox-web reads
+     * Both dataset names are load-bearing outside this repo: juicebox-web reads
      * `dataset` (3 sites) and so does Spacewalk (`juicebox/hicMapState.js`),
      * while Spacewalk reads `activeDataset` from `juicebox/juiceboxPanel.js`.
      * Neither name can simply win.
-     */
-    get dataset() {
-        return this.stateManager.getActiveDataset();
-    }
-
-    set dataset(value) {
-        this.stateManager.setActiveDataset(value);
-    }
-
-    /**
-     * The current view state -- chromosomes, zoom, bin origin, pixel size.
+     *
+     * `dataset` and `controlDataset` are plain fields, assigned in the
+     * constructor (#563). Only `state` keeps an accessor, and only a getter:
+     * the state has one writer, `setState`.
      */
     get state() {
-        return this.stateManager.getActiveState();
-    }
-
-    /**
-     * Note: direct assignment bypasses validation. Use setState() for proper
-     * state management.
-     */
-    set state(value) {
-        if (value) {
-            this.stateManager.activeState = value;
-        } else {
-            this.stateManager.activeState = undefined;
-        }
+        return this.#state;
     }
 
     /** Alias for `dataset`. Retained for host apps -- Spacewalk reads it (juicebox/juiceboxPanel.js, 4 sites). */
     get activeDataset() {
-        return this.stateManager.getActiveDataset();
+        return this.dataset;
     }
 
     /** Alias for `dataset`. Retained for host apps -- Spacewalk reads it (juicebox/juiceboxPanel.js, 4 sites). */
     set activeDataset(value) {
-        this.stateManager.setActiveDataset(value);
+        this.dataset = value;
     }
 
-    /** Alias for `state`. Kept as published surface alongside `activeDataset`: no host we can measure reads it, and this repo cannot see the ones it cannot measure. */
+    /**
+     * Alias for `state`. Kept as published surface alongside `activeDataset`:
+     * no host we can measure reads it, and this repo cannot see the ones it
+     * cannot measure -- ADR-0003's "no measurable consumer is not no consumer",
+     * which is why the getters survived #563 and only the setters went.
+     */
     get activeState() {
-        return this.stateManager.getActiveState();
-    }
-
-    /** Alias for `state`; same validation caveat as the `state` setter. */
-    set activeState(value) {
-        if (value) {
-            this.stateManager.activeState = value;
-        } else {
-            this.stateManager.activeState = undefined;
-        }
-    }
-
-    /**
-     * Getter for controlDataset (backward compatibility)
-     */
-    get controlDataset() {
-        return this.stateManager.getControlDataset();
-    }
-
-    /**
-     * Setter for controlDataset (backward compatibility)
-     */
-    set controlDataset(value) {
-        this.stateManager.setControlDataset(value);
+        return this.state;
     }
 
     /**
@@ -738,8 +725,11 @@ class HICBrowser {
      * stay, only the data goes. Internal only -- not on the public API manifest.
      */
     clearDataset() {
-        // Clear current datasets.
-        this.stateManager.clearState();
+        // Clear current datasets. The state goes with them: a browser with no
+        // dataset has no view, and `setState` is the only way one comes back.
+        this.dataset = undefined;
+        this.#state = undefined;
+        this.controlDataset = undefined;
         this.setDisplayMode('A')
         this.unsyncSelf()
     }
@@ -935,11 +925,91 @@ class HICBrowser {
     }
 
     /**
-     * Set the matrix state.  Used to restore state from a bookmark
+     * Restore a saved view. **The chokepoint, and a translator like every other
+     * mutation path** (#558, ADR-0009 decisions 2 and 4).
+     *
+     * This is the one writer of the state field. It used to be two methods --
+     * this one, and `StateManager.setState` behind it -- and #563 folded them
+     * together: the manager was a wrapper re-wrapped by ten accessors here, and
+     * once the behaviour left there was nothing on the far side of the
+     * delegation but the field itself.
+     *
+     * The six canonical fields arrive off the incoming state and are handed to
+     * `State.setView`. Restore used to clone and apply a bare
+     * `Math.max(pixelSize, minPixelSize)` floor of its own, which meant a saved
+     * view skipped the `MAX_PIXEL_SIZE` cap and the x/y clamp that every gesture
+     * path gets. It no longer does.
+     *
+     * **A restored state is clamped silently, never rejected.** That is the same
+     * rule the normalize stage one seam over follows (ADR-0006, #466): defaults
+     * and coerces, never refuses. The cost is deliberate and is in the release
+     * notes -- a saved view at `pixelSize=1e9`, or with an origin past the end of
+     * the chromosome, now opens somewhere different. Rejecting instead would
+     * turn a link that renders something into a link that renders nothing.
+     *
+     * The clone is what is mutated, so the caller's state object is left alone:
+     * `dataLoader` hands the same instance to `coordinator.onMapLoaded`.
+     *
+     * The dataset must already be installed -- `clampXY` reads its chromosome
+     * table and resolution ladder. All three production callers set it first,
+     * one line earlier; #559 makes that ordering explicit at the call sites.
+     *
+     * `resolutionChanged` is computed against the state going out of force, the
+     * same comparison `chrChanged` beside it makes, and for the same reason
+     * (#560, ADR-0009 decision 3). It used to be `true` unconditionally, so
+     * every restore announced a resolution change whether or not the resolution
+     * moved. What that announcement costs is the resolution lock: the
+     * coordinator releases it whenever the flag is set
+     * (`browserCoordinator.onLocusChange`), and it is handed on to external
+     * `onLocusChange` callbacks as contract. The repaint itself is not at stake
+     * -- `update()` runs on every restore, flag or no.
+     *
+     * The seventh field, `normalization`, is settled after `setView` rather than
+     * through it (#561, ADR-0009 decision 5): it is not one of the canonical six
+     * and it is validated against the dataset rather than against the view. See
+     * `resolveNormalization` for why restore is the only place the question can
+     * be asked.
+     *
+     * Locus is not cached -- consumers derive it via state.getLocus().
+     *
      * @param state  browser state
      */
     async setState(state) {
-        const { chrChanged, resolutionChanged } = await this.stateManager.setState(state);
+
+        // Both flags are asked of the state going out of force, in its own
+        // vocabulary: `_detectChromosomeChange` and `_detectResolutionChange`
+        // are the predicates `setView` itself uses, so the answer here and the
+        // answer on every gesture path cannot drift apart. No state in force is
+        // a change on both counts -- there is nothing to have been unchanged
+        // from, and `clearDataset()` nulls the state at the top of every load,
+        // so the first restore of a load lands there.
+        const chrChanged = !this.#state ||
+            this.#state._detectChromosomeChange(state.chr1, state.chr2);
+
+        const resolutionChanged = !this.#state ||
+            this.#state._detectResolutionChange(state.zoom);
+
+        const restored = state.clone();
+
+        // `setView`'s return is deliberately discarded. It runs on the clone,
+        // which already holds the incoming chromosomes and the incoming zoom, so
+        // its `chrChanged` and its `resolutionChanged` are both always false --
+        // the comparisons that mean anything are against the outgoing value of
+        // the state field, which are the ones computed above.
+        //
+        // The clone carries the incoming chr1/chr2 before `setView` runs, so
+        // `_adjustPixelSize` consults `minPixelSize` with the same arguments the
+        // hand-rolled floor above it used to.
+        await restored.setView(
+            state.chr1, state.chr2, state.x, state.y, state.zoom, state.pixelSize,
+            this,
+            this.dataset,
+            this.contactMatrixView.getViewDimensions()
+        );
+
+        restored.normalization = await this.resolveNormalization(restored.normalization);
+
+        this.#state = restored;
 
         const eventData = {
             state: this.state,
@@ -948,6 +1018,84 @@ class HICBrowser {
         };
         await this.update();
         this.coordinator.onLocusChange(eventData);
+    }
+
+    /**
+     * The normalization a restored state can actually be rendered with (#561,
+     * ADR-0009 decision 5).
+     *
+     * **Restore is the first moment this question can be asked, and the last
+     * moment it can be asked cheaply.** The set of valid normalizations does not
+     * exist until a dataset is loaded -- which is why candidate 9 found
+     * `config.normalization` to be one of exactly three fields the normalize
+     * stage provably cannot resolve, and left it alone. Downstream of here the
+     * answer is still knowable but no longer actionable: `imageTileSource`
+     * discovers the missing vector per tile, mid-render, and draws `NONE`
+     * without the canonical state ever admitting it changed. So the state that
+     * comes out of the chokepoint names a normalization the dataset has, and the
+     * render path stops being where the substitution silently happens.
+     *
+     * It is the same invariant as the clamp, at the same moment, and it follows
+     * the same rule: **coerce, never reject.** A saved link naming a
+     * normalization this map does not carry still opens, on `NONE` -- the
+     * fallback every `.hic` file offers. Refusing would turn a link that renders
+     * something into a link that renders nothing.
+     *
+     * **This is validation only.** #372 -- "a normalization that is not
+     * available renders without one and the user is not told" -- narrows to its
+     * notification half and stays open; no error surface belongs here.
+     *
+     * `NONE` short-circuits, and not merely as an optimization: on a real
+     * `.hic` file `getNormalizationOptions` reads the normalization vector index
+     * off the wire, so asking would put a network read on every restore to buy
+     * an answer that is already known. A state with no normalization at all is
+     * `NONE` for the same reason `State`'s constructor defaults it there.
+     *
+     * A dataset that cannot answer is not a licence to skip the check:
+     * `getNormalizationOptions` already answers `['NONE']` for a dataset without
+     * the method, and that is a sincere answer -- such a dataset offers nothing
+     * else. The one case that genuinely cannot be asked is no dataset at all,
+     * and the requested value stands there rather than being coerced against a
+     * set that was never consulted.
+     *
+     * Public rather than private because it is **the** enforcer, and the load
+     * stage has a second thing to ask it: `init` resolves a top-level
+     * `config.normalization` here too. That field is not part of any saved state
+     * -- it is a config field a host sets alongside a map -- so it cannot arrive
+     * through `setState`, but it is the same question against the same set, and
+     * candidate 6's premise is that an invariant has one enforcer or none.
+     *
+     * @param {string|undefined} requested - The normalization asked for
+     * @returns {Promise<string>} - A normalization the loaded dataset offers
+     */
+    async resolveNormalization(requested) {
+
+        if (undefined === requested || 'NONE' === requested) {
+            return 'NONE';
+        }
+
+        if (!this.dataset) {
+            return requested;
+        }
+
+        const available = await this.getNormalizationOptions();
+
+        if (available.includes(requested)) {
+            return requested;
+        }
+
+        // The fallback is read out of the offered set rather than assumed to be
+        // `NONE`. Every `.hic` file seeds its normalization list with `NONE`, so
+        // on a single map the two are the same answer -- but with a control map
+        // loaded this set is an *intersection* of two files' lists, and an
+        // intersection is an expression rather than a guarantee. Where it does
+        // hold `NONE`, or where it is empty and there is nothing to name, `NONE`
+        // is both the answer and what the render path would have drawn anyway.
+        if (0 === available.length || available.includes('NONE')) {
+            return 'NONE';
+        }
+
+        return available[0];
     }
 
     /**
@@ -998,8 +1146,10 @@ class HICBrowser {
     }
 
     setNormalization(normalization) {
-        this.stateManager.setNormalization(normalization);
-        this.coordinator.onNormalizationChange(this.stateManager.getNormalization());
+        if (this.#state) {
+            this.#state.normalization = normalization;
+        }
+        this.coordinator.onNormalizationChange(this.#state ? this.#state.normalization : undefined);
     }
 
     async shiftPixels(dx, dy) {

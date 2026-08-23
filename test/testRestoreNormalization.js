@@ -219,7 +219,7 @@ describe('normalization is validated against the loaded dataset at restore (#561
 
         const browser = new HICBrowser(dom.another(), {})
         vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({...VIEWPORT})
-        const resolve = vi.spyOn(browser.stateManager, 'resolveNormalization')
+        const resolve = vi.spyOn(browser, 'resolveNormalization')
 
         await browser.init({url: HIC_URL, state: savedWith('NONE'), normalization: 'KR'})
 

@@ -667,7 +667,7 @@ export const wireFormatCorpus = [
         outcome: 'throws',
         input: '?session=https://example.org/fixtures/does-not-exist.json',
         loaderResponse: null,
-        note: 'A `loaderResponse` of null means the loader rejects. Wrapped as "Failed to load session from URL/file: …". This is the failure a stale `?session=` link produces, and the outer of the two nested catches — the inner one is reject-session-url-invalid-json.',
+        note: 'A `loaderResponse` of null means the loader rejects. This is the failure a stale `?session=` link produces. It and reject-session-url-invalid-json were the two nested catches, and the nesting is why a document that fetched fine and then would not parse was reported as if the fetch had failed; #521 unnested them, so the two now report the same shape with different *reasons* — "Session document could not be fetched" here, "Session is not valid JSON" there.',
     },
 
     {
@@ -679,7 +679,7 @@ export const wireFormatCorpus = [
         outcome: 'throws',
         input: '?session=https://example.org/fixtures/not-json.txt',
         loaderResponse: '<!doctype html><title>404</title>',
-        note: 'The loader succeeds and returns something that is neither compressed nor JSON — in practice a login page or an error page served with a 200. Wrapped as "Failed to parse session from URL/file: …".',
+        note: 'The loader succeeds and returns something that is neither compressed nor JSON — in practice a login page or an error page served with a 200. Reported as a parse failure naming a session URL as the source (#521); it used to arrive double-wrapped inside a load failure.',
     },
 
     {
@@ -690,7 +690,7 @@ export const wireFormatCorpus = [
         source: 'urlUtils.js:89 — BGZip.uncompressString on a payload that is not compressed',
         outcome: 'throws',
         input: '?session=blob:not-actually-compressed',
-        note: 'Throws out of the decompressor, uncaught and unwrapped — the `blob:`/`data:` arm has no try/catch, unlike the file and URL arms. The message is undefined. A truncated share link lands here.',
+        note: 'A truncated share link lands here. It used to throw out of the decompressor uncaught and unwrapped — the `blob:`/`data:` arm had no try/catch, unlike the file and URL arms, so what escaped `extractConfig` was a bare string with no `message` at all. #521 gave it the one shape the other arms report in.',
     },
 
     {
@@ -701,7 +701,7 @@ export const wireFormatCorpus = [
         source: 'urlUtils.js:101-104 — the isFile catch',
         outcome: 'throws',
         fileText: '{ this is not json',
-        note: 'Wrapped: "Failed to parse session file: …". Same reachability caveat as the other sessionFile fixtures.',
+        note: 'Reported in the one shape (#521), naming a session file as the source. Same reachability caveat as the other sessionFile fixtures — which is why the File arm\'s share of that shape is asserted against the adapter in `testSessionDecode.js` rather than here.',
     },
 
     {

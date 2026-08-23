@@ -457,9 +457,8 @@ exports[`decoder golden file — inputs the decoder takes as a string > reject-q
 exports[`decoder golden file — inputs the decoder takes as a string > reject-session-blob-corrupt 1`] = `
 {
   "error": {
-    "message": undefined,
-    "name": undefined,
-    "thrown": "string: invalid block type",
+    "message": "Could not decode the session from the session= parameter: Session is not a readable blob (invalid block type)",
+    "name": "SessionDecodeError",
   },
   "outcome": "throws",
 }
@@ -468,9 +467,8 @@ exports[`decoder golden file — inputs the decoder takes as a string > reject-s
 exports[`decoder golden file — inputs the decoder takes as a string > reject-session-gzip-data-uri 1`] = `
 {
   "error": {
-    "message": undefined,
-    "name": undefined,
-    "thrown": "string: invalid distance too far back",
+    "message": "Could not decode the session from the session= parameter: Session is not a readable data-uri (invalid distance too far back)",
+    "name": "SessionDecodeError",
   },
   "outcome": "throws",
 }
@@ -1028,8 +1026,8 @@ exports[`decoder golden file — inputs the decoder takes as a string > synth-se
 exports[`decoder golden file — session URLs, driven from their loader response > reject-session-url-invalid-json 1`] = `
 {
   "error": {
-    "message": "Failed to load session from URL/file: Failed to parse session from URL/file: Unexpected token '<', "<!doctype "... is not valid JSON",
-    "name": "Error",
+    "message": "Could not decode the session from a session URL: Session is not valid JSON (Unexpected token '<', "<!doctype "... is not valid JSON)",
+    "name": "SessionDecodeError",
   },
   "outcome": "throws",
 }
@@ -1038,8 +1036,8 @@ exports[`decoder golden file — session URLs, driven from their loader response
 exports[`decoder golden file — session URLs, driven from their loader response > reject-session-url-unreachable 1`] = `
 {
   "error": {
-    "message": "Failed to load session from URL/file: simulated fetch failure",
-    "name": "Error",
+    "message": "Could not decode the session from a session URL: Session document could not be fetched (simulated fetch failure)",
+    "name": "SessionDecodeError",
   },
   "outcome": "throws",
 }

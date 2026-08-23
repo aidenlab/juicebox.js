@@ -189,10 +189,10 @@ than rediscovered one at a time.
 | Issue | Open since | Relationship | Do what |
 |---|---|---|---|
 | ~~**#510**~~ | Aug 2026 | Was the frontier. Promoted from a candidate-5 follow-up by ADR-0009 | ✅ **fixed**, before the gate, exactly as ADR-0009 sequenced it |
-| **#372** | Jul 2026 | Its **validation half is #561**. Restore is the first moment a valid normalization set exists | leave open; it narrows to notification |
-| **#528** | Aug 2026 | **Answered by ADR-0009.** It asked whether a numeric seventh state token (`normalization: "2000"`) should be rejected or coerced; decisions 2 and 5 say coerce, at restore, against the dataset | ✅ re-labelled `ready-for-agent` and pointed at #561; use it as #561's fixture |
+| **#372** | Jul 2026 | Its **validation half is #561**. Restore is the first moment a valid normalization set exists | ✅ narrowing recorded on the issue; open, `ready-for-human` — "tell the user" is an error-UX decision nobody has made |
+| ~~**#528**~~ | Aug 2026 | **Answered by ADR-0009.** It asked whether a numeric seventh state token (`normalization: "2000"`) should be rejected or coerced; decisions 2 and 5 say coerce, at restore, against the dataset | ✅ **closed** — #561 coerces it, and the restore golden pins `"2000"` in, `"NONE"` out, at both viewports |
 | **#280** | 2018 | **Hypothesis weakened by #566** — the rung it blames is unreachable, not racy. See below | linked both ways with #562; still open, needs the repro, do **not** close on the reading |
-| **#473** | Aug 2026 | Same in-flight hazard as #469, on `TrackPair` rather than `ContactMatrixView`. Candidate 6 changed who owns state mutation | **neither easier nor harder** — the identity check `testRepaintDuringReset.js` pins is unaffected by the fold; still open, still unfiled work |
+| **#473** | Aug 2026 | Same in-flight hazard as #469, on `TrackPair` rather than `ContactMatrixView`. Candidate 6 changed who owns state mutation | **neither easier nor harder** — the identity check `testRepaintDuringReset.js` pins is unaffected by the fold. Still open, `needs-triage` |
 | ~~**#125**~~ | 2020 | Asked how `state` should be encoded for `loadHicFile`. The syntax in the question was always right; `docs/url.md` now documents v0 and v1 per ADR-0006 decision 2 | ✅ **answered and closed** |
 | ~~**#283**~~ | 2018 | Share produced `?juiceboxURL=undefined`. Moot — nothing writes that format since #506; only the adapter that refuses it remains | ✅ **closed as moot** |
 
@@ -215,6 +215,15 @@ reading is wrong about which door it comes through.
 and #562 moved `canBeSynched` without changing what it answers. **#280 stays open and stays linked.**
 The next honest move is to run its repro against a build with #566 lifted; until then it does not
 belong in candidate 6's Outcome box.
+
+## Filed during candidate 6, still open
+
+| Issue | State | What it is |
+|---|---|---|
+| **#575** | `needs-triage` | `init` writes `state.normalization` unvalidated in its `config.colorScale` branch, 35 lines above the validated write that overwrites it. Found by the review axes on #563; older than the candidate, transient in effect |
+| **#566** | `needs-triage` | The `config.synchState` restore rung is unreachable — `clearDataset()` runs four lines above a guard that needs a dataset. Pinned both ways in `testRestoreBackDoor.js`: unreachable today, correct for when this lifts |
+| **#372** | `ready-for-human` | Narrowed to its notification half; the validation half landed in #561 |
+| **#280** | — | Still open, still unreproduced; #566 weakened its mechanism. Needs the repro, not another reading |
 
 ## The release note this candidate owes
 

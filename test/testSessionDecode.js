@@ -487,12 +487,13 @@ describe('decodeSession — one outward failure shape', () => {
 
     /** Reject and return the rejection, so the shape can be read off it. */
     async function rejection(promise) {
+        let resolved
         try {
-            await promise
-            throw new Error('expected a rejection, and the session decoded')
+            resolved = await promise
         } catch (e) {
             return e
         }
+        throw new Error(`expected a rejection, and the session decoded to ${JSON.stringify(resolved)}`)
     }
 
     const arms = {

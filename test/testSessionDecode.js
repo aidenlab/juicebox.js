@@ -575,6 +575,35 @@ describe('decodeSession — one outward failure shape', () => {
     })
 
     /**
+     * The criterion is written against `extractConfig`, which is more than the
+     * `session` parameter: `?juiceboxData=` decompresses too, and rejected with
+     * the same kind of bare string. It carries no source — the parameter names
+     * itself, and `SESSION_SOURCES` is the `session=` vocabulary — but it is an
+     * `Error`, which is the half of the criterion that was failing.
+     */
+    test('a corrupt juiceboxData= link rejects with an Error too', async () => {
+        const e = await rejection(decodeSession('?juiceboxData=not-compressed-at-all', noIO))
+
+        expect(e).toBeInstanceOf(SessionDecodeError)
+        expect(e.message).toContain('juiceboxData=')
+        expect(e.cause).toBeDefined()
+    })
+
+    /**
+     * A session value that is neither a File nor a string cannot arrive through
+     * `extractConfig`, whose parser only ever produces strings. It used to raise
+     * a bare `TypeError` out of the prefix sniff all the same; a caller driving
+     * the adapter gets the one shape instead, and the ladder's own reason.
+     */
+    test('a session value that is not a string is refused in the same shape', async () => {
+        const e = await rejection(sessionAdapter.decode({query: {session: 42}, loaders: {}}))
+
+        expect(e).toBeInstanceOf(SessionDecodeError)
+        expect(e.source).toBe('parameter')
+        expect(e.message).toContain('Session must be a string, got number')
+    })
+
+    /**
      * The version refusal is raised after the arms, on the document rather than
      * on where it was read from -- and it still has to come out in the one shape,
      * carrying the source of the document it refused.

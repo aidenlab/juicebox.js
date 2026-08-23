@@ -60,7 +60,7 @@
  * 10: a session parameter may name a URL whose *contents* then need sniffing, so
  * a caller deciding whether more I/O is needed would need to know the format.
  *
- * The one read left inside is `File.text()`, in the `session` adapter's second
+ * The one read left inside is `File.text()`, in the `session` adapter's File
  * arm — an arm the sole caller cannot reach at all (see `testDecoderGolden.js`,
  * "the File arm is not reachable"). It gets no loader slot because inventing one
  * for a dead arm would be design work in service of nothing.
@@ -150,12 +150,21 @@ const COMPRESSED_PREFIXES = {
  * `cause` is the failure underneath — a `SyntaxError` from `JSON.parse`, or
  * whatever the decompressor threw, which is not always an `Error`: `BGZip`
  * rejects a corrupt payload with a bare string.
+ *
+ * `source` says where the session came from — a key of {@link SESSION_SOURCES}
+ * — and is carried by the one a caller sees, the error {@link sessionFailure}
+ * writes. It is a constructor parameter rather than a field stamped on
+ * afterwards because it is the half of the report a caller is invited to branch
+ * on, and a field the type does not declare is a field the next reader has to
+ * discover. Absent on the errors raised *inside* the decode ladder, which
+ * describe a string and cannot know where it was read from.
  */
 export class SessionDecodeError extends Error {
-    constructor(message, cause) {
+    constructor(message, cause, source) {
         super(message)
         this.name = 'SessionDecodeError'
         this.cause = cause
+        this.source = source
     }
 }
 
@@ -614,8 +623,7 @@ function sessionFailure(source, e) {
 
     const failure = new SessionDecodeError(
         `Could not decode the session from ${SESSION_SOURCES[source]}: ${e.message}${describeCause(e.cause)}`,
-        e)
-    failure.source = source
+        e, source)
 
     console.error(failure.message, e)
 
@@ -629,8 +637,25 @@ function sessionFailure(source, e) {
  * an empty pair of brackets after it.
  */
 function describeCause(cause) {
-    if (undefined === cause || null === cause) return ''
-    return ` (${cause instanceof Error ? cause.message : String(cause)})`
+    const described = undefined === cause || null === cause
+        ? ''
+        : (cause instanceof Error ? cause.message : String(cause))
+    return '' === described ? '' : ` (${described})`
+}
+
+/**
+ * Decode one session string, reporting a refusal as coming from `source`.
+ *
+ * The three arms differ in where their text comes from and in nothing else, so
+ * this is what they have in common written once rather than three times — which
+ * is the "one shape" of #521 made structural instead of maintained by hand.
+ */
+function decodeFrom(source, text) {
+    try {
+        return decodeSessionString(text)
+    } catch (e) {
+        throw sessionFailure(source, e)
+    }
 }
 
 /**
@@ -729,28 +754,18 @@ export const WIRE_FORMATS = [
             const sessionValue = ctx.query.session
             let source
 
-            // The File is asked about first, and has to be: `isCompressedSession`
-            // sniffs a prefix off a string and raises a bare `TypeError` on
-            // anything else, so with the string test in front of it the File arm
-            // could not be entered at all -- not even by a caller driving this
-            // adapter directly -- and so could not report in the one shape #521
-            // is about. The order is safe because a query value that is a string
-            // is never a File: `isFile` wants `name`, `slice` and `arrayBuffer`.
-            if (isFile(sessionValue)) {
-                source = 'file'
-                const sessionText = await sessionValue.text()
-                try {
-                    ctx.config = decodeSessionString(sessionText)
-                } catch (e) {
-                    throw sessionFailure(source, e)
-                }
-            } else if (isCompressedSession(sessionValue)) {
+            // `isCompressedSession` sniffs a prefix off a string and raises a
+            // bare `TypeError` on anything else, so the string test in front of
+            // it is what makes the arms below reachable at all -- the File arm
+            // could not be entered even by a caller driving this adapter
+            // directly, which is why it had no way to report in the one shape.
+            // The arms themselves stay in the order they have always been in.
+            if (typeof sessionValue === 'string' && isCompressedSession(sessionValue)) {
                 source = 'parameter'
-                try {
-                    ctx.config = decodeSessionString(sessionValue)
-                } catch (e) {
-                    throw sessionFailure(source, e)
-                }
+                ctx.config = decodeFrom(source, sessionValue)
+            } else if (isFile(sessionValue)) {
+                source = 'file'
+                ctx.config = decodeFrom(source, await sessionValue.text())
             } else if (typeof sessionValue === 'string') {
                 // A session URL, or a local file path. The fetched document is
                 // itself sniffed -- it may be plain JSON or either compressed
@@ -772,11 +787,15 @@ export const WIRE_FORMATS = [
                         new SessionDecodeError('Session document could not be fetched', e))
                 }
 
-                try {
-                    ctx.config = decodeSessionString(sessionText)
-                } catch (e) {
-                    throw sessionFailure(source, e)
-                }
+                ctx.config = decodeFrom(source, sessionText)
+            } else {
+                // Neither a File nor a string. Unreachable from `extractConfig`,
+                // whose parser can only produce strings, and reported anyway:
+                // the value came off the parameter, and the ladder says what is
+                // wrong with it ("Session must be a string, got …") in the one
+                // shape rather than as a bare `TypeError` out of the sniff.
+                source = 'parameter'
+                ctx.config = decodeFrom(source, sessionValue)
             }
 
             // Outside the arms on purpose, and after all three: the version is a
@@ -835,7 +854,18 @@ export const WIRE_FORMATS = [
             const {query} = ctx
             let q;
             if (query.hasOwnProperty("juiceboxData")) {
-                q = BGZip.uncompressString(query["juiceboxData"])
+                // Wrapped for the same reason the session arms are (#521): a
+                // corrupt payload rejects out of `BGZip` with a bare string, and
+                // "the rejection is always an `Error`" is a claim about
+                // `extractConfig`, not about the `session` parameter alone. The
+                // parameter names itself in the message, so there is no source
+                // to carry -- `SESSION_SOURCES` is the `session=` vocabulary.
+                try {
+                    q = BGZip.uncompressString(query["juiceboxData"])
+                } catch (e) {
+                    throw new SessionDecodeError(
+                        'juiceboxData= is not a readable compressed query string', e)
+                }
             } else {
                 q = query["juicebox"];
                 if (q.startsWith("%7B")) {

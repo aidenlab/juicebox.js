@@ -74,11 +74,18 @@ class HICBrowser {
      * The view in force -- chromosomes, zoom, bin origin, pixel size.
      *
      * Private, and that is the whole of #563's behaviour change: the field is
-     * readable through `state` and its `activeState` alias, and writable only
-     * by `setState`, the chokepoint. The setters that used to stand beside
-     * those getters were commented "direct assignment bypasses validation" and
-     * had no production caller (ADR-0009 fact 2); reading is plausible host
-     * behaviour and stays, writing is not and goes (decision 7).
+     * readable through `state` and its `activeState` alias, and **the field**
+     * is written only by `setState`, the chokepoint. The setters that used to
+     * stand beside those getters were commented "direct assignment bypasses
+     * validation" and had no production caller (ADR-0009 fact 2); reading is
+     * plausible host behaviour and stays, writing is not and goes (decision 7).
+     *
+     * The field, not the object. The getter hands back the live `State`, so
+     * `browser.state.normalization = x` still writes canonical state from
+     * outside -- and two production sites do exactly that, `createWidgets`'
+     * `normalizationUnavailable` and `init`. `normalization` is not one of the
+     * canonical six and `setView` does not take it; what it has instead is one
+     * enforcer, `#resolveNormalization`. See `docs/state-manipulation.md`.
      */
     #state
 
@@ -282,7 +289,7 @@ class HICBrowser {
             // a normalization this map does not carry still opens. Recorded in
             // CONTEXT.md as a load-stage rule, not part of the resolved schema.
             //
-            // The rule itself lives in `resolveNormalization` and
+            // The rule itself lives in `#resolveNormalization` and
             // is spelled out once (#561, ADR-0009 decision 5). It used to be
             // written out a second time here, as its own `Set` and its own
             // fallback, and this copy ran *after* restore -- so of the two
@@ -290,7 +297,7 @@ class HICBrowser {
             // the question, not the answer: which field is being asked about,
             // and when.
             if (config.normalization) {
-                this.state.normalization = await this.resolveNormalization(config.normalization);
+                this.state.normalization = await this.#resolveNormalization(config.normalization);
             }
 
             if (config.cycle) {
@@ -967,8 +974,8 @@ class HICBrowser {
      * The seventh field, `normalization`, is settled after `setView` rather than
      * through it (#561, ADR-0009 decision 5): it is not one of the canonical six
      * and it is validated against the dataset rather than against the view. See
-     * `resolveNormalization` for why restore is the only place the question can
-     * be asked.
+     * `#resolveNormalization` for why restore is the only place the question
+     * can be asked.
      *
      * Locus is not cached -- consumers derive it via state.getLocus().
      *
@@ -1007,7 +1014,7 @@ class HICBrowser {
             this.contactMatrixView.getViewDimensions()
         );
 
-        restored.normalization = await this.resolveNormalization(restored.normalization);
+        restored.normalization = await this.#resolveNormalization(restored.normalization);
 
         this.#state = restored;
 
@@ -1058,17 +1065,22 @@ class HICBrowser {
      * and the requested value stands there rather than being coerced against a
      * set that was never consulted.
      *
-     * Public rather than private because it is **the** enforcer, and the load
-     * stage has a second thing to ask it: `init` resolves a top-level
+     * It has two callers, not one: `init` resolves a top-level
      * `config.normalization` here too. That field is not part of any saved state
      * -- it is a config field a host sets alongside a map -- so it cannot arrive
      * through `setState`, but it is the same question against the same set, and
      * candidate 6's premise is that an invariant has one enforcer or none.
      *
+     * Private, because both callers are inside this class and `js/publicApi.js`
+     * is the manifest of what a host may reach. It was public on `StateManager`,
+     * which was not published surface at all; landing it on `HICBrowser`
+     * unmarked would have made it contract by accident, which ADR-0003's
+     * "absence is not permission" is precisely about.
+     *
      * @param {string|undefined} requested - The normalization asked for
      * @returns {Promise<string>} - A normalization the loaded dataset offers
      */
-    async resolveNormalization(requested) {
+    async #resolveNormalization(requested) {
 
         if (undefined === requested || 'NONE' === requested) {
             return 'NONE';
@@ -1149,7 +1161,7 @@ class HICBrowser {
         if (this.#state) {
             this.#state.normalization = normalization;
         }
-        this.coordinator.onNormalizationChange(this.#state ? this.#state.normalization : undefined);
+        this.coordinator.onNormalizationChange(this.#state?.normalization);
     }
 
     async shiftPixels(dx, dy) {

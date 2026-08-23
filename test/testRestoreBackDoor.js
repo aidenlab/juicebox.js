@@ -100,7 +100,8 @@ const ZOOM = 3
  * can still be asked whether the state it left standing is one of them. The
  * installed state is read back off the browser after each call rather than
  * taken from the argument: `setState` installs a clone, and the clone is the
- * thing that has to be in force.
+ * thing that has to be in force. An `undefined` is recorded like any other
+ * answer but is not a state -- a load clears before it restores.
  */
 function trapStateInstalls(browser) {
 
@@ -108,19 +109,20 @@ function trapStateInstalls(browser) {
 
     const chokepoint = HICBrowser.prototype.setState
     vi.spyOn(HICBrowser.prototype, 'setState').mockImplementation(async function (...args) {
-        try {
-            return await chokepoint.apply(this, args)
-        } finally {
-            installs.push({state: this.state, throughChokepoint: true})
-        }
+        const result = await chokepoint.apply(this, args)
+        // After the call, not in a `finally`: a `setState` that threw installed
+        // nothing, and recording it would make a failed restore look like a
+        // successful one.
+        installs.push(this.state)
+        return result
     })
 
     return installs
 }
 
 /** The states a load left standing — the installs that were not a clear. */
-function installed(writes) {
-    return writes.filter(write => write.state !== undefined)
+function installed(installs) {
+    return installs.filter(state => state !== undefined)
 }
 
 describe('the state parameter is gone from setActiveDataset (#559)', () => {
@@ -167,21 +169,17 @@ describe('the state parameter is gone from setActiveDataset (#559)', () => {
     test('the config.locus door installs no state the chokepoint did not produce', async () => {
 
         const browser = embed()
-        const writes = trapStateInstalls(browser)
+        const installs = trapStateInstalls(browser)
 
         await browser.loadHicFile({url: HIC_URL, locus: 'chr1:1000000-2000000'}, true)
 
         // The door ran: a state is installed and the locus was applied to it.
-        expect(installed(writes).length).toBeGreaterThan(0)
+        expect(installed(installs).length).toBeGreaterThan(0)
         expect(browser.state.chr1).toBe(CHR1)
-
-        for (const write of installed(writes)) {
-            expect(write.throughChokepoint).toBe(true)
-        }
 
         // `parseGotoInput` mutates the state in place rather than installing a
         // new one, so the state left standing is the chokepoint's own clone.
-        expect(browser.state).toBe(installed(writes).at(-1).state)
+        expect(browser.state).toBe(installed(installs).at(-1))
     })
 
     test('onMapLoaded publishes the state in force, not the one handed to the chokepoint', async () => {
@@ -233,7 +231,7 @@ describe('the state parameter is gone from setActiveDataset (#559)', () => {
         // Nothing else about the door is stubbed.
         vi.spyOn(HICBrowser.prototype, 'clearDataset').mockImplementation(() => undefined)
 
-        const writes = trapStateInstalls(browser)
+        const installs = trapStateInstalls(browser)
         const sync = vi.spyOn(HICBrowser.prototype, 'syncState')
 
         await browser.loadHicFile({url: HIC_URL, synchState}, true)
@@ -242,11 +240,9 @@ describe('the state parameter is gone from setActiveDataset (#559)', () => {
 
         // The sibling's view arrives through `State.sync`, which is itself a
         // `setView` call, and the freshly installed dataset is then re-clamped
-        // against by `setState`. Either way, nothing lands on `activeState`
-        // that a chokepoint did not shape.
-        expect(installed(writes).length).toBeGreaterThan(0)
-        for (const write of installed(writes)) {
-            expect(write.throughChokepoint).toBe(true)
-        }
+        // against by `setState`. Either way, the state left standing is one the
+        // chokepoint shaped.
+        expect(installed(installs).length).toBeGreaterThan(0)
+        expect(browser.state).toBe(installed(installs).at(-1))
     })
 })

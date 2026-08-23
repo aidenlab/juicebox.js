@@ -208,7 +208,9 @@ Two consequences worth stating, because they are what "a translator like every o
 
 The replacement is followed by a render and the application continues normally — subsequent mutations go through translators as usual.
 
-**There is exactly one writer.** `browser.state` and its `activeState` alias are getters over a private field; the setters that used to stand beside them are gone (#563, ADR-0009 decision 7). Reading canonical state is unrestricted, here as everywhere; writing it is `setState`.
+**The state field has exactly one writer.** `browser.state` and its `activeState` alias are getters over a private field; the setters that used to stand beside them are gone (#563, ADR-0009 decision 7). Reading canonical state is unrestricted, here as everywhere; *replacing* it is `setState`.
+
+That is the field, not the object. The getter hands back the live `State`, so a `browser.state.<field> = x` from outside is still reachable — and for `normalization`, two production sites do it (see the next section). For the canonical six, the discipline that stops it is the same one it always was: they are written through translators, by convention, and `setView` is where the invariants are enforced.
 
 ## What is NOT a state mutation
 

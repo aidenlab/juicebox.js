@@ -215,16 +215,21 @@ describe('normalization is validated against the loaded dataset at restore (#561
         // to answer it a second time in its own words, *after* restore, so the
         // duplicate was the copy that won. Driving it here is what says the two
         // now agree by construction rather than by coincidence.
-        offered = ['NONE', 'VC']
+        //
+        // Asserted on the answer rather than by spying the enforcer, which is
+        // private as of #563 -- and a set with **no NONE in it** is what makes
+        // the answer discriminating. The duplicate `init` used to carry fell
+        // back to a literal `NONE`; the enforcer reads its fallback out of the
+        // offered set, so only one of the two can produce `VC` here. This is
+        // claim 4's rule, asked at the other door.
+        offered = ['VC']
 
         const browser = new HICBrowser(dom.another(), {})
         vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({...VIEWPORT})
-        const resolve = vi.spyOn(browser, 'resolveNormalization')
 
         await browser.init({url: HIC_URL, state: savedWith('NONE'), normalization: 'KR'})
 
-        expect(resolve).toHaveBeenCalledWith('KR')
-        expect(browser.state.normalization).toBe('NONE')
+        expect(browser.state.normalization).toBe('VC')
     })
 
     test('a top-level config.normalization the dataset offers survives init', async () => {

@@ -163,6 +163,11 @@ fixture through the chokepoint surfaced two defects in it, both invisible while 
   been standing on that, including the config golden's session-blob fixture — the one whose note
   reads *"if exactly one fixture in this file has to keep working, it is this one"*.
 
+**One finding was filed rather than fixed: #575.** `init` writes `state.normalization` unvalidated
+inside its `config.colorScale` branch, 35 lines above the validated write that overwrites it. Older
+than candidate 6, and transient — but it is a second copy of a field write in the code #563 claims
+has one enforcer, so it is filed against the claim rather than left to be rediscovered.
+
 **The general form is worth keeping:** a fixture that writes canonical state directly cannot observe
 the invariant the chokepoint exists to enforce, and it will not fail while it does. The gate proves
 the production path did not change; it says nothing about whether the path the tests drive *is* the

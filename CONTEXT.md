@@ -174,6 +174,15 @@ have never been sampled. The contract is frozen against what the decoder takes,
 and the evidence that this matches what users send is partial by decision. See
 `test/data/wireFormatCorpus.js`'s harvest-scope note.
 
+**Session source** — *where* a session was read from, as distinct from what it
+says: the `session=` parameter itself, a File, or a fetched URL. The three arms
+of the `session` adapter, and a fact a user needs when a link will not open —
+"which of my links is this?" is the first question a refusal has to answer. It
+is carried outward on the `source` field of a `SessionDecodeError` and spelled
+into that error's message, both from `SESSION_SOURCES` (`js/sessionCodec.js`).
+Vocabulary of the `session=` format only: the legacy braced parameters name
+themselves in their own messages. #521.
+
 **Wire-format adapter** — one entry in `WIRE_FORMATS` (`js/sessionCodec.js`):
 the pair of "does this input carry my format?" and "decode it into the shared
 decode context." The array is the only place a format is named, so adding a

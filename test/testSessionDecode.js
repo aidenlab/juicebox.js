@@ -31,6 +31,7 @@
 import {afterEach, describe, expect, test, vi} from 'vitest'
 import {BGZip} from 'igv-utils'
 import {
+    SESSION_SOURCES,
     SESSION_VERSION,
     SessionDecodeError,
     WIRE_FORMATS,
@@ -38,6 +39,7 @@ import {
     encodeSession,
 } from '../js/sessionCodec.js'
 import State from '../js/hicState.js'
+import {File} from './utils/File.js'
 
 /**
  * A loader that fails the test rather than the fetch. Passed wherever a fixture
@@ -222,14 +224,14 @@ describe('decodeSession — a session URL, driven from a fake loader', () => {
             loadString: async () => {
                 throw new Error('404')
             },
-        })).rejects.toThrow('Failed to load session from URL/file: 404')
+        })).rejects.toThrow('Session document could not be fetched (404)')
     })
 
     test('a fetched document that is not a session is reported as a parse failure', async () => {
         await expect(decodeSession('?session=https://example.org/index.html', {
             ...noIO,
             loadString: async () => '<html lang="en"></html>',
-        })).rejects.toThrow(/Failed to parse session from URL\/file/)
+        })).rejects.toThrow(/Session is not valid JSON/)
     })
 })
 
@@ -454,5 +456,167 @@ describe('the format registry', () => {
         // recorded, and "retired, refuse it loudly" is a disposition.
         expect(WIRE_FORMATS.map(a => a.format))
             .toEqual(['session', 'juiceboxURL', 'juicebox', 'query'])
+    })
+})
+
+/**
+ * One outward failure shape, whatever fetched the session. #521.
+ *
+ * The three arms of the `session` adapter differ only in where the text came
+ * from, and until this ticket they differed in how they said so: the parameter
+ * arm rethrew a bare string from `BGZip` (`name` and `message` both `undefined`),
+ * the File arm wrote one sentence, and the URL arm wrote that sentence wrapped
+ * inside a second one. The same malformed input therefore reported differently
+ * depending on which path reached it, which is what made a bug report ambiguous
+ * about where the link actually failed.
+ *
+ * What is asserted here is the shape, not the prose: a `SessionDecodeError`,
+ * always, carrying **two facts in one message** — what would not decode, and
+ * where the session came from — plus the source as a field a caller can branch
+ * on and the original failure still reachable through `cause`.
+ *
+ * The File arm is driven through the adapter rather than through
+ * `decodeSession`, because `extractQuery` can only ever produce string values
+ * and so the arm is unreachable from the entry point (#519). Its *shape* is
+ * still this suite's business: the arm is the one #521 has to bring into line
+ * and the one no golden snapshot can see.
+ */
+describe('decodeSession — one outward failure shape', () => {
+
+    const sessionAdapter = WIRE_FORMATS.find(adapter => adapter.format === 'session')
+
+    /** Reject and return the rejection, so the shape can be read off it. */
+    async function rejection(promise) {
+        let resolved
+        try {
+            resolved = await promise
+        } catch (e) {
+            return e
+        }
+        throw new Error(`expected a rejection, and the session decoded to ${JSON.stringify(resolved)}`)
+    }
+
+    const arms = {
+        parameter: () => decodeSession('?session=blob:not-compressed-at-all', noIO),
+        file: () => sessionAdapter.decode({
+            query: {session: new File(Buffer.from('<html lang="en"></html>'), 'session.json')},
+            loaders: {},
+        }),
+        url: () => decodeSession('?session=https://example.org/index.html', {
+            ...noIO,
+            loadString: async () => '<html lang="en"></html>',
+        }),
+    }
+
+    for (const [source, arm] of Object.entries(arms)) {
+
+        test(`the ${source} arm rejects with a SessionDecodeError naming its source`, async () => {
+            const e = await rejection(arm())
+
+            expect(e).toBeInstanceOf(Error)
+            expect(e).toBeInstanceOf(SessionDecodeError)
+            expect(e.name).toBe('SessionDecodeError')
+            expect(e.source).toBe(source)
+            expect(e.message).toContain(SESSION_SOURCES[source])
+        })
+
+        test(`the ${source} arm keeps the failure underneath as cause`, async () => {
+            const e = await rejection(arm())
+
+            expect(e.cause).toBeDefined()
+        })
+    }
+
+    /**
+     * The bare string is the one the acceptance criterion names outright: `BGZip`
+     * rejects a corrupt payload with a string, and until now the parameter arm
+     * rethrew it untouched, so `extractConfig` rejected with a value that was not
+     * an `Error` at all.
+     */
+    test('a corrupt share link no longer rejects with a bare string', async () => {
+        const e = await rejection(decodeSession('?session=blob:not-compressed-at-all', noIO))
+
+        expect(typeof e).not.toBe('string')
+        expect(e.message).toMatch(/[a-z]/)
+        expect(e.message).not.toContain('undefined')
+    })
+
+    /** Two facts, one message — and the decoder's own reason is the *what*. */
+    test('the message says what would not decode as well as where it came from', async () => {
+        const e = await rejection(arms.url())
+
+        expect(e.message).toContain('Session is not valid JSON')
+        expect(e.message).toContain(SESSION_SOURCES.url)
+    })
+
+    /**
+     * The URL arm used to nest its parse failure inside a load failure, so a
+     * document that fetched fine and then would not parse was reported as if the
+     * fetch had failed. The two are different repairs for a user and stay told
+     * apart — but each is now said once.
+     */
+    test('a fetch that failed and a document that would not parse are told apart, and neither is double-wrapped', async () => {
+        const unreachable = await rejection(decodeSession('?session=https://example.org/gone.json', {
+            ...noIO,
+            loadString: async () => {
+                throw new Error('404')
+            },
+        }))
+        const unparseable = await rejection(arms.url())
+
+        expect(unreachable.message).toContain('404')
+        expect(unreachable.message).not.toContain('Session is not valid JSON')
+        expect(unparseable.message).not.toMatch(/could not be fetched/)
+
+        for (const e of [unreachable, unparseable]) {
+            expect(e.source).toBe('url')
+            expect(e.message.match(/Could not decode/g)).toHaveLength(1)
+        }
+    })
+
+    /**
+     * The criterion is written against `extractConfig`, which is more than the
+     * `session` parameter: `?juiceboxData=` decompresses too, and rejected with
+     * the same kind of bare string. It carries no source — the parameter names
+     * itself, and `SESSION_SOURCES` is the `session=` vocabulary — but it is an
+     * `Error`, which is the half of the criterion that was failing.
+     */
+    test('a corrupt juiceboxData= link rejects with an Error too', async () => {
+        const e = await rejection(decodeSession('?juiceboxData=not-compressed-at-all', noIO))
+
+        expect(e).toBeInstanceOf(SessionDecodeError)
+        expect(e.message).toContain('juiceboxData=')
+        expect(e.cause).toBeDefined()
+    })
+
+    /**
+     * A session value that is neither a File nor a string cannot arrive through
+     * `extractConfig`, whose parser only ever produces strings. It used to raise
+     * a bare `TypeError` out of the prefix sniff all the same; a caller driving
+     * the adapter gets the one shape instead, and the ladder's own reason.
+     */
+    test('a session value that is not a string is refused in the same shape', async () => {
+        const e = await rejection(sessionAdapter.decode({query: {session: 42}, loaders: {}}))
+
+        expect(e).toBeInstanceOf(SessionDecodeError)
+        expect(e.source).toBe('parameter')
+        expect(e.message).toContain('Session must be a string, got number')
+    })
+
+    /**
+     * The version refusal is raised after the arms, on the document rather than
+     * on where it was read from -- and it still has to come out in the one shape,
+     * carrying the source of the document it refused.
+     */
+    test('a version refusal is reported in the same shape, with the source of the document', async () => {
+        const e = await rejection(decodeSession('?session=https://example.org/session.json', {
+            ...noIO,
+            loadString: async () => JSON.stringify({browsers: [{url: 'https://example.org/one.hic'}], version: 7}),
+        }))
+
+        expect(e).toBeInstanceOf(SessionDecodeError)
+        expect(e.source).toBe('url')
+        expect(e.message).toContain('version 7')
+        expect(e.message).toContain(SESSION_SOURCES.url)
     })
 })

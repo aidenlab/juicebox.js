@@ -54,6 +54,7 @@
  * | 2026-08-09 | `harvested-juiceboxURL-bitly` — `decodes` became `throws` | **#506**, ADR-0006 decision 1: the named exception to the frozen contract. The bit.ly expansion and its embedded credential are gone, so the fixture that decoded a two-browser session through a live third-party endpoint now records the refusal that replaced it. **This is the first deliberate deviation from the baseline** — the whole point of the log is that it is written down rather than absorbed by a bare `-u`. No other fixture moved, which is the other half of the claim. |
  * | 2026-08-11 | `harvested-query-wapl-wt`, `harvested-query-wapl-ko`, `harvested-query-gm12878-nvi`, `harvested-query-degron-fully-encoded`, `synth-query-colorscale-bare-threshold` | **#514**, the bare-threshold colour scale. The five moved fixtures are exactly the five carrying a `colorScale` of a threshold with no RGB, and every moved line is `r: undefined` → `255`, `g: undefined` → `0` or `b: undefined` → `0` — `defaultColorScaleConfig`, which `parseSingle` never consulted, so the bare form decoded to a scale that painted `rgba(undefined,undefined,undefined,alpha)`. **This is not a change to the wire format**: the same strings are accepted, the threshold is untouched, and no encoder writes the bare form. What moved is the colour an *absent* component resolves to. `testConfigGolden.js`'s query columns move in the same five, for the same three lines, and nothing else. |
  * | 2026-08-11 | `harvested-query-wapl-wt`, `harvested-query-wapl-ko`, `harvested-juicebox-literal-braces`, `harvested-query-4dn-state-colorscale-track`, `synth-query-tracks-empty-range` | **#515**, the empty data-range field. The five moved fixtures are exactly the five carrying a four-field track string with an empty third field, and every moved line is a **deleted** `min: NaN` or `max: NaN` — twelve tracks, twenty-four lines, nothing added. `destringifyTracksV0` gated on `tokens.length > 2`, which an empty field satisfies, so `parseFloat("")` handed a track that would otherwise autoscale a range it could not use; it now reads the field only when it holds something. **This is not a change to the wire format**: the same strings are accepted and the same tracks come out of them, minus two keys that never meant anything. `testConfigGolden.js` did **not** move at all, because `normalizeSession` was already deleting these downstream — what closed is the round trip through `NaN`, not the end state. |
+ * | 2026-08-23 | `reject-session-blob-corrupt`, `reject-session-gzip-data-uri`, `reject-session-url-invalid-json`, `reject-session-url-unreachable` | **#521**, the one outward failure shape. The four moved fixtures are exactly the four that reject *inside the `session` adapter*, one per arm-and-failure: the two compressed forms, a fetched document that is not a session, and a link that does not resolve. Every moved line is the error itself — `name` is now `SessionDecodeError` in all four where it was `Error` twice and `undefined` twice, and the message says what would not decode **and** where the session came from, in one sentence and once. The two `undefined` names are the acceptance criterion's other half: those two rejected with a bare string from `BGZip`, so `describeThrow`'s `thrown` field had to stand in for a `name` and `message` that did not exist; the field is now absent from every snapshot in the file. **This is not a change to the wire format.** The same inputs are refused, for the same reasons, at the same point; what moved is how the refusal is reported. Nothing that decodes moved, and the three `sessionFile` fixtures did not move either — that arm is still unreachable from `extractConfig` (#519), which is why its share of this ticket is asserted in `testSessionDecode.js` against the adapter instead. |
  *
  * @see docs/adr/0006-session-wire-format-and-one-decoder.md
  * @see test/data/wireFormatCorpus.js — the inputs
@@ -74,11 +75,15 @@ import {
 /**
  * Describe a rejection well enough that its snapshot means something.
  *
- * Not everything the decoder throws is an `Error`: the `blob:`/`data:` arm has
- * no try/catch of its own, so a corrupt share link rejects with whatever the
- * decompressor threw, `name` and `message` both undefined. `{name, message}`
- * alone would snapshot that as two blanks and pin nothing at all, so the raw
- * value is stringified alongside for those.
+ * The `thrown` field is a **tripwire, and is expected to stay unused**. It was
+ * written because not everything the decoder threw was an `Error`: the
+ * `blob:`/`data:` arm had no try/catch of its own, so a corrupt share link
+ * rejected with whatever the decompressor threw — a bare string, `name` and
+ * `message` both undefined — which `{name, message}` alone would have
+ * snapshotted as two blanks, pinning nothing at all. #521 closed that: every
+ * arm now rejects with a `SessionDecodeError`. The field stays so that a
+ * non-`Error` escaping again shows up as a snapshot movement rather than as a
+ * pair of blanks.
  */
 function describeThrow(e) {
     const described = {name: e?.name, message: e?.message}

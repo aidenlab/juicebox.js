@@ -60,7 +60,7 @@
  * 10: a session parameter may name a URL whose *contents* then need sniffing, so
  * a caller deciding whether more I/O is needed would need to know the format.
  *
- * The one read left inside is `File.text()`, in the `session` adapter's second
+ * The one read left inside is `File.text()`, in the `session` adapter's File
  * arm — an arm the sole caller cannot reach at all (see `testDecoderGolden.js`,
  * "the File arm is not reachable"). It gets no loader slot because inventing one
  * for a dead arm would be design work in service of nothing.
@@ -74,18 +74,16 @@
  *
  * ## The error contract
  *
- * One condition, one error: anything this module cannot decode raises a
- * `SessionDecodeError` carrying the underlying failure as `cause`. Previously
- * the same malformed input produced a different message depending on which of
- * three call sites reached it, which made a user's bug report ambiguous about
- * where their link actually failed.
- *
- * **The three arms of the `session` adapter still rethrow `cause` in the shape
- * each has always thrown** — they were three call sites in `urlUtils.js` until
- * #505 moved them here — because ADR-0006's golden file (#503) pins those
- * outward messages and neither ticket changes behaviour. Unifying what the
- * *caller* reports is a deliberate, snapshot-moving change and belongs to a
- * later ticket in the candidate; unifying what the *decoder* raises is this one.
+ * One condition, one error, one shape: anything this module cannot decode
+ * raises a `SessionDecodeError` carrying the underlying failure as `cause`, and
+ * anything that leaves the `session` adapter has been through
+ * {@link sessionFailure} — so a malformed session reports the same way whichever
+ * of the three arms fetched it, naming both what would not decode and where the
+ * session came from. Before, the same input produced a different message
+ * depending on which path reached it (and, down one of them, a value that was
+ * not an `Error` at all), which made a user's bug report ambiguous about where
+ * their link had actually failed. #504 unified what the decoder *raises*; #521
+ * unified what the caller *reports*, and moved four golden snapshots doing it.
  *
  * @see docs/adr/0006-session-wire-format-and-one-decoder.md
  * @see docs/url.md — the format specification
@@ -152,12 +150,21 @@ const COMPRESSED_PREFIXES = {
  * `cause` is the failure underneath — a `SyntaxError` from `JSON.parse`, or
  * whatever the decompressor threw, which is not always an `Error`: `BGZip`
  * rejects a corrupt payload with a bare string.
+ *
+ * `source` says where the session came from — a key of {@link SESSION_SOURCES}
+ * — and is carried by the one a caller sees, the error {@link sessionFailure}
+ * writes. It is a constructor parameter rather than a field stamped on
+ * afterwards because it is the half of the report a caller is invited to branch
+ * on, and a field the type does not declare is a field the next reader has to
+ * discover. Absent on the errors raised *inside* the decode ladder, which
+ * describe a string and cannot know where it was read from.
  */
 export class SessionDecodeError extends Error {
-    constructor(message, cause) {
+    constructor(message, cause, source) {
         super(message)
         this.name = 'SessionDecodeError'
         this.cause = cause
+        this.source = source
     }
 }
 
@@ -574,17 +581,81 @@ function decodeQuery(query, uriDecode) {
 // ---------------------------------------------------------------------------
 
 /**
- * Report a session that would not decode, in the shape the arm naming `origin`
- * has always reported it. Two arms, one shape, one noun apart.
- *
- * `cause` is the failure underneath the codec's single `SessionDecodeError`, and
- * is not always an `Error` -- `BGZip` rejects a corrupt payload with a bare
- * string, whose `message` is `undefined`. That `undefined` reaches the user
- * today; #521 is where it stops.
+ * Where a session came from, spelled for a user. The keys are the vocabulary a
+ * caller branches on and the values are what the message says; both are here so
+ * that the three arms cannot drift into three ways of naming the same thing
+ * again.
  */
-function parseFailure(origin, e) {
-    console.error(`Error parsing session ${origin}:`, e.cause);
-    return new Error(`Failed to parse session ${origin}: ${e.cause?.message}`);
+export const SESSION_SOURCES = {
+    parameter: 'the session= parameter',
+    file: 'a session file',
+    url: 'a session URL',
+}
+
+/**
+ * The one outward shape for a session that will not decode. #521.
+ *
+ * Until this ticket each arm reported in the shape it happened to have grown:
+ * the parameter arm rethrew `cause` untouched — a bare **string** from `BGZip`,
+ * so `name` and `message` were both `undefined` and what escaped `extractConfig`
+ * was not an `Error` at all — while the File and URL arms wrote one sentence and
+ * two respectively. The same malformed input therefore reported differently
+ * depending on which path reached it, and a user's bug report could not say
+ * where their link had actually failed.
+ *
+ * What comes out now is always a `SessionDecodeError` carrying **two facts in
+ * one message**: what would not decode, and where the session came from. The
+ * *what* is the codec's own reason ({@link decodeSessionString} and
+ * {@link takeSessionVersion} raise one for every condition), which is why this
+ * reads `e.message` and not `e.cause?.message` — the reason is always present
+ * and always a string, where the underlying failure is neither. The underlying
+ * failure is not lost: it is quoted in parentheses when it says anything, and
+ * stays reachable through the `cause` chain either way.
+ *
+ * @param {string} source - a key of {@link SESSION_SOURCES}
+ * @param {SessionDecodeError} e - the codec's reason for refusing. An arm that
+ *   fails before the codec is reached — the URL arm, whose fetch can fail —
+ *   states its own reason as one of these, so that every path through here has
+ *   a *what* to report and not just a cause.
+ * @returns {SessionDecodeError} to throw
+ */
+function sessionFailure(source, e) {
+
+    const failure = new SessionDecodeError(
+        `Could not decode the session from ${SESSION_SOURCES[source]}: ${e.message}${describeCause(e.cause)}`,
+        e, source)
+
+    console.error(failure.message, e)
+
+    return failure
+}
+
+/**
+ * Quote a failure that is not necessarily an `Error` — `BGZip` rejects a corrupt
+ * payload with a bare string — as a parenthetical, or as nothing when there is
+ * nothing underneath. A version refusal has no cause, and reads better without
+ * an empty pair of brackets after it.
+ */
+function describeCause(cause) {
+    const described = undefined === cause || null === cause
+        ? ''
+        : (cause instanceof Error ? cause.message : String(cause))
+    return '' === described ? '' : ` (${described})`
+}
+
+/**
+ * Decode one session string, reporting a refusal as coming from `source`.
+ *
+ * The three arms differ in where their text comes from and in nothing else, so
+ * this is what they have in common written once rather than three times — which
+ * is the "one shape" of #521 made structural instead of maintained by hand.
+ */
+function decodeFrom(source, text) {
+    try {
+        return decodeSessionString(text)
+    } catch (e) {
+        throw sessionFailure(source, e)
+    }
 }
 
 /**
@@ -671,60 +742,74 @@ export const WIRE_FORMATS = [
      * `?session=` — the only form juicebox still writes, and the only one that
      * may need a second read. Three arms, one decoder: they differ in where the
      * session text comes from — the parameter itself, a File, or a fetched
-     * document — and in how they report a failure. The reporting is preserved
-     * verbatim, because #503's golden file pins those messages; collapsing the
-     * three outward messages into one is #521.
+     * document — and in nothing else. **They used to differ in how they reported
+     * a failure too**; #521 collapsed that into the one shape
+     * {@link sessionFailure} writes, which is why each arm now does no more than
+     * name where its text came from.
      */
     {
         format: 'session',
         appliesTo: ({query}) => query.hasOwnProperty('session'),
         decode: async ctx => {
             const sessionValue = ctx.query.session
+            let source
 
-            if (isCompressedSession(sessionValue)) {
-                // No wrapping here, and never has been: a corrupt share link
-                // rejects with whatever the decompressor threw, which is a bare
-                // string rather than an Error.
-                try {
-                    ctx.config = decodeSessionString(sessionValue)
-                } catch (e) {
-                    throw e.cause ?? e
-                }
+            // `isCompressedSession` sniffs a prefix off a string and raises a
+            // bare `TypeError` on anything else, so the string test in front of
+            // it is what makes the arms below reachable at all -- the File arm
+            // could not be entered even by a caller driving this adapter
+            // directly, which is why it had no way to report in the one shape.
+            // The arms themselves stay in the order they have always been in.
+            if (typeof sessionValue === 'string' && isCompressedSession(sessionValue)) {
+                source = 'parameter'
+                ctx.config = decodeFrom(source, sessionValue)
             } else if (isFile(sessionValue)) {
-                const sessionText = await sessionValue.text()
-                try {
-                    ctx.config = decodeSessionString(sessionText)
-                } catch (e) {
-                    throw parseFailure('file', e)
-                }
+                source = 'file'
+                ctx.config = decodeFrom(source, await sessionValue.text())
             } else if (typeof sessionValue === 'string') {
                 // A session URL, or a local file path. The fetched document is
                 // itself sniffed -- it may be plain JSON or either compressed
                 // form -- which is why this read cannot be hoisted out of the
                 // decoder (ADR-0006 decision 10).
+                source = 'url'
                 const loadString = requireLoader(ctx, 'loadString', 'a session URL')
+
+                // Two reads, two catches, in sequence rather than nested. Nested
+                // is how the double-wrapped message arose -- the outer catch saw
+                // the inner one's rethrow and wrapped it a second time -- and it
+                // also folded two different repairs, a link that does not resolve
+                // and a document that is not a session, into one report.
+                let sessionText
                 try {
-                    const sessionText = await loadString(sessionValue)
-                    try {
-                        ctx.config = decodeSessionString(sessionText)
-                    } catch (e) {
-                        throw parseFailure('from URL/file', e)
-                    }
+                    sessionText = await loadString(sessionValue)
                 } catch (e) {
-                    console.error("Error loading session from URL/file:", e);
-                    throw new Error(`Failed to load session from URL/file: ${e.message}`);
+                    throw sessionFailure(source,
+                        new SessionDecodeError('Session document could not be fetched', e))
                 }
+
+                ctx.config = decodeFrom(source, sessionText)
+            } else {
+                // Neither a File nor a string. Unreachable from `extractConfig`,
+                // whose parser can only produce strings, and reported anyway:
+                // the value came off the parameter, and the ladder says what is
+                // wrong with it ("Session must be a string, got …") in the one
+                // shape rather than as a bare `TypeError` out of the sniff.
+                source = 'parameter'
+                ctx.config = decodeFrom(source, sessionValue)
             }
 
-            // Outside the arms on purpose, and after all three. Outside, because
-            // each arm rewraps what it catches -- the URL arm's wrapper reads
-            // `cause.message`, which a version refusal does not have, so a check
-            // inside would report `undefined` to the user (#521). After, because
-            // the version is a property of the document, not of where it was
-            // read from: a session named by a URL is version-checked exactly as
-            // one carried in the parameter.
+            // Outside the arms on purpose, and after all three: the version is a
+            // property of the document, not of where it was read from, so a
+            // session named by a URL is version-checked exactly as one carried
+            // in the parameter. It is reported *with* the source all the same --
+            // "which of my links is this?" is the first question a refusal has
+            // to answer, whatever raised it.
             if (ctx.config) {
-                ctx.config = takeSessionVersion(ctx.config)
+                try {
+                    ctx.config = takeSessionVersion(ctx.config)
+                } catch (e) {
+                    throw sessionFailure(source, e)
+                }
             }
         },
     },
@@ -769,7 +854,18 @@ export const WIRE_FORMATS = [
             const {query} = ctx
             let q;
             if (query.hasOwnProperty("juiceboxData")) {
-                q = BGZip.uncompressString(query["juiceboxData"])
+                // Wrapped for the same reason the session arms are (#521): a
+                // corrupt payload rejects out of `BGZip` with a bare string, and
+                // "the rejection is always an `Error`" is a claim about
+                // `extractConfig`, not about the `session` parameter alone. The
+                // parameter names itself in the message, so there is no source
+                // to carry -- `SESSION_SOURCES` is the `session=` vocabulary.
+                try {
+                    q = BGZip.uncompressString(query["juiceboxData"])
+                } catch (e) {
+                    throw new SessionDecodeError(
+                        'juiceboxData= is not a readable compressed query string', e)
+                }
             } else {
                 q = query["juicebox"];
                 if (q.startsWith("%7B")) {

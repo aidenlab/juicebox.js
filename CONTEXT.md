@@ -80,13 +80,15 @@ directly.
 (screen pixel deltas, BP loci, a peer browser's state) into canonical arguments
 for the chokepoint. `panShift`, `updateWithLoci`, `setWithZoom` and friends.
 
-**Bulk replacement** — session and URL restore replacing the whole `State`
-object rather than mutating it field by field. It used to be the chokepoint's
-deliberate exception, on the reasoning that at restore time there is nothing to
-translate relative to; #558 retired that. `StateManager.setState` hands the
-canonical six to `setView` like any other translator, so a restored view is
-clamped and capped exactly as a gesture is — silently, never rejected
-(ADR-0009 decision 2).
+**Restore** — session and URL restore replacing the whole `State` object rather
+than mutating it field by field. Called *bulk replacement* until #563, when the
+name stopped earning its keep: it used to be the chokepoint's deliberate
+exception, on the reasoning that at restore time there is nothing to translate
+relative to, and #558 retired that. `HICBrowser.setState` hands the canonical
+six to `setView` like any other translator, so a restored view is clamped and
+capped exactly as a gesture is — silently, never rejected (ADR-0009 decision 2).
+It is also the **only** writer of the state: `browser.state` and `activeState`
+are getters over a private field as of #563.
 
 ## Browser wiring
 
@@ -285,7 +287,7 @@ document's to answer — each needs the load, the layout or the dataset:
   normalizations and falls back to `NONE` if the map does not carry the one
   asked for. The only field still checked below the seam, and it *cannot* move
   up: the valid set does not exist until a dataset is loaded. Since #561 the
-  rule is written once, in `stateManager.resolveNormalization`, and the same
+  rule is written once, in `browser.resolveNormalization`, and the same
   enforcer coerces the `normalization` a restored *state* carries — which is a
   different field arriving by a different door, asked the same question at the
   same moment (ADR-0009 decision 5).

@@ -32,11 +32,22 @@ function createView({ tiles }) {
     view.backgroundRGBString = 'rgb(255,255,255)'
     view.displayMode = 'A'
 
-    const state = { chr1: 1, chr2: 1, x: 0, y: 0, zoom: 0, pixelSize: 1, normalization: 'NONE' }
+    // The stand-in browser reads its state through a getter, as the real one
+    // does since #563 -- a fixture whose `state` is a writable field is a
+    // fixture shaped unlike the thing it stands in for, which is the blindness
+    // `stubbedLoads` was rewritten to remove. `install` is this fixture's
+    // chokepoint: the tests below drive it from a tile's suspension point.
+    const held = { state: { chr1: 1, chr2: 1, x: 0, y: 0, zoom: 0, pixelSize: 1, normalization: 'NONE' } }
 
-    view.browser = { dataset: {}, controlDataset: undefined, state }
+    view.browser = {
+        dataset: {},
+        controlDataset: undefined,
+        get state() { return held.state }
+    }
 
-    return { view, drawnImages: instrument(view, tiles) }
+    const install = state => { held.state = state }
+
+    return { view, install, drawnImages: instrument(view, tiles) }
 }
 
 /**
@@ -95,7 +106,7 @@ describe('repaint against a state that is replaced mid-pass', () => {
 
     test('a pass whose state is cleared between tiles stops rather than throwing', async () => {
         const fixture = {}
-        const reset = () => { fixture.view.browser.state = undefined }
+        const reset = () => fixture.install(undefined)
         Object.assign(fixture, createView({ tiles: [ tile(0), tile(1, reset), tile(2) ] }))
 
         await expect(fixture.view.repaint()).resolves.toBeUndefined()
@@ -104,7 +115,7 @@ describe('repaint against a state that is replaced mid-pass', () => {
 
     test('a pass whose state is cleared before the first tile paints nothing', async () => {
         const fixture = {}
-        const reset = () => { fixture.view.browser.state = undefined }
+        const reset = () => fixture.install(undefined)
         Object.assign(fixture, createView({ tiles: [ tile(0, reset), tile(1) ] }))
 
         await expect(fixture.view.repaint()).resolves.toBeUndefined()
@@ -116,7 +127,7 @@ describe('repaint against a state that is replaced mid-pass', () => {
         // the old map's tiles against the new map's state is the same hazard.
         const fixture = {}
         const load = () => {
-            fixture.view.browser.state = { chr1: 5, chr2: 5, x: 0, y: 0, zoom: 0, pixelSize: 1, normalization: 'NONE' }
+            fixture.install({ chr1: 5, chr2: 5, x: 0, y: 0, zoom: 0, pixelSize: 1, normalization: 'NONE' })
         }
         Object.assign(fixture, createView({ tiles: [ tile(0), tile(1, load), tile(2) ] }))
 

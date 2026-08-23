@@ -72,7 +72,7 @@
  * against. Three are known, and all three were found by reading the baseline:
  *
  * 1. **No door clamps.** The `state` door does not, because
- *    `StateManager.setState` applies a `minPixelSize` floor directly and never
+ *    `StateManager.setState` applied a `minPixelSize` floor directly and never
  *    calls `_adjustPixelSize` or `clampXY`. The `locus` door does not either, on
  *    the branch a real link takes: `State.updateWithLoci` passes
  *    `{clampXY: false}`, so only the whole-chromosome branch through
@@ -278,7 +278,6 @@ import {extractConfig} from '../js/urlUtils.js'
 import {decodeState} from '../js/sessionCodec.js'
 import {normalizeSession} from '../js/normalizeSession.js'
 import ContactMatrixView from '../js/contactMatrixView.js'
-import StateManager from '../js/stateManager.js'
 import {selfContained, viaLoader, wireFormatCorpus} from './data/wireFormatCorpus.js'
 import {withContainers} from './utils/browserFixture.js'
 import {restoreDataset} from './utils/restoreDataset.js'
@@ -544,8 +543,8 @@ function rungCounter() {
         // count is the dataset install itself, which the update convention reads
         // alongside the state: a door losing this call while its state stays put
         // would mean the dataset stopped being installed.
-        const original = StateManager.prototype.setActiveDataset
-        vi.spyOn(StateManager.prototype, 'setActiveDataset').mockImplementation(function (dataset) {
+        const original = HICBrowser.prototype.setActiveDataset
+        vi.spyOn(HICBrowser.prototype, 'setActiveDataset').mockImplementation(function (dataset) {
             counts['setActiveDataset'] = (counts['setActiveDataset'] || 0) + 1
             return original.call(this, dataset)
         })

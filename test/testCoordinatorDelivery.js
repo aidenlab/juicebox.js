@@ -18,6 +18,19 @@ import {COORDINATOR_PAYLOAD_SHAPES} from '../js/publicApi.js'
  * exactly once.
  */
 
+/**
+ * A stand-in view, defined as an own property over the `state` getter.
+ *
+ * `state` is read-only as of #563 -- one writer, `browser.setState`, and it
+ * wants a dataset, a viewport and a `State`, none of which this claim is about.
+ * The stand-in is per browser and goes with it, and being a *definition* rather
+ * than an assignment it says at the call site that it is scaffolding.
+ */
+function standInState(browser, state) {
+    Object.defineProperty(browser, 'state', {value: state, configurable: true, writable: true})
+    return state
+}
+
 describe('coordinator delivery', () => {
 
     const context = withBrowser()
@@ -141,8 +154,7 @@ describe('coordinator delivery', () => {
         // before the stub above can intercept. The fixture browser has never
         // loaded a map, so give it one. Fresh browser per test, so this leaks
         // nowhere.
-        const state = {chr1: 1, chr2: 1, zoom: 0, pixelSize: 1, x: 0, y: 0}
-        browser.state = state
+        const state = standInState(browser, {chr1: 1, chr2: 1, zoom: 0, pixelSize: 1, x: 0, y: 0})
 
         let received
         browser.coordinator.addCallback('onMapLoaded', payload => { received = payload })

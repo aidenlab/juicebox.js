@@ -75,7 +75,10 @@ export function restoreDataset(config = {}) {
     return {
         url: config.url,
         name: config.name,
-        genomeId: 'hg19',
+        // hg19 unless the caller names another. The override exists for the
+        // sync suites, whose whole question is whether two datasets name the
+        // same genome; nothing in the restore corpus passes one.
+        genomeId: config.genomeId || 'hg19',
         datasetType: 'hic',
         chromosomes: chrs,
         bpResolutions: BP_RESOLUTIONS,

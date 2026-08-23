@@ -71,7 +71,7 @@ flowchart TB
 
   subgraph STATE["③ State — the chokepoint"]
     ST["State<br/><span style='font-size:11px'>setView + 8 translators + getLocus</span>"]
-    SM["StateManager<br/><span style='font-size:11px'>the back door — folds into State</span>"]
+    SM["HICBrowser.setState<br/><span style='font-size:11px'>restore — a translator, and the one writer</span>"]
   end
 
   subgraph SESSION["④ Session &amp; config — decode then normalize"]
@@ -208,10 +208,10 @@ flowchart TB
                 <p><strong>Candidate 3</strong> — <span class="font-mono">browserUIManager.js</span> and <span class="font-mono">renderCoordinator.js</span> deleted, 14 <span class="font-mono">notify*</span> forwarders gone.</p>
                 <p><strong>Candidate 9</strong> — config defaulting left the constructor and <span class="font-mono">init</span> entirely. The browser reads <span class="font-mono">config.synchable</span> and <span class="font-mono">config.figureMode</span>; it decides neither. One field is still checked in <span class="font-mono">init</span> and stays there — <span class="font-mono">normalization</span>, against a set the loaded dataset owns.</p>
                 <p><strong>Candidate 8</strong> — four teardown verbs became two; <span class="font-mono">dispose()</span> is now symmetric with the constructor at both browser and registry level (ADR-0005).</p>
+                <p><strong>Candidate 6</strong> — the 10 state accessors are 4, over a dataset and a control dataset held as plain fields and a state held privately. The two setters the code documented as bypassing validation are gone; restore is a translator (ADR-0009).</p>
               </div>
               <div class="rounded border border-dashed border-slate-500 bg-slate-50 p-4 space-y-2">
                 <div class="text-xs uppercase tracking-wider text-slate-600">Still to move out</div>
-                <p><strong>Candidate 6</strong> — the 10 state accessors, which the code itself documents as bypassing validation. Three plain fields survive.</p>
                 <p><strong>Candidate 10</strong> — three load paths that reach back into <span class="font-mono">browser.userInteractionShield</span>, <span class="font-mono">contactMapLabel</span>, <span class="font-mono">browser.genome</span>, <span class="font-mono">tracks2D</span> and a raw <span class="font-mono">document.querySelector</span>.</p>
               </div>
             </div>
@@ -249,10 +249,10 @@ flowchart TB
       <section class="space-y-6">
         <h2 class="font-serif text-3xl border-b border-stone-300 pb-3">③ State — the chokepoint</h2>
 
-        <article class="rounded-lg border-2 border-slate-500 bg-white overflow-hidden" style="border-style: dashed;">
-          <div class="bg-slate-50 px-5 py-3 border-b-2 border-slate-500 flex flex-wrap items-baseline gap-x-4">
+        <article class="rounded-lg border-2 border-emerald-600 bg-white overflow-hidden">
+          <div class="bg-emerald-50 px-5 py-3 border-b-2 border-emerald-600 flex flex-wrap items-baseline gap-x-4">
             <h3 class="font-serif text-2xl">State</h3>
-            <span class="text-xs uppercase tracking-wider text-slate-600 font-semibold">Chokepoint landed (#411, #499) · back door still open — candidate 6, confidence <em>strong</em></span>
+            <span class="text-xs uppercase tracking-wider text-emerald-800 font-semibold">Landed · chokepoint #411, #499 · back door closed #557&ndash;#563, ADR-0009</span>
           </div>
           <div class="p-5 space-y-4 text-sm">
             <p class="font-mono text-xs text-slate-500">js/hicState.js · 545 lines · docs/state-manipulation.md · ADR-0006</p>
@@ -272,13 +272,13 @@ flowchart TB
               </div>
             </div>
 
-            <div class="rounded bg-rose-50 border border-rose-300 p-4 space-y-1">
-              <div class="text-xs uppercase tracking-wider text-rose-900">The back door — what candidate 6 closes</div>
-              <p><span class="font-mono">StateManager.setState</span> writes canonical state without passing the chokepoint: it floors, but does not cap and does not clamp. Session and URL restore go in that way. Ten <span class="font-mono">HICBrowser</span> accessors take the same route, and the code <em>documents</em> that they bypass validation.</p>
-              <p><strong>Target shape:</strong> <span class="font-mono">StateManager</span> (220 lines, 8 of 10 methods pure get/set) folds into <span class="font-mono">State</span>; restore becomes <span class="font-mono">restoreFrom</span>, a translator like every other one, validating against the loaded dataset before it reaches <span class="font-mono">setView</span>.</p>
+            <div class="rounded bg-emerald-50 border border-emerald-300 p-4 space-y-1">
+              <div class="text-xs uppercase tracking-wider text-emerald-900">The back door — closed by candidate 6</div>
+              <p><span class="font-mono">StateManager.setState</span> used to write canonical state without passing the chokepoint: it floored, but did not cap and did not clamp, and session and URL restore went in that way. Ten <span class="font-mono">HICBrowser</span> accessors took the same route, and the code <em>documented</em> that they bypassed validation.</p>
+              <p><strong>Shape now:</strong> <span class="font-mono">StateManager</span> is gone (#563). Restore is <span class="font-mono">HICBrowser.setState</span>, a translator like every other one, validating against the loaded dataset before it reaches <span class="font-mono">setView</span>. The browser holds the dataset and the control dataset as plain fields and the state as a private one, read through <span class="font-mono">state</span>/<span class="font-mono">activeState</span> and written by nothing but the chokepoint.</p>
             </div>
 
-            <p class="text-slate-600"><strong>Note the one deliberate exception that survives:</strong> bulk replacement. Session and URL restore replace the whole <span class="font-mono">State</span> object rather than mutating it, because at restore time there is nothing to translate relative to. The constructor transposes as belt-and-braces, which on canonical state is a no-op — and that no-op is what makes save → restore the identity.</p>
+            <p class="text-slate-600"><strong>The one deliberate exception did not survive, and that was the point:</strong> restore replaces the whole <span class="font-mono">State</span> object rather than mutating it, but it does so <em>through</em> <span class="font-mono">setView</span> — it used to be argued that at restore time there is nothing to translate relative to. The constructor transposes as belt-and-braces, which on canonical state is a no-op — and that no-op is what makes save → restore the identity.</p>
           </div>
         </article>
       </section>
@@ -448,7 +448,7 @@ flowchart TB
             <p class="font-mono text-xs text-slate-500">js/contactMatrixView.js (845) · js/interactionHandler.js (514) · js/sweepZoom.js</p>
             <p><strong>Today:</strong> <span class="font-mono">addMouseHandlers</span> is 177 lines of closures and <span class="font-mono">addTouchHandlers</span> is 119. Gesture state — <span class="font-mono">startX</span>, <span class="font-mono">mouseDown</span>, <span class="font-mono">lastTouch</span>, pinch distance — lives in those closures, which means <strong>there is no test surface at all</strong>. The coordinator installs them by hand.</p>
             <p><strong>Target:</strong> the view forwards raw pointer events and holds no gesture state. <span class="font-mono">InteractionHandler</span> — already deep and already partly tested — grows <span class="font-mono">onPointerDown/Move/Up</span>, <span class="font-mono">onWheel</span>, <span class="font-mono">onTouch*</span>, and holds drag, double-click, pinch and sweep as <em>explicit state</em>. Testable with synthetic event objects. <span class="font-mono">pinchZoom</span> and <span class="font-mono">_performWheelZoom</span> de-duplicate on the way through.</p>
-            <p class="text-slate-600">Note the direction: this is <strong>not</strong> a new module. It is behaviour moving from a shallow module into a deep one that already exists and already talks to <span class="font-mono">State</span> only through translators. That makes it one of the cheaper cards, once candidate 6 has settled what a translator call looks like.</p>
+            <p class="text-slate-600">Note the direction: this is <strong>not</strong> a new module. It is behaviour moving from a shallow module into a deep one that already exists and already talks to <span class="font-mono">State</span> only through translators. That makes it one of the cheaper cards, now that candidate 6 has settled what a translator call looks like.</p>
           </div>
         </article>
 

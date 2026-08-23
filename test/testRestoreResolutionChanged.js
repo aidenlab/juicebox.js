@@ -8,7 +8,7 @@
  * resolution lock when it is set, and hands the flag on to external
  * `onLocusChange` callbacks as declared payload. A restore that lands on the
  * current zoom now leaves a locked resolution locked. The repaint is not at
- * stake — `hicBrowser.setState` calls `update()` on every restore, flag or no
+ * stake — `setState` calls `update()` on every restore, flag or no
  * — so the lock is the observable half, and claim 4 is where this file earns
  * its keep.
  *
@@ -19,7 +19,7 @@
  * neither. #536's lesson inverted.
  *
  * The honest answer is computed the same way `chrChanged` beside it is: against
- * the **outgoing** `activeState`. `setView`'s own `resolutionChanged` cannot
+ * the **outgoing** state. `setView`'s own `resolutionChanged` cannot
  * serve, and the reason is worth stating because the ticket assumed otherwise.
  * The chokepoint runs on a clone of the *incoming* state (#558), and that clone
  * already carries the incoming zoom, so `_detectResolutionChange` compares the
@@ -36,9 +36,14 @@
  *    There is nothing to have been unchanged from, and `clearDataset()` nulls
  *    the state at the top of every load, so every load lands there.
  * 4. The flag survives the trip to the coordinator, and a same-zoom restore no
- *    longer releases the resolution lock. Claims 1 and 2 read the chokepoint's
- *    return; this one reads what a widget sees, which is where the behaviour
- *    change is actually visible.
+ *    longer releases the resolution lock. Claims 1 to 3 read the flag off the
+ *    `onLocusChange` payload; this one reads the widget-visible consequence of
+ *    it, which is where the behaviour change actually shows.
+ *
+ * All four read the payload because #563 folded `StateManager` into the browser
+ * and there is no longer an inner `setState` whose return value a test can
+ * take. That is the better instrument anyway: the payload is what
+ * `js/publicApi.js` declares as contract, and the return value never was.
  *
  * The dataset, the viewport and the stubs are `testRestoreClamp.js`'s, for the
  * reason it gives: a stated 800x800, because JSDOM does no layout (ADR-0009
@@ -98,6 +103,23 @@ describe('resolutionChanged tells the truth on restore (#560)', () => {
         return browser
     }
 
+    /**
+     * The `resolutionChanged` flag of every locus change the browser publishes,
+     * in order. `onLocusChange` is left to run: the lock claim below reads what
+     * it does, and a test that stubbed it out would be reading its own mock.
+     */
+    function flagsPublishedBy(browser) {
+
+        const flags = []
+        const onLocusChange = browser.coordinator.onLocusChange.bind(browser.coordinator)
+        vi.spyOn(browser.coordinator, 'onLocusChange').mockImplementation(eventData => {
+            flags.push(eventData.resolutionChanged)
+            return onLocusChange(eventData)
+        })
+
+        return flags
+    }
+
     /** A loaded browser sitting at ZOOM, ready to be restored onto. */
     async function loaded() {
         const browser = embed()
@@ -110,11 +132,13 @@ describe('resolutionChanged tells the truth on restore (#560)', () => {
 
         const browser = await loaded()
 
+        const flags = flagsPublishedBy(browser)
+
         // A different origin, so the restore is a real move — just not a
         // resolution one.
-        const {resolutionChanged} = await browser.stateManager.setState(savedView(ZOOM, 40, 40))
+        await browser.setState(savedView(ZOOM, 40, 40))
 
-        expect(resolutionChanged).toBe(false)
+        expect(flags).toEqual([false])
         expect(browser.state.zoom).toBe(ZOOM)
     })
 
@@ -122,22 +146,18 @@ describe('resolutionChanged tells the truth on restore (#560)', () => {
 
         const browser = await loaded()
 
-        const {resolutionChanged} = await browser.stateManager.setState(savedView(OTHER_ZOOM))
+        const flags = flagsPublishedBy(browser)
 
-        expect(resolutionChanged).toBe(true)
+        await browser.setState(savedView(OTHER_ZOOM))
+
+        expect(flags).toEqual([true])
         expect(browser.state.zoom).toBe(OTHER_ZOOM)
     })
 
     test('the first restore of a load, with no state in force, reports true', async () => {
 
         const browser = embed()
-        const flags = []
-        const chokepoint = browser.stateManager.setState.bind(browser.stateManager)
-        vi.spyOn(browser.stateManager, 'setState').mockImplementation(async state => {
-            const result = await chokepoint(state)
-            flags.push(result.resolutionChanged)
-            return result
-        })
+        const flags = flagsPublishedBy(browser)
 
         await browser.loadHicFile({url: HIC_URL, state: savedView(ZOOM)}, true)
 
@@ -149,12 +169,7 @@ describe('resolutionChanged tells the truth on restore (#560)', () => {
 
         const browser = await loaded()
 
-        const seen = []
-        const onLocusChange = browser.coordinator.onLocusChange.bind(browser.coordinator)
-        vi.spyOn(browser.coordinator, 'onLocusChange').mockImplementation(eventData => {
-            seen.push(eventData.resolutionChanged)
-            return onLocusChange(eventData)
-        })
+        const seen = flagsPublishedBy(browser)
 
         // The lock is the widget-visible consequence: `onLocusChange` releases it
         // whenever the flag is set, which is what every restore used to do.

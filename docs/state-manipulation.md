@@ -183,36 +183,43 @@ These are the API surfaces a host app or embedder calls directly. Each terminate
 | `browser.zoomAndCenter(direction, x, y)` | `state.zoomBy` or `state.recenterByPixel` + `setWithZoom`, depending on lock/boundary |
 | `browser.syncState(targetState)` | `state.sync` |
 
-There are also two **bulk replacement** APIs that bypass the translator layer (see next section).
+There is one more entry point, restore, which replaces the whole `State` object rather than mutating fields (see next section). It is a translator too.
 
-## Bulk replacement (session and URL restoration)
+## Restore (session and URL restoration)
 
-These paths replace the entire `State` object rather than mutate it field-by-field. Since #558 they **do** go through `setView` — restore is a translator like any other. Used at startup and during session restore.
+Restore replaces the entire `State` object rather than mutating it field-by-field, and it is **a translator like every other one**: it clones the incoming state and hands the canonical six to `setView`. Used at startup and during session restore.
 
 | Entry point | Path |
 |---|---|
-| `browser.setState(state)` | `stateManager.setState(state)`: clones the incoming state and hands the canonical six to `setView`, so a restored state gets the same `MAX_PIXEL_SIZE` cap and x/y clamp as every gesture path. |
+| `browser.setState(state)` | The chokepoint's one caller-facing name. It clones the incoming state, hands the canonical six to `setView` — so a restored state gets the same `MAX_PIXEL_SIZE` cap and x/y clamp as every gesture path — settles `normalization` against the loaded dataset, installs the clone, and publishes the locus change. |
 | Loading a session JSON | `dataLoader` → `State.fromJSON(json)` → `browser.setState(state)`. Old payloads with a `locus` field are read-and-ignored (backward compatibility). |
 | Loading via URL with `?session=...` | Same as above; URL → JSON → `fromJSON` → `setState`. |
-| Loading via URL with a config-level `locus` string | After the dataset loads, `dataLoader` calls `browser.parseGotoInput(config.locus)` — i.e. translator path, not bulk replacement. |
+| Loading via URL with a config-level `locus` string | After the dataset loads, `dataLoader` calls `browser.parseGotoInput(config.locus)` — i.e. a per-field translator rather than a whole-state replacement. |
 | Loading via URL with a `state` token (legacy compact form) | `State.parse(string)` → `browser.setState(state)`. |
 
-Bulk replacement used to be a deliberate exception to the chokepoint discipline, on the reasoning that at startup or restore the new state is the *only* state that exists, so there is nothing to "translate" relative to. [ADR-0009](adr/0009-restore-is-a-translator.md) retired that reasoning: an invariant with an exception has no enforcer, and `clampXY` was reachable from `updateLayout()` as well, which runs only when tracks change — so a restored session carrying a track was clamped and a bare map restore was not. The same saved session opened two ways.
+Restore used to be a deliberate exception to the chokepoint discipline, on the reasoning that at startup or restore the new state is the *only* state that exists, so there is nothing to "translate" relative to. [ADR-0009](adr/0009-restore-is-a-translator.md) retired that reasoning: an invariant with an exception has no enforcer, and `clampXY` was reachable from `updateLayout()` as well, which runs only when tracks change — so a restored session carrying a track was clamped and a bare map restore was not. The same saved session opened two ways.
 
-**A restored state is clamped silently, never rejected** (ADR-0009 decision 2) — the same "coerce, never reject" rule the normalize stage one seam over follows. A saved view at `pixelSize=1e9`, or with an origin past the end of its chromosome, opens somewhere different rather than failing to open.
+**A restored state is clamped silently, never rejected** (ADR-0009 decision 2) — the same "coerce, never reject" rule the normalize stage one seam over follows. A saved view at `pixelSize=1e9`, or with an origin past the end of its chromosome, opens somewhere different rather than failing to open. The same rule settles `normalization`, which is the seventh field and not one of the canonical six: it is validated against the loaded dataset, which is the first moment the set of valid answers exists, and coerced to `NONE` rather than refused (#561).
+
+Two consequences worth stating, because they are what "a translator like every other one" buys:
+
+- **`chrChanged` and `resolutionChanged` are computed against the state going out of force**, the same comparison every gesture path makes. Restore used to report `resolutionChanged: true` unconditionally, which released the resolution lock on every restore (#560).
+- **The state that lands is a clone.** The object a caller hands to `setState` is left alone, and stops being the state in force the moment it is accepted.
 
 The replacement is followed by a render and the application continues normally — subsequent mutations go through translators as usual.
 
-> The rest of this section, and "Where to look in code" below, are rewritten when candidate 6 lands whole (#563). What is above is true today.
+**The state field has exactly one writer.** `browser.state` and its `activeState` alias are getters over a private field; the setters that used to stand beside them are gone (#563, ADR-0009 decision 7). Reading canonical state is unrestricted, here as everywhere; *replacing* it is `setState`.
+
+That is the field, not the object. The getter hands back the live `State`, so a `browser.state.<field> = x` from outside is still reachable — and for `normalization`, two production sites do it (see the next section). For the canonical six, the discipline that stops it is the same one it always was: they are written through translators, by convention, and `setView` is where the invariants are enforced.
 
 ## What is NOT a state mutation
 
 For completeness, these UI elements affect display but do **not** change `State`:
 
 - **Color scale widget** — adjusts contact-matrix pixel intensity mapping. Lives on `ColorScale` instances on the dataset/control dataset, not on `State`.
-- **Normalization widget** — *does* set `state.normalization`, which is canonical. But the visualization side (re-rendering with a different vector) is a side effect; the state change itself is one field. Not enumerated above because it's a single field write currently outside the chokepoint discipline (a known small inconsistency, not yet folded into `setView`).
+- **Normalization widget** — *does* set `state.normalization`, which is canonical. But the visualization side (re-rendering with a different vector) is a side effect; the state change itself is one field. It is not enumerated above because it is a single-field write rather than a view change: `normalization` is not one of the canonical six, and `setView` does not take it. It is still validated in one place — `browser.resolveNormalization`, which restore and `init` both ask (#561) — so the field has an enforcer even though it does not have a translator.
 - **2D track menu / annotation widget** — load/unload track data. Tracks are stored on the browser, not on `State`.
-- **Control map widget (A/B compare)** — switches the active dataset. Affects `stateManager.activeDataset` (and the corresponding control-map view) but not the canonical six fields.
+- **Control map widget (A/B compare)** — switches the active dataset. Affects `browser.dataset` (and the corresponding control-map view) but not the canonical six fields.
 - **Sweep zoom rectangle drawing** — visual only, until the user releases the mouse and triggers `goto`.
 - **Pan/zoom inertia animations** — pure rendering effects layered on top of state changes.
 
@@ -226,9 +233,8 @@ For BP coordinates, always go through `state.getLocus(dataset, viewDimensions)`.
 
 - `js/hicState.js` — `State` class. Canonical fields, all translators, `setView`, `getLocus`, helpers (`_adjustPixelSize`, `clampXY`).
 - `js/interactionHandler.js` — bridges UI events to translators. Should not mutate state fields directly.
-- `js/stateManager.js` — bulk replacement (`setState`, `setControlState`), state cloning for the active/control split.
 - `js/syncGroup.js` — the sync-group rule: which browsers pair (`pairSynchable`) and whether one may take a published state (`canBeSynched`). The only reader of `synchable` (#562).
-- `js/hicBrowser.js` — public API methods. Mostly thin delegations to `interactionHandler` or `stateManager`.
+- `js/hicBrowser.js` — public API methods, mostly thin delegations to `interactionHandler`; the state itself (a private field), `setState`, and `resolveNormalization`. `js/stateManager.js` used to hold the field and the restore path; #563 folded it away once the behaviour had left it.
 - `js/dataLoader.js` — session/URL ingestion path.
 - `test/testState.js` — characterization tests for every translator and the chokepoint. The behavioral contract.
 

@@ -1,6 +1,6 @@
 # Juicebox.js — Punch List
 
-**As of 2026-08-22. Candidate 6 is the active work; the gate (#557), the behaviour change behind it (#558), the back door beside it (#559), the honest change flag (#560) and both halves of the parallel branch (#561, #562) are in, so the frontier is the join — [#563](https://github.com/aidenlab/juicebox.js/issues/563), the fold, now unblocked.**
+**As of 2026-08-23. Candidate 6 is done — all eight tickets (#510, #557–#563) are in, `StateManager` is deleted and restore is a translator. Eight of eleven candidates have landed and nothing queues behind this one, so the next move is picking one of the three unpicked candidates. Candidate 6 owes two release notes.**
 
 > **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
 > agree with it. Where the durable facts live:
@@ -29,10 +29,12 @@ Three repos are involved:
 
 ---
 
-# NOW — Candidate 6
+# JUST LANDED — Candidate 6
 
 **Fold `StateManager` into `State`, and make restore use the chokepoint.** Scoped by
-[ADR-0009](adr/0009-restore-is-a-translator.md), filed as #557–#563.
+[ADR-0009](adr/0009-restore-is-a-translator.md), filed as #557–#563, landed 23 August 2026 as
+`7eab0c1..83e5457`. **Eight of eleven candidates are done and nothing queues behind this one** — see
+*NEXT* below, and the Outcome box on the card in `docs/architecture-review.html`.
 
 ## The chain
 
@@ -48,9 +50,9 @@ what is actually unblocked.
 | ~~**#560**~~ | `resolutionChanged` tells the truth on restore | ✅ **landed** — the flag is computed against the state going out of force, and **not one of the gate's 450 records moved** |
 | ~~**#561**~~ | Normalization is validated against the loaded dataset at restore | ✅ **landed** — a normalization the loaded dataset does not offer is coerced to `NONE` in the chokepoint, `NONE` short-circuiting ahead of the dataset |
 | ~~**#562**~~ | The sync trio splits three ways | ✅ **landed** — `canBeSynched` to `syncGroup.js`, `getSyncState` to `State`, `StateManager.syncState` deleted; **the `synchable` guard on `HICBrowser.syncState` stayed**, see below |
-| **#563** | `StateManager` folds into `State`, the setters go, and the discipline is written down | — **frontier**, all three blockers closed |
+| ~~**#563**~~ | `StateManager` folds into `State`, the setters go, and the discipline is written down | ✅ **landed** — `StateManager` is gone, the state is a private field on `HICBrowser` with one writer, and **neither golden moved**; the find was in the fixture, see below |
 
-**#560, #561 and #562 were a parallel branch** off #559; #563 is the join, and all three legs are in. This is the first
+**#560, #561 and #562 were a parallel branch** off #559; #563 was the join, and all three legs went in first. This is the first
 candidate with real fan-out rather than a linear chain — which is exactly why the edges are native
 rather than read off a table here.
 
@@ -106,8 +108,10 @@ ADR.
 `setActiveDataset(state)` — the count of states installed without the chokepoint seeing them — left
 the file entirely, and `setState` arrived on the `config.locus` door in both viewport columns. The
 `locus` door's validated state is overwritten by `parseGotoInput` a line later, so what the door
-gained is not visible in a snapshot; `test/testRestoreBackDoor.js` traps `activeState` itself and
-asserts every state installed during that load came out of the chokepoint. **The `synchState`
+gained is not visible in a snapshot; `test/testRestoreBackDoor.js` trapped `activeState` itself and
+asserted every state installed during that load came out of the chokepoint. **#563 made that
+structural**: the field is private, there is nowhere to write it from, and what the file asserts now
+is that the state left standing is one the chokepoint produced. **The `synchState`
 branch was fixed but cannot be exercised in production: the rung is unreachable (#566), so #559's
 third acceptance criterion is narrowed to a test that pins both the unreachability and the branch's
 correctness for when #566 lifts it.**
@@ -137,6 +141,45 @@ fixes those three by itself. The `locus` and `synchState` branches leave the unv
 standing and need #559. **The ADR was right about the decision and wrong about the ticket boundary,
 which is the ordinary way round:** ADRs find decisions, decomposition finds call sites.
 
+## What #563 found, and it was in the test fixture
+
+**The fold itself was uneventful** — `StateManager` was a wrapper re-wrapped by ten accessors, and
+once #558–#562 had taken the behaviour out there was nothing on the far side of the delegation but
+the field. `dataset` and `controlDataset` are plain fields on `HICBrowser`; the state is private,
+because a public field cannot be read-only and read-only is the whole of the change. The
+`state`/`activeState` **getters stayed and the setters went** (ADR-0009 decision 7, ADR-0003's
+reasoning): reading is plausible host behaviour, writing is not, and nothing outside tests did it.
+
+**The value was in `test/utils/stubbedLoads.js`, exactly as the ticket predicted.** Routing the
+fixture through the chokepoint surfaced two defects in it, both invisible while it wrote the field:
+
+- **The dataset was too thin to clamp against.** Two chromosomes, six resolutions, no `getMatrix` —
+  so `clampXY` and `minPixelSize` could not have run against it at all. It uses `restoreDataset`
+  now, the honest hg19 stand-in #557 built for the golden, which grew a `genomeId` override for the
+  sync suites. One dataset stub, two purposes.
+- **It decoded the state with the wrong function.** `State.fromJSON` where the two ladder rungs that
+  carry a state call `decodeState`. A session blob spells its state as a comma-separated *string*,
+  and `fromJSON` on a string returns a `State` whose every field is `undefined`. Nine suites had
+  been standing on that, including the config golden's session-blob fixture — the one whose note
+  reads *"if exactly one fixture in this file has to keep working, it is this one"*.
+
+**One finding was filed rather than fixed: #575.** `init` writes `state.normalization` unvalidated
+inside its `config.colorScale` branch, 35 lines above the validated write that overwrites it. Older
+than candidate 6, and transient — but it is a second copy of a field write in the code #563 claims
+has one enforcer, so it is filed against the claim rather than left to be rediscovered.
+
+**The general form is worth keeping:** a fixture that writes canonical state directly cannot observe
+the invariant the chokepoint exists to enforce, and it will not fail while it does. The gate proves
+the production path did not change; it says nothing about whether the path the tests drive *is* the
+production path. Neither golden moved on #563 — 450 restore records and 65 config records
+byte-identical — which is the fold being a fold, and is not evidence about the fixture either way.
+
+**Two tests changed instrument rather than claim.** `testRestoreResolutionChanged.js` read the flag
+off the inner `setState`'s return value; there is no inner `setState` now, so it reads the
+`onLocusChange` payload, which is what `js/publicApi.js` declares as contract and is the better
+instrument anyway. `testAccessorVocabulary.js` gained a claim that the setters are gone, and lost
+the one that wrote through them.
+
 ## Pre-existing issues this candidate touches
 
 Surveyed 2026-08-22. **None of these is a candidate-6 ticket** — they are older issues that live in
@@ -149,7 +192,7 @@ than rediscovered one at a time.
 | **#372** | Jul 2026 | Its **validation half is #561**. Restore is the first moment a valid normalization set exists | leave open; it narrows to notification |
 | **#528** | Aug 2026 | **Answered by ADR-0009.** It asked whether a numeric seventh state token (`normalization: "2000"`) should be rejected or coerced; decisions 2 and 5 say coerce, at restore, against the dataset | ✅ re-labelled `ready-for-agent` and pointed at #561; use it as #561's fixture |
 | **#280** | 2018 | **Hypothesis weakened by #566** — the rung it blames is unreachable, not racy. See below | linked both ways with #562; still open, needs the repro, do **not** close on the reading |
-| **#473** | Aug 2026 | Same in-flight hazard as #469, on `TrackPair` rather than `ContactMatrixView`. Candidate 6 changes who owns state mutation, so it may get easier or harder | watch during #563 |
+| **#473** | Aug 2026 | Same in-flight hazard as #469, on `TrackPair` rather than `ContactMatrixView`. Candidate 6 changed who owns state mutation | **neither easier nor harder** — the identity check `testRepaintDuringReset.js` pins is unaffected by the fold; still open, still unfiled work |
 | ~~**#125**~~ | 2020 | Asked how `state` should be encoded for `loadHicFile`. The syntax in the question was always right; `docs/url.md` now documents v0 and v1 per ADR-0006 decision 2 | ✅ **answered and closed** |
 | ~~**#283**~~ | 2018 | Share produced `?juiceboxURL=undefined`. Moot — nothing writes that format since #506; only the adapter that refuses it remains | ✅ **closed as moot** |
 
@@ -176,7 +219,10 @@ belong in candidate 6's Outcome box.
 ## The release note this candidate owes
 
 **A saved view whose `pixelSize` or origin violates an invariant now opens clamped rather than as
-written.** ✅ True as of #558. That is phase 4's **fifth** note and the **second** an end user can
+written.** ✅ True as of #558, and unchanged by the rest of the candidate. **A second note is owed
+by #563:** `browser.state = x` and `browser.activeState = x` now throw. Neither host writes them,
+which is why the setters went — but the accessors are declared public surface, so their removal is a
+release note rather than an internal change. That is phase 4's **fifth** note and the **second** an end user can
 hit. Clamping
 silently is decision 2 — the same "coerce, never reject" rule the normalize stage already follows.
 
@@ -184,7 +230,7 @@ silently is decision 2 — the same "coerce, never reject" rule the normalize st
 
 # NEXT — the three unpicked candidates
 
-Nothing queues behind candidate 6; when it lands, the choice is open again. Each card in
+Nothing queued behind candidate 6, and it has landed: **the choice is open again.** Each card in
 `docs/architecture-review.html` carries a Consumer impact block — read it before filing anything.
 
 | Candidate | Status | What is known |
@@ -193,7 +239,7 @@ Nothing queues behind candidate 6; when it lands, the choice is open again. Each
 | **7 · Move the gesture state machines behind InteractionHandler** | largest remaining | must keep both crosshair paths firing for Spacewalk. ~300 lines of closures with no test surface. **The one candidate that may want `/wayfinder`** rather than `/to-tickets` — its shape is genuinely unknown, where candidate 4's was settled in a grilling session before any ticket existed |
 | **10 · One dataset-load path** — *the live-map seam* | spans three repos | three named load methods must survive |
 
-**The pattern to repeat, now proven five times: ADR → tickets → Outcome box on the card.** The ADR
+**The pattern to repeat, now proven six times: ADR → tickets → Outcome box on the card.** The ADR
 is where the breaking question gets answered before code moves. Candidate 9 added the corollary: a
 candidate scoped as needing no ADR can still owe one, and it comes due on the last ticket, when the
 readers finally have to agree.
@@ -211,9 +257,9 @@ add an Outcome box to its card. That is the only time either file is touched.
 
 ---
 
-# DONE — candidates 1, 2, 3, 4, 5, 8, 9
+# DONE — candidates 1, 2, 3, 4, 5, 6, 8, 9
 
-Seven of eleven. Phases 0, 1 and 2 are complete. Full outcomes are in the green boxes in
+Eight of eleven. Phases 0, 1 and 2 are complete. Full outcomes are in the green boxes in
 `docs/architecture-review.html` and on #466; the compressed version:
 
 | # | Candidate | Outcome |
@@ -225,6 +271,7 @@ Seven of eleven. Phases 0, 1 and 2 are complete. Full outcomes are in the green 
 | 8 | Give the browser a teardown that matches its construction | ADR-0005 → #491–#496. Four teardown verbs → two. Not breaking |
 | 5 | One decoder for session and URL | ADR-0006 → #499–#509. One deliberate break (`juiceboxURL=`); eight follow-ups filed |
 | 9 | Give the config schema one reader | ADR-0008 → #531–#536. `normalizeSession` runs once at the entry; schema in `CONTEXT.md` |
+| 6 | Fold `StateManager` into `State`, and make restore use the chokepoint | ADR-0009 → #510, #557–#563. Restore is a translator; `StateManager` deleted; the state has one writer. Owes a release note |
 
 **Phase 3b — candidate 4's loose ends — is closed.** #477 scoped the `--hic-viewport-*` properties
 to each browser's `rootElement` (`461535a`), and the registry click-through ran on 11 August as

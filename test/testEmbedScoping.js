@@ -38,6 +38,19 @@ globalThis.document = mockedDocument
  * the container its own registry owns, and only the DOM can answer that.
  */
 
+/**
+ * A stand-in view, defined as an own property over the `state` getter.
+ *
+ * `state` is read-only as of #563 -- one writer, `browser.setState`, and it
+ * wants a dataset, a viewport and a `State`, none of which this claim is about.
+ * The stand-in is per browser and goes with it, and being a *definition* rather
+ * than an assignment it says at the call site that it is scaffolding.
+ */
+function standInState(browser, state) {
+    Object.defineProperty(browser, 'state', {value: state, configurable: true, writable: true})
+    return state
+}
+
 describe('selectedGene', () => {
 
     const dom = withContainers()
@@ -62,7 +75,7 @@ describe('selectedGene', () => {
         const theirs = new HICBrowser(dom.another(), {})
 
         for (const browser of [mine, theirs]) {
-            browser.state = {}
+            standInState(browser, {})
             browser.genome = {featureDB: new Map([['ACE', {chr: 'chr17', start: 61554422, end: 61575741}]])}
             // The locus parse is a separate concern, and needs a dataset.
             browser.parseLocusString = locus => locus

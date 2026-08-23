@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import {fileURLToPath} from 'url'
 import {withBrowser} from './utils/browserFixture.js'
+import {withStubbedLoads} from './utils/stubbedLoads.js'
 
 /**
  * One accessor vocabulary for dataset and state -- see #468.
@@ -14,9 +15,16 @@ import {withBrowser} from './utils/browserFixture.js'
  * sites. They are not deprecated, because no removal is scheduled.
  *
  * Two things are worth pinning. That the alias really is an alias, so a host
- * writing either name sees the same object. And that nothing *inside* this repo
+ * reading either name sees the same object. And that nothing *inside* this repo
  * reads the alias, because the alias exists only for consumers we cannot see:
  * an internal read is how a second vocabulary grows back.
+ *
+ * The state half is read-only as of #563 (ADR-0009 decision 7): `state` and
+ * `activeState` are getters over a private field, and the setters that used to
+ * stand beside them -- commented "direct assignment bypasses validation", with
+ * no production caller -- are gone. So the state claims here are made against a
+ * state the chokepoint installed, and the last one pins the absence itself.
+ * Reading is plausible host behaviour and stays; writing is not, and went.
  */
 
 const jsDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../js')
@@ -24,6 +32,13 @@ const jsDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 describe('alias accessors', () => {
 
     const context = withBrowser()
+    withStubbedLoads()
+
+    /** A state in force, put there the only way there is: the chokepoint. */
+    async function load() {
+        await context.browser.loadHicFile({url: 'https://example.org/alias-vocabulary.hic'})
+        expect(context.browser.state).toBeDefined()
+    }
 
     it('reads the same dataset through either name', () => {
         const dataset = {name: 'stand-in'}
@@ -32,20 +47,31 @@ describe('alias accessors', () => {
         expect(context.browser.activeDataset).toBe(context.browser.dataset)
     })
 
-    it('reads the same state through either name', () => {
-        const state = {chr1: 0, chr2: 0}
-        context.browser.state = state
-        expect(context.browser.activeState).toBe(state)
+    it('reads the same state through either name', async () => {
+        await load()
         expect(context.browser.activeState).toBe(context.browser.state)
     })
 
-    it('writes through the alias to the canonical name', () => {
+    it('writes the dataset through the alias to the canonical name', () => {
         const dataset = {name: 'stand-in'}
-        const state = {chr1: 1, chr2: 1}
         context.browser.activeDataset = dataset
-        context.browser.activeState = state
         expect(context.browser.dataset).toBe(dataset)
-        expect(context.browser.state).toBe(state)
+    })
+
+    it('has no state setter under either name', async () => {
+        await load()
+
+        const inForce = context.browser.state
+
+        // Strict mode, so the assignment throws rather than failing quietly --
+        // which is the point: a host that was writing state finds out.
+        for (const name of ['state', 'activeState']) {
+            expect(Object.getOwnPropertyDescriptor(Object.getPrototypeOf(context.browser), name).set,
+                `"${name}" has a setter again`).toBeUndefined()
+            expect(() => { context.browser[name] = {chr1: 9, chr2: 9} }).toThrow(TypeError)
+        }
+
+        expect(context.browser.state).toBe(inForce)
     })
 })
 
@@ -55,20 +81,15 @@ describe('internal call sites', () => {
      * Lines that may mention the alias, by repo-relative path.
      *
      * Exemptions are per line rather than per file: exempting `hicBrowser.js`
-     * outright would excuse the largest internal reader there ever was, and
-     * exempting `stateManager.js` would let a `browser.activeDataset` read in
-     * there pass. A line in one of these files still fails unless it is one of
-     * the shapes below.
+     * outright would excuse the largest internal reader there ever was. A line
+     * in one of these files still fails unless it is one of the shapes below.
      */
     const allowances = new Map([
-        // The alias accessors themselves, the one place the state field is
-        // written through the manager rather than through setActiveDataset, and
-        // the doc comments that explain the arrangement -- prose is not a read.
-        ['hicBrowser.js', [/^\s*(get|set) active(Dataset|State)\(/, /^\s*this\.stateManager\.activeState\b/, /^\s*(\*|\/\/|\/\*)/]],
-        // StateManager's own fields, not the browser accessor. Collapsing
-        // StateManager is its own candidate; until then its internal spelling
-        // is its business, but reaching for the browser's alias is not.
-        ['stateManager.js', [/\bthis\.active(Dataset|State)\b/]],
+        // The alias accessors themselves, and the doc comments that explain the
+        // arrangement -- prose is not a read. `stateManager.js` used to want a
+        // third allowance for its own two fields; #563 folded it away, and the
+        // fields are `dataset` and a private `#state` on the browser now.
+        ['hicBrowser.js', [/^\s*(get|set) active(Dataset|State)\(/, /^\s*(\*|\/\/|\/\*)/]],
         // The declaration of the aliases as public surface.
         ['publicApi.js', [/active(Dataset|State)/]]
     ])

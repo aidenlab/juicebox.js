@@ -45,6 +45,27 @@ function chromosomes() {
 }
 
 /**
+ * The single-chromosome assembly ADR-0010 is about: the `All` entry plus one
+ * real scaffold, 2.4 Gbp -- the size #398 reports, and the size at which no
+ * declared bin can frame the thing.
+ *
+ * Two numbers here are faithful to the format in a way the hg19 stand-in above
+ * is not, because ADR-0010's arithmetic reads them:
+ *
+ * - the `All` entry's `size` is in **kb** (`hic-straw/src/hicFile.js:141`), so
+ *   it is the genome length over 1000.
+ * - `wholeGenomeResolution` is that same bin expressed in **bp**: `size * 2`,
+ *   which is the genome length over 500. Five hundred bins across the scaffold.
+ */
+const SOLE_SCAFFOLD_SIZE = 2400000000
+
+function singleChromosomes() {
+    const scaffold = {index: 1, name: 'scaffold_1', size: SOLE_SCAFFOLD_SIZE}
+    const wholeGenome = {index: 0, name: 'All', size: SOLE_SCAFFOLD_SIZE / 1000}
+    return [wholeGenome, scaffold]
+}
+
+/**
  * The zoom record `minPixelSize` and `minZoom` read. `findZoomForResolution`
  * mirrors `browser.findMatchingZoomIndex`: the finest index whose bin is still
  * no smaller than the target, floored at the whole-genome resolution.
@@ -69,8 +90,44 @@ function matrix() {
  *   dataset can echo the identity `loadHicFile` then reads back off it.
  */
 export function restoreDataset(config = {}) {
+    return buildDataset(chromosomes(), config)
+}
 
-    const chrs = chromosomes()
+/**
+ * The same stand-in over a one-scaffold assembly (#236, ADR-0010). Everything
+ * the sentinel path reads is real here: the predicate answers true, the
+ * whole-genome matrix answers at its own single resolution, and
+ * `wholeGenomeResolution` is the bp bin the sentinel rung carries.
+ */
+export function singleChromosomeDataset(config = {}) {
+    const chrs = singleChromosomes()
+    return {
+        ...buildDataset(chrs, config),
+        genomeId: config.genomeId || 'sole-scaffold',
+        wholeGenomeResolution: chrs[0].size * 2,
+        // The whole-genome matrix carries exactly one BP resolution, stated in
+        // the kb its own coordinates are in -- `wholeGenomeResolution / 1000`.
+        async getMatrix(chr1, chr2) {
+            if (0 === chr1 && 0 === chr2) return wholeGenomeMatrix(chrs[0].size * 2 / 1000)
+            return matrix()
+        },
+    }
+}
+
+function wholeGenomeMatrix(binSize) {
+    return {
+        getZoomDataByIndex(index, unit) {
+            return 0 === index
+                ? {zoom: {index, unit: unit || 'BP', binSize}, chr1: {index: 0, name: 'All'}, chr2: {index: 0, name: 'All'}}
+                : undefined
+        },
+        findZoomForResolution() {
+            return 0
+        },
+    }
+}
+
+function buildDataset(chrs, config) {
 
     return {
         url: config.url,
@@ -85,8 +142,23 @@ export function restoreDataset(config = {}) {
         isCompatible(other) {
             return other?.genomeId === this.genomeId
         },
+        wholeGenomeChromosome: chrs[0],
         isWholeGenome(chrIndex) {
             return chrIndex === 0
+        },
+        // The four ADR-0010 methods, implemented rather than stubbed, so a
+        // fixture over a different chromosome table answers honestly.
+        isSingleChromosome() {
+            return 2 === chrs.length
+        },
+        soleChromosome() {
+            return 2 === chrs.length ? chrs[1] : undefined
+        },
+        binSizeForZoom(zoom) {
+            return -1 === zoom ? this.wholeGenomeResolution : BP_RESOLUTIONS[zoom]
+        },
+        matrixViewForZoom(chr1, chr2, zoom) {
+            return -1 === zoom ? {chr1: 0, chr2: 0, zoomIndex: 0} : {chr1, chr2, zoomIndex: zoom}
         },
         getChrIndexFromName(name) {
             const found = chrs.find(c => c.name.toLowerCase() === String(name).toLowerCase())

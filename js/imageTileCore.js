@@ -33,6 +33,8 @@
  * it can be exercised directly from tests. See CONTEXT.md.
  */
 
+import {SENTINEL_ZOOM} from "./sentinelZoom.js"
+
 /**
  * Cache key for a single image tile.
  *
@@ -109,6 +111,11 @@ function tileGrid(state, viewDimensions, tileDimension) {
  *         bin size is not present on the control map
  */
 function bZoomIndex(dataset, controlDataset, zoom) {
+
+    // The sentinel rung is synthesised identically on both maps: genomes must
+    // match, so both compute the same `wholeGenomeResolution`. There is no
+    // declared bin size to look up on either side. ADR-0010.
+    if (SENTINEL_ZOOM === zoom) return SENTINEL_ZOOM
 
     const binSize = dataset.getBinSizeForZoomIndex(zoom)
     if (!binSize) throw new Error(`Invalid zoom (resolution) index: ${zoom}`)

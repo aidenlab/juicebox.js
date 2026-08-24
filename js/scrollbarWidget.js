@@ -66,7 +66,8 @@ class ScrollbarWidget {
 
             const { chr1, chr2, zoom, pixelSize, x, y } = state;
 
-            const chromosomeLengthsBin = [chr1, chr2].map(chr => dataset.chromosomes[chr].size / dataset.bpResolutions[zoom]);
+            const binSize = this.browser.binSizeForZoom(zoom);
+            const chromosomeLengthsBin = [chr1, chr2].map(chr => dataset.chromosomes[chr].size / binSize);
             const chromosomeLengthsPixel = chromosomeLengthsBin.map(bin => bin * pixelSize);
             const { width, height } = this.browser.contactMatrixView.getViewDimensions();
             const pixels = [width, height];

@@ -39,6 +39,7 @@ import DataLoader from "./dataLoader.js"
 import {normalizeTrackConfigs} from "./normalizeSession.js"
 import {unmappedUrl, unmappedIndexUrl} from "./urlMapper.js"
 import {isSynchable} from "./syncGroup.js"
+import {SENTINEL_ZOOM} from "./sentinelZoom.js"
 
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
@@ -408,12 +409,43 @@ class HICBrowser {
         const baseResolutions = this.dataset.bpResolutions.map(function (resolution, index) {
             return {index: index, binSize: resolution}
         })
+
+        let resolutions = baseResolutions
         if (this.controlDataset) {
-            let controlResolutions = new Set(this.controlDataset.bpResolutions)
-            return baseResolutions.filter(base => controlResolutions.has(base.binSize))
-        } else {
-            return baseResolutions
+            const controlResolutions = new Set(this.controlDataset.bpResolutions)
+            resolutions = baseResolutions.filter(base => controlResolutions.has(base.binSize))
         }
+
+        // The sentinel rung is appended *after* the intersection rather than
+        // passed through it: a B map declares no whole-genome resolution for the
+        // intersection to keep. It needs none -- genomes must match
+        // (`dataLoader.js:356`), so both datasets compute the same
+        // `wholeGenomeResolution`. ADR-0010.
+        if (this.dataset.isSingleChromosome()) {
+            resolutions = [...resolutions, {index: SENTINEL_ZOOM, binSize: this.dataset.wholeGenomeResolution}]
+        }
+
+        // Sorted by bin size, coarsest first, rather than trusted to arrive that
+        // way. `interactionHandler` reads `resolutions[0]` as the coarsest rung
+        // and the last entry as the finest, and the sentinel's index does not
+        // put it at either end. ADR-0010 decision 1.
+        return resolutions.sort((a, b) => b.binSize - a.binSize)
+    }
+
+    /**
+     * The bin size, in bp, of a zoom rung -- the sentinel rung included.
+     *
+     * The landing pad for #398. Some twenty sites index
+     * `dataset.bpResolutions[state.zoom]` directly, and ADR-0010 decision 2
+     * converts only the ones the sentinel path can reach; the rest are left to
+     * the refactor that owns them, rather than folded into this ticket's diff.
+     *
+     * Delegation, and the split is deliberate: whatever holds a browser reads it
+     * here, and `State` -- which is handed a dataset and, in `getLocus` and
+     * `clampXY`, no browser at all -- reads `dataset.binSizeForZoom` directly.
+     */
+    binSizeForZoom(zoom = this.state.zoom) {
+        return this.dataset.binSizeForZoom(zoom)
     }
 
     isWholeGenome() {
@@ -491,7 +523,7 @@ class HICBrowser {
     genomicState(axis) {
 
         let width = this.contactMatrixView.getViewDimensions().width
-        let resolution = this.dataset.bpResolutions[this.state.zoom]
+        let resolution = this.binSizeForZoom(this.state.zoom)
         const bpp =
             (this.dataset.chromosomes[this.state.chr1].name.toLowerCase() === "all") ?
                 this.genome.getGenomeLength() / width :
@@ -1254,7 +1286,7 @@ class HICBrowser {
     }
 
     resolution() {
-        return this.dataset.bpResolutions[this.state.zoom]
+        return this.binSizeForZoom()
     };
 
     /**
@@ -1384,6 +1416,25 @@ class HICBrowser {
         const { width, height } = this.contactMatrixView.getViewDimensions()
         const binSize = Math.max(chromosome1.size / width, chromosome2.size / height)
 
+        // `findZoomForResolution` floors at the coarsest *declared* bin, so on a
+        // large single scaffold it answers with a rung that cannot frame the
+        // thing at all. The only coarser data in the file is the whole-genome
+        // matrix, which for this assembly is the same picture -- so the fit
+        // falls through to the sentinel rung. ADR-0010 fact 3.
+        //
+        // Asked of the rungs actually on offer, not of the primary map's raw
+        // ladder: on an A/B map the coarsest *common* bin can be finer than the
+        // primary's coarsest, and a scaffold that map cannot frame either has
+        // to fall through too. The list is sorted coarsest-first, and the
+        // sentinel is filtered back out so the question stays "is anything
+        // declared coarse enough".
+        if (this.dataset.isSingleChromosome()) {
+            const declared = this.getResolutions().filter(({index}) => SENTINEL_ZOOM !== index)
+            if (0 === declared.length || declared[0].binSize < binSize) {
+                return SENTINEL_ZOOM
+            }
+        }
+
         const matrix = await this.dataset.getMatrix(chr1, chr2)
         if (!matrix) {
             throw new Error(`Data not avaiable for chromosomes ${chromosome1.name} - ${chromosome2.name}`)
@@ -1406,6 +1457,18 @@ class HICBrowser {
 
         const chr1Length = this.dataset.chromosomes[chr1].size
         const chr2Length = this.dataset.chromosomes[chr2].size
+
+        // The sentinel rung is sized against the scaffold, not against the
+        // whole-genome matrix's own zoom record. Both describe the same 500-bin
+        // span, but the matrix states it in the kb it stores its coordinates in
+        // while `chr1Length` here is bp -- reading the record would divide one
+        // unit by the other. `wholeGenomeResolution` is that same bin in bp,
+        // which is what makes this a unit match. ADR-0010 fact 4.
+        if (SENTINEL_ZOOM === zoomIndex) {
+            const binSize = this.dataset.wholeGenomeResolution
+            const { width, height } = this.contactMatrixView.getViewDimensions();
+            return Math.min(width / (chr1Length / binSize), height / (chr2Length / binSize));
+        }
 
         const matrix = await this.dataset.getMatrix(chr1, chr2)
         if (!matrix) {

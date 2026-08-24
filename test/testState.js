@@ -41,6 +41,7 @@ export function createMockBrowser(overrides = {}) {
         resolutionLocked: overrides.resolutionLocked ?? false,
         minPixelSize: overrides.minPixelSize ?? (async () => 1),
         getResolutions: overrides.getResolutions ?? (() => resolutions),
+        binSizeForZoom: overrides.binSizeForZoom ?? (zoom => binSizes[zoom]),
         // Mirrors the real interactionHandler.findMatchingZoomIndex, which accepts
         // both shapes: an array of {binSize, index} objects (browser.getResolutions())
         // and a flat array of numbers (dataset.bpResolutions). State.sync passes the
@@ -52,7 +53,7 @@ export function createMockBrowser(overrides = {}) {
                 const index = isObject ? res[z].index : z
                 if (binSize >= targetResolution) return index
             }
-            return 0
+            return isObject ? res[0].index : 0
         }),
         genome: overrides.genome ?? {
             getChromosome: (name) => chromosomes.find(c => c.name === name)
@@ -64,9 +65,20 @@ export function createMockBrowser(overrides = {}) {
 }
 
 export function createMockDataset(overrides = {}) {
+    const chromosomes = overrides.chromosomes ?? DEFAULT_CHROMOSOMES
+    const binSizes = overrides.bpResolutions ?? DEFAULT_BIN_SIZES
     return {
-        chromosomes: overrides.chromosomes ?? DEFAULT_CHROMOSOMES,
-        bpResolutions: overrides.bpResolutions ?? DEFAULT_BIN_SIZES,
+        chromosomes,
+        bpResolutions: binSizes,
+        // ADR-0010's four. The default table is a whole genome, so the predicate
+        // is false and `binSizeForZoom` is a plain array read -- which is what
+        // every claim in this file is made against.
+        wholeGenomeChromosome: chromosomes[0],
+        isWholeGenome: overrides.isWholeGenome ?? (chrIndex => 0 === chrIndex),
+        isSingleChromosome: overrides.isSingleChromosome ?? (() => 2 === chromosomes.length),
+        soleChromosome: () => chromosomes[1],
+        binSizeForZoom: overrides.binSizeForZoom ?? (zoom => binSizes[zoom]),
+        matrixViewForZoom: (chr1, chr2, zoom) => ({chr1, chr2, zoomIndex: zoom}),
     }
 }
 
@@ -452,7 +464,7 @@ describe('State.panWithZoom', () => {
         // Zoom to zoom=4 (binSize=100000) at pixelSize=8.
         const newZoom = 4
         const newBinSize = bpResolutions[newZoom].binSize
-        await state.panWithZoom(newZoom, 8, anchorPx, anchorPy, newBinSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS, bpResolutions)
+        await state.panWithZoom(newZoom, 8, anchorPx, anchorPy, newBinSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
 
         const gxAfter = (state.x + anchorPx / state.pixelSize) * newBinSize
         const gyAfter = (state.y + anchorPy / state.pixelSize) * newBinSize
@@ -467,7 +479,7 @@ describe('State.panWithZoom', () => {
         const bpResolutions = browser.getResolutions()
         const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 })
 
-        await state.panWithZoom(4, 8, 400, 400, bpResolutions[4].binSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS, bpResolutions)
+        await state.panWithZoom(4, 8, 400, 400, bpResolutions[4].binSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
 
         expect(state.zoom).toBe(4)
         expect(state.pixelSize).toBe(8) // 8 > min (1), 8 < MAX_PIXEL_SIZE (128)
@@ -479,7 +491,7 @@ describe('State.panWithZoom', () => {
         const bpResolutions = browser.getResolutions()
         const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 })
 
-        await state.panWithZoom(4, 8, 400, 400, bpResolutions[4].binSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS, bpResolutions)
+        await state.panWithZoom(4, 8, 400, 400, bpResolutions[4].binSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
 
         // Under the field-based design panWithZoom left state.locus stale until
         // interactionHandler called configureLocus separately. With getLocus the
@@ -498,7 +510,7 @@ describe('State.panWithZoom', () => {
         // Start near origin so the anchor preservation math would push x negative.
         const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 0, y: 0, pixelSize: 4 })
 
-        await state.panWithZoom(4, 8, 400, 400, bpResolutions[4].binSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS, bpResolutions)
+        await state.panWithZoom(4, 8, 400, 400, bpResolutions[4].binSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
 
         expect(state.x).toBeGreaterThanOrEqual(0)
         expect(state.y).toBeGreaterThanOrEqual(0)
@@ -512,7 +524,7 @@ describe('State.panWithZoom', () => {
         const bpResolutions = browser.getResolutions()
         const state = createState({ chr1: 1, chr2: 2, zoom: 3, x: 200, y: 200, pixelSize: 4 })
 
-        await state.panWithZoom(4, 2, 400, 400, bpResolutions[4].binSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS, bpResolutions)
+        await state.panWithZoom(4, 2, 400, 400, bpResolutions[4].binSize, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
 
         expect(state.pixelSize).toBe(5)
     })

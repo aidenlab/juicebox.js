@@ -126,8 +126,11 @@ class ResolutionSelector {
      * @param {number} zoomIndex - The zoom index to select
      */
     setSelectedResolution(zoomIndex) {
-        Array.from(this.resolutionSelectorElement.options).forEach((option, index) => {
-            option.selected = index === zoomIndex;
+        // Matched on the option's value, which is the zoom index. Its position
+        // in the list is a different number whenever a rung has been filtered
+        // out (an A/B map) or synthesised in (the sentinel rung, ADR-0010).
+        Array.from(this.resolutionSelectorElement.options).forEach(option => {
+            option.selected = parseInt(option.value, 10) === zoomIndex;
         });
     }
 }

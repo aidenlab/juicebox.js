@@ -166,13 +166,22 @@ class ImageTileSource {
         const {ds, dsControl, zoom, controlZoom} =
             resolveDisplayMode(dataset, controlDataset, state.zoom, displayMode)
 
-        const matrix = await ds.getMatrix(state.chr1, state.chr2)
-        const zd = matrix.getZoomDataByIndex(zoom, "BP")
+        // Which matrix carries the view, and at which of its resolutions. An
+        // identity for a declared rung; at the sentinel it is the whole-genome
+        // matrix, queried in the whole-genome matrix's own coordinates exactly
+        // as the `All` view queries it. That is what keeps `0 === zd.chr1.index`
+        // -- and so the x4 auto-threshold below -- true at the sentinel, while
+        // `browser.isWholeGenome()` is false. Divergent by design; see
+        // ADR-0010 decisions 3 and 4 before reconciling them.
+        const view = ds.matrixViewForZoom(state.chr1, state.chr2, zoom)
+        const matrix = await ds.getMatrix(view.chr1, view.chr2)
+        const zd = matrix.getZoomDataByIndex(view.zoomIndex, "BP")
 
         let zdControl = null
         if (dsControl) {
-            const matrixControl = await dsControl.getMatrix(state.chr1, state.chr2)
-            zdControl = matrixControl.getZoomDataByIndex(controlZoom, "BP")
+            const controlView = dsControl.matrixViewForZoom(state.chr1, state.chr2, controlZoom)
+            const matrixControl = await dsControl.getMatrix(controlView.chr1, controlView.chr2)
+            zdControl = matrixControl.getZoomDataByIndex(controlView.zoomIndex, "BP")
         }
 
         const {row1, row2, col1, col2} = tileGrid(state, viewDimensions, this.tileDimension)

@@ -64,6 +64,9 @@ const dataset = ({
         getZoomIndexForBinSize: (b) => resolutions.indexOf(b),
         hasNormalizationVector: (norm) => normalizations.includes(norm),
         getMatrix: async () => ({getZoomDataByIndex: () => zd}),
+        // A declared rung is an identity here; the sentinel path has its own
+        // suite. See ADR-0010.
+        matrixViewForZoom: (chr1, chr2, zoom) => ({chr1, chr2, zoomIndex: zoom}),
         getContactRecords: async (norm, r1, r2, unit, binSize, forScale) => {
             calls.push({norm, r1, r2, unit, binSize, forScale: !!forScale})
             return records
@@ -162,6 +165,33 @@ describe('ImageTileSource.tilesFor', () => {
         const origin = tiles.find(t => t.row === 0 && t.column === 0)
         const i = (3 + 4 * TILE) * 4
         expect([origin.image.buf.data[i], origin.image.buf.data[i + 3]]).toEqual([99, 255])
+    })
+
+    it('reads the whole-genome matrix at the sentinel rung', async () => {
+        // ADR-0010 decision 3. The rung is synthesised, but the data behind it
+        // is the `All` matrix -- queried in the `All` matrix's own coordinates,
+        // exactly as the whole-genome view queries it today. The source asks the
+        // dataset which matrix carries the view rather than assuming the state's
+        // chromosomes do.
+        const asked = []
+        const wholeGenomeZd = zoomData({binSize: 4800, chr1Index: 0, chr2Index: 0})
+        const ds = {
+            ...dataset(),
+            matrixViewForZoom: (chr1, chr2, zoom) =>
+                -1 === zoom ? {chr1: 0, chr2: 0, zoomIndex: 0} : {chr1, chr2, zoomIndex: zoom},
+            getMatrix: async (chr1, chr2) => {
+                asked.push([chr1, chr2])
+                return {getZoomDataByIndex: () => wholeGenomeZd}
+            }
+        }
+
+        const tiles = await collect(makeSource().tilesFor(request({
+            dataset: ds,
+            state: {chr1: 1, chr2: 1, zoom: -1, x: 0, y: 0, pixelSize: 1, normalization: 'NONE'}
+        })))
+
+        expect(asked).toEqual([[0, 0]])
+        expect(tiles.every(t => t.binSize === 4800)).toBe(true)
     })
 
     it('does not request a raster context when there are no records', async () => {

@@ -27,6 +27,7 @@
  */
 
 import {DEFAULT_PIXEL_SIZE, MAX_PIXEL_SIZE} from "./hicBrowser.js"
+import {SENTINEL_ZOOM} from "./sentinelZoom.js"
 
 /**
  * State holds the canonical six fields that fully specify the view:
@@ -186,14 +187,44 @@ class State {
             [x, y] = [y, x];
         }
 
+        // `All` is not a chromosome a single-chromosome assembly can be at
+        // (ADR-0010 decision 5). Every entry point that can name it -- the
+        // pulldown, the locus box, a saved session, a pasted URL -- reaches the
+        // state through here, so the redirect lives at the chokepoint rather
+        // than at four call sites, and an eight-year-old link naming `chr 0`
+        // opens instead of throwing (ADR-0009: coerce, never reject).
+        //
+        // It is silent. By the premise of #236 there is no user-visible
+        // difference between the two views, so there is nothing to warn about.
+        //
+        // x, y and pixelSize carry over untouched: the whole-genome bin and the
+        // sentinel bin are the same bin, offset zero (ADR-0010 fact 4).
+        let redirected = false;
+        if (dataset && dataset.isSingleChromosome() && dataset.isWholeGenome(chr1)) {
+            chr1 = chr2 = dataset.soleChromosome().index;
+            zoom = SENTINEL_ZOOM;
+            redirected = true;
+        }
+
         const chrChanged = this._detectChromosomeChange(chr1, chr2);
         const resolutionChanged = this._detectResolutionChange(zoom);
+
+        // A redirected view is sized against the pair it lands on, not the pair
+        // it arrived as. `_adjustPixelSize` consults `minPixelSize` with the
+        // *outgoing* chromosomes by the convention noted below, and the outgoing
+        // pair here is `All`, whose size is in kb -- divided by a sentinel bin
+        // stated in bp it yields half a bin and a pixelSize pinned to the cap.
+        // The scaffold and the sentinel bin are both bp (ADR-0010 fact 4).
+        let sizedAgainst = minPixelSize;
+        if (redirected && undefined === sizedAgainst && adjustPixelSize && browser) {
+            sizedAgainst = await browser.minPixelSize(chr1, chr2, zoom);
+        }
 
         // Adjust pixelSize BEFORE mutating chr1/chr2 — preserves the existing convention
         // that browser.minPixelSize is consulted with the pre-mutation chr1/chr2 (and the
         // post-mutation zoom).
         const adjustedPixelSize = adjustPixelSize
-            ? await this._adjustPixelSize(pixelSize, browser, zoom, { useDefaultMin, minPixelSize })
+            ? await this._adjustPixelSize(pixelSize, browser, zoom, { useDefaultMin, minPixelSize: sizedAgainst })
             : pixelSize;
 
         this.chr1 = chr1;
@@ -212,9 +243,9 @@ class State {
 
     clampXY(dataset, viewDimensions) {
         const { width, height } = viewDimensions
-        const { chromosomes, bpResolutions } = dataset;
+        const { chromosomes } = dataset;
 
-        const binSize = bpResolutions[this.zoom];
+        const binSize = dataset.binSizeForZoom(this.zoom);
         const maxX = Math.max(0, chromosomes[this.chr1].size / binSize -  width / this.pixelSize);
         const maxY = Math.max(0, chromosomes[this.chr2].size / binSize - height / this.pixelSize);
 
@@ -222,13 +253,19 @@ class State {
         this.y = Math.min(Math.max(0, this.y), maxY);
     }
 
-    async panWithZoom(zoom, pixelSize, anchorPx, anchorPy, binSize, browser, dataset, viewDimensions, bpResolutions) {
+    async panWithZoom(zoom, pixelSize, anchorPx, anchorPy, binSize, browser, dataset, viewDimensions) {
         // The translator owns anchor-preservation math because it depends on the adjusted
         // pixelSize: the new x/y must be computed against the post-adjust pixelSize so the
         // genomic position at (anchorPx, anchorPy) is invariant across the call.
+        //
+        // The outgoing bin size is read off the dataset rather than out of a
+        // resolution array the caller passes in. Position and zoom index are not
+        // the same number once a rung is filtered (an A/B map) or synthesised
+        // (the sentinel), and this used to index one by the other.
         const adjustedPixelSize = await this._adjustPixelSize(pixelSize, browser, zoom)
-        const gx = (this.x + anchorPx / this.pixelSize) * bpResolutions[this.zoom].binSize
-        const gy = (this.y + anchorPy / this.pixelSize) * bpResolutions[this.zoom].binSize
+        const currentBinSize = dataset.binSizeForZoom(this.zoom)
+        const gx = (this.x + anchorPx / this.pixelSize) * currentBinSize
+        const gy = (this.y + anchorPy / this.pixelSize) * currentBinSize
         const newX = gx / binSize - anchorPx / adjustedPixelSize
         const newY = gy / binSize - anchorPy / adjustedPixelSize
 
@@ -258,8 +295,8 @@ class State {
         const xCenter = this.x + (width / 2) / this.pixelSize
         const yCenter = this.y + (height / 2) / this.pixelSize
 
-        const binSize = dataset.bpResolutions[this.zoom]
-        const binSizeNew = dataset.bpResolutions[zoom]
+        const binSize = dataset.binSizeForZoom(this.zoom)
+        const binSizeNew = dataset.binSizeForZoom(zoom)
         const scaleFactor = binSize / binSizeNew
         const xCenterNew = xCenter * scaleFactor
         const yCenterNew = yCenter * scaleFactor
@@ -286,7 +323,7 @@ class State {
      * reflects what is actually on screen, derived from chr1/chr2/x/y/zoom/pixelSize.
      */
     getLocus(dataset, viewDimensions) {
-        const bpPerBin = dataset.bpResolutions[this.zoom];
+        const bpPerBin = dataset.binSizeForZoom(this.zoom);
         const startBP1 = Math.round(this.x * bpPerBin);
         const startBP2 = Math.round(this.y * bpPerBin);
         const chr1 = dataset.chromosomes[this.chr1];
@@ -318,7 +355,9 @@ class State {
         const zoomNew = (true === browser.resolutionLocked)
             ? this.zoom
             : browser.findMatchingZoomIndex(bpPerPixelTarget, bpResolutions)
-        const { binSize: binSizeNew } = bpResolutions[zoomNew]
+        // Off the browser rather than off a dataset, uniquely here: this is the
+        // one translator handed no dataset of its own.
+        const binSizeNew = browser.binSizeForZoom(zoomNew)
 
         return await this.setView(
             chr1Index, chr2Index,
@@ -439,7 +478,7 @@ class State {
         return {
             chr1Name: dataset.chromosomes[this.chr1].name,
             chr2Name: dataset.chromosomes[this.chr2].name,
-            binSize: dataset.bpResolutions[this.zoom],
+            binSize: dataset.binSizeForZoom(this.zoom),
             binX: this.x,
             binY: this.y,
             pixelSize: this.pixelSize
@@ -451,8 +490,12 @@ class State {
         const chr2 = genome.getChromosome(targetState.chr2Name)
 
         const bpPerPixelTarget = targetState.binSize / targetState.pixelSize
-        const zoomNew = browser.findMatchingZoomIndex(bpPerPixelTarget, dataset.bpResolutions)
-        const binSizeNew = dataset.bpResolutions[zoomNew]
+        // Matched against `browser.getResolutions()` rather than the raw
+        // `bpResolutions` array so a peer sitting at the sentinel rung is a rung
+        // this browser can follow it to. Same reason as everywhere else: array
+        // position and zoom index are not the same number.
+        const zoomNew = browser.findMatchingZoomIndex(bpPerPixelTarget, browser.getResolutions())
+        const binSizeNew = dataset.binSizeForZoom(zoomNew)
 
         const xBinNew = targetState.binX * (targetState.binSize / binSizeNew)
         const yBinNew = targetState.binY * (targetState.binSize / binSizeNew)
@@ -529,11 +572,23 @@ class State {
         }
     }
 
+    /**
+     * The sentinel rung never crosses the process boundary (ADR-0010 decision
+     * 6). A view sitting on it is written out as the whole-genome view --
+     * `chr1: 0, chr2: 0, zoom: 0` -- which for a single-chromosome assembly is
+     * pixel-for-pixel the same picture, is a wire value every existing consumer
+     * already renders, and is redirected straight back to the sentinel by
+     * `setView` on the way in.
+     */
     toJSON() {
+        // Named for where the state *is*, not for what it is written as. The
+        // sentinel is deliberately not a whole-genome view (decision 4); what
+        // decision 6 says is that it is written out as one.
+        const atSentinel = SENTINEL_ZOOM === this.zoom;
         return {
-            chr1: this.chr1,
-            chr2: this.chr2,
-            zoom: this.zoom,
+            chr1: atSentinel ? 0 : this.chr1,
+            chr2: atSentinel ? 0 : this.chr2,
+            zoom: atSentinel ? 0 : this.zoom,
             x: this.x,
             y: this.y,
             pixelSize: this.pixelSize,

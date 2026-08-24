@@ -171,6 +171,16 @@ describe('bZoomIndex', () => {
         expect(bZoomIndex(datasetWith(res), datasetWith(res), 1)).toBe(1)
     })
 
+    it('carries the sentinel rung through unchanged', () => {
+        // Both maps synthesise it from their own `wholeGenomeResolution`, and
+        // genomes must match, so there is nothing to look up on either side --
+        // and nothing for the "absent from the primary map" throw to catch.
+        // ADR-0010.
+        const a = datasetWith([1000000, 500000])
+        const b = datasetWith([500000, 100000])
+        expect(bZoomIndex(a, b, -1)).toBe(-1)
+    })
+
     it('throws when the zoom index is absent from the primary map', () => {
         const a = datasetWith([1000000])
         const b = datasetWith([1000000])

@@ -297,13 +297,22 @@ class ContactMatrixView {
         const state = this.browser.state;
         const viewportWidth = this.viewportElement.offsetWidth;
         const viewportHeight = this.viewportElement.offsetHeight;
-        const matrices = await getMatrices.call(this, state.chr1, state.chr2);
+        // The same matrix and resolution the tile pass drew from, so the extent
+        // computed here is in the same units as `this.genomicExtent`, which is
+        // recorded off `tile.binSize`. At the sentinel rung both are the
+        // whole-genome matrix's, which states its bins in kb where every
+        // declared rung states them in bp. The two never meet: the one caller
+        // (`interactionHandler._applyStateChange`) runs this only when
+        // `resolutionChanged` is false, and moving on or off the sentinel is
+        // always a resolution change. ADR-0010 decision 3.
+        const view = this.browser.dataset.matrixViewForZoom(state.chr1, state.chr2, state.zoom);
+        const matrices = await getMatrices.call(this, view.chr1, view.chr2);
 
         const matrix = matrices[0];
 
         if (matrix) {
             const unit = "BP";
-            const zd = await matrix.getZoomDataByIndex(state.zoom, unit);
+            const zd = await matrix.getZoomDataByIndex(view.zoomIndex, unit);
             const newGenomicExtent = {
                 x: state.x * zd.zoom.binSize,
                 y: state.y * zd.zoom.binSize,
@@ -694,8 +703,15 @@ class ContactMatrixView {
 
     async render2DTracks(track2DList, dataset, state) {
 
-        const matrix = await dataset.getMatrix(state.chr1, state.chr2)
-        const zoomData = matrix.getZoomDataByIndex(state.zoom, 'BP')
+        // Resolved the same way the tile pass resolves it, so `bpPerPixel` below
+        // is in the matrix's own units. At the sentinel rung that is the
+        // whole-genome matrix, whose axes are named `All` -- so a 2D track keyed
+        // to the scaffold matches nothing and draws nothing, exactly as it does
+        // in the whole-genome view the sentinel replaces. One rung in, it is
+        // back. ADR-0010 decision 3.
+        const view = dataset.matrixViewForZoom(state.chr1, state.chr2, state.zoom)
+        const matrix = await dataset.getMatrix(view.chr1, view.chr2)
+        const zoomData = matrix.getZoomDataByIndex(view.zoomIndex, 'BP')
 
         const { width, height } = this.getViewDimensions()
         const bpPerPixel = zoomData.zoom.binSize/state.pixelSize

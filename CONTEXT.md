@@ -183,11 +183,8 @@ error's message, both from `SESSION_SOURCES` (`js/sessionCodec.js`).
 Vocabulary of the `session=` format only: the legacy braced parameters name
 themselves in their own messages. #521.
 
-There was a third source, a File, until #519 found that nothing could produce
-one and removed the arm. A **local path** is not a third source: it is fetched
-by the URL arm and reports as one. A host that opens a session file parses it
-and calls `restoreSession`, which is a different entry point and not a wire
-format at all.
+A **local path** is not a third source: it is fetched by the URL arm and reports
+as one. #519.
 
 **Wire-format adapter** — one entry in `WIRE_FORMATS` (`js/sessionCodec.js`):
 the pair of "does this input carry my format?" and "decode it into the shared

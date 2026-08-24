@@ -60,9 +60,13 @@ describe('wire-format corpus — shape', () => {
         }
     })
 
-    test('every fixture carries an input, a loader response or a file text', () => {
+    test('every fixture carries an input or a loader response', () => {
         for (const fixture of wireFormatCorpus) {
-            const carriers = [fixture.input, fixture.loaderResponse, fixture.fileText]
+            // There was a third carrier, `fileText`, for the File arm #519
+            // deleted. It has to go with the fixtures: a disjunct nothing sets
+            // is permanently true, so leaving it would let a fixture carrying
+            // only a `fileText` pass the very check this closes.
+            const carriers = [fixture.input, fixture.loaderResponse]
             expect(carriers.some(c => typeof c === 'string'), fixture.id).toBe(true)
         }
     })

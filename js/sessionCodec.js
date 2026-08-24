@@ -79,8 +79,8 @@
  * anything that leaves the `session` adapter has been through
  * {@link sessionFailure} — so a malformed session reports the same way whichever
  * arm fetched it, naming both what would not decode and where the session came
- * from. Before, the same input produced a different message
- * depending on which path reached it (and, down one of them, a value that was
+ * from. Before, the same input produced a different message depending on which
+ * path reached it (and, down one of them, a value that was
  * not an `Error` at all), which made a user's bug report ambiguous about where
  * their link had actually failed. #504 unified what the decoder *raises*; #521
  * unified what the caller *reports*, and moved four golden snapshots doing it.
@@ -760,17 +760,19 @@ export const WIRE_FORMATS = [
             const sessionValue = ctx.query.session
             let source
 
-            // The type guard comes first so the two arms below can assume a
-            // string: `isCompressedSession` sniffs a prefix and raises a bare
-            // `TypeError` on anything else. A non-string is unreachable from
-            // `extractConfig`, whose parser can only produce strings, and is
-            // reported anyway -- the value came off the parameter, and the
-            // ladder says what is wrong with it ("Session must be a string,
-            // got ...") in the one shape rather than as a bare `TypeError`.
-            if (typeof sessionValue !== 'string') {
-                source = 'parameter'
-                ctx.config = decodeFrom(source, sessionValue)
-            } else if (isCompressedSession(sessionValue)) {
+            // Two arms, and this is the one that decodes what it was handed:
+            // the value is the session text, so nothing more is read.
+            //
+            // The type test guards the sniff as well as selecting the arm --
+            // `isCompressedSession` raises a bare `TypeError` on a non-string --
+            // which is why it comes first and why `||` rather than a branch of
+            // its own: short-circuit is what keeps the sniff from seeing one. A
+            // non-string is unreachable from `extractConfig`, whose parser can
+            // only produce strings, and is reported anyway: the value came off
+            // the parameter, and the ladder says what is wrong with it
+            // ("Session must be a string, got ...") in the one shape rather
+            // than as a bare `TypeError`.
+            if (typeof sessionValue !== 'string' || isCompressedSession(sessionValue)) {
                 source = 'parameter'
                 ctx.config = decodeFrom(source, sessionValue)
             } else {
@@ -797,7 +799,7 @@ export const WIRE_FORMATS = [
                 ctx.config = decodeFrom(source, sessionText)
             }
 
-            // Outside the arms on purpose, and after all three: the version is a
+            // Outside the arms on purpose, and after both: the version is a
             // property of the document, not of where it was read from, so a
             // session named by a URL is version-checked exactly as one carried
             // in the parameter. It is reported *with* the source all the same --

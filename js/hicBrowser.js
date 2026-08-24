@@ -1421,8 +1421,18 @@ class HICBrowser {
         // thing at all. The only coarser data in the file is the whole-genome
         // matrix, which for this assembly is the same picture -- so the fit
         // falls through to the sentinel rung. ADR-0010 fact 3.
-        if (this.dataset.isSingleChromosome() && Math.max(...this.dataset.bpResolutions) < binSize) {
-            return SENTINEL_ZOOM
+        //
+        // Asked of the rungs actually on offer, not of the primary map's raw
+        // ladder: on an A/B map the coarsest *common* bin can be finer than the
+        // primary's coarsest, and a scaffold that map cannot frame either has
+        // to fall through too. The list is sorted coarsest-first, and the
+        // sentinel is filtered back out so the question stays "is anything
+        // declared coarse enough".
+        if (this.dataset.isSingleChromosome()) {
+            const declared = this.getResolutions().filter(({index}) => SENTINEL_ZOOM !== index)
+            if (0 === declared.length || declared[0].binSize < binSize) {
+                return SENTINEL_ZOOM
+            }
         }
 
         const matrix = await this.dataset.getMatrix(chr1, chr2)

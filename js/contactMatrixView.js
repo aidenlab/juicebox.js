@@ -300,7 +300,11 @@ class ContactMatrixView {
         // The same matrix and resolution the tile pass drew from, so the extent
         // computed here is in the same units as `this.genomicExtent`, which is
         // recorded off `tile.binSize`. At the sentinel rung both are the
-        // whole-genome matrix's. ADR-0010 decision 3.
+        // whole-genome matrix's, which states its bins in kb where every
+        // declared rung states them in bp. The two never meet: the one caller
+        // (`interactionHandler._applyStateChange`) runs this only when
+        // `resolutionChanged` is false, and moving on or off the sentinel is
+        // always a resolution change. ADR-0010 decision 3.
         const view = this.browser.dataset.matrixViewForZoom(state.chr1, state.chr2, state.zoom);
         const matrices = await getMatrices.call(this, view.chr1, view.chr2);
 

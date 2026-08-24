@@ -184,6 +184,56 @@ describe('a multi-chromosome assembly is unchanged', () => {
     })
 })
 
+describe('an A/B map', () => {
+
+    test('falls through to the sentinel on the coarsest rung the two maps share', async () => {
+        // Sized so the two answers differ. Over a 2400px viewport the scaffold
+        // wants 1mb bins: the primary map's own coarsest is 2.5mb and would say
+        // "coarse enough", but 2.5mb is not a rung this browser can render at
+        // all once the control map's ladder starts at 500kb. Asking the raw
+        // ladder floors the fit at a bin no pass will ever use.
+        const browser = await load(SINGLE_URL)
+        vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({width: 2400, height: 2400})
+
+        expect(await browser.minZoom(SCAFFOLD, SCAFFOLD)).toBeGreaterThanOrEqual(0)
+
+        browser.controlDataset = {bpResolutions: browser.dataset.bpResolutions.slice(2)}
+        expect(browser.getResolutions().filter(r => r.index !== SENTINEL_ZOOM)[0].binSize).toBe(500000)
+        expect(await browser.minZoom(SCAFFOLD, SCAFFOLD)).toBe(SENTINEL_ZOOM)
+    })
+})
+
+describe('cross-browser sync', () => {
+
+    test('is unchanged for a browser with no control map', async () => {
+        // `State.sync` now matches against `getResolutions()` rather than the
+        // raw ladder, so that a peer sitting at the sentinel is a rung this
+        // browser can follow it to. For a single-map browser the two lists carry
+        // the same bin sizes, so the rung chosen is the rung it always was.
+        const browser = await load(MULTI_URL, State.fromJSON({chr1: 1, chr2: 1, zoom: 3, x: 0, y: 0, pixelSize: 2}))
+        const offered = browser.getResolutions().map(r => r.binSize)
+
+        expect(offered).toEqual(browser.dataset.bpResolutions)
+        expect(browser.getResolutions().every(r => r.index === offered.indexOf(r.binSize))).toBe(true)
+    })
+
+    test('hands a peer the sentinel bin size, and takes it back', async () => {
+        const browser = await load(SINGLE_URL, wholeGenomeState())
+        const sync = browser.state.getSyncState(browser.dataset)
+
+        // Named by the scaffold, sized by the sentinel bin -- so a peer over the
+        // same assembly resolves it back to the sentinel rather than to the
+        // coarsest declared one.
+        expect(sync.chr1Name).toBe('scaffold_1')
+        expect(sync.binSize).toBe(browser.dataset.wholeGenomeResolution)
+
+        const peer = await load(SINGLE_URL)
+        await peer.state.sync(sync, peer, peer.genome, peer.dataset)
+        expect(peer.state.zoom).toBe(SENTINEL_ZOOM)
+        expect(peer.state.chr1).toBe(SCAFFOLD)
+    })
+})
+
 describe('rung lookup by index rather than by array position', () => {
 
     test('answers the sentinel when nothing declared is coarse enough', async () => {

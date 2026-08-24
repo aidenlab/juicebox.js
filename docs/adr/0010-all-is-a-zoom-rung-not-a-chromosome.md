@@ -121,6 +121,38 @@ and as wire format — and disappears exactly where it was redundant.
   (`interactionHandler.js:345`) becomes unreachable for these datasets, since
   `state.chr1` is never 0. It is left in place for normal genomes.
 
+## Amendments, recorded during implementation (2026-08-24)
+
+Three things the decision above did not anticipate, found while building it and
+recorded here rather than left in a commit message.
+
+**The blast radius of decision 2 is wider than "ruler, `State`, tile source".**
+Seven further sites index `bpResolutions[state.zoom]` on a path the sentinel can
+reach, and each returns `undefined` at index `-1`: the scrollbar, sweep zoom,
+`genomicState`, `resolution()`, and -- via `getZoomDataByIndex(-1)` -- the smooth
+zoom animation and the 2D track pass. They are converted. Thirteen conversions
+against the five budgeted; the count was an underestimate, not a boundary that
+was crossed for convenience. Seven direct-index sites remain for #398.
+
+**2D annotations draw nothing at the sentinel.** The 2D pass resolves through
+`matrixViewForZoom` like the tile pass, so at the sentinel its axes are named
+`All` and a track keyed to the scaffold matches nothing. This is exactly what
+the whole-genome view it replaces does today, and one rung in the annotations
+are back -- at 500 bins across a 2.4 Gbp scaffold a loop call is sub-pixel
+anyway. Drawing them would mean running the 2D pass in the state's vocabulary
+while the tile pass runs in the data's, which is decisions 3 and 4 pulled apart
+one layer too far.
+
+**Sync had to be told about the rung.** `State.sync` matched an incoming peer's
+bin size against `dataset.bpResolutions`, which cannot name the sentinel -- so a
+peer sitting on it would have been followed to the coarsest *declared* rung, a
+visibly different view. It now matches against `browser.getResolutions()`. For a
+browser with no control map the two lists carry the same bin sizes and the rung
+chosen is the rung it always was; for an A/B map the new list is the
+intersection, which is strictly more correct -- the old one could pick a bin the
+B map does not carry. Decision 6 governs the *process* boundary; sync is
+in-process, and is the one place the sentinel legitimately travels.
+
 ## Considered and rejected
 
 - **Filtering the pulldown only.** Leaves `All` reachable by three other paths.

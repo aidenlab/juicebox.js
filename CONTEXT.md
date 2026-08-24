@@ -376,6 +376,25 @@ and per-map average counts. Obtained from a matrix by zoom index.
 **Bin** — the unit of resolution. Canonical `x`/`y` are bin positions, not base
 pairs; `pixelSize` is pixels per bin.
 
+**`All` chromosome** — the pseudo-chromosome a `.hic` file declares at index 0,
+covering the whole genome in kb-from-genome-start coordinates. A member of
+`dataset.chromosomes` but not a real sequence.
+_Avoid_: chr0, whole-genome chromosome.
+
+**Whole-genome view** — the view whose `state.chr1` is the `All` chromosome. Not
+the same thing as the **whole-genome matrix**, the chr0-vs-chr0 data the `All`
+entry addresses, nor the **whole-genome resolution**, the single synthetic bin
+size that matrix is stored at. The three can be held apart: a view can read the
+whole-genome matrix without being a whole-genome view (see ADR-0010).
+
+**Sentinel zoom** — a zoom index of `-1`, marking a resolution rung that is
+synthesised rather than declared by the file. Reserved so it can never collide
+with a persisted `zoom`, which indexes `bpResolutions`. Never serialized.
+
+**Single-chromosome assembly** — a dataset whose `chromosomes` holds the `All`
+entry and exactly one real chromosome, so the whole-genome view and that
+chromosome describe the same picture.
+
 **Live contact map** — a streaming map sourced from hic-straw rather than a
 static `.hic` file, driven by Spacewalk. Emits ensemble contact *frequencies*
 bounded in (0, 1] rather than raw counts, which is why the auto colour-scale

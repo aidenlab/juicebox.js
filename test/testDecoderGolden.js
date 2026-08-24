@@ -54,7 +54,8 @@
  * | 2026-08-09 | `harvested-juiceboxURL-bitly` — `decodes` became `throws` | **#506**, ADR-0006 decision 1: the named exception to the frozen contract. The bit.ly expansion and its embedded credential are gone, so the fixture that decoded a two-browser session through a live third-party endpoint now records the refusal that replaced it. **This is the first deliberate deviation from the baseline** — the whole point of the log is that it is written down rather than absorbed by a bare `-u`. No other fixture moved, which is the other half of the claim. |
  * | 2026-08-11 | `harvested-query-wapl-wt`, `harvested-query-wapl-ko`, `harvested-query-gm12878-nvi`, `harvested-query-degron-fully-encoded`, `synth-query-colorscale-bare-threshold` | **#514**, the bare-threshold colour scale. The five moved fixtures are exactly the five carrying a `colorScale` of a threshold with no RGB, and every moved line is `r: undefined` → `255`, `g: undefined` → `0` or `b: undefined` → `0` — `defaultColorScaleConfig`, which `parseSingle` never consulted, so the bare form decoded to a scale that painted `rgba(undefined,undefined,undefined,alpha)`. **This is not a change to the wire format**: the same strings are accepted, the threshold is untouched, and no encoder writes the bare form. What moved is the colour an *absent* component resolves to. `testConfigGolden.js`'s query columns move in the same five, for the same three lines, and nothing else. |
  * | 2026-08-11 | `harvested-query-wapl-wt`, `harvested-query-wapl-ko`, `harvested-juicebox-literal-braces`, `harvested-query-4dn-state-colorscale-track`, `synth-query-tracks-empty-range` | **#515**, the empty data-range field. The five moved fixtures are exactly the five carrying a four-field track string with an empty third field, and every moved line is a **deleted** `min: NaN` or `max: NaN` — twelve tracks, twenty-four lines, nothing added. `destringifyTracksV0` gated on `tokens.length > 2`, which an empty field satisfies, so `parseFloat("")` handed a track that would otherwise autoscale a range it could not use; it now reads the field only when it holds something. **This is not a change to the wire format**: the same strings are accepted and the same tracks come out of them, minus two keys that never meant anything. `testConfigGolden.js` did **not** move at all, because `normalizeSession` was already deleting these downstream — what closed is the round trip through `NaN`, not the end state. |
- * | 2026-08-23 | `reject-session-blob-corrupt`, `reject-session-gzip-data-uri`, `reject-session-url-invalid-json`, `reject-session-url-unreachable` | **#521**, the one outward failure shape. The four moved fixtures are exactly the four that reject *inside the `session` adapter*, one per arm-and-failure: the two compressed forms, a fetched document that is not a session, and a link that does not resolve. Every moved line is the error itself — `name` is now `SessionDecodeError` in all four where it was `Error` twice and `undefined` twice, and the message says what would not decode **and** where the session came from, in one sentence and once. The two `undefined` names are the acceptance criterion's other half: those two rejected with a bare string from `BGZip`, so `describeThrow`'s `thrown` field had to stand in for a `name` and `message` that did not exist; the field is now absent from every snapshot in the file. **This is not a change to the wire format.** The same inputs are refused, for the same reasons, at the same point; what moved is how the refusal is reported. Nothing that decodes moved, and the three `sessionFile` fixtures did not move either — that arm is still unreachable from `extractConfig` (#519), which is why its share of this ticket is asserted in `testSessionDecode.js` against the adapter instead. |
+ * | 2026-08-23 | `reject-session-blob-corrupt`, `reject-session-gzip-data-uri`, `reject-session-url-invalid-json`, `reject-session-url-unreachable` | **#521**, the one outward failure shape. The four moved fixtures are exactly the four that reject *inside the `session` adapter*, one per arm-and-failure: the two compressed forms, a fetched document that is not a session, and a link that does not resolve. Every moved line is the error itself — `name` is now `SessionDecodeError` in all four where it was `Error` twice and `undefined` twice, and the message says what would not decode **and** where the session came from, in one sentence and once. The two `undefined` names are the acceptance criterion's other half: those two rejected with a bare string from `BGZip`, so `describeThrow`'s `thrown` field had to stand in for a `name` and `message` that did not exist; the field is now absent from every snapshot in the file. **This is not a change to the wire format.** The same inputs are refused, for the same reasons, at the same point; what moved is how the refusal is reported. Nothing that decodes moved, and the three `sessionFile` fixtures did not move either — that arm was still unreachable from `extractConfig` on this date, and was removed the next day by #519 (see the row below), which is why its share of this ticket is asserted in `testSessionDecode.js` against the adapter instead. |
+ * | 2026-08-24 | `synth-session-file-plain-json`, `synth-session-file-blob-prefixed`, `reject-session-file-invalid-json` — three entries **removed**, none moved | **#519**, the unreachable File arm. The three are the only fixtures the corpus ever carried whose outcome was measured by hand rather than re-measured, because the arm they described could not be run: `extractQuery` produces only strings, so no input reached it. The arm is deleted, the `sessionFile` format tag with it, and the suite that snapshotted their unreachability (`the File arm is not reachable`) is gone — so what leaves this file is three entries and the suite that wrote them. **This is not a change to the wire format**, and not a narrowing of the accepted set either: no input ever decoded through that arm, and `docs/url.md`'s "or file" named a local *path*, which the URL arm still handles. A non-string `session` value cannot be spelled as a URL, so it gets no fixture; its refusal is asserted in `testSessionDecode.js` against the adapter. No other fixture moved. |
  *
  * @see docs/adr/0006-session-wire-format-and-one-decoder.md
  * @see test/data/wireFormatCorpus.js — the inputs
@@ -67,7 +68,6 @@ import State from '../js/hicState.js'
 import {
     selfContained,
     stateStringCorpus,
-    viaFile,
     viaLoader,
     wireFormatCorpus,
 } from './data/wireFormatCorpus.js'
@@ -128,13 +128,13 @@ expect.addSnapshotSerializer({
 
 /**
  * "Every fixture in the corpus has a committed snapshot" has to hold by
- * construction, not by having been true the day it was written. The three suites
- * below run the three partitions the corpus exports; a fixture belonging to none
- * of them would otherwise be skipped in silence, which is the one failure mode a
+ * construction, not by having been true the day it was written. The two suites
+ * below run the two partitions the corpus exports; a fixture belonging to
+ * neither would otherwise be skipped in silence, which is the one failure mode a
  * golden file cannot survive.
  */
-test('every fixture falls into exactly one of the three suites', () => {
-    const partitioned = [...selfContained, ...viaLoader, ...viaFile]
+test('every fixture falls into exactly one of the two suites', () => {
+    const partitioned = [...selfContained, ...viaLoader]
     expect(partitioned.length, 'a fixture in two partitions is snapshotted twice')
         .toBe(wireFormatCorpus.length)
     expect(new Set(partitioned.map(f => f.id)).size, 'a fixture in none is never snapshotted')
@@ -196,48 +196,6 @@ describe('decoder golden file — session URLs, driven from their loader respons
     }
 })
 
-/**
- * The `isFile` arm of `extractConfig` (`urlUtils.js:90-104`).
- *
- * What is snapshotted here is **the arm's unreachability**, which is the real
- * behaviour and not a stand-in for it. `extractConfig` parses its argument with
- * `extractQuery`, which calls `indexOf` on it and can only ever produce string
- * values; the sole caller (`init.js:50`) hands it `window.location.href`. There
- * is no input — File or otherwise — that reaches line 92. Handing the decoder
- * the query object the arm was written for does not enter the arm, it throws out
- * of the parser one line earlier, and that throw is what the snapshot records.
- *
- * The three `sessionFile` fixtures still get a snapshot each, so that "every
- * fixture in the corpus has one" stays literally true and so that this arm
- * becoming reachable — which the ADR-0006 collapse could easily do by accident —
- * shows up as a snapshot movement rather than as silence.
- *
- * **These three are the one place the suite does not assert `fixture.outcome`,
- * and the divergence is deliberate.** The corpus records what the *arm* would do
- * with `fileText` — two `decodes` and one `throws`, measured by reading the code
- * because nothing can run it. What is measured here is what the *decoder* does,
- * which is to reject at the parser without ever looking at the file. Asserting
- * the parser's message rather than the coarse outcome is what keeps the two
- * claims apart: the day that assertion fails, the arm has become reachable and
- * the corpus's declared outcome is the thing to check against instead.
- */
-describe('decoder golden file — the File arm is not reachable', () => {
-
-    for (const fixture of viaFile) {
-        test(fixture.id, async () => {
-            // The mock File (test/utils/File.js) takes a Buffer, not the array
-            // of parts the DOM constructor wants. Deliberate — `.text()` reads
-            // `buffer.toString()`.
-            const file = new File(Buffer.from(fixture.fileText), 'session.json')
-
-            const captured = await capture({session: file})
-
-            expect(captured.error.message, 'the File arm became reachable — see the note above')
-                .toBe('uri.indexOf is not a function')
-            expect(captured).toMatchSnapshot()
-        })
-    }
-})
 
 /**
  * `State.parse` on its own. The state string is a wire format in its own right —

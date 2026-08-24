@@ -35,19 +35,20 @@
  * Every `outcome` was measured against `extractConfig` at `b92b602` rather than
  * inferred from reading the code. `test/testWireFormatCorpus.js` re-measures on
  * every run everything drivable from literals, including the `sessionUrl`
- * fixtures via a stubbed loader. Three are left out and were measured by hand:
- * the `sessionFile` fixtures, which the sole caller cannot reach at all (see
- * their notes). Distrust those three first if the corpus and the decoder ever
- * disagree.
+ * fixtures via a stubbed loader. **Every fixture here is re-measured**; none is
+ * measured by hand.
  *
- * There was a fourth — `harvested-juiceboxURL-bitly`, whose outcome depended on
- * a third party. #506 retired that format, so the fixture now measures a
- * rejection off its own literal like everything else.
+ * Two sets used to be exceptions. `harvested-juiceboxURL-bitly`'s outcome
+ * depended on a third party until #506 retired that format, and three
+ * `sessionFile` fixtures recorded an arm nothing could reach until #519 deleted
+ * it. A `session` value that is not a string cannot be spelled as an `input`
+ * string, so it is not a wire format and has no fixture here; its refusal is
+ * asserted against the adapter in `test/testSessionDecode.js`.
  *
  * Nothing here does I/O. Every fixture whose decode path would reach the network
- * or a file carries the *text* that path would have returned as a further string
- * literal — `loaderResponse`, `fileText` — so the whole decode path is drivable
- * from literals, which is the point of ADR-0006 decision 10's injected loader.
+ * carries the *text* that path would have returned as a further string literal
+ * — `loaderResponse` — so the whole decode path is drivable from literals, which
+ * is the point of ADR-0006 decision 10's injected loader.
  *
  * **Harvest scope.** ADR-0006 names three repos and the published docs. All
  * three were searched: juicebox.js (`git log`, `test/test_urls.md`,
@@ -113,7 +114,6 @@
  * `sessionData`     — `session=data:`, the same payload under the other prefix.
  * `sessionUrl`      — `session=<url>`, fetched then parsed; the fetched text is
  *                     itself either compressed-prefixed or plain JSON.
- * `sessionFile`     — `session=<File>`, same two sub-forms as `sessionUrl`.
  * `query`           — the `hicUrl=&state=&tracks=` parameter form.
  * `juicebox`        — `juicebox={…},{…}`, one braced query string per browser.
  * `juiceboxData`    — `juiceboxData=`, the *braced* form compressed. Not session
@@ -127,7 +127,6 @@ export const FORMATS = [
     'sessionBlob',
     'sessionData',
     'sessionUrl',
-    'sessionFile',
     'query',
     'juicebox',
     'juiceboxData',
@@ -349,28 +348,6 @@ export const wireFormatCorpus = [
         input: '?session=https://example.org/fixtures/session.blob',
         loaderResponse: 'blob:HZDBboMwEER_pdqzDQ41EPmcROVQIjXHKofFgEABr2WMSEH8e51cRqOn1cxoN6gcLVPjJlC_G8xuAAWd93ZScSxrw8k2htfokdu5GnodTZ8RjriSwWWKNI1xS7NrHRnPl6ayjup4Ccjb2cfHVmQyzwXPhDhy2eaSV61GnmTHWmKS1LlMY3kqL8X3z_WclTLqeg0MDI5N2PF1uejs42RNUQQ4efSBbqA7dwB1YC.TvM1KNIKSDJ6gBIO_t9r.2Qy3fm3eJ4bciEO_ou_JhOzyWp5hDxk0kLtpHF6FByFYkqZMMBEKvUP9eP3lvt_3fw--',
         note: 'A saved session file whose contents are the share link\'s payload rather than readable JSON. The prefix test is repeated inside the fetch branch, which is why this is a separate fixture from synth-session-data-prefix.',
-    },
-
-    {
-        id: 'synth-session-file-plain-json',
-        format: 'sessionFile',
-        provenance: 'synthesized',
-        role: 'branch-coverage',
-        source: 'urlUtils.js:90-100 — the isFile branch, plain-JSON arm',
-        outcome: 'decodes',
-        fileText: '{"browsers":[{"url":"https://example.org/a.hic","name":"A","state":{"chr1":1,"chr2":1,"zoom":4,"x":0,"y":0,"pixelSize":1,"normalization":"NONE"}}]}',
-        note: 'No `input` string: the decoder reaches this branch only when handed a query object whose `session` value is a File, so a consuming test builds `new File([fileText], "session.json")`. **Unreachable from the sole caller** — init.js:50 passes `window.location.href`, a string, and `extractQuery` can only ever produce string values. Recorded because it is in the accepted set as written, and a corpus that quietly omitted it would be describing the decoder someone meant to write.',
-    },
-
-    {
-        id: 'synth-session-file-blob-prefixed',
-        format: 'sessionFile',
-        provenance: 'synthesized',
-        role: 'branch-coverage',
-        source: 'urlUtils.js:95 — the isFile branch, compressed arm',
-        outcome: 'decodes',
-        fileText: 'blob:HZDBboMwEER_pdqzDQ41EPmcROVQIjXHKofFgEABr2WMSEH8e51cRqOn1cxoN6gcLVPjJlC_G8xuAAWd93ZScSxrw8k2htfokdu5GnodTZ8RjriSwWWKNI1xS7NrHRnPl6ayjup4Ccjb2cfHVmQyzwXPhDhy2eaSV61GnmTHWmKS1LlMY3kqL8X3z_WclTLqeg0MDI5N2PF1uejs42RNUQQ4efSBbqA7dwB1YC.TvM1KNIKSDJ6gBIO_t9r.2Qy3fm3eJ4bciEO_ou_JhOzyWp5hDxk0kLtpHF6FByFYkqZMMBEKvUP9eP3lvt_3fw--',
-        note: 'Same reachability caveat as synth-session-file-plain-json.',
     },
 
     {
@@ -694,17 +671,6 @@ export const wireFormatCorpus = [
     },
 
     {
-        id: 'reject-session-file-invalid-json',
-        format: 'sessionFile',
-        provenance: 'synthesized',
-        role: 'branch-coverage',
-        source: 'urlUtils.js:101-104 — the isFile catch',
-        outcome: 'throws',
-        fileText: '{ this is not json',
-        note: 'Reported in the one shape (#521), naming a session file as the source. Same reachability caveat as the other sessionFile fixtures — which is why the File arm\'s share of that shape is asserted against the adapter in `testSessionDecode.js` rather than here.',
-    },
-
-    {
         id: 'reject-query-no-recognized-parameters',
         format: 'query',
         provenance: 'synthesized',
@@ -745,27 +711,24 @@ export const wireFormatCorpus = [
  * copies that disagreed would silently stop covering whichever group fell
  * through the gap.
  *
- * The three groups are disjoint and exhaustive, which `testDecoderGolden.js`
- * asserts. Adding a fixture that belongs to none of them fails that assertion
- * rather than being quietly skipped.
+ * The two groups are disjoint and exhaustive, which `testDecoderGolden.js`
+ * asserts. Adding a fixture that belongs to neither fails that assertion rather
+ * than being quietly skipped.
  *
  * `selfContained` — hand it `input` and nothing else.
  * `viaLoader`     — stub `igvxhr.loadString` with `loaderResponse` first; a
  *                   `loaderResponse` of null means the loader itself rejects.
- * `viaFile`       — needs a File where `extractQuery` can only put a string.
- *                   See the golden test's note on this group.
  *
- * There was a fourth, `viaBitly`, which stubbed `fetch` with a captured
- * `long_url`. #506 removed the expansion, so its one fixture needs nothing
- * stubbed and is self-contained like the rest.
+ * There were two more. `viaBitly` stubbed `fetch` with a captured `long_url`
+ * until #506 removed the expansion, and `viaFile` needed a File where
+ * `extractQuery` can only put a string until #519 removed the arm; both their
+ * fixture sets are gone or self-contained like the rest.
  */
 export const selfContained = wireFormatCorpus.filter(f =>
     f.input !== undefined &&
     f.loaderResponse === undefined)
 
 export const viaLoader = wireFormatCorpus.filter(f => f.loaderResponse !== undefined)
-
-export const viaFile = wireFormatCorpus.filter(f => f.format === 'sessionFile')
 
 /**
  * Fixtures for `State.parse` (`js/hicState.js`), the `state` query parameter on

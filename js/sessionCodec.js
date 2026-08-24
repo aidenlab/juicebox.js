@@ -60,10 +60,10 @@
  * 10: a session parameter may name a URL whose *contents* then need sniffing, so
  * a caller deciding whether more I/O is needed would need to know the format.
  *
- * The one read left inside is `File.text()`, in the `session` adapter's File
- * arm — an arm the sole caller cannot reach at all (see `testDecoderGolden.js`,
- * "the File arm is not reachable"). It gets no loader slot because inventing one
- * for a dead arm would be design work in service of nothing.
+ * There is no read left inside at all. There was one until #519 — `File.text()`,
+ * in a `session` adapter arm for a `File` value that no caller could produce.
+ * With it gone, every byte this module decodes arrives either in the string it
+ * was handed or through the injected loader.
  *
  * ## What is pure, and what is not
  *
@@ -78,9 +78,9 @@
  * raises a `SessionDecodeError` carrying the underlying failure as `cause`, and
  * anything that leaves the `session` adapter has been through
  * {@link sessionFailure} — so a malformed session reports the same way whichever
- * of the three arms fetched it, naming both what would not decode and where the
- * session came from. Before, the same input produced a different message
- * depending on which path reached it (and, down one of them, a value that was
+ * arm fetched it, naming both what would not decode and where the session came
+ * from. Before, the same input produced a different message depending on which
+ * path reached it (and, down one of them, a value that was
  * not an `Error` at all), which made a user's bug report ambiguous about where
  * their link had actually failed. #504 unified what the decoder *raises*; #521
  * unified what the caller *reports*, and moved four golden snapshots doing it.
@@ -91,7 +91,6 @@
 import {BGZip} from 'igv-utils'
 import State from './hicState.js'
 import {parseColorScale} from './colorScaleParser.js'
-import {isFile} from './fileUtils.js'
 
 /**
  * The shapes a session string can arrive in.
@@ -583,12 +582,12 @@ function decodeQuery(query, uriDecode) {
 /**
  * Where a session came from, spelled for a user. The keys are the vocabulary a
  * caller branches on and the values are what the message says; both are here so
- * that the three arms cannot drift into three ways of naming the same thing
- * again.
+ * that the arms cannot drift into separate ways of naming the same thing again.
+ *
+ * There were three until #519 removed a `File` arm no caller could reach.
  */
 export const SESSION_SOURCES = {
     parameter: 'the session= parameter',
-    file: 'a session file',
     url: 'a session URL',
 }
 
@@ -599,7 +598,8 @@ export const SESSION_SOURCES = {
  * the parameter arm rethrew `cause` untouched — a bare **string** from `BGZip`,
  * so `name` and `message` were both `undefined` and what escaped `extractConfig`
  * was not an `Error` at all — while the File and URL arms wrote one sentence and
- * two respectively. The same malformed input therefore reported differently
+ * two respectively (the File arm is gone as of #519, having never been
+ * reachable). The same malformed input therefore reported differently
  * depending on which path reached it, and a user's bug report could not say
  * where their link had actually failed.
  *
@@ -646,9 +646,9 @@ function describeCause(cause) {
 /**
  * Decode one session string, reporting a refusal as coming from `source`.
  *
- * The three arms differ in where their text comes from and in nothing else, so
- * this is what they have in common written once rather than three times — which
- * is the "one shape" of #521 made structural instead of maintained by hand.
+ * The arms differ in where their text comes from and in nothing else, so this is
+ * what they have in common written once rather than once per arm — which is the
+ * "one shape" of #521 made structural instead of maintained by hand.
  */
 function decodeFrom(source, text) {
     try {
@@ -740,12 +740,18 @@ export const WIRE_FORMATS = [
 
     /**
      * `?session=` — the only form juicebox still writes, and the only one that
-     * may need a second read. Three arms, one decoder: they differ in where the
-     * session text comes from — the parameter itself, a File, or a fetched
-     * document — and in nothing else. **They used to differ in how they reported
-     * a failure too**; #521 collapsed that into the one shape
-     * {@link sessionFailure} writes, which is why each arm now does no more than
-     * name where its text came from.
+     * may need a second read. Two arms, one decoder: they differ in where the
+     * session text comes from — the parameter itself, or a fetched document —
+     * and in nothing else. **They used to differ in how they reported a failure
+     * too**; #521 collapsed that into the one shape {@link sessionFailure}
+     * writes, which is why each arm now does no more than name where its text
+     * came from.
+     *
+     * There was a third, for a `session` value that was a `File`. Nothing could
+     * reach it — `extractQuery` can only produce strings — and #519 removed it
+     * along with the row in `docs/url.md` it was mistaken for. A host opening a
+     * session file parses it and calls `restoreSession`; a `File` never arrives
+     * in a URL, so a query-parameter adapter was the wrong seam for one.
      */
     {
         format: 'session',
@@ -754,19 +760,22 @@ export const WIRE_FORMATS = [
             const sessionValue = ctx.query.session
             let source
 
-            // `isCompressedSession` sniffs a prefix off a string and raises a
-            // bare `TypeError` on anything else, so the string test in front of
-            // it is what makes the arms below reachable at all -- the File arm
-            // could not be entered even by a caller driving this adapter
-            // directly, which is why it had no way to report in the one shape.
-            // The arms themselves stay in the order they have always been in.
-            if (typeof sessionValue === 'string' && isCompressedSession(sessionValue)) {
+            // Two arms, and this is the one that decodes what it was handed:
+            // the value is the session text, so nothing more is read.
+            //
+            // The type test guards the sniff as well as selecting the arm --
+            // `isCompressedSession` raises a bare `TypeError` on a non-string --
+            // which is why it comes first and why `||` rather than a branch of
+            // its own: short-circuit is what keeps the sniff from seeing one. A
+            // non-string is unreachable from `extractConfig`, whose parser can
+            // only produce strings, and is reported anyway: the value came off
+            // the parameter, and the ladder says what is wrong with it
+            // ("Session must be a string, got ...") in the one shape rather
+            // than as a bare `TypeError`.
+            if (typeof sessionValue !== 'string' || isCompressedSession(sessionValue)) {
                 source = 'parameter'
                 ctx.config = decodeFrom(source, sessionValue)
-            } else if (isFile(sessionValue)) {
-                source = 'file'
-                ctx.config = decodeFrom(source, await sessionValue.text())
-            } else if (typeof sessionValue === 'string') {
+            } else {
                 // A session URL, or a local file path. The fetched document is
                 // itself sniffed -- it may be plain JSON or either compressed
                 // form -- which is why this read cannot be hoisted out of the
@@ -788,17 +797,9 @@ export const WIRE_FORMATS = [
                 }
 
                 ctx.config = decodeFrom(source, sessionText)
-            } else {
-                // Neither a File nor a string. Unreachable from `extractConfig`,
-                // whose parser can only produce strings, and reported anyway:
-                // the value came off the parameter, and the ladder says what is
-                // wrong with it ("Session must be a string, got …") in the one
-                // shape rather than as a bare `TypeError` out of the sniff.
-                source = 'parameter'
-                ctx.config = decodeFrom(source, sessionValue)
             }
 
-            // Outside the arms on purpose, and after all three: the version is a
+            // Outside the arms on purpose, and after both: the version is a
             // property of the document, not of where it was read from, so a
             // session named by a URL is version-checked exactly as one carried
             // in the parameter. It is reported *with* the source all the same --

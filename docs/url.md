@@ -186,7 +186,7 @@ follow the same rules as above.
 
 | Parameter | Description |
 | --------- | ----------- |
-| `session=` | **v1 session JSON**, carrying a [version](#version) field on the way out and never requiring one on the way in. A `blob:` or `data:` prefix means the rest is compressed and base64-encoded — the only form juicebox writes, as juicebox-web's share link. Anything else is loaded as a URL or file and may be either compressed or plain JSON. |
+| `session=` | **v1 session JSON**, carrying a [version](#version) field on the way out and never requiring one on the way in. A `blob:` or `data:` prefix means the rest is compressed and base64-encoded — the only form juicebox writes, as juicebox-web's share link. Anything else is loaded as a URL or local path and may be either compressed or plain JSON. |
 | `juicebox={…},{…}` | one brace-wrapped query string per browser, comma-separated. Read-only legacy. |
 | `juiceboxData=` | the `juicebox=` value above, compressed. **Not** session JSON — the two share one code path, and the only difference is that this one is decompressed first. Read-only legacy. |
 

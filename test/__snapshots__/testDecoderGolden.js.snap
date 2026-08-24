@@ -1198,33 +1198,3 @@ State {
   "zoom": 6,
 }
 `;
-
-exports[`decoder golden file — the File arm is not reachable > reject-session-file-invalid-json 1`] = `
-{
-  "error": {
-    "message": "uri.indexOf is not a function",
-    "name": "TypeError",
-  },
-  "outcome": "throws",
-}
-`;
-
-exports[`decoder golden file — the File arm is not reachable > synth-session-file-blob-prefixed 1`] = `
-{
-  "error": {
-    "message": "uri.indexOf is not a function",
-    "name": "TypeError",
-  },
-  "outcome": "throws",
-}
-`;
-
-exports[`decoder golden file — the File arm is not reachable > synth-session-file-plain-json 1`] = `
-{
-  "error": {
-    "message": "uri.indexOf is not a function",
-    "name": "TypeError",
-  },
-  "outcome": "throws",
-}
-`;

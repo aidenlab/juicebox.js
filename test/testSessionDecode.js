@@ -39,7 +39,6 @@ import {
     encodeSession,
 } from '../js/sessionCodec.js'
 import State from '../js/hicState.js'
-import {File} from './utils/File.js'
 
 /**
  * A loader that fails the test rather than the fetch. Passed wherever a fixture
@@ -462,24 +461,20 @@ describe('the format registry', () => {
 /**
  * One outward failure shape, whatever fetched the session. #521.
  *
- * The three arms of the `session` adapter differ only in where the text came
- * from, and until this ticket they differed in how they said so: the parameter
- * arm rethrew a bare string from `BGZip` (`name` and `message` both `undefined`),
- * the File arm wrote one sentence, and the URL arm wrote that sentence wrapped
- * inside a second one. The same malformed input therefore reported differently
- * depending on which path reached it, which is what made a bug report ambiguous
- * about where the link actually failed.
+ * The arms of the `session` adapter differ only in where the text came from, and
+ * until this ticket they differed in how they said so: the parameter arm rethrew
+ * a bare string from `BGZip` (`name` and `message` both `undefined`), and the URL
+ * arm wrote a sentence wrapped inside a second one. The same malformed input
+ * therefore reported differently depending on which path reached it, which is
+ * what made a bug report ambiguous about where the link actually failed.
+ *
+ * There was a third arm, for a `File`, which wrote a single sentence. #519
+ * removed it: nothing could reach it, and a `File` never arrives in a URL.
  *
  * What is asserted here is the shape, not the prose: a `SessionDecodeError`,
  * always, carrying **two facts in one message** — what would not decode, and
  * where the session came from — plus the source as a field a caller can branch
  * on and the original failure still reachable through `cause`.
- *
- * The File arm is driven through the adapter rather than through
- * `decodeSession`, because `extractQuery` can only ever produce string values
- * and so the arm is unreachable from the entry point (#519). Its *shape* is
- * still this suite's business: the arm is the one #521 has to bring into line
- * and the one no golden snapshot can see.
  */
 describe('decodeSession — one outward failure shape', () => {
 
@@ -498,10 +493,6 @@ describe('decodeSession — one outward failure shape', () => {
 
     const arms = {
         parameter: () => decodeSession('?session=blob:not-compressed-at-all', noIO),
-        file: () => sessionAdapter.decode({
-            query: {session: new File(Buffer.from('<html lang="en"></html>'), 'session.json')},
-            loaders: {},
-        }),
         url: () => decodeSession('?session=https://example.org/index.html', {
             ...noIO,
             loadString: async () => '<html lang="en"></html>',
@@ -590,10 +581,16 @@ describe('decodeSession — one outward failure shape', () => {
     })
 
     /**
-     * A session value that is neither a File nor a string cannot arrive through
+     * A session value that is not a string cannot arrive through
      * `extractConfig`, whose parser only ever produces strings. It used to raise
      * a bare `TypeError` out of the prefix sniff all the same; a caller driving
      * the adapter gets the one shape instead, and the ladder's own reason.
+     *
+     * **This is the only coverage of the non-string path**, and the only place
+     * the adapter is driven with a value no URL can carry. #519 deleted the
+     * three corpus fixtures that used to sit beside it, on the grounds that a
+     * value which cannot be spelled as a URL is not a wire format -- which
+     * leaves this test carrying the claim on its own.
      */
     test('a session value that is not a string is refused in the same shape', async () => {
         const e = await rejection(sessionAdapter.decode({query: {session: 42}, loaders: {}}))

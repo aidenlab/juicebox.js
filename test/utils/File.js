@@ -2,7 +2,6 @@
  * Mock object for browser 'File' class
  */
 
-import fs from 'fs'
 
 class File {
 
@@ -34,11 +33,4 @@ class File {
     }
 }
 
-function createFile(path) {
-
-    const b = fs.readFileSync(path)
-    //const arrayBuffer = b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
-    return new File(b, path)
-}
-
-export {createFile, File}
+export {File}

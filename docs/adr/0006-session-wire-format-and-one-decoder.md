@@ -215,6 +215,21 @@ the round-trip property test. Candidate 9 follows with the normalize stage.
   and whose brace repair is broken from browser 2 on is still the right one to
   drop — but #506 is removing live behaviour, not tidying a dead path, and the
   corpus carries the fixture that says so.
+- **The `session=<File>` arm was never in the accepted set, and is removed
+  (#519).** Decision 1 froze the contract as the decoder's *currently-accepted*
+  set. That set was read off the code, and the code had a branch for a `session`
+  value that was a `File` — which nothing could reach: `extractConfig` parses
+  with `extractQuery`, whose every product is a string. The corpus (#502) kept
+  three fixtures for it, measured by hand because nothing could run them, on the
+  grounds that omitting them would describe the decoder someone meant to write.
+  Deleting the arm is therefore a **correction to the record, not an amendment to
+  the contract**, and specifically *not* an entry on decision 1's exception list:
+  that list is for forms users could once use and deliberately lost, and no user
+  could ever use this one. `docs/url.md`'s "or file" was read as evidence the arm
+  was intended; it names a local *path*, which the URL arm still loads. The one
+  thing that did look like intent — the arm's careful error wrapping beside a
+  neighbour that threw bare — was an artefact of when each arm was written, and
+  #521 flattened all of them into one shape before this was decided.
 - Sessions saved with an empty browser will restore with one fewer panel rather
   than failing to restore at all.
 - `docs/url.md` becomes a **versioned format specification** and acquires the

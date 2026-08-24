@@ -717,18 +717,13 @@ test('two viewports are stated, and they differ on both axes', () => {
  * strictly fewer fixtures than that one, so it states which and why rather than
  * letting the `filter` above be the only record.
  *
- * Two exclusions, both structural:
+ * One exclusion, and it is structural: **`throws` and `no-config`** never
+ * produce a config, so there is no state for a restore door to resolve. #503 is
+ * where those outcomes are pinned.
  *
- * - **`throws` and `no-config`** never produce a config, so there is no state
- *   for a restore door to resolve. #503 is where those outcomes are pinned.
- * - **The three `sessionFile` fixtures**, whose `outcome` says `decodes` but
- *   whose arm is not reachable: `extractConfig` rejects with
- *   `uri.indexOf is not a function` before any of them produces a config, which
- *   is exactly what `testDecoderGolden.js`'s "the File arm is not reachable"
- *   suite pins. Their declared outcome was measured by hand rather than
- *   re-measured on every run -- the corpus header says to distrust those three
- *   first -- so this suite trusts the driven measurement over the declaration
- *   and leaves them out.
+ * There was a second until #519 -- three `sessionFile` fixtures whose declared
+ * `outcome` said `decodes` but whose arm nothing could reach. The arm is gone
+ * and so are they, which is why the reason list below has one entry.
  */
 test('every corpus fixture is either driven or excluded for a stated reason', () => {
 
@@ -739,17 +734,8 @@ test('every corpus fixture is either driven or excluded for a stated reason', ()
     expect(driven.size).toBeGreaterThan(0)
 
     for (const fixture of excluded) {
-        const reason = fixture.format === 'sessionFile' ? 'the File arm is not reachable' : fixture.outcome
-        expect(['the File arm is not reachable', 'throws', 'no-config'], fixture.id).toContain(reason)
+        expect(['throws', 'no-config'], fixture.id).toContain(fixture.outcome)
     }
-
-    // Named, so that a fixture leaving the File arm -- because the arm was fixed
-    // -- fails here and gets driven rather than staying excluded by format.
-    expect(wireFormatCorpus.filter(f => f.format === 'sessionFile').map(f => f.id)).toEqual([
-        'synth-session-file-plain-json',
-        'synth-session-file-blob-prefixed',
-        'reject-session-file-invalid-json',
-    ])
 })
 
 describe('resolved state golden file — every restore door, at two stated viewports', () => {

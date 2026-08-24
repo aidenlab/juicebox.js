@@ -37,7 +37,7 @@ import BrowserCoordinator from "./browserCoordinator.js"
 import InteractionHandler from "./interactionHandler.js"
 import DataLoader from "./dataLoader.js"
 import {normalizeTrackConfigs} from "./normalizeSession.js"
-import {unmappedUrl} from "./urlMapper.js"
+import {unmappedUrl, unmappedIndexUrl} from "./urlMapper.js"
 import {isSynchable} from "./syncGroup.js"
 
 const DEFAULT_PIXEL_SIZE = 1
@@ -1322,6 +1322,19 @@ class HICBrowser {
                 if (typeof url === "string") {
 
                     const t = {url}
+
+                    // The index is what makes a track random-access. Dropped, the
+                    // reload does not fail -- it downgrades to a whole-file read,
+                    // and only stalls once the view is zoomed in far enough for igv
+                    // to ask for data. A session saved at 1kb over `hg38.fa` was
+                    // fetching the whole three-gigabyte FASTA on restore, and never
+                    // finishing; the same session saved zoomed out restored fine,
+                    // because nothing had asked the sequence track for anything yet
+                    // (#584).
+                    const indexURL = unmappedIndexUrl(config)
+                    if (typeof indexURL === "string") {
+                        t.indexURL = indexURL
+                    }
 
                     if (config.type) {
                         t.type = config.type

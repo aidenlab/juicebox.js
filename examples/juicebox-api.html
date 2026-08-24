@@ -44,6 +44,14 @@ This example illustrates the use of the juicebox API to dynamically load a map a
 </div>
 
 
+<div style="margin-top: 50px;margin-bottom: 50px">
+    <h2>Or: load a session file from disk</h2>
+    <label for="session-input"><span style="font-size: large;font-weight: bold">Session (.json file)</span></label>
+    <input type="file" id="session-input" accept=".json,application/json">
+    <span id="session-status" style="margin-left: 10px"></span>
+</div>
+
+
 <div id="app-container"></div>
 
 
@@ -65,18 +73,22 @@ This example illustrates the use of the juicebox API to dynamically load a map a
     juicebox.init(container, config)
         .then(function (hicBrowser) {
             console.log("Juicebox loaded");
-            initMenus(hicBrowser);
+            initMenus();
         })
 
 
-    function initMenus(hicBrowser) {
+    function initMenus() {
         const hicSelect = document.getElementById("hic-select");
         const tracksSelect = document.getElementById("tracks-select");
+        const sessionInput = document.getElementById("session-input");
+        const sessionStatus = document.getElementById("session-status");
 
         hicSelect.onchange = async (e) => {
             const idx = hicSelect.selectedIndex;
             const option = hicSelect.options[idx];
-            await hicBrowser.loadHicFile({url: option.value});
+            // getCurrentBrowser() rather than the browser init handed us: a
+            // session restore replaces the browsers, so the original is stale.
+            await juicebox.getCurrentBrowser().loadHicFile({url: option.value});
             tracksSelect.removeAttribute("disabled")
         }
 
@@ -84,7 +96,36 @@ This example illustrates the use of the juicebox API to dynamically load a map a
             const idx = tracksSelect.selectedIndex;
             const option = tracksSelect.options[idx];
             const trackConfig = trackDictionary[option.value];
-            hicBrowser.loadTracks([trackConfig]);
+            juicebox.getCurrentBrowser().loadTracks([trackConfig]);
+        }
+
+        // A session file is just JSON on disk: the host reads it and hands the
+        // parsed object to restoreSession. juicebox never sees the File.
+        sessionInput.onchange = async (e) => {
+
+            const file = sessionInput.files[0];
+            if (!file) {
+                return;
+            }
+
+            sessionStatus.textContent = `Loading ${file.name} ...`;
+
+            try {
+                const session = JSON.parse(await file.text());
+                await juicebox.restoreSession(container, session);
+                sessionStatus.textContent = `Loaded ${file.name}`;
+            } catch (error) {
+                console.error(error);
+                sessionStatus.textContent = `Could not load ${file.name}: ${error.message}`;
+            }
+
+            // Restoring replaces the browsers, so the menus above no longer
+            // describe what is on screen. Reset them, and allow the same file
+            // to be picked again.
+            hicSelect.selectedIndex = 0;
+            tracksSelect.selectedIndex = 0;
+            tracksSelect.setAttribute("disabled", "disabled");
+            sessionInput.value = "";
         }
 
     }

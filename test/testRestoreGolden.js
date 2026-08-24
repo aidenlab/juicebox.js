@@ -148,6 +148,7 @@
  * | 2026-08-22 | `harvested-query-degron-fully-encoded`, `harvested-query-gm12878-nvi` — the `config.state` door, `1600x400` column only | #558. Restore goes through `setView`, so the clamp reaches it. Tally below. |
  * | 2026-08-22 | all — the `rungs` field only, on every door | #559. `setActiveDataset` loses its `state` parameter, so the count of calls carrying one leaves the file, and the `config.locus` door reaches `setState` where it did not before. Tally below. |
  * | 2026-08-22 | 10 fixtures — the `normalization` field only, on the `config.state` and live doors, both columns | #561. A restored normalization is coerced against the loaded dataset. Tally below. |
+ * | 2026-08-24 | `session-gzip-data-uri` — one entry **added**, none moved | **#518**, ADR-0011 decision 2. The corpus fixture that used to reject now decodes, so this suite — which runs the decoding fixtures — sees it for the first time. An addition rather than a movement: a fixture with no prior entry has nothing to disagree with. The decoded session is one browser naming `https://example.org/a.hic`, which is what the fixture's note has always said its payload holds. Logged so that "one new entry and nothing else changed" is a claim a reader of the diff can check; the movement itself is logged in `testDecoderGolden.js`. |
  *
  * ### The #558 tally
  *

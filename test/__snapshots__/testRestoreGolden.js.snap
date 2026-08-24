@@ -4543,6 +4543,311 @@ exports[`resolved state golden file — every restore door, at two stated viewpo
 ]
 `;
 
+exports[`resolved state golden file — every restore door, at two stated viewports > session-gzip-data-uri 1`] = `
+[
+  {
+    "State.default() — the fallback rung": {
+      "1600x400": {
+        "outcome": "restores",
+        "presented": {
+          "url": "https://example.org/a.hic",
+        },
+        "rungs": {
+          "setActiveDataset": 1,
+          "setState": 1,
+        },
+        "state": {
+          "__class": "State",
+          "chr1": 0,
+          "chr2": 0,
+          "locus": "All:0-3095677412 All:0-1000000000",
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 0,
+        },
+        "viewport": {
+          "height": 400,
+          "width": 1600,
+        },
+      },
+      "800x800": {
+        "outcome": "restores",
+        "presented": {
+          "url": "https://example.org/a.hic",
+        },
+        "rungs": {
+          "setActiveDataset": 1,
+          "setState": 1,
+        },
+        "state": {
+          "__class": "State",
+          "chr1": 0,
+          "chr2": 0,
+          "locus": "All:0-2000000000 All:0-2000000000",
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 0,
+        },
+        "viewport": {
+          "height": 800,
+          "width": 800,
+        },
+      },
+    },
+    "config.locus — the goto rung": {
+      "1600x400": {
+        "outcome": "restores",
+        "presented": {
+          "locus": "All:0-2000000000 All:0-2000000000",
+          "url": "https://example.org/a.hic",
+        },
+        "rungs": {
+          "parseGotoInput": 1,
+          "setActiveDataset": 1,
+          "setState": 1,
+        },
+        "state": {
+          "__class": "State",
+          "chr1": 0,
+          "chr2": 0,
+          "locus": "All:0-3095677412 All:0-1000000000",
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 0,
+        },
+        "viewport": {
+          "height": 400,
+          "width": 1600,
+        },
+      },
+      "800x800": {
+        "outcome": "restores",
+        "presented": {
+          "locus": "All:0-2000000000 All:0-2000000000",
+          "url": "https://example.org/a.hic",
+        },
+        "rungs": {
+          "parseGotoInput": 1,
+          "setActiveDataset": 1,
+          "setState": 1,
+        },
+        "state": {
+          "__class": "State",
+          "chr1": 0,
+          "chr2": 0,
+          "locus": "All:0-2000000000 All:0-2000000000",
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 0,
+        },
+        "viewport": {
+          "height": 800,
+          "width": 800,
+        },
+      },
+    },
+    "config.state — the restore rung": {
+      "1600x400": {
+        "outcome": "restores",
+        "presented": {
+          "state": undefined,
+          "url": "https://example.org/a.hic",
+        },
+        "rungs": {
+          "setActiveDataset": 1,
+          "setState": 1,
+        },
+        "state": {
+          "__class": "State",
+          "chr1": 0,
+          "chr2": 0,
+          "locus": "All:0-3095677412 All:0-1000000000",
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 0,
+        },
+        "viewport": {
+          "height": 400,
+          "width": 1600,
+        },
+      },
+      "800x800": {
+        "outcome": "restores",
+        "presented": {
+          "state": undefined,
+          "url": "https://example.org/a.hic",
+        },
+        "rungs": {
+          "setActiveDataset": 1,
+          "setState": 1,
+        },
+        "state": {
+          "__class": "State",
+          "chr1": 0,
+          "chr2": 0,
+          "locus": "All:0-2000000000 All:0-2000000000",
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 0,
+        },
+        "viewport": {
+          "height": 800,
+          "width": 800,
+        },
+      },
+    },
+    "config.synchState — the sibling rung": {
+      "1600x400": {
+        "outcome": "restores",
+        "presented": {
+          "synchState": {
+            "binSize": 2500000,
+            "binX": 0,
+            "binY": 0,
+            "chr1Name": "All",
+            "chr2Name": "All",
+            "pixelSize": 1,
+          },
+          "url": "https://example.org/a.hic",
+        },
+        "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
+        "rungs": {
+          "setActiveDataset": 1,
+          "setState": 1,
+        },
+        "state": {
+          "__class": "State",
+          "chr1": 0,
+          "chr2": 0,
+          "locus": "All:0-3095677412 All:0-1000000000",
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 0,
+        },
+        "viewport": {
+          "height": 400,
+          "width": 1600,
+        },
+      },
+      "800x800": {
+        "outcome": "restores",
+        "presented": {
+          "synchState": {
+            "binSize": 2500000,
+            "binX": 0,
+            "binY": 0,
+            "chr1Name": "All",
+            "chr2Name": "All",
+            "pixelSize": 1,
+          },
+          "url": "https://example.org/a.hic",
+        },
+        "primedWith": "loadHicFile({url}) — a bare load, so that a dataset is active",
+        "rungs": {
+          "setActiveDataset": 1,
+          "setState": 1,
+        },
+        "state": {
+          "__class": "State",
+          "chr1": 0,
+          "chr2": 0,
+          "locus": "All:0-2000000000 All:0-2000000000",
+          "normalization": "NONE",
+          "pixelSize": 1,
+          "x": 0,
+          "y": 0,
+          "zoom": 0,
+        },
+        "viewport": {
+          "height": 800,
+          "width": 800,
+        },
+      },
+    },
+    "loadLiveContactMap — the live door": {
+      "1600x400": {
+        "outcome": "restores",
+        "presented": {
+          "liveContactMap": {
+            "chromosomes": "25 — the restoreDataset table",
+            "genomicEnd": 10000000,
+            "genomicStart": 0,
+          },
+          "state": undefined,
+          "url": "https://example.org/a.hic",
+        },
+        "rungs": {
+          "parseGotoInput": 1,
+          "setActiveDataset": 1,
+          "setState": 1,
+        },
+        "state": {
+          "__class": "State",
+          "chr1": 1,
+          "chr2": 1,
+          "locus": "chr1:-1-40000003 chr1:-1-10000000",
+          "normalization": "NONE",
+          "pixelSize": 1.99999980000002,
+          "x": -0.00002,
+          "y": -0.00002,
+          "zoom": 5,
+        },
+        "viewport": {
+          "height": 400,
+          "width": 1600,
+        },
+      },
+      "800x800": {
+        "outcome": "restores",
+        "presented": {
+          "liveContactMap": {
+            "chromosomes": "25 — the restoreDataset table",
+            "genomicEnd": 10000000,
+            "genomicStart": 0,
+          },
+          "state": undefined,
+          "url": "https://example.org/a.hic",
+        },
+        "rungs": {
+          "parseGotoInput": 1,
+          "setActiveDataset": 1,
+          "setState": 1,
+        },
+        "state": {
+          "__class": "State",
+          "chr1": 1,
+          "chr2": 1,
+          "locus": "chr1:-1-10000000 chr1:-1-10000000",
+          "normalization": "NONE",
+          "pixelSize": 1.99999980000002,
+          "x": -0.00004,
+          "y": -0.00004,
+          "zoom": 6,
+        },
+        "viewport": {
+          "height": 800,
+          "width": 800,
+        },
+      },
+    },
+  },
+]
+`;
+
 exports[`resolved state golden file — every restore door, at two stated viewports > synth-juicebox-browser-carrying-selected-gene 1`] = `
 [
   {

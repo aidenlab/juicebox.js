@@ -186,9 +186,29 @@ follow the same rules as above.
 
 | Parameter | Description |
 | --------- | ----------- |
-| `session=` | **v1 session JSON**, carrying a [version](#version) field on the way out and never requiring one on the way in. A `blob:` or `data:` prefix means the rest is compressed and base64-encoded — the only form juicebox writes, as juicebox-web's share link. Anything else is loaded as a URL or local path and may be either compressed or plain JSON. |
+| `session=` | **v1 session JSON**, carrying a [version](#version) field on the way out and never requiring one on the way in. The value is a *session string*, in one of [four spellings](#session-string-spellings). |
 | `juicebox={…},{…}` | one brace-wrapped query string per browser, comma-separated. Read-only legacy. |
 | `juiceboxData=` | the `juicebox=` value above, compressed. **Not** session JSON — the two share one code path, and the only difference is that this one is decompressed first. Read-only legacy. |
+
+### Session string spellings
+
+The value of `session=` is a **session string**, and there are four spellings of
+one. They are **alternatives, not generations** — no version is assigned to any
+of them, and none supersedes another. What carries the session's version is the
+`version` field *inside* the JSON, described below.
+
+| Spelling | What the rest of the string is |
+| -------- | ------------------------------ |
+| `blob:<payload>` | BGZip-compressed, base64-encoded session JSON. **The only form juicebox writes**, as juicebox-web's share link. |
+| `data:<payload>` | the same compressed payload under the other prefix. Both prefixes are five characters and both bodies decode identically. |
+| `data:application/gzip;base64,<payload>` | a real data URI: gzipped session JSON, base64-encoded. Not written by juicebox; accepted because it is read elsewhere under the same parameter name ([ADR-0011](adr/0011-session-string-is-the-cross-host-contract.md) decision 2). |
+| `<URL>` | anything else: a URL or local path, fetched, whose contents are then themselves one of the three spellings above or plain JSON. |
+
+**The URL spelling is juicebox-only.** Other apps embedding juicebox read a
+`session=` parameter of their own, and owe each other these payloads rather than
+each other's query strings — a host reading session strings for itself is
+expected to refuse a URL rather than reproduce the fetch (ADR-0011 decisions 1
+and 5).
 
 ### Version
 

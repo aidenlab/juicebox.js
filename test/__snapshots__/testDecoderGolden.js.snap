@@ -464,13 +464,17 @@ exports[`decoder golden file — inputs the decoder takes as a string > reject-s
 }
 `;
 
-exports[`decoder golden file — inputs the decoder takes as a string > reject-session-gzip-data-uri 1`] = `
+exports[`decoder golden file — inputs the decoder takes as a string > session-gzip-data-uri 1`] = `
 {
-  "error": {
-    "message": "Could not decode the session from the session= parameter: Session is not a readable data-uri (invalid distance too far back)",
-    "name": "SessionDecodeError",
+  "config": {
+    "browsers": [
+      {
+        "name": "A",
+        "url": "https://example.org/a.hic",
+      },
+    ],
   },
-  "outcome": "throws",
+  "outcome": "decodes",
 }
 `;
 

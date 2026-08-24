@@ -16,6 +16,7 @@
  */
 import {describe, expect, test} from 'vitest'
 import {BGZip} from 'igv-utils'
+import {gzipSync} from 'zlib'
 import {
     SessionDecodeError,
     SessionFormat,
@@ -25,6 +26,15 @@ import {
     sniffSessionFormat,
 } from '../js/sessionCodec.js'
 import State from '../js/hicState.js'
+import {wireFormatCorpus} from './data/wireFormatCorpus.js'
+
+/**
+ * The gzip data URI, taken from the corpus rather than pasted a second time:
+ * this suite and the golden file have to be reading the same literal for either
+ * to mean anything about the accepted set. Its `payload` field is the session
+ * string with the `?session=` parameter stripped — ADR-0011 decision 1.
+ */
+const GZIP_DATA_URI = wireFormatCorpus.find(f => f.id === 'session-gzip-data-uri').payload
 
 /**
  * The share link juicebox-web writes is `?session=blob:<compressed JSON>`, so a
@@ -115,6 +125,37 @@ describe('decodeSessionString', () => {
     test('a data URI decodes by the same path as a blob', () => {
         const session = {browsers: [{url: 'a.hic'}]}
         expect(decodeSessionString(`data:${compress(session)}`)).toEqual(session)
+    })
+
+    /**
+     * The other data URI: a real one, `application/gzip;base64,` and all.
+     *
+     * Not a spelling juicebox writes. It is admitted because Spacewalk's
+     * decoder has always read it under the same `?session=` parameter name, and
+     * the sent set is not enumerable from this repo — ADR-0011 decision 2,
+     * refining ADR-0006 decision 1. The payload is the one the corpus carries as
+     * `session-gzip-data-uri`.
+     */
+    test('a gzip data URI decodes to the session it carries', () => {
+        expect(decodeSessionString(GZIP_DATA_URI))
+            .toEqual({browsers: [{url: 'https://example.org/a.hic', name: 'A'}]})
+    })
+
+    /**
+     * The one behavioural difference between this decoder's gzip arm and the
+     * one it was written to match.
+     *
+     * Spacewalk walks the inflated bytes through `String.fromCharCode`; this one
+     * decodes them as UTF-8. The two agree on every ASCII payload — including
+     * the corpus fixture above, which is why that one proves nothing here — and
+     * diverge on a session naming a sample with an accent in it, where
+     * byte-by-byte gives mojibake. Built with `gzip` rather than pasted, since
+     * a literal would pin the suite to one compressor build.
+     */
+    test('a non-ASCII session survives the gzip data URI', () => {
+        const session = {browsers: [{url: 'https://example.org/a.hic', name: 'Müller — café'}]}
+        const uri = `data:application/gzip;base64,${gzipSync(Buffer.from(JSON.stringify(session), 'utf8')).toString('base64')}`
+        expect(decodeSessionString(uri)).toEqual(session)
     })
 
     /**

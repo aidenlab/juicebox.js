@@ -175,7 +175,9 @@ and the evidence that this matches what users send is partial by decision. See
 `test/data/wireFormatCorpus.js`'s harvest-scope note.
 
 **Session string** vs **session parameter** — a *session string* is the payload:
-`blob:…`, `data:…`, a bare JSON document, or a URL naming one. A *session
+`blob:…`, `data:…`, `data:application/gzip;base64,…`, a bare JSON document, or a
+URL naming one (`docs/url.md` spells the four out; the URL spelling is
+juicebox-only). A *session
 parameter* is a host application's query parameter carrying one — juicebox-web
 writes `?session=<string>` raw, Spacewalk composes three apps' sessions under
 three parameter names of its own. **The session string is the contract; the URL

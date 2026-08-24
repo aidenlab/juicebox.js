@@ -1,6 +1,6 @@
 {
   "name": "juicebox.js",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "type": "module",
   "main": "./dist/juicebox.esm.js",
   "module": "./dist/juicebox.esm.js",
@@ -18,7 +18,8 @@
   },
   "files": [
     "dist/**",
-    "dev-proxy/**"
+    "dev-proxy/**",
+    "test/data/wireFormatCorpus.js"
   ],
   "author": {
     "name": "Jim Robinson"

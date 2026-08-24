@@ -171,3 +171,24 @@ ADR-0006 decision 7 deliberately put it inside the JSON.
   asked, and this ADR answers one it did not know it had left open — that "one
   decoder" meant one *per repo*. Rewriting an accepted ADR to look prescient
   loses the record of when we learned this.
+
+## Amendment, recorded during implementation (2026-08-24)
+
+**Decision 3's premise about distribution is false, and one line of
+`package.json` was needed to make the export real.** The decision reads "a
+github-installed dependency already ships the whole tree, so nothing about
+distribution changes". It does not. npm installs a git dependency by *packing*
+it, which honours `files` — at v4.1.0 `files` was `dist/**` and `dev-proxy/**`,
+so `exports` resolved `./test/data/wireFormatCorpus.js` to a path that did not
+exist in `node_modules`. Measured from Spacewalk's own tree after the bump
+rather than reasoned about: the import failed with `Cannot find module`.
+
+`files` therefore gains `test/data/wireFormatCorpus.js` — the one file, not the
+directory, because shipping a fixture corpus is the deliberate act decision 3
+describes and shipping a test tree is not. v4.1.1 carries it.
+
+The consequence the decision drew from the false premise — that the entry "makes
+the corpus a deliberate export rather than a file someone reached into
+`node_modules` for" — survives intact, and is truer than it was: the file is now
+reachable in both install modes and reachable *only* through the export. Nothing
+else in the ADR rested on the tree being shipped whole.

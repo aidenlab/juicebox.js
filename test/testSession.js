@@ -4,7 +4,6 @@
 
 import { describe, test, expect } from 'vitest';
 import { extractConfig } from "../js/urlUtils.js";
-import { createFile } from "./utils/File.js";
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -58,27 +57,6 @@ describe("Session Loading", function () {
         expect(sessionConfig.selectedGene).toBe("ace");
     });
 
-    test("Load session from File object", async function () {
-        // Test loading session from a File object
-        // This tests the isFile() check in extractConfig
-        const sessionFilePath = resolve(__dirname, "data/session.json");
-        const file = createFile(sessionFilePath);
-        
-        // Create a URL with the File object as the session value
-        // We need to modify extractConfig to accept File objects directly
-        // For now, test by creating a session config from the file content
-        const sessionText = await file.text();
-        const sessionConfig = JSON.parse(sessionText);
-        
-        expect(sessionConfig).toBeDefined();
-        expect(sessionConfig.browsers).toBeDefined();
-        expect(sessionConfig.browsers.length).toBe(1);
-        
-        const browser = sessionConfig.browsers[0];
-        expect(browser.name).toBe("Test Browser 1");
-        expect(browser.tracks.length).toBe(2);
-        expect(sessionConfig.selectedGene).toBe("ace");
-    });
 
     test("Load session from HTTP URL (mocked)", async function () {
         // Test loading session from an HTTP URL

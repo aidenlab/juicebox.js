@@ -421,7 +421,7 @@ class HICBrowser {
         // intersection to keep. It needs none -- genomes must match
         // (`dataLoader.js:356`), so both datasets compute the same
         // `wholeGenomeResolution`. ADR-0010.
-        if (this.dataset.isSingleChromosome && this.dataset.isSingleChromosome()) {
+        if (this.dataset.isSingleChromosome()) {
             resolutions = [...resolutions, {index: SENTINEL_ZOOM, binSize: this.dataset.wholeGenomeResolution}]
         }
 
@@ -439,6 +439,10 @@ class HICBrowser {
      * `dataset.bpResolutions[state.zoom]` directly, and ADR-0010 decision 2
      * converts only the ones the sentinel path can reach; the rest are left to
      * the refactor that owns them, rather than folded into this ticket's diff.
+     *
+     * Delegation, and the split is deliberate: whatever holds a browser reads it
+     * here, and `State` -- which is handed a dataset and, in `getLocus` and
+     * `clampXY`, no browser at all -- reads `dataset.binSizeForZoom` directly.
      */
     binSizeForZoom(zoom = this.state.zoom) {
         return this.dataset.binSizeForZoom(zoom)

@@ -200,7 +200,7 @@ class State {
         // x, y and pixelSize carry over untouched: the whole-genome bin and the
         // sentinel bin are the same bin, offset zero (ADR-0010 fact 4).
         let redirected = false;
-        if (dataset && dataset.isSingleChromosome && dataset.isSingleChromosome() && dataset.isWholeGenome(chr1)) {
+        if (dataset && dataset.isSingleChromosome() && dataset.isWholeGenome(chr1)) {
             chr1 = chr2 = dataset.soleChromosome().index;
             zoom = SENTINEL_ZOOM;
             redirected = true;
@@ -355,6 +355,8 @@ class State {
         const zoomNew = (true === browser.resolutionLocked)
             ? this.zoom
             : browser.findMatchingZoomIndex(bpPerPixelTarget, bpResolutions)
+        // Off the browser rather than off a dataset, uniquely here: this is the
+        // one translator handed no dataset of its own.
         const binSizeNew = browser.binSizeForZoom(zoomNew)
 
         return await this.setView(
@@ -493,7 +495,7 @@ class State {
         // this browser can follow it to. Same reason as everywhere else: array
         // position and zoom index are not the same number.
         const zoomNew = browser.findMatchingZoomIndex(bpPerPixelTarget, browser.getResolutions())
-        const binSizeNew = browser.binSizeForZoom(zoomNew)
+        const binSizeNew = dataset.binSizeForZoom(zoomNew)
 
         const xBinNew = targetState.binX * (targetState.binSize / binSizeNew)
         const yBinNew = targetState.binY * (targetState.binSize / binSizeNew)
@@ -579,11 +581,14 @@ class State {
      * `setView` on the way in.
      */
     toJSON() {
-        const wholeGenome = SENTINEL_ZOOM === this.zoom;
+        // Named for where the state *is*, not for what it is written as. The
+        // sentinel is deliberately not a whole-genome view (decision 4); what
+        // decision 6 says is that it is written out as one.
+        const atSentinel = SENTINEL_ZOOM === this.zoom;
         return {
-            chr1: wholeGenome ? 0 : this.chr1,
-            chr2: wholeGenome ? 0 : this.chr2,
-            zoom: wholeGenome ? 0 : this.zoom,
+            chr1: atSentinel ? 0 : this.chr1,
+            chr2: atSentinel ? 0 : this.chr2,
+            zoom: atSentinel ? 0 : this.zoom,
             x: this.x,
             y: this.y,
             pixelSize: this.pixelSize,

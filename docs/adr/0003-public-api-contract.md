@@ -1,7 +1,7 @@
 # ADR-0003 — What juicebox.js's public API actually is
 
 **Status:** Superseded in part by `js/publicApi.js` (see *Reversal*)
-**Last measured:** 2026-08-06, against `juicebox.js` HEAD, `juicebox-web` `7538049`, `spacewalk` `2776a3a` (both consumers pinned to `v3.6.2`)
+**Last measured:** 2026-08-24, for the v4.0.0 release — see *Re-measurement* at the end. The tables below are the 2026-08-06 measurement and are kept as history.
 **Related:** #466 (architecture review tracker), ADR-0002
 
 This ADR exists because `docs/architecture-review.html` was written without it, and
@@ -260,3 +260,56 @@ until #438 gives the probe harness a home.
 The tables above still go stale the moment either consumer changes. Re-measure
 them at each release rather than trusting them — and when you do, update the
 manifest, not just the tables.
+
+---
+
+## Re-measurement — 2026-08-24, for the v4.0.0 release
+
+Appended, not revised: this ADR is append-only and the tables above stay as the
+measurement they were.
+
+Measured against `juicebox.js` at `close-466-descope-and-release-v4.0.0`,
+`juicebox-web` `master` and `spacewalk` `main`, as the pre-release step #466
+called for. **The result is the one that matters: every member either consumer
+uses today is declared in `js/publicApi.js`. Zero undeclared members in use.**
+
+The drift is entirely in the tables above, and it ran in **both directions** —
+which is the finding, because the failure this ADR was written about was drift in
+one direction only.
+
+| Consumer | What moved | Where |
+|---|---|---|
+| juicebox-web | **`browser.eventBus` has zero call sites.** All four global-bus subscriptions go through `hic.EventBus.globalBus` instead | `initializationHelper.js:140, 142, 223, 241, 253` |
+| juicebox-web | **gained** `browser.coordinator.addCallback('onMapLoaded', …)` | `controlMapDropdown.js:37` |
+| juicebox-web | **gained** a read of `hic.getCurrentBrowser().config` for `{width, height}` — the tables attributed `browser.config` to Spacewalk alone | `initializationHelper.js:386` |
+| Spacewalk | **`browser.config` has zero call sites** | — |
+| Spacewalk | **gained** `browser.dataset`, read for `dataset.isLive` | `juicebox/hicMapState.js:19` |
+| Spacewalk | **gained** `browser.loadHicFile` — the tables had it as juicebox-web's alone | `juicebox/juiceboxPanel.js:301` |
+
+`browser.dispose()` and `registry.dispose()` have **zero call sites in either
+consumer**, which confirms in measurement what candidate 8 asserted in prose:
+neither known host can reach `DisposedBrowserError`. It ships as a release note
+for third-party embedders, not for these two.
+
+### One measurement trap worth writing down
+
+Spacewalk embeds **igv as well as juicebox**, and both are reached through a
+variable named `browser`. A naive `grep -o 'browser\.[A-Za-z_]*' src/` returns
+`trackViews`, `search`, `loadGenome`, `referenceFrameList`, `loadTrackList`,
+`removeAllTracks`, `loadSession`, `toJSON`, `compressedSession` and
+`columnContainer` — **none of which are ours.** They are `igvPanel.browser`. The
+count has to be scoped to `src/juicebox/` and checked call site by call site.
+
+This is the inverse of the error in *Why this was written*: there, grepping `js/`
+under-counted because the surface was invisible from inside the repo. Here,
+grepping a consumer **over-counts** because two libraries share a noun. Both are
+the same mistake — trusting a name match instead of resolving what the name
+refers to — and #474 remains the fix for both: make the measurement re-runnable
+rather than re-reasoned.
+
+### Consequence
+
+**Nothing was required of the release.** The manifest held across eight refactor
+candidates and 160 commits, including two that deleted a module (`StateManager`)
+and one that removed a wire format (`?juiceboxURL=`). The half of the contract
+that drifted is the half nothing executes.

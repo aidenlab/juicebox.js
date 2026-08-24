@@ -169,6 +169,23 @@ class InteractionHandler {
             return;
         }
 
+        await this._zoomByScaleFactor(anchorPx, anchorPy, scaleFactor);
+    }
+
+    /**
+     * Zoom about an anchor by a scale factor -- the behaviour pinch and wheel
+     * gestures share, once each has decided the gesture is a zoom at all.
+     *
+     * The two used to carry a copy of this each, and the copies drifted: the
+     * pinch one asked for chromosome `1` where the comment said whole genome,
+     * and handed `setChromosomes` a `{ xLocus }` wrapper rather than a locus
+     * (#589). One copy now, so a fix to either gesture is a fix to both.
+     *
+     * @param {number} anchorPx - Anchor X position in pixels
+     * @param {number} anchorPy - Anchor Y position in pixels
+     * @param {number} scaleFactor - Scale factor (>1 = zoom in, <1 = zoom out)
+     */
+    async _zoomByScaleFactor(anchorPx, anchorPy, scaleFactor) {
         try {
             this.browser.startSpinner();
 
@@ -213,8 +230,8 @@ class InteractionHandler {
 
             if (canLeaveForWholeGenome && !this.browser.resolutionLocked && scaleFactor < 1 && newZoom < z) {
                 // Zoom out to whole genome
-                const xLocus = this.parseLocusString('1');
-                const yLocus = { xLocus };
+                const xLocus = this.parseLocusString('All');
+                const yLocus = { ...xLocus };
                 await this.setChromosomes(xLocus, yLocus);
             } else {
                 await this.browser.state.panWithZoom(
@@ -301,69 +318,7 @@ class InteractionHandler {
             return;
         }
 
-        try {
-            this.browser.startSpinner();
-
-            const bpResolutions = this.browser.getResolutions();
-            const currentResolution = this._resolutionForZoom(bpResolutions, this.browser.state.zoom);
-
-            // The list is sorted coarsest-first, so the finest rung is the last
-            // entry and the coarsest is the first. Both guards used to be written
-            // as the array positions those ends happen to have when index and
-            // position agree, which stopped being true once a rung could be
-            // filtered out or synthesised in. ADR-0010 decision 1.
-            const finest = bpResolutions[bpResolutions.length - 1];
-            const coarsest = bpResolutions[0];
-
-            let newBinSize;
-            let newZoom;
-            let newPixelSize;
-            let resolutionChanged;
-
-            if (this.browser.resolutionLocked ||
-                (this.browser.state.zoom === finest.index && scaleFactor > 1) ||
-                (this.browser.state.zoom === coarsest.index && scaleFactor < 1)) {
-                // Can't change resolution level, must adjust pixel size
-                newBinSize = currentResolution.binSize;
-                newPixelSize = Math.min(MAX_PIXEL_SIZE, this.browser.state.pixelSize * scaleFactor);
-                newZoom = this.browser.state.zoom;
-                resolutionChanged = false;
-            } else {
-                const targetBinSize = (currentResolution.binSize / this.browser.state.pixelSize) / scaleFactor;
-                newZoom = this.findMatchingZoomIndex(targetBinSize, bpResolutions);
-                newBinSize = this._resolutionForZoom(bpResolutions, newZoom).binSize;
-                resolutionChanged = newZoom !== this.browser.state.zoom;
-                newPixelSize = Math.min(MAX_PIXEL_SIZE, newBinSize / targetBinSize);
-            }
-
-            const z = await this.browser.minZoom(this.browser.state.chr1, this.browser.state.chr2);
-
-            // A single-chromosome assembly has no whole-genome view to fall out
-            // to: `All` is the sentinel rung of the scaffold now, and zooming
-            // past the last declared rung already lands there. ADR-0010.
-            const canLeaveForWholeGenome = !this.browser.dataset.isSingleChromosome();
-
-            if (canLeaveForWholeGenome && !this.browser.resolutionLocked && scaleFactor < 1 && newZoom < z) {
-                // Zoom out to whole genome
-                const xLocus = this.parseLocusString('All');
-                const yLocus = { ...xLocus };
-                await this.setChromosomes(xLocus, yLocus);
-            } else {
-                await this.browser.state.panWithZoom(
-                    newZoom, newPixelSize, anchorPx, anchorPy, newBinSize,
-                    this.browser, this.browser.dataset,
-                    this.browser.contactMatrixView.getViewDimensions()
-                );
-
-                await this._applyStateChange({
-                    resolutionChanged,
-                    chrChanged: false,
-                    zoomIn: true
-                });
-            }
-        } finally {
-            this.browser.stopSpinner();
-        }
+        await this._zoomByScaleFactor(anchorPx, anchorPy, scaleFactor);
     }
 
     /**

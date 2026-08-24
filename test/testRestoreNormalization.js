@@ -40,20 +40,20 @@
  *
  * The dataset is `test/utils/restoreDataset.js`, the fixture the gate and
  * `testRestoreClamp.js` both drive, wrapped here to answer
- * `getNormalizationOptions`. A wrapper rather than a change to the fixture: the
- * fixture's silence on normalization is itself a case this file drives (a
- * dataset that cannot answer at all), and the browser's own fallback for that
- * silence -- `['NONE']` -- is what the last test pins.
+ * `getNormalizationOptions` -- the one thing this suite asks of its dataset that
+ * the shared harness (`test/utils/restoreFixture.js`) does not provide. A
+ * wrapper rather than a change to the fixture: the fixture's silence on
+ * normalization is itself a case this file drives (a dataset that cannot answer
+ * at all), and the browser's own fallback for that silence -- `['NONE']` -- is
+ * what the last test pins.
  *
  * The viewport is stated, not measured, for the reason ADR-0009 fact 5 gives.
  * Nothing here depends on its size; it is stated so the load behaves the way it
  * does in the neighbouring suites.
  */
-import {beforeEach, afterEach, describe, expect, test, vi} from 'vitest'
-import {igvxhr} from 'igv-utils'
-import ContactMatrixView from '../js/contactMatrixView.js'
+import {beforeEach, describe, expect, test, vi} from 'vitest'
 import State from '../js/hicState.js'
-import {withContainers} from './utils/browserFixture.js'
+import {restoreFixture} from './utils/restoreFixture.js'
 
 /**
  * What the next loaded dataset offers, or `undefined` for a dataset that does
@@ -62,29 +62,19 @@ import {withContainers} from './utils/browserFixture.js'
 let offered
 
 vi.mock('../js/hicDataset.js', async () => {
-    const {restoreDataset} = await import('./utils/restoreDataset.js')
-    const build = config => {
+    const {restoreDataset, datasetModule} = await import('./utils/restoreDataset.js')
+    return datasetModule(config => {
         const dataset = restoreDataset(config)
         if (offered !== undefined) {
             const options = offered
             dataset.getNormalizationOptions = async () => options
         }
         return dataset
-    }
-    return {
-        default: {loadDataset: async config => build(config)},
-        HiCDataset: class {
-            constructor(config) {
-                Object.assign(this, build(config))
-            }
-            async init() {}
-        },
-    }
+    })
 })
 
 const {default: HICBrowser} = await import('../js/hicBrowser.js')
 
-const VIEWPORT = {width: 800, height: 800}
 const HIC_URL = 'https://example.org/restore-normalization.hic'
 
 /** chr1 x chr1 at 250kb bins, at an origin well inside the chromosome. */
@@ -96,28 +86,12 @@ const savedWith = normalization => new State(CHR1, CHR1, ZOOM, 10, 10, 2, normal
 
 describe('normalization is validated against the loaded dataset at restore (#561)', () => {
 
-    const dom = withContainers()
+    const {embed, restore} = restoreFixture(HICBrowser, {suite: 'restore normalization', url: HIC_URL})
 
     beforeEach(() => {
         offered = undefined
-        vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined)
-        vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined)
-        vi.spyOn(igvxhr, 'loadString').mockImplementation(async () => {
-            throw new Error('unexpected network access from the restore normalization suite')
-        })
     })
 
-    afterEach(() => {
-        vi.restoreAllMocks()
-    })
-
-    /** One embed, one load, one stated viewport. Returns the live browser. */
-    async function restore(state) {
-        const browser = new HICBrowser(dom.another(), {})
-        vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({...VIEWPORT})
-        await browser.loadHicFile({url: HIC_URL, state}, true)
-        return browser
-    }
 
     test('a saved normalization the dataset offers is preserved exactly', async () => {
 
@@ -197,8 +171,7 @@ describe('normalization is validated against the loaded dataset at restore (#561
         offered = ['NONE', 'KR']
         const asked = vi.fn(async () => offered)
 
-        const browser = new HICBrowser(dom.another(), {})
-        vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({...VIEWPORT})
+        const browser = embed()
         vi.spyOn(browser, 'getNormalizationOptions').mockImplementation(asked)
 
         await browser.loadHicFile({url: HIC_URL, state: savedWith('NONE')}, true)
@@ -224,8 +197,7 @@ describe('normalization is validated against the loaded dataset at restore (#561
         // claim 4's rule, asked at the other door.
         offered = ['VC']
 
-        const browser = new HICBrowser(dom.another(), {})
-        vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({...VIEWPORT})
+        const browser = embed()
 
         await browser.init({url: HIC_URL, state: savedWith('NONE'), normalization: 'KR'})
 
@@ -236,8 +208,7 @@ describe('normalization is validated against the loaded dataset at restore (#561
 
         offered = ['NONE', 'VC', 'KR']
 
-        const browser = new HICBrowser(dom.another(), {})
-        vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({...VIEWPORT})
+        const browser = embed()
 
         await browser.init({url: HIC_URL, state: savedWith('NONE'), normalization: 'KR'})
 

@@ -293,16 +293,8 @@ import {restoreDataset} from './utils/restoreDataset.js'
  * through `new HiCDataset(...)`, and a constructor cannot be spied.
  */
 vi.mock('../js/hicDataset.js', async () => {
-    const {restoreDataset} = await import('./utils/restoreDataset.js')
-    return {
-        default: {loadDataset: async config => restoreDataset(config)},
-        HiCDataset: class {
-            constructor(config) {
-                Object.assign(this, restoreDataset(config))
-            }
-            async init() {}
-        },
-    }
+    const {restoreDataset, datasetModule} = await import('./utils/restoreDataset.js')
+    return datasetModule(restoreDataset)
 })
 
 const {default: HICBrowser} = await import('../js/hicBrowser.js')

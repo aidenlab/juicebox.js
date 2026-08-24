@@ -98,3 +98,29 @@ export function restoreDataset(config = {}) {
         hicFile: {config: {nvi: config.nvi}},
     }
 }
+
+/**
+ * The module shape a `vi.mock('../js/hicDataset.js')` factory has to return:
+ * `loadDataset` for the ladder, and a `HiCDataset` class for the callers that
+ * construct one. The four restore suites (#571) all return this.
+ *
+ * It lives beside the dataset rather than in `restoreFixture.js` because a mock
+ * factory runs *inside* the module graph it is mocking: a factory that imported
+ * the fixture would pull `hicBrowser.js` back in through it, and the load would
+ * deadlock on itself. This file imports nothing.
+ *
+ * `build` is a `config => dataset` function -- ordinarily `restoreDataset`
+ * itself, and a wrapper around it for a suite that needs the dataset to answer
+ * one more question.
+ */
+export function datasetModule(build) {
+    return {
+        default: {loadDataset: async config => build(config)},
+        HiCDataset: class {
+            constructor(config) {
+                Object.assign(this, build(config))
+            }
+            async init() {}
+        },
+    }
+}

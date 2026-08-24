@@ -45,33 +45,21 @@
  * take. That is the better instrument anyway: the payload is what
  * `js/publicApi.js` declares as contract, and the return value never was.
  *
- * The dataset, the viewport and the stubs are `testRestoreClamp.js`'s, for the
- * reason it gives: a stated 800x800, because JSDOM does no layout (ADR-0009
- * fact 5).
+ * The dataset, the viewport and the stubs are `test/utils/restoreFixture.js`'s,
+ * for the reason it gives: a stated 800x800, because JSDOM does no layout
+ * (ADR-0009 fact 5).
  */
-import {beforeEach, afterEach, describe, expect, test, vi} from 'vitest'
-import {igvxhr} from 'igv-utils'
-import ContactMatrixView from '../js/contactMatrixView.js'
+import {describe, expect, test, vi} from 'vitest'
 import State from '../js/hicState.js'
-import {withContainers} from './utils/browserFixture.js'
-import {restoreDataset} from './utils/restoreDataset.js'
+import {restoreFixture} from './utils/restoreFixture.js'
 
 vi.mock('../js/hicDataset.js', async () => {
-    const {restoreDataset} = await import('./utils/restoreDataset.js')
-    return {
-        default: {loadDataset: async config => restoreDataset(config)},
-        HiCDataset: class {
-            constructor(config) {
-                Object.assign(this, restoreDataset(config))
-            }
-            async init() {}
-        },
-    }
+    const {restoreDataset, datasetModule} = await import('./utils/restoreDataset.js')
+    return datasetModule(restoreDataset)
 })
 
 const {default: HICBrowser} = await import('../js/hicBrowser.js')
 
-const VIEWPORT = {width: 800, height: 800}
 const HIC_URL = 'https://example.org/restore-resolution-changed.hic'
 
 /** chr1 x chr1, and two zooms off the same ladder `testRestoreClamp.js` drives. */
@@ -83,25 +71,7 @@ const savedView = (zoom, x = 0, y = 0) => new State(CHR1, CHR1, zoom, x, y, 2, '
 
 describe('resolutionChanged tells the truth on restore (#560)', () => {
 
-    const dom = withContainers()
-
-    beforeEach(() => {
-        vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined)
-        vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined)
-        vi.spyOn(igvxhr, 'loadString').mockImplementation(async () => {
-            throw new Error('unexpected network access from the restore resolution suite')
-        })
-    })
-
-    afterEach(() => {
-        vi.restoreAllMocks()
-    })
-
-    function embed() {
-        const browser = new HICBrowser(dom.another(), {})
-        vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({...VIEWPORT})
-        return browser
-    }
+    const {embed} = restoreFixture(HICBrowser, {suite: 'restore resolution'})
 
     /**
      * The `resolutionChanged` flag of every locus change the browser publishes,

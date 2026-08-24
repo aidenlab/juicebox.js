@@ -40,30 +40,18 @@
  * against zero is a clamp against the whole chromosome. `testState.js` states
  * 800x800 and so does the gate's first column; this file states the same.
  */
-import {beforeEach, afterEach, describe, expect, test, vi} from 'vitest'
-import {igvxhr} from 'igv-utils'
-import ContactMatrixView from '../js/contactMatrixView.js'
+import {describe, expect, test, vi} from 'vitest'
 import State from '../js/hicState.js'
 import {MAX_PIXEL_SIZE} from '../js/hicBrowser.js'
-import {withContainers} from './utils/browserFixture.js'
-import {restoreDataset} from './utils/restoreDataset.js'
+import {restoreFixture, VIEWPORT} from './utils/restoreFixture.js'
 
 vi.mock('../js/hicDataset.js', async () => {
-    const {restoreDataset} = await import('./utils/restoreDataset.js')
-    return {
-        default: {loadDataset: async config => restoreDataset(config)},
-        HiCDataset: class {
-            constructor(config) {
-                Object.assign(this, restoreDataset(config))
-            }
-            async init() {}
-        },
-    }
+    const {restoreDataset, datasetModule} = await import('./utils/restoreDataset.js')
+    return datasetModule(restoreDataset)
 })
 
 const {default: HICBrowser} = await import('../js/hicBrowser.js')
 
-const VIEWPORT = {width: 800, height: 800}
 const HIC_URL = 'https://example.org/restore-clamp.hic'
 
 /** chr1 x chr1 at 250kb bins — a zoom the corpus's harvested states also use. */
@@ -100,27 +88,10 @@ function stubTrackPair(window) {
 
 describe('restore routes through the chokepoint (#558)', () => {
 
-    const dom = withContainers()
+    const {dom, restore: restoreFrom} = restoreFixture(HICBrowser, {suite: 'restore clamp'})
 
-    beforeEach(() => {
-        vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined)
-        vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined)
-        vi.spyOn(igvxhr, 'loadString').mockImplementation(async () => {
-            throw new Error('unexpected network access from the restore clamp suite')
-        })
-    })
-
-    afterEach(() => {
-        vi.restoreAllMocks()
-    })
-
-    /** One embed, one load, one stated viewport. Returns the live browser. */
-    async function restore(state) {
-        const browser = new HICBrowser(dom.another(), {})
-        vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({...VIEWPORT})
-        await browser.loadHicFile({url: HIC_URL, state}, true)
-        return browser
-    }
+    /** One embed, one load of the fixture file. Returns the live browser. */
+    const restore = state => restoreFrom(HIC_URL, state)
 
     test('a saved pixelSize above the cap opens at the cap', async () => {
 

@@ -51,33 +51,21 @@
  * the payload as contract, so it is now read back off the browser. The gate
  * cannot see this: it records `browser.state`, never the callback's argument.
  *
- * The dataset, the viewport and the stubs are `testRestoreClamp.js`'s, for the
- * reason it gives: a stated 800x800, because JSDOM does no layout (ADR-0009
- * fact 5).
+ * The dataset, the viewport and the stubs are `test/utils/restoreFixture.js`'s,
+ * for the reason it gives: a stated 800x800, because JSDOM does no layout
+ * (ADR-0009 fact 5).
  */
-import {beforeEach, afterEach, describe, expect, test, vi} from 'vitest'
-import {igvxhr} from 'igv-utils'
-import ContactMatrixView from '../js/contactMatrixView.js'
+import {describe, expect, test, vi} from 'vitest'
 import State from '../js/hicState.js'
-import {withContainers} from './utils/browserFixture.js'
-import {restoreDataset} from './utils/restoreDataset.js'
+import {restoreFixture} from './utils/restoreFixture.js'
 
 vi.mock('../js/hicDataset.js', async () => {
-    const {restoreDataset} = await import('./utils/restoreDataset.js')
-    return {
-        default: {loadDataset: async config => restoreDataset(config)},
-        HiCDataset: class {
-            constructor(config) {
-                Object.assign(this, restoreDataset(config))
-            }
-            async init() {}
-        },
-    }
+    const {restoreDataset, datasetModule} = await import('./utils/restoreDataset.js')
+    return datasetModule(restoreDataset)
 })
 
 const {default: HICBrowser} = await import('../js/hicBrowser.js')
 
-const VIEWPORT = {width: 800, height: 800}
 const HIC_URL = 'https://example.org/restore-back-door.hic'
 
 /** chr1 x chr1 at 250kb bins — the zoom `testRestoreClamp.js` drives. */
@@ -127,25 +115,7 @@ function installed(installs) {
 
 describe('the state parameter is gone from setActiveDataset (#559)', () => {
 
-    const dom = withContainers()
-
-    beforeEach(() => {
-        vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined)
-        vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined)
-        vi.spyOn(igvxhr, 'loadString').mockImplementation(async () => {
-            throw new Error('unexpected network access from the restore back-door suite')
-        })
-    })
-
-    afterEach(() => {
-        vi.restoreAllMocks()
-    })
-
-    function embed() {
-        const browser = new HICBrowser(dom.another(), {})
-        vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({...VIEWPORT})
-        return browser
-    }
+    const {embed} = restoreFixture(HICBrowser, {suite: 'restore back-door'})
 
     test('setActiveDataset takes a dataset and nothing else', async () => {
 

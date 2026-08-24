@@ -7,10 +7,15 @@
  * `xLocus` -- where a locus was wanted. The claims below are made against both
  * entry points from the same starting state, so the two cannot drift again
  * without a red test.
+ *
+ * The gesture runs into a real `State` through the real `setChromosomes`, so
+ * what is pinned is the view arrived at, not the arguments handed onward. The
+ * one spy is on `setChromosomes` itself, in the test that has to look at the
+ * loci it receives -- the malformed `yLocus` was invisible downstream.
  */
 import {describe, expect, test, vi} from 'vitest'
 import InteractionHandler from '../js/interactionHandler.js'
-import {createInteractionBrowser} from './utils/interactionBrowser.js'
+import {createGestureBrowser, START_PIXEL_SIZE, START_ZOOM} from './utils/gestureBrowser.js'
 
 /** The two gestures, named by the method that drives them. */
 const gestures = [
@@ -21,12 +26,25 @@ const gestures = [
 /** Small enough that the matched zoom index falls below `minZoom`. */
 const ZOOM_OUT = 0.1
 
+/** The whole-genome view, as `hicState` spells it. */
+const WHOLE_GENOME_CHR = 0
+
 describe.each(gestures)('%s zoomed out past the minimum zoom', (name, gesture) => {
 
-    test('navigates to the whole-genome view on both axes', async () => {
-        const browser = createInteractionBrowser()
+    test('lands on the whole-genome view', async () => {
+        const browser = createGestureBrowser()
         const handler = new InteractionHandler(browser)
-        const setChromosomes = vi.spyOn(handler, 'setChromosomes').mockResolvedValue(undefined)
+
+        await gesture(handler, ZOOM_OUT)
+
+        expect(browser.state.chr1).toBe(WHOLE_GENOME_CHR)
+        expect(browser.state.chr2).toBe(WHOLE_GENOME_CHR)
+    })
+
+    test('asks setChromosomes for the whole genome on both axes', async () => {
+        const browser = createGestureBrowser()
+        const handler = new InteractionHandler(browser)
+        const setChromosomes = vi.spyOn(handler, 'setChromosomes')
 
         await gesture(handler, ZOOM_OUT)
 
@@ -34,40 +52,52 @@ describe.each(gestures)('%s zoomed out past the minimum zoom', (name, gesture) =
         const [xLocus, yLocus] = setChromosomes.mock.calls[0]
 
         // The whole-genome chromosome, not chromosome 1.
-        expect(xLocus.chr).toBe('all')
+        expect(xLocus.chr).toBe('All')
         // A locus, not a `{ xLocus: ... }` wrapper: same keys, same values.
         expect(Object.keys(yLocus).sort()).toEqual(Object.keys(xLocus).sort())
         expect(yLocus).toEqual(xLocus)
-        expect(yLocus.chr).toBe('all')
     })
 
-    test('stays put when the resolution is locked', async () => {
-        const browser = createInteractionBrowser({resolutionLocked: true})
+    test('both gestures reach the identical state from the identical start', async () => {
+        const pinchBrowser = createGestureBrowser()
+        const wheelBrowser = createGestureBrowser()
+
+        await new InteractionHandler(pinchBrowser).pinchZoom(400, 400, ZOOM_OUT)
+        await new InteractionHandler(wheelBrowser)._performWheelZoom(400, 400, ZOOM_OUT)
+
+        expect({...pinchBrowser.state}).toEqual({...wheelBrowser.state})
+    })
+
+    test('stays on the current chromosome pair when the resolution is locked', async () => {
+        const browser = createGestureBrowser({resolutionLocked: true})
         const handler = new InteractionHandler(browser)
-        const setChromosomes = vi.spyOn(handler, 'setChromosomes').mockResolvedValue(undefined)
 
         await gesture(handler, ZOOM_OUT)
 
-        expect(setChromosomes).not.toHaveBeenCalled()
+        expect(browser.state.chr1).toBe(1)
+        expect(browser.state.chr2).toBe(1)
+        // The locked path zooms by pixel size instead of by rung.
+        expect(browser.state.zoom).toBe(START_ZOOM)
+        expect(browser.state.pixelSize).toBeLessThan(START_PIXEL_SIZE)
     })
 
-    test('stays put when zooming in', async () => {
-        const browser = createInteractionBrowser()
+    test.each([1, 2])('stays on the current chromosome pair at scaleFactor %d', async scaleFactor => {
+        const browser = createGestureBrowser()
         const handler = new InteractionHandler(browser)
-        const setChromosomes = vi.spyOn(handler, 'setChromosomes').mockResolvedValue(undefined)
 
-        await gesture(handler, 2)
+        await gesture(handler, scaleFactor)
 
-        expect(setChromosomes).not.toHaveBeenCalled()
+        expect(browser.state.chr1).toBe(1)
+        expect(browser.state.chr2).toBe(1)
     })
 
     test('stays put on a single-chromosome assembly, whose All is a zoom rung', async () => {
-        const browser = createInteractionBrowser({isSingleChromosome: true})
+        const browser = createGestureBrowser({isSingleChromosome: true})
         const handler = new InteractionHandler(browser)
-        const setChromosomes = vi.spyOn(handler, 'setChromosomes').mockResolvedValue(undefined)
 
         await gesture(handler, ZOOM_OUT)
 
-        expect(setChromosomes).not.toHaveBeenCalled()
+        expect(browser.state.chr1).toBe(1)
+        expect(browser.state.chr2).toBe(1)
     })
 })

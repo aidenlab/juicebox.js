@@ -54,9 +54,8 @@ function mapUrl(url) {
  * read is what it hands over. Those rewritten values must never escape into a saved session, so the
  * originals travel alongside them and `HICBrowser.toJSON` serializes those instead.
  *
- * Every URL the mapper rewrites is stashed, `indexURL` included — nothing serializes an `indexURL`
- * today, but a rewrite whose original cannot be recovered is exactly the leak this field exists to
- * prevent, and half an invariant is worse than none.
+ * Every URL the mapper rewrites is stashed, `indexURL` included, and both are serialized —
+ * `unmappedUrl` and `unmappedIndexUrl` below are the two readers.
  */
 const UNMAPPED_URLS = 'unmappedUrls'
 
@@ -101,4 +100,15 @@ function unmappedUrl(config) {
     return Object.hasOwn(config, UNMAPPED_URLS) ? config[UNMAPPED_URLS].url : config.url
 }
 
-export { setUrlMapper, getUrlMapper, mapUrl, mapTrackConfig, unmappedUrl }
+/**
+ * The index URL a track config should be serialized with: the original, whenever mapTrackConfig
+ * rewrote one. Safe on any config, mapped or not.
+ *
+ * @param {object} config
+ * @returns {*} the pre-mapping indexURL, or undefined where the track has none.
+ */
+function unmappedIndexUrl(config) {
+    return Object.hasOwn(config, UNMAPPED_URLS) ? config[UNMAPPED_URLS].indexURL : config.indexURL
+}
+
+export { setUrlMapper, getUrlMapper, mapUrl, mapTrackConfig, unmappedUrl, unmappedIndexUrl }

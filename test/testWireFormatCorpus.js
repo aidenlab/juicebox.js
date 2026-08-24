@@ -71,6 +71,27 @@ describe('wire-format corpus — shape', () => {
         }
     })
 
+    /**
+     * The `payload` field, and the layering it makes executable.
+     *
+     * `input` is a URL — a host's query string, which ADR-0011 decision 1 says
+     * no host owes another. `payload` is the session string, which every host
+     * reading `session=` owes every other, and is what a consumer that never
+     * sees a query string is handed. Kept honest by deriving one from the other
+     * here: a payload that has drifted from its own input is a fixture claiming
+     * two different things.
+     */
+    test('every session fixture carries the payload its input spells, and only those do', () => {
+        for (const fixture of wireFormatCorpus) {
+            if (fixture.format.startsWith('session')) {
+                expect(fixture.payload, fixture.id).toBe(
+                    /[?&]session=([^&]*)/.exec(fixture.input)[1])
+            } else {
+                expect(fixture.payload, fixture.id).toBeUndefined()
+            }
+        }
+    })
+
     test('every accepted format has at least one fixture', () => {
         const covered = new Set(wireFormatCorpus.map(f => f.format))
         expect([...FORMATS].filter(f => !covered.has(f))).toEqual([])

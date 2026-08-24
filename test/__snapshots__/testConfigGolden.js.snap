@@ -4717,6 +4717,46 @@ exports[`resolved config golden file — the query path, over the wire-format co
 }
 `;
 
+exports[`resolved config golden file — the query path, over the wire-format corpus > session-gzip-data-uri 1`] = `
+{
+  "atConstruction": [
+    {
+      "backgroundColor": {
+        "b": 255,
+        "g": 255,
+        "r": 255,
+      },
+      "name": "A",
+      "showChromosomeSelector": true,
+      "showHicContactMapLabel": true,
+      "showLocusGoto": true,
+      "synchable": true,
+      "url": "https://example.org/a.hic",
+    },
+  ],
+  "readBack": [
+    {
+      "config": {
+        "backgroundColor": {
+          "b": 255,
+          "g": 255,
+          "r": 255,
+        },
+        "name": "A",
+        "showChromosomeSelector": true,
+        "showHicContactMapLabel": true,
+        "showLocusGoto": true,
+        "synchable": true,
+        "url": "https://example.org/a.hic",
+      },
+      "figureMode": undefined,
+      "sameObjectAsInput": undefined,
+      "synchable": true,
+    },
+  ],
+}
+`;
+
 exports[`resolved config golden file — the query path, over the wire-format corpus > synth-juicebox-browser-carrying-selected-gene 1`] = `
 {
   "atConstruction": [

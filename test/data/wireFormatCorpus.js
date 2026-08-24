@@ -91,15 +91,18 @@
  * parsed object to `hic.restoreSession` — ADR-0006 fact 6's bypass, in
  * production, in a host app.
  *
- * So the `session=` wire format has **two independent decoders**, and they do
- * not accept the same set. Spacewalk's takes a `/gzip;base64` data URI that
- * juicebox's throws on (see `reject-session-gzip-data-uri`), while juicebox's
- * takes a `data:`-prefixed BGZip payload that Spacewalk's would mangle — its
- * `else` arm slices a fixed five characters, which is right for `blob:` and
- * wrong for `data:`. Both are reached by the same parameter name on the same
- * launch URL. ADR-0006's "one decoder" is one decoder *in this repo*; the
- * contract has a second reader, and collapsing the decoders here does not
- * change that. Worth its own ticket — it is a divergence, not a bug in either.
+ * So the `session=` wire format has **two independent decoders**, reached by the
+ * same parameter name on the same launch URL. ADR-0006's "one decoder" is one
+ * decoder *in this repo*; collapsing the decoders here does not change that.
+ * #518 tabulated where the two disagreed and ADR-0011 settled it: the **session
+ * string** is the cross-host contract, a host's **session parameter** is not, so
+ * what the two owe each other is the accepted payload set and nothing about
+ * query strings. One row of that table moved this file — `/gzip;base64`, which
+ * Spacewalk read and juicebox threw on, is now accepted here too (see
+ * `session-gzip-data-uri`). The other rows stayed divergences on purpose: the
+ * `data:`-prefixed BGZip payload that Spacewalk's fixed five-character `slice`
+ * mangles, and the `session=<url>` arm Spacewalk does not have, are stated
+ * boundaries rather than bugs.
  *
  * @see docs/url.md — the specification these fixtures are instances of
  * @see docs/adr/0006-session-wire-format-and-one-decoder.md
@@ -111,7 +114,9 @@
  *
  * `sessionBlob`     — `session=blob:` compressed session JSON. The only form
  *                     juicebox writes today (juicebox-web's share link).
- * `sessionData`     — `session=data:`, the same payload under the other prefix.
+ * `sessionData`     — `session=data:`, either the same BGZip payload under the
+ *                     other prefix, or a real `application/gzip;base64` data
+ *                     URI (ADR-0011 decision 2).
  * `sessionUrl`      — `session=<url>`, fetched then parsed; the fetched text is
  *                     itself either compressed-prefixed or plain JSON.
  * `query`           — the `hicUrl=&state=&tracks=` parameter form.
@@ -146,6 +151,20 @@ export const OUTCOMES = ['decodes', 'no-config', 'throws']
  * Fixtures for `extractConfig` (today `js/urlUtils.js`; `decodeSession` in
  * `js/sessionCodec.js` after the collapse). `input` is a whole href or query
  * string, exactly as the decoder receives it from `window.location.href`.
+ *
+ * A fixture carrying a `session=` parameter also carries `payload`: the session
+ * string alone, with the parameter name and any neighbouring parameters off.
+ * The two fields are ADR-0011 decision 1 made executable — `input` is a *URL*,
+ * which no host owes another, and `payload` is the *session string*, which every
+ * host that reads `session=` owes every other. A consumer that never sees a
+ * query string — Spacewalk's `uncompressSessionURL`, which is handed a value —
+ * runs the `payload` rows, and asserts **outcome only**: decodes to this, or
+ * rejects. Not error type; that would export this repo's error taxonomy into an
+ * app with its own.
+ *
+ * The `payload` rows are not all portable, and the corpus does not claim they
+ * are. `sessionUrl` payloads are a juicebox-only spelling (ADR-0011 decision 5),
+ * and a consumer without a fetch arm is expected to *reject* them.
  */
 export const wireFormatCorpus = [
 
@@ -161,7 +180,20 @@ export const wireFormatCorpus = [
         source: 'test/test_urls.md and test/testURL.js — an aidenlab.org share link, two browsers, three tracks each',
         outcome: 'decodes',
         input: 'http://aidenlab.org/juicebox/?session=blob:1ZPPbtswDMbfxacNECRR_51b0Qwb1tPS24bAUGylMWpbmaS1w4q8e.UYS5d06C7JYRfC_kRTP9Ifn4pV8I_RhVjMvj0VP0JXzIpNSts4IyRybHv7yw_2MeLa92TT1uu2czE_RPedDLc_N5._fmrmiy_0_uN8QYBhDhg0uZpfXe9DxSnOXxWoGGzvcu1jMSabRpUhhhQCUyoMUjHJNQetmURQgsJKajAgGdfaIMBSMM4MPUR0s8ilat_5cFvbbqwHQmAGhmsBwuQkLRCTElFER5KHNqfo0pRQCiryJUbpMh.kYOv7CwyiHZILuemq9kOydaoa39t2iERSSqtV58dbDxM6FvdtZTXcrd6NLezbeF_s0HkZq877bSS9C3eumV7wyjVb98L117M_8SjiauS7AN1DrD4Mjb8mTbteu.CG1NpuQoFTzrdSjnHHWXKVcZfnBJ5A9_GV.0_Uy9mfYa0FL0VeAloa_tr.yoCRzAAVl7T_1O8ZvAUm05_dW9Ov.h_W840FYP9egJeUk5n.xl3ulrtn',
+        payload: 'blob:1ZPPbtswDMbfxacNECRR_51b0Qwb1tPS24bAUGylMWpbmaS1w4q8e.UYS5d06C7JYRfC_kRTP9Ifn4pV8I_RhVjMvj0VP0JXzIpNSts4IyRybHv7yw_2MeLa92TT1uu2czE_RPedDLc_N5._fmrmiy_0_uN8QYBhDhg0uZpfXe9DxSnOXxWoGGzvcu1jMSabRpUhhhQCUyoMUjHJNQetmURQgsJKajAgGdfaIMBSMM4MPUR0s8ilat_5cFvbbqwHQmAGhmsBwuQkLRCTElFER5KHNqfo0pRQCiryJUbpMh.kYOv7CwyiHZILuemq9kOydaoa39t2iERSSqtV58dbDxM6FvdtZTXcrd6NLezbeF_s0HkZq877bSS9C3eumV7wyjVb98L117M_8SjiauS7AN1DrD4Mjb8mTbteu.CG1NpuQoFTzrdSjnHHWXKVcZfnBJ5A9_GV.0_Uy9mfYa0FL0VeAloa_tr.yoCRzAAVl7T_1O8ZvAUm05_dW9Ov.h_W840FYP9egJeUk5n.xl3ulrtn',
         note: 'The one format juicebox still writes. If exactly one fixture in this file has to keep working, it is this one.',
+    },
+
+    {
+        id: 'session-gzip-data-uri',
+        format: 'sessionData',
+        provenance: 'harvested',
+        role: 'load-bearing',
+        source: 'Spacewalk src/sessionURLCodec.js — the `/gzip;base64` arm of uncompressSessionURL',
+        outcome: 'decodes',
+        input: '?session=data:application/gzip;base64,H4sIAAAAAAAAE6tWSirKLy9OLSpWsoquViotylGyUsooKSkottLXT61IzC3ISdXLL0rXT9TLyExW0lHKS8xNVbJSclSqja0FAMrS4c89AAAA',
+        payload: 'data:application/gzip;base64,H4sIAAAAAAAAE6tWSirKLy9OLSpWsoquViotylGyUsooKSkottLXT61IzC3ISdXLL0rXT9TLyExW0lHKS8xNVbJSclSqja0FAMrS4c89AAAA',
+        note: 'A real data URI carrying gzipped session JSON, and **the form this corpus argued into the accepted set**. It records why the form was admitted rather than dropped. Until #518 it threw here and decoded in Spacewalk, under the same `?session=` parameter name: juicebox tested only the five-character `data:` prefix and handed the remainder to BGZip.uncompressString, which is not what a data URI holds. Harvested as a *form Spacewalk accepts*, not as a string seen in the wild; Spacewalk documents it as one of two "historical forms", so something once wrote it — and "unwritten by us" is not "unwritten by the Java desktop app", which is ADR-0006 decision 1\'s own reason for freezing the contract as the *accepted* set. So the divergence closed towards acceptance: `decodeSessionString` now routes `/gzip;base64` to BGZip.decodeDataURI, and the payload here decodes to {"browsers":[{"url":"https://example.org/a.hic","name":"A"}]}. Still the sharpest single piece of evidence that the wire format has two readers — see the harvest-scope note at the top of this file. ADR-0011 is the comment ADR-0006 requires for the deliberate snapshot movement that came with it.',
     },
 
     {
@@ -312,6 +344,7 @@ export const wireFormatCorpus = [
         source: 'urlUtils.js:88 — the `data:` half of the `blob:|data:` prefix test',
         outcome: 'decodes',
         input: '?session=data:HZDBboMwEER_pdqzDQ41EPmcROVQIjXHKofFgEABr2WMSEH8e51cRqOn1cxoN6gcLVPjJlC_G8xuAAWd93ZScSxrw8k2htfokdu5GnodTZ8RjriSwWWKNI1xS7NrHRnPl6ayjup4Ccjb2cfHVmQyzwXPhDhy2eaSV61GnmTHWmKS1LlMY3kqL8X3z_WclTLqeg0MDI5N2PF1uejs42RNUQQ4efSBbqA7dwB1YC.TvM1KNIKSDJ6gBIO_t9r.2Qy3fm3eJ4bciEO_ou_JhOzyWp5hDxk0kLtpHF6FByFYkqZMMBEKvUP9eP3lvt_3fw--',
+        payload: 'data:HZDBboMwEER_pdqzDQ41EPmcROVQIjXHKofFgEABr2WMSEH8e51cRqOn1cxoN6gcLVPjJlC_G8xuAAWd93ZScSxrw8k2htfokdu5GnodTZ8RjriSwWWKNI1xS7NrHRnPl6ayjup4Ccjb2cfHVmQyzwXPhDhy2eaSV61GnmTHWmKS1LlMY3kqL8X3z_WclTLqeg0MDI5N2PF1uejs42RNUQQ4efSBbqA7dwB1YC.TvM1KNIKSDJ6gBIO_t9r.2Qy3fm3eJ4bciEO_ou_JhOzyWp5hDxk0kLtpHF6FByFYkqZMMBEKvUP9eP3lvt_3fw--',
         note: 'Compressed from `synth-session-json-plain` below. No harvested example exists: juicebox has only ever written `blob:`, and both prefixes are stripped by the same `substr(5)`, so the two are indistinguishable after the first five characters. Kept anyway — the branch is live and something else may have written it.',
     },
 
@@ -334,6 +367,7 @@ export const wireFormatCorpus = [
         source: 'urlUtils.js:108,115 — loadString, then the plain-JSON arm',
         outcome: 'decodes',
         input: '?session=https://example.org/fixtures/session.json',
+        payload: 'https://example.org/fixtures/session.json',
         loaderResponse: '{"browsers":[{"url":"https://example.org/a.hic","name":"A","state":{"chr1":1,"chr2":1,"zoom":4,"x":0,"y":0,"pixelSize":1,"normalization":"NONE"}}]}',
         note: 'Drive this with the injected loader of ADR-0006 decision 10; until it exists, stub igvxhr.loadString to return `loaderResponse`. The session value is a URL, so nothing distinguishes it from a relative file path — juicebox-web writes `?session=${relativePath}` and lands in this same branch.',
     },
@@ -346,6 +380,7 @@ export const wireFormatCorpus = [
         source: 'urlUtils.js:111 — the fetched text is itself compressed',
         outcome: 'decodes',
         input: '?session=https://example.org/fixtures/session.blob',
+        payload: 'https://example.org/fixtures/session.blob',
         loaderResponse: 'blob:HZDBboMwEER_pdqzDQ41EPmcROVQIjXHKofFgEABr2WMSEH8e51cRqOn1cxoN6gcLVPjJlC_G8xuAAWd93ZScSxrw8k2htfokdu5GnodTZ8RjriSwWWKNI1xS7NrHRnPl6ayjup4Ccjb2cfHVmQyzwXPhDhy2eaSV61GnmTHWmKS1LlMY3kqL8X3z_WclTLqeg0MDI5N2PF1uejs42RNUQQ4efSBbqA7dwB1YC.TvM1KNIKSDJ6gBIO_t9r.2Qy3fm3eJ4bciEO_ou_JhOzyWp5hDxk0kLtpHF6FByFYkqZMMBEKvUP9eP3lvt_3fw--',
         note: 'A saved session file whose contents are the share link\'s payload rather than readable JSON. The prefix test is repeated inside the fetch branch, which is why this is a separate fixture from synth-session-data-prefix.',
     },
@@ -595,6 +630,7 @@ export const wireFormatCorpus = [
         source: 'urlUtils.js:174-180 — the #481 selectedGene reconciliation',
         outcome: 'decodes',
         input: '?session=data:HZDBboMwEER_pdqzDQ41EPmcROVQIjXHKofFgEABr2WMSEH8e51cRqOn1cxoN6gcLVPjJlC_G8xuAAWd93ZScSxrw8k2htfokdu5GnodTZ8RjriSwWWKNI1xS7NrHRnPl6ayjup4Ccjb2cfHVmQyzwXPhDhy2eaSV61GnmTHWmKS1LlMY3kqL8X3z_WclTLqeg0MDI5N2PF1uejs42RNUQQ4efSBbqA7dwB1YC.TvM1KNIKSDJ6gBIO_t9r.2Qy3fm3eJ4bciEO_ou_JhOzyWp5hDxk0kLtpHF6FByFYkqZMMBEKvUP9eP3lvt_3fw--&selectedGene=MYC',
+        payload: 'data:HZDBboMwEER_pdqzDQ41EPmcROVQIjXHKofFgEABr2WMSEH8e51cRqOn1cxoN6gcLVPjJlC_G8xuAAWd93ZScSxrw8k2htfokdu5GnodTZ8RjriSwWWKNI1xS7NrHRnPl6ayjup4Ccjb2cfHVmQyzwXPhDhy2eaSV61GnmTHWmKS1LlMY3kqL8X3z_WclTLqeg0MDI5N2PF1uejs42RNUQQ4efSBbqA7dwB1YC.TvM1KNIKSDJ6gBIO_t9r.2Qy3fm3eJ4bciEO_ou_JhOzyWp5hDxk0kLtpHF6FByFYkqZMMBEKvUP9eP3lvt_3fw--',
         note: 'A gene beside a session that does not name one: the query value rides onto the session config rather than being dropped. One of the two paths that used to reach restoreSession through a page-scoped global.',
     },
 
@@ -625,17 +661,6 @@ export const wireFormatCorpus = [
     // ---------------------------------------------------------------------
 
     {
-        id: 'reject-session-gzip-data-uri',
-        format: 'sessionData',
-        provenance: 'harvested',
-        role: 'load-bearing',
-        source: 'Spacewalk src/sessionURLCodec.js — the `/gzip;base64` arm of uncompressSessionURL',
-        outcome: 'throws',
-        input: '?session=data:application/gzip;base64,H4sIAAAAAAAAE6tWSirKLy9OLSpWsoquViotylGyUsooKSkottLXT61IzC3ISdXLL0rXT9TLyExW0lHKS8xNVbJSclSqja0FAMrS4c89AAAA',
-        note: 'A real data URI carrying gzipped session JSON. **Spacewalk decodes this and juicebox throws on it**, under the same `?session=` parameter name — juicebox tests only the five-character `data:` prefix and hands the remainder to BGZip.uncompressString, which is not what a data URI holds. Harvested as a *form Spacewalk accepts*, not as a string seen in the wild; Spacewalk documents it as one of two "historical forms", so something once wrote it. The payload here decodes to {"browsers":[{"url":"https://example.org/a.hic","name":"A"}]}. This is the sharpest single piece of evidence that the wire format has two readers — see the harvest-scope note at the top of this file.',
-    },
-
-    {
         id: 'reject-session-url-unreachable',
         format: 'sessionUrl',
         provenance: 'synthesized',
@@ -643,6 +668,7 @@ export const wireFormatCorpus = [
         source: 'urlUtils.js:121-124 — the loadString catch',
         outcome: 'throws',
         input: '?session=https://example.org/fixtures/does-not-exist.json',
+        payload: 'https://example.org/fixtures/does-not-exist.json',
         loaderResponse: null,
         note: 'A `loaderResponse` of null means the loader rejects. This is the failure a stale `?session=` link produces. It and reject-session-url-invalid-json were the two nested catches, and the nesting is why a document that fetched fine and then would not parse was reported as if the fetch had failed; #521 unnested them, so the two now report the same shape with different *reasons* — "Session document could not be fetched" here, "Session is not valid JSON" there.',
     },
@@ -655,6 +681,7 @@ export const wireFormatCorpus = [
         source: 'urlUtils.js:117-120 — the inner parse catch',
         outcome: 'throws',
         input: '?session=https://example.org/fixtures/not-json.txt',
+        payload: 'https://example.org/fixtures/not-json.txt',
         loaderResponse: '<!doctype html><title>404</title>',
         note: 'The loader succeeds and returns something that is neither compressed nor JSON — in practice a login page or an error page served with a 200. Reported as a parse failure naming a session URL as the source (#521); it used to arrive double-wrapped inside a load failure.',
     },
@@ -667,6 +694,7 @@ export const wireFormatCorpus = [
         source: 'urlUtils.js:89 — BGZip.uncompressString on a payload that is not compressed',
         outcome: 'throws',
         input: '?session=blob:not-actually-compressed',
+        payload: 'blob:not-actually-compressed',
         note: 'A truncated share link lands here. It used to throw out of the decompressor uncaught and unwrapped — the `blob:`/`data:` arm had no try/catch, unlike the file and URL arms, so what escaped `extractConfig` was a bare string with no `message` at all. #521 gave it the one shape the other arms report in.',
     },
 

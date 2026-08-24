@@ -96,9 +96,12 @@ import {parseColorScale} from './colorScaleParser.js'
  * The shapes a session string can arrive in.
  *
  * `BLOB` and `DATA_URI` are told apart because the sniff is the one place that
- * can still see the difference — they are handled identically downstream (both
- * prefixes are five characters and both carry the same compressed payload), and
- * naming them separately keeps that an observation rather than a coincidence.
+ * can still see the difference — both prefixes are five characters and both
+ * usually carry the same compressed payload, and naming them separately keeps
+ * that an observation rather than a coincidence. It stopped being *only* an
+ * observation with ADR-0011 decision 2: `DATA_URI` now covers a second body,
+ * `application/gzip;base64,…`, which {@link decodeSessionString} routes
+ * elsewhere. `BLOB` covers one body and always has.
  *
  * There is no `STATE_TOKEN` member. A bare state token (`3,3,6,…`) is a wire
  * format in its own right, but it never arrives as a *session* string — it
@@ -142,6 +145,21 @@ const COMPRESSED_PREFIXES = {
     'blob:': SessionFormat.BLOB,
     'data:': SessionFormat.DATA_URI,
 }
+
+/**
+ * The marker that tells a *real* data URI from juicebox's `data:`-prefixed BGZip
+ * payload — `data:application/gzip;base64,…`, which carries gzipped bytes where
+ * the other carries `BGZip.compressString` output.
+ *
+ * Both spellings start `data:`, so the five-character prefix cannot tell them
+ * apart and the body has to be looked at. Matching the media-type fragment
+ * rather than the whole prefix is what Spacewalk's decoder does
+ * (`src/sessionURLCodec.js`), and this test was written to accept exactly what
+ * that one accepts — the point of admitting the form at all.
+ *
+ * @see docs/adr/0011-session-string-is-the-cross-host-contract.md decision 2
+ */
+const GZIP_DATA_URI_MARKER = '/gzip;base64'
 
 /**
  * Raised for every input this module refuses.
@@ -213,6 +231,23 @@ export function isCompressedSession(text) {
 }
 
 /**
+ * Un-gzip a `data:application/gzip;base64,…` session string to its JSON text.
+ *
+ * `BGZip.decodeDataURI` hands back the inflated **bytes**, so the last step is
+ * ours. They are decoded as UTF-8 rather than byte-by-byte through
+ * `String.fromCharCode`, which is what Spacewalk does: the two agree on every
+ * ASCII payload and this one is right for the rest — a session naming a sample
+ * with an accent in it survives the round trip.
+ *
+ * @param {string} text - the whole session string, `data:` prefix included
+ * @returns {string} the session JSON
+ */
+function decodeGzipDataURI(text) {
+    const inflated = BGZip.decodeDataURI(text)
+    return typeof inflated === 'string' ? inflated : new TextDecoder().decode(inflated)
+}
+
+/**
  * Decode a session string to the session config it encodes.
  *
  * The whole ladder: sniff, decompress if compressed, parse. Every failure —
@@ -236,6 +271,20 @@ export function decodeSessionString(text) {
     let json
     if (format === SessionFormat.JSON) {
         json = payload
+    } else if (format === SessionFormat.DATA_URI && payload.includes(GZIP_DATA_URI_MARKER)) {
+        // A real data URI, and the one arm that reads the *whole* string rather
+        // than the sniffed payload: `decodeDataURI` parses the `data:` prefix
+        // itself. Ahead of the raw-payload path because both spellings sniff as
+        // DATA_URI and only this one holds gzipped bytes.
+        //
+        // juicebox has never written this form; it is accepted because
+        // Spacewalk's decoder reads it under the same parameter name and the
+        // sent set is not enumerable from here (ADR-0011 decision 2).
+        try {
+            json = decodeGzipDataURI(text)
+        } catch (e) {
+            throw new SessionDecodeError(`Session is not a readable ${format}`, e)
+        }
     } else {
         try {
             json = BGZip.uncompressString(payload)

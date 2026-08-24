@@ -1,6 +1,6 @@
 # Juicebox.js — Punch List
 
-**As of 2026-08-23. Candidate 6 is done — all eight tickets (#510, #557–#563) are in, `StateManager` is deleted and restore is a translator. Eight of eleven candidates have landed and nothing queues behind this one, so the next move is picking one of the three unpicked candidates. Candidate 6 owes two release notes.**
+**As of 2026-08-24. The architecture review is closed and juicebox.js is released as `v4.0.0`.** Eight of eleven candidates landed; the three nobody picked — 7, 10 and 11 — were **descoped and carried out** of [#466](https://github.com/aidenlab/juicebox.js/issues/466) as [#580](https://github.com/aidenlab/juicebox.js/issues/580), [#581](https://github.com/aidenlab/juicebox.js/issues/581) and [#582](https://github.com/aidenlab/juicebox.js/issues/582), each `ready-for-human`. All five owed release notes shipped. **There is no tracking issue any more** — the three successors stand on their own, and the next move is picking one of them or not.
 
 > **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
 > agree with it. Where the durable facts live:
@@ -10,7 +10,7 @@
 > | Why was this decided? | `docs/adr/` — append-only, never revised |
 > | What does this word mean? | `CONTEXT.md` |
 > | What do I do next on this ticket? | the GitHub issue |
-> | Is the candidate done? | the table in [#466](https://github.com/aidenlab/juicebox.js/issues/466), updated at candidate boundaries |
+> | Is the candidate done? | [#466](https://github.com/aidenlab/juicebox.js/issues/466) — **closed 2026-08-24**, and now history rather than status. Live state for the three survivors is #580, #581, #582 |
 > | What is unblocked right now? | **query GitHub**, not this file — blocking edges are native |
 > | Which skill do I reach for? | `docs/agents/triage-labels.md` |
 > | What did the review originally say? | `docs/architecture-review.html` — **frozen**, cards are not edited |
@@ -237,32 +237,38 @@ silently is decision 2 — the same "coerce, never reject" rule the normalize st
 
 ---
 
-# NEXT — the three unpicked candidates
+# NEXT — the three that were carried out
 
-Nothing queued behind candidate 6, and it has landed: **the choice is open again.** Each card in
-`docs/architecture-review.html` carries a Consumer impact block — read it before filing anything.
+**#466 is closed and these three are no longer candidates; they are three ordinary issues.** They
+were descoped on 24 August because #466's own rule — *no release until every candidate is done* —
+had stopped gating the release and started blocking it: eight landed candidates and five owed
+release notes sat unreleased on `master` behind three candidates nobody had picked in a month.
 
-| Candidate | Status | What is known |
+**None of the three was found wrong. All three were found unpicked** — which is why the cards in
+`docs/architecture-review.html` are unedited, and each carries an amber *carried out* box rather
+than a green Outcome box.
+
+| Candidate | Issue | The decision it is waiting on |
 |---|---|---|
-| **11 · Give the track tile one owner** | ⚠️ breaking | the `TrackXYPairLoad` payload *is* the track pair, and juicebox-web reads its shape |
-| **7 · Move the gesture state machines behind InteractionHandler** | largest remaining | must keep both crosshair paths firing for Spacewalk. ~300 lines of closures with no test surface. **The one candidate that may want `/wayfinder`** rather than `/to-tickets` — its shape is genuinely unknown, where candidate 4's was settled in a grilling session before any ticket existed |
-| **10 · One dataset-load path** — *the live-map seam* | spans three repos | three named load methods must survive |
+| **7 · gesture state machines behind `InteractionHandler`** | [#580](https://github.com/aidenlab/juicebox.js/issues/580) | Whether its shape can be planned at all. ~300 lines of closures with **no test surface to read the behaviour off** — the first candidate where `/grill-with-docs` may not be enough and `/wayfinder` is the honest tool |
+| **10 · one dataset-load path** — *the live-map seam* | [#581](https://github.com/aidenlab/juicebox.js/issues/581) | **Whether the live-map disguise was the right call.** Not a deduplication question, and the answer spans three repos — hic-straw (not in the review at all), Spacewalk, and the thin adapter here |
+| **11 · give the track tile one owner** | [#582](https://github.com/aidenlab/juicebox.js/issues/582) | **Whether to split it.** Cache ownership is safe and fixes a real stale-tile bug; the ordering half reaches into published `TrackXYPairLoad` payload shape. Taking only the safe half may be the whole answer, and then it is a bug fix, not a candidate |
 
-**The pattern to repeat, now proven six times: ADR → tickets → Outcome box on the card.** The ADR
-is where the breaking question gets answered before code moves. Candidate 9 added the corollary: a
-candidate scoped as needing no ADR can still owe one, and it comes due on the last ticket, when the
-readers finally have to agree.
+Each issue carries its card's Consumer impact block and what scoping already knows, so none of them
+has to be re-derived from the HTML.
 
-**Skill:** `/to-tickets` once the shape is settled, `/grilling` first when it is not. Full routing
-rules, and the reason to file tickets *before* the blocker clears, are in
+**The pattern, proven eight times: ADR → gate first → tickets → Outcome box on the card.** Candidate
+9 added the corollary — a candidate scoped as needing no ADR can still owe one, and it comes due on
+the last ticket, when the readers finally have to agree. **ADR-0010 is the next free number** (0007
+was reserved for #477 and never written; the gap in `docs/adr/` is deliberate).
+
+**Skill:** `/grill-with-docs` on any of the three — all are `ready-for-human`, meaning a decision
+comes before code. `/to-tickets` only once the shape is settled. Routing rules are in
 `docs/agents/triage-labels.md`.
 
-**ADR numbering:** 0005 → candidate 8, 0006 → candidate 5, 0008 → candidate 9, 0009 → candidate 6.
-**0007 was reserved for #477 and never written** — #477 landed without one — so the gap in
-`docs/adr/` is deliberate, not a missing file. **ADR-0010 is next.**
-
-When a candidate lands: tick it in [#466](https://github.com/aidenlab/juicebox.js/issues/466) and
-add an Outcome box to its card. That is the only time either file is touched.
+**Rendering, gestures and dataset loading are still verified mostly by hand-running `dev/`,** so all
+three face the gate problem the earlier candidates did: what pins today's behaviour before any of it
+moves is the *first* question, not the last.
 
 ---
 
@@ -304,25 +310,47 @@ Five remain: **#518**, **#519**, **#521**, **#525**, **#528** (now answered by A
 
 ---
 
-# Phase 4 — Release
+# Phase 4 — Release: DONE, `v4.0.0`, 24 August 2026
 
-#466 sets the rule: **no release until every candidate is done.** Both consumers pin `v3.6.2`, so a
-moving `master` costs them nothing until then.
+#466 set the rule *no release until every candidate is done*. **That rule was retired rather than
+satisfied** — see *NEXT* above. Both consumers were repointed off `v3.6.2`.
 
-Before releasing:
+**Major, not minor.** `?juiceboxURL=` links are removed outright, a disposed browser throws, and a
+saved view violating an invariant now opens clamped. Neither known host breaks — but a removed
+public URL form is a major under semver, and ADR-0003's whole finding is that the browser-instance
+surface is public in practice, so the number is the signal a third-party embedder gets.
 
-1. **Re-measure the consumer surface.** `docs/adr/0003-public-api-contract.md` goes stale the moment
-   either app changes. It has already under-counted once, and candidate 8 added two members
-   (`browser.dispose`, `registry.dispose`). #474 proposes making that re-runnable.
-2. **Run #466's pre-release consumer verification checklist.** The registry click-through it carried
-   over from candidate 4 is already checked off (#549); what remains is the 20-member consumer
-   surface and the release notes below.
-3. **Bump / tag / `gh release create` / repoint both consumers.**
+## What the pre-release re-measurement found
 
-**The release notes owed — five, from candidates 8, 5, 9 and 6:**
+**Every member either consumer uses is declared in `js/publicApi.js`. Zero undeclared members in
+use** — across 160 commits, eight candidates, one deleted module and one removed wire format.
+
+The drift was entirely in ADR-0003's hand-counted tables, and **it ran in both directions**, which
+is the part worth carrying:
+
+- juicebox-web has **dropped `browser.eventBus` entirely** (zero call sites) for
+  `hic.EventBus.globalBus`, and **gained** `browser.coordinator.addCallback('onMapLoaded')` and a
+  read of `hic.getCurrentBrowser().config`.
+- Spacewalk has **dropped `browser.config`** and **gained** `browser.dataset` (for `dataset.isLive`)
+  and `browser.loadHicFile`.
+
+`browser.dispose()` and `registry.dispose()` have zero call sites in either consumer — candidate 8's
+claim that neither known host can reach `DisposedBrowserError`, confirmed by measurement rather than
+asserted.
+
+**The measurement trap, because it will bite again:** Spacewalk embeds **igv as well as juicebox**,
+and both are reached through a variable named `browser`. A naive
+`grep -o 'browser\.[A-Za-z_]*' src/` returns ten members that are not ours — they are
+`igvPanel.browser`. Scope to `src/juicebox/` and check call sites. This is the *inverse* of the
+error that caused this whole review: there, grepping `js/` under-counted because the surface was
+invisible from inside the repo; here, grepping a consumer over-counts because two libraries share a
+noun. Same mistake both times — trusting a name match instead of resolving what the name refers to.
+**#474 is still the fix**, and the full note is appended to `docs/adr/0003-public-api-contract.md`.
+
+## The five release notes that shipped
 
 1. **A disposed browser now throws `DisposedBrowserError`** rather than silently no-op'ing
-   (candidate 8). Neither known host can reach it; a third-party embedder might.
+   (candidate 8). Measured unreachable by both known hosts; a third-party embedder might hit it.
 2. **`?juiceboxURL=` links no longer work** (candidate 5, #506). The one deliberate break in the
    wire format, and **not** the dead path ADR-0006 assumed: measured 9 August, bit.ly still expanded
    these and the session still decoded. How many exist was deliberately not measured beyond our own
@@ -357,7 +385,8 @@ do: real canvas output, real gestures, pixel probes. Candidate 6 is a fresh data
 had to *state* a viewport because the harness measures zero.
 
 **#474 is the drift problem:** the consumer surface is hand-measured prose in four places and has
-already gone stale once. Phase 4 step 1 is that measurement.
+now gone stale **twice** — the v4.0.0 re-measurement found drift in both directions, and had to be
+done by hand again to find it. See *Phase 4* above.
 
 ---
 

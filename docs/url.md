@@ -204,15 +204,11 @@ of them, and none supersedes another. What carries the session's version is the
 | `data:application/gzip;base64,<payload>` | a real data URI: gzipped session JSON, base64-encoded. Not written by juicebox; accepted because it is read elsewhere under the same parameter name ([ADR-0011](adr/0011-session-string-is-the-cross-host-contract.md) decision 2). |
 | `<URL>` | anything else: a URL or local path, fetched, whose contents are then themselves one of the three spellings above or plain JSON. |
 
-The same four spellings are what a session **string** means anywhere it appears,
-which is not the same as what a `session=` **parameter** means anywhere it
-appears. Other apps embedding juicebox read a `session=` parameter of their own,
-and are not obliged to read a query string the way this one does — a juicebox
-link is not portable into another host's URL, and never was. The payload set is
-the contract; the URL is not.
-
-**The URL spelling is juicebox-only.** A host reading session strings for itself
-is expected to refuse it rather than reproduce the fetch (ADR-0011 decision 5).
+**The URL spelling is juicebox-only.** Other apps embedding juicebox read a
+`session=` parameter of their own, and owe each other these payloads rather than
+each other's query strings — a host reading session strings for itself is
+expected to refuse a URL rather than reproduce the fetch (ADR-0011 decisions 1
+and 5).
 
 ### Version
 

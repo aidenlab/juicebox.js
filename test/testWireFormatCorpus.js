@@ -84,8 +84,12 @@ describe('wire-format corpus — shape', () => {
     test('every session fixture carries the payload its input spells, and only those do', () => {
         for (const fixture of wireFormatCorpus) {
             if (fixture.format.startsWith('session')) {
-                expect(fixture.payload, fixture.id).toBe(
-                    /[?&]session=([^&]*)/.exec(fixture.input)[1])
+                // Destructured through `?? []` so a fixture whose input carries
+                // no `session=` at all fails as the assertion this test is —
+                // "the payload is not what the input spells" — rather than as a
+                // TypeError on a null match.
+                const [, spelled] = /[?&]session=([^&]*)/.exec(fixture.input) ?? []
+                expect(fixture.payload, fixture.id).toBe(spelled)
             } else {
                 expect(fixture.payload, fixture.id).toBeUndefined()
             }

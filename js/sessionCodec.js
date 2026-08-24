@@ -239,12 +239,15 @@ export function isCompressedSession(text) {
  * ASCII payload and this one is right for the rest — a session naming a sample
  * with an accent in it survives the round trip.
  *
+ * Bytes and not a string, always: `decodeDataURI` returns a *string* from its
+ * other branch, the one for a data URI that is not base64, and
+ * {@link GZIP_DATA_URI_MARKER} is what keeps this call off it.
+ *
  * @param {string} text - the whole session string, `data:` prefix included
  * @returns {string} the session JSON
  */
 function decodeGzipDataURI(text) {
-    const inflated = BGZip.decodeDataURI(text)
-    return typeof inflated === 'string' ? inflated : new TextDecoder().decode(inflated)
+    return new TextDecoder().decode(BGZip.decodeDataURI(text))
 }
 
 /**

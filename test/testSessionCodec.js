@@ -16,6 +16,7 @@
  */
 import {describe, expect, test} from 'vitest'
 import {BGZip} from 'igv-utils'
+import {gzipSync} from 'zlib'
 import {
     SessionDecodeError,
     SessionFormat,
@@ -138,6 +139,23 @@ describe('decodeSessionString', () => {
     test('a gzip data URI decodes to the session it carries', () => {
         expect(decodeSessionString(GZIP_DATA_URI))
             .toEqual({browsers: [{url: 'https://example.org/a.hic', name: 'A'}]})
+    })
+
+    /**
+     * The one behavioural difference between this decoder's gzip arm and the
+     * one it was written to match.
+     *
+     * Spacewalk walks the inflated bytes through `String.fromCharCode`; this one
+     * decodes them as UTF-8. The two agree on every ASCII payload — including
+     * the corpus fixture above, which is why that one proves nothing here — and
+     * diverge on a session naming a sample with an accent in it, where
+     * byte-by-byte gives mojibake. Built with `gzip` rather than pasted, since
+     * a literal would pin the suite to one compressor build.
+     */
+    test('a non-ASCII session survives the gzip data URI', () => {
+        const session = {browsers: [{url: 'https://example.org/a.hic', name: 'Müller — café'}]}
+        const uri = `data:application/gzip;base64,${gzipSync(Buffer.from(JSON.stringify(session), 'utf8')).toString('base64')}`
+        expect(decodeSessionString(uri)).toEqual(session)
     })
 
     /**

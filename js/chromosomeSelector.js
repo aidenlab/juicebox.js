@@ -65,8 +65,14 @@ class ChromosomeSelector {
     }
 
     respondToDataLoadWithDataset(dataset) {
-        const { chromosomes } = dataset;
-        const options = chromosomes.map(({ name }, index) => `<option value="${index}">${name}</option>`).join('');
+        // `All` is dropped for a single-chromosome assembly: it and the sole
+        // scaffold describe the same view, and offering both is the duplicate
+        // #236 asked to be rid of. The entry survives as data and as wire
+        // format -- what goes is the vocabulary. ADR-0010.
+        const chromosomes = dataset.isSingleChromosome()
+            ? dataset.chromosomes.filter(chromosome => !dataset.isWholeGenome(chromosome.index))
+            : dataset.chromosomes;
+        const options = chromosomes.map(({ name, index }) => `<option value="${index}">${name}</option>`).join('');
         this.xAxisSelector.innerHTML = options;
         this.yAxisSelector.innerHTML = options;
 

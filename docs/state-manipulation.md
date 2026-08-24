@@ -12,7 +12,7 @@ This document catalogs every way the browser's `State` can be mutated. It exists
 | `chr2` | Chromosome index, y axis |
 | `x` | Bin position, x axis |
 | `y` | Bin position, y axis |
-| `zoom` | Resolution index (into `dataset.bpResolutions`) |
+| `zoom` | Resolution index (into `dataset.bpResolutions`), or the **sentinel** `-1` — see below |
 | `pixelSize` | Pixels per bin (display scaling) |
 | `normalization` | Normalization vector ID (`'NONE'`, `'KR'`, etc.) |
 
@@ -39,6 +39,30 @@ async state.setView(chr1, chr2, x, y, zoom, pixelSize,
 - Adjusts `pixelSize` through the standard floor-and-cap pipeline (`Math.max(1, x)` → floor by `minPixelSize` → `Math.min(MAX_PIXEL_SIZE, x)`).
 - Mutates the canonical fields in a fixed order.
 - Optionally clamps `x`/`y` to chromosome bounds.
+- Redirects `All` to the sole scaffold on a **single-chromosome assembly**, landing
+  the view on the sentinel zoom rung. See below.
+
+### The sentinel zoom rung
+
+On a dataset whose chromosome table is the `All` entry plus exactly one real
+chromosome, `All` is not a chromosome the view can be at. `setView` rewrites such
+a view to `{chr1: sole, chr2: sole, zoom: -1}` — `-1` being the **sentinel**, a
+rung juicebox synthesises from the whole-genome matrix rather than reading off
+the file's resolution ladder. `x`, `y` and `pixelSize` carry over untouched,
+because the whole-genome bin and the sentinel bin are the same bin.
+
+Two consequences worth knowing before touching this code:
+
+- **`zoom` is not always an index into `bpResolutions`.** Read bin sizes through
+  `dataset.binSizeForZoom(zoom)` or `browser.binSizeForZoom(zoom)`, and resolve
+  matrix coordinates through `dataset.matrixViewForZoom(chr1, chr2, zoom)`.
+- **The sentinel never crosses the process boundary.** `State.toJSON` writes it
+  out as `{chr1: 0, chr2: 0, zoom: 0}`, the whole-genome view — which is the same
+  picture for this assembly, and is redirected back on the way in.
+
+ADR-0010 has the full reasoning, including why the two whole-genome tests
+(`dataset.isWholeGenome(chrIndex)` and `0 === zd.chr1.index`) are divergent by
+design at this rung.
 
 ### `setView` options
 
@@ -69,7 +93,7 @@ The translators are thin wrappers (typically ~10–20 lines each) that convert d
 |---|---|---|
 | `updateWithLoci(chr1Name, bpX, bpXMax, chr2Name, bpY, bpYMax, browser, width, height)` | BP loci → bin positions, target zoom from `bpPerPixelTarget` | Locus goto, gene search, programmatic `browser.goto()`, sweep zoom |
 | `panShift(dx, dy, browser, dataset, viewDimensions)` | Screen pixel deltas → bin position deltas | Drag pan |
-| `panWithZoom(zoom, pixelSize, anchorPx, anchorPy, binSize, browser, dataset, viewDimensions, bpResolutions)` | Anchor pixel + new zoom/pixelSize → anchor-preserving bin position | Wheel zoom, pinch zoom |
+| `panWithZoom(zoom, pixelSize, anchorPx, anchorPy, binSize, browser, dataset, viewDimensions)` | Anchor pixel + new zoom/pixelSize → anchor-preserving bin position | Wheel zoom, pinch zoom |
 | `setWithZoom(zoom, viewDimensions, browser, dataset)` | Target zoom only → view-center-preserving bin position; applies `useDefaultMin: true` | Resolution selector, zoom-step from `zoomAndCenter` |
 | `sync(targetState, browser, genome, dataset)` | Peer-browser state (different binSize/dataset) → bin-converted local state | Cross-browser sync |
 | `zoomBy(direction, centerPX, centerPY, browser, dataset, viewDimensions)` | Zoom direction at click point under resolution lock or zoom boundary → atomic recenter + pixelSize doubling/halving | Double-click and wheel zoom when locked or at boundary |

@@ -246,9 +246,13 @@ class Ruler {
             { fillStyle: IGVColor.rgbColor(255, 255, 255) }
         );
 
-        config.bpPerPixel = browser.dataset.bpResolutions[browser.state.zoom] / browser.state.pixelSize;
+        // Scaffold coordinates at the sentinel rung, not whole-genome ones: the
+        // ruler follows the *state*, and the state is at the sole chromosome.
+        // ADR-0010 decision 4.
+        const bpPerBin = browser.binSizeForZoom(browser.state.zoom);
+        config.bpPerPixel = bpPerBin / browser.state.pixelSize;
         const bin = this.axis === 'x' ? browser.state.x : browser.state.y;
-        config.bpStart = bin * browser.dataset.bpResolutions[browser.state.zoom];
+        config.bpStart = bin * bpPerBin;
 
         config.rulerTickMarkReferencePixels = Math.max(
             this.canvasElement.width,

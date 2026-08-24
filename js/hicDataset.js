@@ -29,6 +29,7 @@
 import {isFile} from "./fileUtils.js"
 import {getUrlMapper} from "./urlMapper.js"
 import Straw from 'hic-straw'
+import {SENTINEL_ZOOM} from './sentinelZoom.js'
 
 const knownGenomes = {
 
@@ -190,6 +191,64 @@ class Dataset {
      */
     isWholeGenome(chrIndex) {
         return (this.wholeGenomeChromosome != null && this.wholeGenomeChromosome.index === chrIndex);
+    }
+
+    /**
+     * True when the assembly holds the `All` pseudo-chromosome and exactly one
+     * real chromosome, so the whole-genome view and that chromosome describe the
+     * same picture.
+     *
+     * `All` is identified by `wholeGenomeChromosome` identity rather than by the
+     * name test `genome.js:49` and `ruler.js:93` use. The predicate gates a
+     * change of vocabulary, and it must stay false for every real genome --
+     * a two-entry chromosome table is the whole claim. ADR-0010.
+     */
+    isSingleChromosome() {
+        return this.wholeGenomeChromosome != null && this.chromosomes.length === 2;
+    }
+
+    /**
+     * The one real chromosome of a single-chromosome assembly -- the scaffold
+     * `All` is a duplicate of. Undefined for every other dataset.
+     */
+    soleChromosome() {
+        if (!this.isSingleChromosome()) return undefined;
+        return this.chromosomes.find(chr => chr !== this.wholeGenomeChromosome);
+    }
+
+    /**
+     * Bin size in bp for a zoom index, the sentinel rung included.
+     *
+     * At the sentinel the answer is `wholeGenomeResolution`, which is the
+     * whole-genome bin expressed in bp rather than in the kb the whole-genome
+     * matrix stores its own coordinates in. For a one-chromosome genome the
+     * cumulative offset is zero, so that bin divides the sole scaffold's bp
+     * exactly -- ADR-0010 fact 4, and the reason this is a unit match rather
+     * than a conversion.
+     */
+    binSizeForZoom(zoom) {
+        return SENTINEL_ZOOM === zoom ? this.wholeGenomeResolution : this.bpResolutions[zoom];
+    }
+
+    /**
+     * The matrix coordinates and resolution index that carry a view's *data*.
+     *
+     * Identity for a declared rung. At the sentinel it answers with the
+     * whole-genome matrix at its only resolution: the rung is synthesised, but
+     * the data behind it is the `All` matrix, queried in the `All` matrix's own
+     * coordinates exactly as the whole-genome view queries it today.
+     *
+     * This is why `imageTileSource`'s `0 === zd.chr1.index` stays true at the
+     * sentinel while `browser.isWholeGenome()` is false. The two whole-genome
+     * tests are divergent **by design** -- ADR-0010 decisions 3 and 4. Do not
+     * "fix" them into agreement.
+     */
+    matrixViewForZoom(chr1, chr2, zoom) {
+        if (SENTINEL_ZOOM !== zoom) {
+            return {chr1, chr2, zoomIndex: zoom};
+        }
+        const {index} = this.wholeGenomeChromosome;
+        return {chr1: index, chr2: index, zoomIndex: 0};
     }
 
     /**

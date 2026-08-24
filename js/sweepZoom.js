@@ -53,8 +53,8 @@ class SweepZoom {
         this.rulerSweeperElement.style.display = 'none';
 
         const state = this.browser.state;
-        const { chromosomes, bpResolutions } = this.browser.dataset;
-        const bpResolution = bpResolutions[state.zoom];
+        const { chromosomes } = this.browser.dataset;
+        const bpResolution = this.browser.binSizeForZoom(state.zoom);
 
         // bp = ((bin + pixel/pixel-per-bin) / bp-per-bin)
         const xBP = (state.x + (xPixel / state.pixelSize)) * bpResolution

@@ -104,7 +104,12 @@ function createView({ chr1, chr2, features, displayMode }) {
         strokeRect: (x, y, w, h) => strokeRects.push({ x, y, w, h }),
     }
 
-    const dataset = { chromosomes, getMatrix: async () => ({ getZoomDataByIndex: () => zoomData }) }
+    const dataset = {
+        chromosomes,
+        getMatrix: async () => ({ getZoomDataByIndex: () => zoomData }),
+        // An identity at a declared rung. The sentinel rung has its own suite.
+        matrixViewForZoom: (chr1, chr2, zoom) => ({ chr1, chr2, zoomIndex: zoom }),
+    }
     const state = { chr1, chr2, zoom: 0, x: 0, y: 0, pixelSize: PIXEL_SIZE }
 
     const track2D = {

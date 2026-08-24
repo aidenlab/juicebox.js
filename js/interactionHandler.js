@@ -45,6 +45,19 @@ class InteractionHandler {
     }
 
     /**
+     * The rung carrying a zoom index, looked up by index rather than by array
+     * position.
+     *
+     * The two are not the same number. An A/B map's `getResolutions()` is a
+     * filtered list, and a single-chromosome assembly's carries a synthetic rung
+     * sorted to the coarse end (ADR-0010 decision 1). Position-indexing the list
+     * read the wrong rung in both cases.
+     */
+    _resolutionForZoom(resolutions, zoom) {
+        return resolutions.find(resolution => resolution.index === zoom);
+    }
+
+    /**
      * Validate that the dataset is available.
      * 
      * @returns {boolean} - True if dataset is valid, false otherwise
@@ -160,7 +173,15 @@ class InteractionHandler {
             this.browser.startSpinner();
 
             const bpResolutions = this.browser.getResolutions();
-            const currentResolution = bpResolutions[this.browser.state.zoom];
+            const currentResolution = this._resolutionForZoom(bpResolutions, this.browser.state.zoom);
+
+            // The list is sorted coarsest-first, so the finest rung is the last
+            // entry and the coarsest is the first. Both guards used to be written
+            // as the array positions those ends happen to have when index and
+            // position agree, which stopped being true once a rung could be
+            // filtered out or synthesised in. ADR-0010 decision 1.
+            const finest = bpResolutions[bpResolutions.length - 1];
+            const coarsest = bpResolutions[0];
 
             let newBinSize;
             let newZoom;
@@ -168,8 +189,8 @@ class InteractionHandler {
             let resolutionChanged;
 
             if (this.browser.resolutionLocked ||
-                (this.browser.state.zoom === bpResolutions.length - 1 && scaleFactor > 1) ||
-                (this.browser.state.zoom === 0 && scaleFactor < 1)) {
+                (this.browser.state.zoom === finest.index && scaleFactor > 1) ||
+                (this.browser.state.zoom === coarsest.index && scaleFactor < 1)) {
                 // Can't change resolution level, must adjust pixel size
                 newBinSize = currentResolution.binSize;
                 newPixelSize = Math.min(MAX_PIXEL_SIZE, this.browser.state.pixelSize * scaleFactor);
@@ -178,14 +199,19 @@ class InteractionHandler {
             } else {
                 const targetBinSize = (currentResolution.binSize / this.browser.state.pixelSize) / scaleFactor;
                 newZoom = this.findMatchingZoomIndex(targetBinSize, bpResolutions);
-                newBinSize = bpResolutions[newZoom].binSize;
+                newBinSize = this._resolutionForZoom(bpResolutions, newZoom).binSize;
                 resolutionChanged = newZoom !== this.browser.state.zoom;
                 newPixelSize = Math.min(MAX_PIXEL_SIZE, newBinSize / targetBinSize);
             }
 
             const z = await this.browser.minZoom(this.browser.state.chr1, this.browser.state.chr2);
 
-            if (!this.browser.resolutionLocked && scaleFactor < 1 && newZoom < z) {
+            // A single-chromosome assembly has no whole-genome view to fall out
+            // to: `All` is the sentinel rung of the scaffold now, and zooming
+            // past the last declared rung already lands there. ADR-0010.
+            const canLeaveForWholeGenome = !this.browser.dataset.isSingleChromosome();
+
+            if (canLeaveForWholeGenome && !this.browser.resolutionLocked && scaleFactor < 1 && newZoom < z) {
                 // Zoom out to whole genome
                 const xLocus = this.parseLocusString('1');
                 const yLocus = { xLocus };
@@ -194,8 +220,7 @@ class InteractionHandler {
                 await this.browser.state.panWithZoom(
                     newZoom, newPixelSize, anchorPx, anchorPy, newBinSize,
                     this.browser, this.browser.dataset,
-                    this.browser.contactMatrixView.getViewDimensions(),
-                    bpResolutions
+                    this.browser.contactMatrixView.getViewDimensions()
                 );
 
                 await this._applyStateChange({
@@ -280,7 +305,15 @@ class InteractionHandler {
             this.browser.startSpinner();
 
             const bpResolutions = this.browser.getResolutions();
-            const currentResolution = bpResolutions[this.browser.state.zoom];
+            const currentResolution = this._resolutionForZoom(bpResolutions, this.browser.state.zoom);
+
+            // The list is sorted coarsest-first, so the finest rung is the last
+            // entry and the coarsest is the first. Both guards used to be written
+            // as the array positions those ends happen to have when index and
+            // position agree, which stopped being true once a rung could be
+            // filtered out or synthesised in. ADR-0010 decision 1.
+            const finest = bpResolutions[bpResolutions.length - 1];
+            const coarsest = bpResolutions[0];
 
             let newBinSize;
             let newZoom;
@@ -288,8 +321,8 @@ class InteractionHandler {
             let resolutionChanged;
 
             if (this.browser.resolutionLocked ||
-                (this.browser.state.zoom === bpResolutions.length - 1 && scaleFactor > 1) ||
-                (this.browser.state.zoom === 0 && scaleFactor < 1)) {
+                (this.browser.state.zoom === finest.index && scaleFactor > 1) ||
+                (this.browser.state.zoom === coarsest.index && scaleFactor < 1)) {
                 // Can't change resolution level, must adjust pixel size
                 newBinSize = currentResolution.binSize;
                 newPixelSize = Math.min(MAX_PIXEL_SIZE, this.browser.state.pixelSize * scaleFactor);
@@ -298,14 +331,19 @@ class InteractionHandler {
             } else {
                 const targetBinSize = (currentResolution.binSize / this.browser.state.pixelSize) / scaleFactor;
                 newZoom = this.findMatchingZoomIndex(targetBinSize, bpResolutions);
-                newBinSize = bpResolutions[newZoom].binSize;
+                newBinSize = this._resolutionForZoom(bpResolutions, newZoom).binSize;
                 resolutionChanged = newZoom !== this.browser.state.zoom;
                 newPixelSize = Math.min(MAX_PIXEL_SIZE, newBinSize / targetBinSize);
             }
 
             const z = await this.browser.minZoom(this.browser.state.chr1, this.browser.state.chr2);
 
-            if (!this.browser.resolutionLocked && scaleFactor < 1 && newZoom < z) {
+            // A single-chromosome assembly has no whole-genome view to fall out
+            // to: `All` is the sentinel rung of the scaffold now, and zooming
+            // past the last declared rung already lands there. ADR-0010.
+            const canLeaveForWholeGenome = !this.browser.dataset.isSingleChromosome();
+
+            if (canLeaveForWholeGenome && !this.browser.resolutionLocked && scaleFactor < 1 && newZoom < z) {
                 // Zoom out to whole genome
                 const xLocus = this.parseLocusString('All');
                 const yLocus = { ...xLocus };
@@ -314,8 +352,7 @@ class InteractionHandler {
                 await this.browser.state.panWithZoom(
                     newZoom, newPixelSize, anchorPx, anchorPy, newBinSize,
                     this.browser, this.browser.dataset,
-                    this.browser.contactMatrixView.getViewDimensions(),
-                    bpResolutions
+                    this.browser.contactMatrixView.getViewDimensions()
                 );
 
                 await this._applyStateChange({
@@ -443,7 +480,10 @@ class InteractionHandler {
                 return index;
             }
         }
-        return 0;
+        // Nothing was coarse enough: fall back to the coarsest rung, which is
+        // the first entry. Its *index* is 0 only when index and array position
+        // agree -- they do not once the list carries a sentinel rung.
+        return isObject ? resolutionArray[0].index : 0;
     }
 
     /**

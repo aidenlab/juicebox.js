@@ -174,6 +174,24 @@ have never been sampled. The contract is frozen against what the decoder takes,
 and the evidence that this matches what users send is partial by decision. See
 `test/data/wireFormatCorpus.js`'s harvest-scope note.
 
+**Session string** vs **session parameter** — a *session string* is the payload:
+`blob:…`, `data:…`, a bare JSON document, or a URL naming one. A *session
+parameter* is a host application's query parameter carrying one — juicebox-web
+writes `?session=<string>` raw, Spacewalk composes three apps' sessions under
+three parameter names of its own. **The session string is the contract; the URL
+is not.** Every juicebox host owes the same session-string set; no host owes
+another its query string, so a whole URL is not portable between host apps even
+where the payload inside it is. In `test/data/wireFormatCorpus.js` a fixture's
+`payload` is the session string and its `input` is the session parameter. See
+ADR-0011.
+
+Juicebox is not the only reader of the format. Spacewalk decodes `?session=`
+itself (`src/sessionURLCodec.js`), because it sets
+`queryParametersSupported: false` and never reaches juicebox's decoder — so
+ADR-0006's "one decoder" is one decoder *per repo*. The two are kept in
+agreement by a shared fixture rather than shared code: the corpus is exported
+and Spacewalk's suite runs its payload rows. ADR-0011.
+
 **Session source** — *where* a session was read from, as distinct from what it
 says: the `session=` parameter itself, or a fetched URL. The two arms of the
 `session` adapter, and a fact a user needs when a link will not open — "which of

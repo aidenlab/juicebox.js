@@ -155,6 +155,19 @@ class TrackPair {
         });
     }
 
+    /**
+     * A pass can outlive the state it started from: `reset()` tears the browser
+     * down while this pair's tiles are still resolving, and a subsequent load
+     * installs a different `State`. Every read of canonical state here --
+     * `browser.genomicState()` dereferences both `dataset` and `state` -- sits
+     * behind an await, so the pass captures its `State` object up front and
+     * stands down once that is no longer the one in place.
+     *
+     * Identity is the test, the same as the contact matrix repaint (#469): the
+     * chokepoint mutates in place, so a pan keeps the object and the pass runs
+     * to completion, while a clear or a bulk replacement swaps it and this pass
+     * has nothing left to draw against (#473).
+     */
     async updateViews() {
 
         if (this.updating) {
@@ -162,14 +175,26 @@ class TrackPair {
         } else {
             try {
                 this.updating = true;
+
+                const state = this.browser.state;
+                if (!state) {
+                    return;
+                }
+
                 const genomicStateX = this.browser.genomicState(this.x.axis);
                 let imageTileX = await this.getTileX(genomicStateX);
+                if (this.browser.state !== state) {
+                    return;
+                }
                 if (imageTileX) {
                     this.x.drawTile(imageTileX, genomicStateX);
                 }
 
                 const genomicStateY = this.browser.genomicState(this.y.axis);
                 let imageTileY = await this.getTileY(genomicStateY);
+                if (this.browser.state !== state) {
+                    return;
+                }
                 if (imageTileY) {
                     this.y.drawTile(imageTileY, genomicStateY);
                 }
@@ -177,6 +202,9 @@ class TrackPair {
                 this.updating = false;
                 if (this.pending) {
                     this.pending = false;
+                    // The retry is a fresh pass and meets the same guard at the
+                    // top, so a call coalesced into a pass that was abandoned
+                    // stands itself down rather than moving the throw.
                     this.updateViews();
                 }
             }
@@ -189,15 +217,34 @@ class TrackPair {
      */
     async repaintViews() {
 
+        // Same hazard, same remedy as `updateViews` above: canonical state is
+        // read after an await, so the pass is pinned to the `State` object it
+        // began with and abandoned once that object is gone or replaced (#473).
+        const state = this.browser.state;
+        if (!state) {
+            return;
+        }
+
         const genomicStateX = this.browser.genomicState(this.x.axis);
         if (this.tileX) {
-            this.tileX = await this.createImageTile({ axis: 'x', ...genomicStateX }, this.tileX.features)
+            // Guarded before the field is written, not just before the draw: a
+            // pass that stands down must leave nothing of itself behind, and a
+            // tile built against the replaced state is exactly that.
+            const tileX = await this.createImageTile({ axis: 'x', ...genomicStateX }, this.tileX.features)
+            if (this.browser.state !== state) {
+                return;
+            }
+            this.tileX = tileX
             this.x.drawTile(this.tileX, genomicStateX);
         }
 
         const genomicStateY = this.browser.genomicState(this.y.axis);
         if (this.tileY) {
-            this.tileY = await this.createImageTile({ axis: 'y', ...genomicStateY }, this.tileY.features)
+            const tileY = await this.createImageTile({ axis: 'y', ...genomicStateY }, this.tileY.features)
+            if (this.browser.state !== state) {
+                return;
+            }
+            this.tileY = tileY
             this.y.drawTile(this.tileY, genomicStateY)
         }
     }

@@ -45,19 +45,23 @@ export const VIEWPORT = {width: 800, height: 800}
  * it through the deferred `await import('../js/hicBrowser.js')` their own
  * `vi.mock` forces, and the class this fixture spies on has to be the one the
  * suite drives. `suite` names the file in the network-access error, so a stray
- * read says which suite made it.
+ * read says which suite made it, and `url` is the `.hic` file `restore` loads
+ * -- one per suite, so it is stated once here rather than at every call.
  *
  * Returns the `withContainers` holder alongside `embed` and `restore`; the
  * holder's fields do not exist until `beforeEach` runs, which is why this hands
  * back an object rather than the elements.
  */
-export function restoreFixture(HICBrowser, {suite}) {
+export function restoreFixture(HICBrowser, {suite, url}) {
 
     const dom = withContainers()
 
     beforeEach(() => {
         vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined)
         vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined)
+        // A tripwire, as in #503 and #531: nothing on this path should reach
+        // the network. What the dataset would have been read from is the mock,
+        // and a corpus fixture is decoded before the browser is built.
         vi.spyOn(igvxhr, 'loadString').mockImplementation(async () => {
             throw new Error(`unexpected network access from the ${suite} suite`)
         })
@@ -74,8 +78,8 @@ export function restoreFixture(HICBrowser, {suite}) {
         return browser
     }
 
-    /** One embed, one load of `url` carrying `state`. Returns the live browser. */
-    async function restore(url, state) {
+    /** One embed, one load of the suite's file carrying `state`. Returns the live browser. */
+    async function restore(state) {
         const browser = embed()
         await browser.loadHicFile({url, state}, true)
         return browser

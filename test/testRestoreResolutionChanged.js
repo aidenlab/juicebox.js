@@ -71,7 +71,7 @@ const savedView = (zoom, x = 0, y = 0) => new State(CHR1, CHR1, zoom, x, y, 2, '
 
 describe('resolutionChanged tells the truth on restore (#560)', () => {
 
-    const {embed} = restoreFixture(HICBrowser, {suite: 'restore resolution'})
+    const {embed} = restoreFixture(HICBrowser, {suite: 'restore resolution', url: HIC_URL})
 
     /**
      * The `resolutionChanged` flag of every locus change the browser publishes,

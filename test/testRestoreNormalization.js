@@ -40,11 +40,12 @@
  *
  * The dataset is `test/utils/restoreDataset.js`, the fixture the gate and
  * `testRestoreClamp.js` both drive, wrapped here to answer
- * `getNormalizationOptions` -- the one thing this suite's harness does that
- * `test/utils/restoreFixture.js`'s shared one does not. A wrapper rather than a change to the fixture: the
- * fixture's silence on normalization is itself a case this file drives (a
- * dataset that cannot answer at all), and the browser's own fallback for that
- * silence -- `['NONE']` -- is what the last test pins.
+ * `getNormalizationOptions` -- the one thing this suite asks of its dataset that
+ * the shared harness (`test/utils/restoreFixture.js`) does not provide. A
+ * wrapper rather than a change to the fixture: the fixture's silence on
+ * normalization is itself a case this file drives (a dataset that cannot answer
+ * at all), and the browser's own fallback for that silence -- `['NONE']` -- is
+ * what the last test pins.
  *
  * The viewport is stated, not measured, for the reason ADR-0009 fact 5 gives.
  * Nothing here depends on its size; it is stated so the load behaves the way it
@@ -85,14 +86,12 @@ const savedWith = normalization => new State(CHR1, CHR1, ZOOM, 10, 10, 2, normal
 
 describe('normalization is validated against the loaded dataset at restore (#561)', () => {
 
-    const {embed, restore: restoreFrom} = restoreFixture(HICBrowser, {suite: 'restore normalization'})
+    const {embed, restore} = restoreFixture(HICBrowser, {suite: 'restore normalization', url: HIC_URL})
 
     beforeEach(() => {
         offered = undefined
     })
 
-    /** One embed, one load of the fixture file. Returns the live browser. */
-    const restore = state => restoreFrom(HIC_URL, state)
 
     test('a saved normalization the dataset offers is preserved exactly', async () => {
 

@@ -115,7 +115,7 @@ function installed(installs) {
 
 describe('the state parameter is gone from setActiveDataset (#559)', () => {
 
-    const {embed} = restoreFixture(HICBrowser, {suite: 'restore back-door'})
+    const {embed} = restoreFixture(HICBrowser, {suite: 'restore back-door', url: HIC_URL})
 
     test('setActiveDataset takes a dataset and nothing else', async () => {
 

@@ -35,10 +35,12 @@
  * chromosome table and juicer resolution ladder the gate reads its numbers off,
  * so a bound computed here and a bound recorded there are the same bound.
  *
- * The viewport is stated, not measured, for the reason ADR-0009 fact 5 gives:
- * JSDOM does no layout, `getViewDimensions()` answers `{0, 0}`, and a clamp read
- * against zero is a clamp against the whole chromosome. `testState.js` states
- * 800x800 and so does the gate's first column; this file states the same.
+ * The dataset, the viewport and the stubs are `test/utils/restoreFixture.js`'s,
+ * for the reason it gives: a stated 800x800, because JSDOM does no layout and
+ * `getViewDimensions()` answers `{0, 0}` (ADR-0009 fact 5). A clamp read against
+ * zero is a clamp against the whole chromosome, which would make every bound
+ * below fictional -- so of the four suites on that harness this is the one whose
+ * claims turn on the stated viewport being what the gate's first column states.
  */
 import {describe, expect, test, vi} from 'vitest'
 import State from '../js/hicState.js'
@@ -88,10 +90,7 @@ function stubTrackPair(window) {
 
 describe('restore routes through the chokepoint (#558)', () => {
 
-    const {dom, restore: restoreFrom} = restoreFixture(HICBrowser, {suite: 'restore clamp'})
-
-    /** One embed, one load of the fixture file. Returns the live browser. */
-    const restore = state => restoreFrom(HIC_URL, state)
+    const {dom, restore} = restoreFixture(HICBrowser, {suite: 'restore clamp', url: HIC_URL})
 
     test('a saved pixelSize above the cap opens at the cap', async () => {
 

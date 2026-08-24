@@ -272,15 +272,14 @@
  * @see test/data/wireFormatCorpus.js — the inputs
  * @see test/testDecoderGolden.js, test/testConfigGolden.js — the same instrument, one seam either side
  */
-import {beforeEach, afterEach, describe, expect, test, vi} from 'vitest'
+import {beforeEach, describe, expect, test, vi} from 'vitest'
 import {igvxhr} from 'igv-utils'
 import {extractConfig} from '../js/urlUtils.js'
 import {decodeState} from '../js/sessionCodec.js'
 import {normalizeSession} from '../js/normalizeSession.js'
-import ContactMatrixView from '../js/contactMatrixView.js'
 import {selfContained, viaLoader, wireFormatCorpus} from './data/wireFormatCorpus.js'
-import {withContainers} from './utils/browserFixture.js'
 import {restoreDataset} from './utils/restoreDataset.js'
+import {restoreFixture} from './utils/restoreFixture.js'
 
 /**
  * The two things behind the restore path that a test cannot supply: the `.hic`
@@ -554,34 +553,19 @@ function rungCounter() {
 /**
  * A JSDOM, the two stubs every restore needs, and the rung counter.
  *
- * `withContainers()` is composed rather than re-implemented, the same way
- * `testConfigGolden.js`'s `goldenSuite()` composes it: this file needs the
+ * The DOM and the stubs are `test/utils/restoreFixture.js`'s (#571), which is
+ * where the `update` stubs, the network tripwire and the composed
+ * `withContainers()` now live for all five restore suites. This file needs the
  * `another()` container factory for the reason that helper exists -- one embed
  * per drive -- and nothing else about the DOM. It does not navigate, because no
  * door here reads `window.location`.
  *
- * `update` is stubbed on both the browser and the view for the reason
- * `stubbedLoads` gives: every route out of a repaint ends at the network or a
- * pixel, and rendering has its own tests. `getViewDimensions` is stubbed per
- * drive rather than here, because its value is the column.
+ * The fixture's `embed()` is deliberately not used: it states one viewport, and
+ * here the viewport is the column, so `drive()` states its own per drive.
  */
 function restoreSuite() {
 
-    const dom = withContainers()
-
-    beforeEach(() => {
-        vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined)
-        vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined)
-        // A tripwire, as in #503 and #531: nothing on this path should reach the
-        // network. The corpus's own decode happens before the browser is built.
-        vi.spyOn(igvxhr, 'loadString').mockImplementation(async () => {
-            throw new Error('unexpected network access from the restore golden-file suite')
-        })
-    })
-
-    afterEach(() => {
-        vi.restoreAllMocks()
-    })
+    const {dom} = restoreFixture(HICBrowser, {suite: 'restore golden-file'})
 
     return {dom, rungs: rungCounter()}
 }

@@ -75,6 +75,7 @@ function stubBrowser({ synchable, peer, synched }) {
         coordinator: {
             onLocusChange: () => undefined,
             onNormalizationSubstituted: () => undefined,
+            onNormalizationReadFailure: () => undefined,
             onGenomeChange: () => undefined,
             onNormVectorIndexLoad: () => undefined,
             onMapLoaded: () => undefined

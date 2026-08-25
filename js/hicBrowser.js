@@ -300,7 +300,7 @@ class HICBrowser {
             // and when.
             if (config.normalization) {
                 this.state.normalization = await this.#resolveNormalization(config.normalization);
-                this.#announceSubstitution(config.normalization, this.state.normalization);
+                await this.#announceSubstitution(config.normalization, this.state.normalization);
             }
 
             if (config.cycle) {
@@ -1057,7 +1057,7 @@ class HICBrowser {
         // it is about and that view is the one now in force. Before `update()`
         // and `onLocusChange`, which follow: both run on this same view, so
         // neither retires it (#372, ADR-0012).
-        this.#announceSubstitution(requestedNormalization, restored.normalization);
+        await this.#announceSubstitution(requestedNormalization, restored.normalization);
 
         const eventData = {
             state: this.state,
@@ -1161,23 +1161,31 @@ class HICBrowser {
      * asked in a restore and in `init`, and only the callers know which view
      * the answer is about.
      *
-     * Two of the three reasons are chosen here, and the choice is the control
-     * dataset: with one loaded, `getNormalizationOptions` returns an
-     * *intersection*, so a normalization missing from it may be present in the
-     * primary file and come back when the control map is unloaded. That is a
-     * different remedy, so it is a different sentence. The third reason belongs
-     * to the render pass and is worded there.
+     * Two of the three reasons are chosen here, and the question that separates
+     * them is asked of the *primary* file, not of the control map's presence.
+     * With a control map loaded `getNormalizationOptions` returns an
+     * intersection, and a normalization missing from an intersection is missing
+     * for one of two quite different causes: the primary file never had it, or
+     * the primary file has it and the control map does not. Only the second is
+     * fixed by unloading the control map, and telling a user to unload a map
+     * that will not bring their vector back is worse than telling them nothing.
+     * So the primary file is asked directly. The third reason belongs to the
+     * render pass and is worded there.
      *
      * @param {string|undefined} requested - what was asked for
      * @param {string} resolved - what will be drawn
      */
-    #announceSubstitution(requested, resolved) {
+    async #announceSubstitution(requested, resolved) {
 
         if (undefined === requested || requested === resolved) {
             return;
         }
 
-        const reason = this.controlDataset
+        const inPrimaryFile = this.dataset && this.dataset.getNormalizationOptions
+            ? (await this.dataset.getNormalizationOptions()).includes(requested)
+            : false;
+
+        const reason = inPrimaryFile
             ? substitutionReason.notInBothMaps(requested, resolved)
             : substitutionReason.notInFile(requested, resolved);
 

@@ -46,6 +46,7 @@ function stubBrowser(recorded) {
         controlDataset: undefined,
         coordinator: {
             onNormalizationSubstituted: () => undefined,
+            onNormalizationReadFailure: () => undefined,
             onGenomeChange: () => undefined,
             onNormVectorIndexLoad: () => undefined,
             onMapLoaded: () => undefined

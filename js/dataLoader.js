@@ -98,7 +98,7 @@ class DataLoader {
             config.name = name;
 
             const hicFileAlert = str => {
-                this.browser.coordinator.onNormalizationSubstituted('NONE');
+                this.browser.coordinator.onNormalizationReadFailure('NONE');
                 this.browser.registry.presentAlert(str);
             };
 
@@ -324,7 +324,7 @@ class DataLoader {
             config.name = name;
 
             const hicFileAlert = str => {
-                this.browser.coordinator.onNormalizationSubstituted('NONE');
+                this.browser.coordinator.onNormalizationReadFailure('NONE');
                 this.browser.registry.presentAlert(str);
             };
 

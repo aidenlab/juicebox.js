@@ -50,14 +50,27 @@ pass — reintroduces exactly the lie ADR-0009 removed: state naming something t
 view is not drawing.
 
 **4. A read failure keeps its modal.** Case 3 is not a substitution, and giving it
-the quiet surface would hide a genuine error. Its separate defect — it updates the
-widget to `NONE` without writing state, so the widget and the state disagree — is
-filed on its own rather than fixed in passing here.
+the quiet surface would hide a genuine error. It also keeps its own coordinator
+entry point, `onNormalizationReadFailure`: the two paths move the same selector,
+which is not the same as being the same event, and a call site that had to name
+itself a substitution would assert the opposite of the glossary. Its separate
+defect — it updates the widget to `NONE` without writing state, so the widget and
+the state disagree — is filed on its own (#600) rather than fixed in passing here.
+
+**5. Which of the first two reasons applies is asked of the primary file.** With a
+control map loaded the offered set is an intersection, and a normalization missing
+from an intersection is missing for one of two causes with different remedies: the
+primary file never carried it, or the primary file carries it and the control map
+does not. Only the second is fixed by unloading the control map. Selecting on the
+control map's mere *presence* would tell half of those users to perform a remedy
+that cannot work, which is worse than the silence this ADR is replacing.
 
 ## Explicit no-s
 
-- **No host-facing callback.** `onNormalizationExternalChange` stays internal and
-  absent from `js/publicApi.js`. Publishing it is a contract and no host has asked;
+- **No host-facing callback.** The notification hook — `onNormalizationExternalChange`
+  before this change, `onNormalizationSubstituted` after it, the rename being free
+  precisely because it is not published — stays internal and absent from
+  `js/publicApi.js`. Publishing it is a contract and no host has asked;
   ADR-0003's "absence is not permission" applies in both directions.
 - **Case 2's direct `state.normalization` write stays outside the chokepoint.** It
   is the documented exception at `docs/state-manipulation.md:237`. Routing it

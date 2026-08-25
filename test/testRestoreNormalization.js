@@ -272,6 +272,44 @@ describe('normalization is validated against the loaded dataset at restore (#561
         expect(announcement(browser)).toBeUndefined()
     })
 
+    test('the control map is named as the remedy only when it is the remedy', async () => {
+
+        // With a control map loaded the offered set is an *intersection*, and a
+        // normalization missing from an intersection is missing for one of two
+        // causes with different remedies. Here the primary file *has* KR and the
+        // control map does not, so unloading the control map brings it back --
+        // and that is the only case in which the user should be told to.
+        offered = ['NONE', 'KR']
+
+        const browser = await restore(savedWith('KR'))
+        expect(browser.state.normalization).toBe('KR')
+
+        browser.controlDataset = {getNormalizationOptions: async () => ['NONE']}
+        await browser.setState(savedWith('KR'))
+
+        expect(browser.state.normalization).toBe('NONE')
+        expect(announcement(browser)).toMatch(/control map/i)
+    })
+
+    test('a control map present but innocent is not named as the remedy', async () => {
+
+        // Same intersection, other cause: the primary file never carried KR, so
+        // unloading the control map changes nothing. Telling this user to unload
+        // it is a remedy that cannot work, which is worse than the silence #372
+        // is about -- so the reason chosen must be asked of the primary file
+        // rather than of the control map's mere presence.
+        offered = ['NONE']
+
+        const browser = await restore(savedWith('NONE'))
+
+        browser.controlDataset = {getNormalizationOptions: async () => ['NONE']}
+        await browser.setState(savedWith('KR'))
+
+        expect(browser.state.normalization).toBe('NONE')
+        expect(announcement(browser)).toBeDefined()
+        expect(announcement(browser)).not.toMatch(/control map/i)
+    })
+
     test('a coerced top-level config.normalization announces it too', async () => {
 
         // The second of `#resolveNormalization`'s two doors. It is the same

@@ -53,6 +53,15 @@ const substitutionReason = {
 const NO_SUBSTITUTION_TITLE = 'Normalization'
 
 /**
+ * The part of a view a substitution's reason is about: which chromosome pair,
+ * at which resolution. Not the whole state -- x and y are deliberately absent,
+ * because a pan cannot make any of the three reasons false.
+ */
+const viewScope = ({chr1, chr2, zoom}) => ({chr1, chr2, zoom})
+
+const sameScope = (a, b) => a.chr1 === b.chr1 && a.chr2 === b.chr2 && a.zoom === b.zoom
+
+/**
  * Created by dat on 3/21/17.
  *
  * Also the surface on which a *substitution* is announced (#372, ADR-0012): a
@@ -70,7 +79,7 @@ class NormalizationWidget {
 
         this.container = document.createElement('div');
         this.container.className = 'hic-normalization-selector-container';
-        this.container.title = 'Normalization';
+        this.container.title = NO_SUBSTITUTION_TITLE;
         parent.appendChild(this.container);
 
         let label = document.createElement('div');
@@ -96,9 +105,11 @@ class NormalizationWidget {
 
         // Hidden until something is substituted. A marker rather than a bare
         // `title`: a title is invisible on touch and offers nothing to notice,
-        // which is the silence #372 has been open about since 2022.
+        // which is the silence #372 has been open about since 2022. An
+        // information glyph rather than a warning one, and amber rather than
+        // red, because a substitution is not a failure (ADR-0012).
         this.substitutionMarker = document.createElement('i');
-        this.substitutionMarker.className = 'fa fa-exclamation-triangle hic-normalization-substitution-marker';
+        this.substitutionMarker.className = 'fa fa-info-circle hic-normalization-substitution-marker';
         this.substitutionMarker.style.display = 'none';
         this.container.appendChild(this.substitutionMarker);
 
@@ -121,7 +132,7 @@ class NormalizationWidget {
      *        about, so a later chromosome or zoom change can tell it is stale
      */
     announceSubstitution(reason, scope) {
-        this.substitutionScope = {chr1: scope.chr1, chr2: scope.chr2, zoom: scope.zoom};
+        this.substitutionScope = viewScope(scope);
         this.container.title = reason;
         this.substitutionMarker.style.display = 'block';
     }
@@ -145,9 +156,8 @@ class NormalizationWidget {
      * @param {{chr1: number, chr2: number, zoom: number}} state - the view now
      */
     clearSubstitutionIfStale(state) {
-        const scope = this.substitutionScope;
-        if (!scope) return;
-        if (scope.chr1 !== state.chr1 || scope.chr2 !== state.chr2 || scope.zoom !== state.zoom) {
+        if (!this.substitutionScope) return;
+        if (!sameScope(this.substitutionScope, viewScope(state))) {
             this.clearSubstitution();
         }
     }

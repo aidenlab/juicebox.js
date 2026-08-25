@@ -339,23 +339,47 @@ class BrowserCoordinator {
      * effective value on the selector and the reason beside it; neither raises a
      * modal, because a link that opens correctly on `NONE` is not an error.
      *
-     * `reason` is optional, and its absence is meaningful: `dataLoader` calls
-     * this after a *read failure*, which keeps its own modal (ADR-0012 decision
-     * 4) and has nothing to announce here.
+     * A read *failure* does not come through here, and must not: ADR-0012
+     * decision 4 keeps its modal, because giving a genuine error the quiet
+     * surface would hide it. It has `onNormalizationReadFailure` instead, so
+     * neither call site has to say a word the glossary reserves for the other
+     * event.
      *
      * Uses a programmatic update method that prevents feedback loops by ensuring
      * the change event listener doesn't trigger when we programmatically set the value.
      *
      * @param {string} normalization - The normalization actually being drawn
-     * @param {string} [reason] - What the user is told, from `substitutionReason`
+     * @param {string} reason - What the user is told, from `substitutionReason`
      */
     onNormalizationSubstituted(normalization, reason) {
         if (this.widgets.normalizationWidget) {
             // Use programmatic update method to prevent feedback loop
             this.widgets.normalizationWidget.setNormalizationProgrammatically(normalization);
-            if (reason && this.browser.state) {
+            if (this.browser.state) {
                 this.widgets.normalizationWidget.announceSubstitution(reason, this.browser.state);
             }
+        }
+    }
+
+    /**
+     * Put the selector back to what a failed normalization read leaves drawable.
+     *
+     * Not a substitution (ADR-0012 decision 4): nothing was on offer and quietly
+     * swapped, a read went wrong, and `dataLoader` has already raised the modal
+     * that says so. Named apart from `onNormalizationSubstituted` so the call
+     * site does not have to use the glossary's word for the other event -- the
+     * two paths happen to move the same selector, which is not the same as
+     * being the same event.
+     *
+     * The state/UI divergence this path still carries -- the widget reads NONE
+     * while `state.normalization` does not -- is #600, deliberately not fixed
+     * here.
+     *
+     * @param {string} normalization - What the selector should now show
+     */
+    onNormalizationReadFailure(normalization) {
+        if (this.widgets.normalizationWidget) {
+            this.widgets.normalizationWidget.setNormalizationProgrammatically(normalization);
         }
     }
 

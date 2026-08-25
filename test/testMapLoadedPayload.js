@@ -65,6 +65,7 @@ function stubBrowser() {
         coordinator: {
             onGenomeChange: () => undefined,
             onNormalizationSubstituted: () => undefined,
+            onNormalizationReadFailure: () => undefined,
             onNormVectorIndexLoad: () => undefined,
             onMapLoaded: (...args) => mapLoaded(...args)
         }

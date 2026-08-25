@@ -19,10 +19,10 @@ Three places can render with a normalization other than the one asked for:
    this chromosome and resolution, and falls back to `NONE` once per render pass.
    This is the case #372 actually reported (KR at 1000BP on chrY); it raised a
    modal.
-3. **A hic-straw read error** — `dataLoader.js:101` and `:327`.
+3. **hic-straw's own `alert` hook** — injected at `dataLoader.js:101` and `:327`.
 
-Cases 1 and 2 are the same event with different scopes. Case 3 is not the same
-event at all: it is a failure.
+Cases 1 and 2 are the same event with different scopes. Case 3 was recorded here
+as a read failure, and that was **wrong** — see the correction below.
 
 ## Decision
 
@@ -49,13 +49,21 @@ asks for KR again. The alternative — keep the request in state and re-attempt 
 pass — reintroduces exactly the lie ADR-0009 removed: state naming something the
 view is not drawing.
 
-**4. A read failure keeps its modal.** Case 3 is not a substitution, and giving it
-the quiet surface would hide a genuine error. It also keeps its own coordinator
-entry point, `onNormalizationReadFailure`: the two paths move the same selector,
-which is not the same as being the same event, and a call site that had to name
-itself a substitution would assert the opposite of the glossary. Its separate
-defect — it updates the widget to `NONE` without writing state, so the widget and
-the state disagree — is filed on its own (#600) rather than fixed in passing here.
+**4. Case 3 is a substitution too, and its modal is deleted.** This decision
+originally read "a read failure keeps its modal", on the premise that hic-straw's
+injected `alert` was an error channel. Hand-testing #372 showed it is not. That
+callback has exactly **one** caller in the library — `hicFile.getNormalizationVector`,
+when `isNormalizationValueAvailableAtResolution` says no (`hic-straw/src/hicFile.js:594`)
+— and it raises the sentence *"Normalization option SCALE not available at
+resolution 10000. Will use NONE."* That is case 2, arriving through the file
+reader instead of through the render pass. Genuine hic-straw read errors throw;
+they never reach this hook. So it announces in the widget like the others, via
+`dataLoader.#announceStrawSubstitution`, and there is no `onNormalizationReadFailure`.
+
+This also undermines **#600**, which was filed against the same mistaken premise
+("case C calls `onNormalizationExternalChange('NONE')` but never writes state").
+The path is a substitution, not a failure, so the question that issue asks needs
+restating before it can be answered.
 
 **5. Which of the first two reasons applies is asked of the primary file.** With a
 control map loaded the offered set is an intersection, and a normalization missing
@@ -72,6 +80,13 @@ that cannot work, which is worse than the silence this ADR is replacing.
   precisely because it is not published — stays internal and absent from
   `js/publicApi.js`. Publishing it is a contract and no host has asked;
   ADR-0003's "absence is not permission" applies in both directions.
+- **Case 2's detection was dead code.** `imageTileSource.#effectiveNormalization`
+  called the async `Dataset.hasNormalizationVector` without awaiting it, so the
+  check tested a Promise — always truthy — and the substitution branch was
+  unreachable. The modal users actually saw was always hic-straw's. Fixing the
+  `await` is what makes decision 1 observable at all; the unit fixture missed it
+  because its dataset double was synchronous where the real one is not.
+
 - **Case 2's direct `state.normalization` write stays outside the chokepoint.** It
   is the documented exception at `docs/state-manipulation.md:237`. Routing it
   through `browser.setNormalization` would trigger a repaint from inside a render

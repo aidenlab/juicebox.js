@@ -186,7 +186,7 @@ class ImageTileSource {
 
         const {row1, row2, col1, col2} = tileGrid(state, viewDimensions, this.tileDimension)
 
-        const normalization = this.#effectiveNormalization(ds, zd, state.normalization)
+        const normalization = await this.#effectiveNormalization(ds, zd, state.normalization)
 
         await this.#ensureColorScale(ds, zd, {row1, row2, col1, col2}, normalization, state, displayMode)
 
@@ -216,11 +216,16 @@ class ImageTileSource {
      * with NONE. The source reports the substitution and renders with it; it
      * does not write state.
      */
-    #effectiveNormalization(ds, zd, requested) {
+    async #effectiveNormalization(ds, zd, requested) {
 
         if (requested === "NONE") return requested
 
-        if (ds.hasNormalizationVector(requested, zd.chr1.name, zd.zoom.unit, zd.zoom.binSize)) {
+        // Awaited. `Dataset.hasNormalizationVector` is async, and without the
+        // await this tested a Promise -- always truthy, so the substitution
+        // below was unreachable and this whole path was dead (#372). The only
+        // thing the user ever saw was hic-straw's own modal, raised much later
+        // and from inside the file reader.
+        if (await ds.hasNormalizationVector(requested, zd.chr1.name, zd.zoom.unit, zd.zoom.binSize)) {
             return requested
         }
 

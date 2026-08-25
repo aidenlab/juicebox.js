@@ -37,6 +37,7 @@ import Track2D from './track2D.js'
 import {decodeState} from "./sessionCodec.js"
 import {mapTrackConfig} from "./urlMapper.js"
 import {canBeSynched} from "./syncGroup.js"
+import {substitutionReason} from "./normalizationWidget.js"
 
 /**
  * How this module reports a `config.state` that is neither a state token nor a
@@ -69,6 +70,33 @@ class DataLoader {
     }
 
     /**
+     * The `alert` callback handed to hic-straw, which is not an alert channel.
+     *
+     * It has exactly one caller in the library -- `hicFile.getNormalizationVector`,
+     * when the requested vector is absent at this chromosome and resolution --
+     * and that is a *substitution*, the same event `imageTileSource` reports one
+     * layer up. Genuine read errors in hic-straw throw; they do not come through
+     * here. So this announces in the widget like every other substitution, and
+     * raises no modal (#372, ADR-0012 decision 4).
+     *
+     * hic-straw hands over a formatted sentence rather than the pieces, so the
+     * reason is rebuilt from what the browser already knows: `state.normalization`
+     * is what was asked for at the moment the vector was refused.
+     *
+     * @returns {(str: string) => void} the callback, closed over this browser
+     */
+    #announceStrawSubstitution() {
+        return () => {
+            const requested = this.browser.state?.normalization;
+            if (!requested || 'NONE' === requested) return;
+            this.browser.coordinator.onNormalizationSubstituted(
+                'NONE',
+                substitutionReason.notAtThisView(requested, 'NONE')
+            );
+        };
+    }
+
+    /**
      * Load a .hic file
      *
      * NOTE: public API function
@@ -97,12 +125,8 @@ class DataLoader {
             this.browser.contactMapLabel.title = name;
             config.name = name;
 
-            const hicFileAlert = str => {
-                this.browser.coordinator.onNormalizationReadFailure('NONE');
-                this.browser.registry.presentAlert(str);
-            };
-
-            const dataset = await Dataset.loadDataset(Object.assign({alert: hicFileAlert}, config));
+            const dataset = await Dataset.loadDataset(
+                Object.assign({alert: this.#announceStrawSubstitution()}, config));
             dataset.name = name;
 
             const previousGenomeId = this.browser.genome ? this.browser.genome.id : undefined;
@@ -323,12 +347,8 @@ class DataLoader {
             const name = extractName(config);
             config.name = name;
 
-            const hicFileAlert = str => {
-                this.browser.coordinator.onNormalizationReadFailure('NONE');
-                this.browser.registry.presentAlert(str);
-            };
-
-            const controlDataset = await Dataset.loadDataset(Object.assign({alert: hicFileAlert}, config));
+            const controlDataset = await Dataset.loadDataset(
+                Object.assign({alert: this.#announceStrawSubstitution()}, config));
 
             controlDataset.name = name;
 

@@ -815,6 +815,13 @@
 .hic-normalization-selector-container select {
   width: 75%;
 }
+.hic-normalization-selector-container i.hic-normalization-substitution-marker {
+  flex: 0 0 auto;
+  margin-left: 5px;
+  font-size: 12px;
+  color: #d9822b;
+  cursor: default;
+}
 
 .hic-resolution-selector-container {
   width: 25%;

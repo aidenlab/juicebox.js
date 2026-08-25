@@ -124,7 +124,7 @@ const recordingObserver = () => {
     return {
         seen,
         colorScaleChanged: (s) => seen.scales.push(s),
-        normalizationUnavailable: (req, eff) => seen.fallbacks.push([req, eff]),
+        normalizationSubstituted: (req, eff) => seen.fallbacks.push([req, eff]),
         loadingChanged: (b) => seen.loading.push(b)
     }
 }

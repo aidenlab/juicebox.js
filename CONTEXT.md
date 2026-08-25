@@ -90,6 +90,18 @@ capped exactly as a gesture is — silently, never rejected (ADR-0009 decision 2
 It is also the **only** writer of the state: `browser.state` and `activeState`
 are getters over a private field as of #563.
 
+**Substitution** — the act of rendering with a normalization other than the one
+asked for, because the one asked for is not on offer. Three causes, which the
+user can act on differently: the file carries no such vector at all; both maps
+carry it but their *intersection* does not, so unloading the control map would
+bring it back; or the vector exists but not at this chromosome and resolution,
+so panning or zooming would. A substitution is not a failure — a link that opens
+on `NONE` opened correctly — and it is announced in the normalization widget,
+never in a modal (ADR-0012). It is always *sticky*: the canonical state is
+rewritten to name what is actually drawn, so state cannot disagree with the view.
+_Avoid_: fallback, external change, unavailable. *Coercion* stays reserved for
+the restore-time act ADR-0009 named.
+
 ## Browser wiring
 
 **Widget** — a UI control surrounding the contact map: the locus box, resolution

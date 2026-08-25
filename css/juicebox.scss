@@ -733,6 +733,16 @@ $default-font-family: 'Open Sans', sans-serif;
   select {
     width: 75%;
   }
+  // Shown only while a normalization substitution stands (#372, ADR-0012). It
+  // carries no click target on purpose: the reason it announces lives in the
+  // container's title, and the remedy is the selector it sits beside.
+  i.hic-normalization-substitution-marker {
+    flex: 0 0 auto;
+    margin-left: 5px;
+    font-size: 12px;
+    color: #d9822b;
+    cursor: default;
+  }
 }
 .hic-resolution-selector-container {
   width: 25%;

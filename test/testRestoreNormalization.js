@@ -33,10 +33,14 @@
  *    two enforcers the duplicate was the one that won. Candidate 6's premise is
  *    that an invariant has one enforcer or none.
  *
- * **No error surface is asserted here, because none is added here.** #372 is
- * "a normalization that is not available renders without one and the user is
- * not told"; its validation half is this file, its notification half stays #372
- * and is a different question with a different reviewer.
+ * 6. **The user is told.** #372's notification half, added by ADR-0012 once the
+ *    design question the validation half deferred had an answer. A coercion
+ *    that nobody sees is the original report with the symptom moved: the map
+ *    still comes up on `NONE` and still says nothing. The surface itself --
+ *    marker, title, and the three things that clear it -- is driven at the
+ *    widget's own seam in `testNormalizationSubstitution.js`; what is claimed
+ *    here is that a real restore reaches it, and that a restore with nothing to
+ *    report stays quiet.
  *
  * The dataset is `test/utils/restoreDataset.js`, the fixture the gate and
  * `testRestoreClamp.js` both drive, wrapped here to answer
@@ -213,5 +217,73 @@ describe('normalization is validated against the loaded dataset at restore (#561
         await browser.init({url: HIC_URL, state: savedWith('NONE'), normalization: 'KR'})
 
         expect(browser.state.normalization).toBe('KR')
+    })
+
+    /** The standing announcement on a browser's normalization widget, if any. */
+    const announcement = browser => {
+        const widget = browser.coordinator.widgets.normalizationWidget
+        return 'none' === widget.substitutionMarker.style.display ? undefined : widget.container.title
+    }
+
+    test('a coerced restore announces the substitution in the widget', async () => {
+
+        offered = ['NONE', 'VC']
+
+        const browser = await restore(savedWith('KR'))
+
+        // Named rather than merely flagged: "a normalization was substituted"
+        // does not tell the user which one they asked for or what they are
+        // looking at instead.
+        expect(announcement(browser)).toContain('KR')
+        expect(announcement(browser)).toContain('NONE')
+    })
+
+    test('the announcement survives the load that raised it', async () => {
+
+        // The coercion happens inside `setState`, which goes on to repaint and
+        // then to fire `onLocusChange` with both change flags set -- so an
+        // announcement cleared on a flag would be gone before the load
+        // returned, and #372 would still be open with a marker in it.
+        offered = ['NONE', 'VC']
+
+        const browser = await restore(savedWith('KR'))
+
+        expect(announcement(browser)).toBeDefined()
+    })
+
+    test('a restore with nothing to report stays quiet', async () => {
+
+        offered = ['NONE', 'VC', 'KR']
+
+        const browser = await restore(savedWith('KR'))
+
+        expect(browser.state.normalization).toBe('KR')
+        expect(announcement(browser)).toBeUndefined()
+    })
+
+    test('NONE, settled without asking, is not a substitution', async () => {
+
+        // Nothing was taken away from the user here: they asked for no
+        // normalization and got none.
+        offered = ['NONE', 'KR']
+
+        const browser = await restore(savedWith('NONE'))
+
+        expect(announcement(browser)).toBeUndefined()
+    })
+
+    test('a coerced top-level config.normalization announces it too', async () => {
+
+        // The second of `#resolveNormalization`'s two doors. It is the same
+        // question against the same set (claim 5), so it is the same
+        // announcement -- one notification path, as one enforcer.
+        offered = ['VC']
+
+        const browser = embed()
+
+        await browser.init({url: HIC_URL, state: savedWith('NONE'), normalization: 'KR'})
+
+        expect(announcement(browser)).toContain('KR')
+        expect(announcement(browser)).toContain('VC')
     })
 })

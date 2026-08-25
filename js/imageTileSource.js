@@ -70,7 +70,7 @@ class ImageTileSource {
      * @param diffColorScale signed scale for AMB
      * @param createTile factory for a raster surface. Defaults to a canvas;
      *        tests inject a stub, since the test environment has no canvas.
-     * @param observer receives colorScaleChanged, normalizationUnavailable and
+     * @param observer receives colorScaleChanged, normalizationSubstituted and
      *        loadingChanged. All optional.
      * @param tileDimension tile edge length in bins
      * @param cacheLimit retained tile count
@@ -212,8 +212,9 @@ class ImageTileSource {
     /**
      * The normalization this pass can actually render with.
      *
-     * A vector absent at the current resolution falls back to NONE. The source
-     * reports the fallback and renders with it; it does not write state.
+     * A vector absent at the current chromosome and resolution is substituted
+     * with NONE. The source reports the substitution and renders with it; it
+     * does not write state.
      */
     #effectiveNormalization(ds, zd, requested) {
 
@@ -223,7 +224,7 @@ class ImageTileSource {
             return requested
         }
 
-        this.observer.normalizationUnavailable?.(requested, "NONE")
+        this.observer.normalizationSubstituted?.(requested, "NONE")
         return "NONE"
     }
 

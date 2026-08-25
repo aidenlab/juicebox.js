@@ -40,6 +40,7 @@ import {normalizeTrackConfigs} from "./normalizeSession.js"
 import {unmappedUrl, unmappedIndexUrl} from "./urlMapper.js"
 import {isSynchable} from "./syncGroup.js"
 import {SENTINEL_ZOOM} from "./sentinelZoom.js"
+import {substitutionReason} from "./normalizationWidget.js"
 
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
@@ -84,7 +85,7 @@ class HICBrowser {
      * The field, not the object. The getter hands back the live `State`, so
      * `browser.state.normalization = x` still writes canonical state from
      * outside -- and two production sites do exactly that, `createWidgets`'
-     * `normalizationUnavailable` and `init`. `normalization` is not one of the
+     * `normalizationSubstituted` and `init`. `normalization` is not one of the
      * canonical six and `setView` does not take it; what it has instead is one
      * enforcer, `#resolveNormalization`. See `docs/state-manipulation.md`.
      */
@@ -299,6 +300,7 @@ class HICBrowser {
             // and when.
             if (config.normalization) {
                 this.state.normalization = await this.#resolveNormalization(config.normalization);
+                this.#announceSubstitution(config.normalization, this.state.normalization);
             }
 
             if (config.cycle) {
@@ -1046,9 +1048,16 @@ class HICBrowser {
             this.contactMatrixView.getViewDimensions()
         );
 
-        restored.normalization = await this.#resolveNormalization(restored.normalization);
+        const requestedNormalization = restored.normalization;
+        restored.normalization = await this.#resolveNormalization(requestedNormalization);
 
         this.#state = restored;
+
+        // After the assignment, because the announcement is scoped to the view
+        // it is about and that view is the one now in force. Before `update()`
+        // and `onLocusChange`, which follow: both run on this same view, so
+        // neither retires it (#372, ADR-0012).
+        this.#announceSubstitution(requestedNormalization, restored.normalization);
 
         const eventData = {
             state: this.state,
@@ -1140,6 +1149,39 @@ class HICBrowser {
         }
 
         return available[0];
+    }
+
+    /**
+     * Tell the user when the answer differs from the request.
+     *
+     * Both of `#resolveNormalization`'s callers ask this immediately after
+     * asking it, which is what makes one enforcer also one notification path
+     * (#372, ADR-0012 decision 1). Split from the enforcer rather than folded
+     * into it so the enforcer stays a pure question with a pure answer -- it is
+     * asked in a restore and in `init`, and only the callers know which view
+     * the answer is about.
+     *
+     * Two of the three reasons are chosen here, and the choice is the control
+     * dataset: with one loaded, `getNormalizationOptions` returns an
+     * *intersection*, so a normalization missing from it may be present in the
+     * primary file and come back when the control map is unloaded. That is a
+     * different remedy, so it is a different sentence. The third reason belongs
+     * to the render pass and is worded there.
+     *
+     * @param {string|undefined} requested - what was asked for
+     * @param {string} resolved - what will be drawn
+     */
+    #announceSubstitution(requested, resolved) {
+
+        if (undefined === requested || requested === resolved) {
+            return;
+        }
+
+        const reason = this.controlDataset
+            ? substitutionReason.notInBothMaps(requested, resolved)
+            : substitutionReason.notInFile(requested, resolved);
+
+        this.coordinator.onNormalizationSubstituted(resolved, reason);
     }
 
     /**

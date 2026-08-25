@@ -64,7 +64,7 @@ function stubBrowser() {
         registry: {presentAlert: () => undefined, sync: () => undefined, browsers: []},
         coordinator: {
             onGenomeChange: () => undefined,
-            onNormalizationExternalChange: () => undefined,
+            onNormalizationSubstituted: () => undefined,
             onNormVectorIndexLoad: () => undefined,
             onMapLoaded: (...args) => mapLoaded(...args)
         }

@@ -45,7 +45,7 @@ function stubBrowser(recorded) {
         userInteractionShield: { style: {} },
         controlDataset: undefined,
         coordinator: {
-            onNormalizationExternalChange: () => undefined,
+            onNormalizationSubstituted: () => undefined,
             onGenomeChange: () => undefined,
             onNormVectorIndexLoad: () => undefined,
             onMapLoaded: () => undefined

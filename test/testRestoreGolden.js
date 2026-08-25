@@ -245,7 +245,7 @@
  *   `loadLiveContactMap` decodes the same `config.state` and calls the same
  *   chokepoint, so it inherits the coercion without being touched. That it moved
  *   in step with the file path is the answer to #504's lesson: the two doors
- *   agree here, which is exactly what the fifth column exists to show.
+ *   agree here, which is exactly what the live column exists to show.
  * - **Both columns moved by the same amount, and that is the point.** A clamp
  *   moves one viewport column and not the other (the #558 tally above); a
  *   normalization is not a function of the viewport, so a movement that

@@ -39,7 +39,7 @@ card names three and misses `syncState`. `syncState` is a pass-through to
 
 **4. `synchable` is checked in three places** — `syncGroup.js:18` filters on it,
 `hicBrowser.syncState:955` guards on it, `stateManager.canBeSynched:158` guards
-on it again. (As of #566 there are two: see the amendment.) The "two-and-a-half enforcers" shape the candidate exists to remove
+on it again. The "two-and-a-half enforcers" shape the candidate exists to remove
 is present one level up, in the sync path, and the card does not mention it.
 
 **5. In a real browser the clamp would be real; in the test harness it is
@@ -251,7 +251,7 @@ an error-surface question this candidate should not be deciding in passing.
 ## Amendment — 2026-08-25, #566
 
 **One of the four `dataLoader.loadHicFile` branches this ADR enumerates no
-longer exists.** The ladder is `config.locus`, `config.state`, `State.default()`.
+longer exists**, and fact 4's three `synchable` checks are now two. The ladder is `config.locus`, `config.state`, `State.default()`.
 The `config.synchState` rung was deleted rather than repaired.
 
 The decision above is unchanged; what changed is the count of branches it

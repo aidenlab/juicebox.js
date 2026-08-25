@@ -132,7 +132,8 @@ same seam from opposite sides: the load-end sync step in `dataLoader` filters pe
 afterwards was caught by the guard too. Deleting it strengthened one path and weakened the other,
 which "moves code, does not change what syncing does" does not allow. The guard stayed, written as
 `isSynchable(this)` — **one statement of the rule, three readers**, which is what the acceptance
-criterion was actually protecting. `test/testSyncOptOut.js` pins both paths and fails without it.
+criterion was actually protecting. (Two readers since #566 deleted `canBeSynched`; the rule is still
+written down once, which is the part that mattered.) `test/testSyncOptOut.js` pins both paths and fails without it.
 
 **One split found while decomposing, against the ADR's own sequencing.** The ADR treats restore
 through the chokepoint as one ticket; it is two. Three of the five `setActiveDataset` call sites are
@@ -222,7 +223,7 @@ at the peer sync. The next honest move is the repro, not a third reading.
 |---|---|---|
 | **#605** | `needs-triage` | `HICBrowser.syncState` does not check that the dataset knows the chromosomes a sync state names. `canBeSynched` was the only code that did, and #566 deleted it with the rung it guarded — but the paths that actually reach `syncState` never had the check, so it is a gap made visible rather than one introduced |
 | **#575** | `needs-triage` | `init` writes `state.normalization` unvalidated in its `config.colorScale` branch, 35 lines above the validated write that overwrites it. Found by the review axes on #563; older than the candidate, transient in effect |
-| ~~**#566**~~ | ✅ **closed** | The `config.synchState` restore rung was unreachable — `clearDataset()` ran four lines above a guard that needs a dataset. **Deleted rather than repaired**: superseded in Dec 2017 by the peer-sync step at the end of `loadHicFile`, no caller since. `canBeSynched` and the golden's fifth column went with it; see the amendment to ADR-0009 |
+| ~~**#566**~~ | ✅ **answered — deletion on `delete-synchstate-rung-566`, closes on merge** | The `config.synchState` restore rung was unreachable — `clearDataset()` ran four lines above a guard that needs a dataset. **Deleted rather than repaired**: superseded in Dec 2017 by the peer-sync step at the end of `loadHicFile`, no caller since. `canBeSynched` and the golden's fifth column went with it; see the amendment to ADR-0009 |
 | **#372** | `ready-for-human` | Narrowed to its notification half; the validation half landed in #561 |
 | **#280** | — | Still open, still unreproduced; #566 retired its mechanism and re-pointed it at the peer sync. Needs the repro, not another reading |
 

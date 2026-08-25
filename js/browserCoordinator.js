@@ -194,6 +194,15 @@ class BrowserCoordinator {
     onLocusChange(eventData) {
         const { state, resolutionChanged, chrChanged } = eventData;
 
+        // 0. Retire a normalization substitution announcement that this view has
+        //    moved off. Asked of the view rather than of the change flags: the
+        //    announcement is raised from inside the same load that sets both
+        //    flags, so a flag-driven clear would take it down in the same breath
+        //    it went up (#372, ADR-0012 decision 2).
+        if (this.widgets.normalizationWidget) {
+            this.widgets.normalizationWidget.clearSubstitutionIfStale(state);
+        }
+
         // 1. Update chromosome selector
         if (this.widgets.chromosomeSelector) {
             this.widgets.chromosomeSelector.respondToLocusChangeWithState(state);
@@ -236,6 +245,13 @@ class BrowserCoordinator {
      * @param {string} normalization - The normalization type
      */
     onNormalizationChange(normalization) {
+        // The user has answered the question a standing announcement asked, so
+        // it is no longer true. The widget clears its own on a selector change;
+        // this is the same clear for a host that calls `setNormalization`
+        // directly, and it is idempotent.
+        if (this.widgets.normalizationWidget) {
+            this.widgets.normalizationWidget.clearSubstitution();
+        }
         this.contactMatrixView.receiveEvent({ type: "NormalizationChange", data: normalization });
         // NormalizationWidget updates via selector change, no direct notification needed
     }
@@ -314,17 +330,33 @@ class BrowserCoordinator {
     }
 
     /**
-     * Orchestrate component updates when normalization changes externally.
-     * 
+     * Orchestrate component updates when a normalization was substituted -- the
+     * view is being drawn with something other than what was asked for.
+     *
+     * One path for both substitution moments (#372, ADR-0012): the restore-time
+     * coercion, whose scope is the whole file's option set, and the mid-render
+     * miss, whose scope is this chromosome and resolution. Both put the
+     * effective value on the selector and the reason beside it; neither raises a
+     * modal, because a link that opens correctly on `NONE` is not an error.
+     *
+     * There is no third caller. The hic-straw `alert` hook, which ADR-0012 first
+     * described as a read-failure surface, turns out to have exactly one caller
+     * in that library and it is this same event -- so it comes here too, through
+     * `dataLoader.#announceStrawSubstitution`, rather than to a modal.
+     *
      * Uses a programmatic update method that prevents feedback loops by ensuring
      * the change event listener doesn't trigger when we programmatically set the value.
-     * 
-     * @param {string} normalization - The normalization type
+     *
+     * @param {string} normalization - The normalization actually being drawn
+     * @param {string} reason - What the user is told, from `substitutionReason`
      */
-    onNormalizationExternalChange(normalization) {
+    onNormalizationSubstituted(normalization, reason) {
         if (this.widgets.normalizationWidget) {
             // Use programmatic update method to prevent feedback loop
             this.widgets.normalizationWidget.setNormalizationProgrammatically(normalization);
+            if (this.browser.state) {
+                this.widgets.normalizationWidget.announceSubstitution(reason, this.browser.state);
+            }
         }
     }
 

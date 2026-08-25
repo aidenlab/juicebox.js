@@ -25,7 +25,7 @@ import LocusGoto from "./hicLocusGoto.js"
 import ResolutionSelector from "./hicResolutionSelector.js"
 import ColorScaleWidget from "./hicColorScaleWidget.js"
 import ControlMapWidget from "./controlMapWidget.js"
-import NormalizationWidget from "./normalizationWidget.js"
+import NormalizationWidget, {substitutionReason} from "./normalizationWidget.js"
 import {getNavbarContainer} from "./layoutController.js"
 import SweepZoom from "./sweepZoom.js"
 import ScrollbarWidget from "./scrollbarWidget.js"
@@ -95,16 +95,25 @@ function createWidgets(browser) {
 
             colorScaleChanged: (scale) => coordinator.onColorScale(scale),
 
-            normalizationUnavailable: (requested, effective) => {
-                browser.registry.presentAlert(`Normalization option ${requested} unavailable at this resolution.`);
-                coordinator.onNormalizationExternalChange(effective);
+            // The mid-render half of #372: a vector the file advertises but does
+            // not carry at *this* chromosome and resolution. It used to raise a
+            // modal; ADR-0012 deleted it, because a substitution is not a
+            // failure and the widget is the surface. Same notification path as
+            // the restore-time coercion, different reason -- here the remedy is
+            // to pan or zoom.
+            normalizationSubstituted: (requested, effective) => {
                 // The source never writes canonical state, so the correction
                 // lands here. Still outside the setView chokepoint, as it was
-                // before -- see the known inconsistency noted in
-                // docs/state-manipulation.md.
+                // before -- routing it through `browser.setNormalization` would
+                // repaint from inside a render pass. See the known
+                // inconsistency noted in docs/state-manipulation.md.
                 if (browser.state) {
                     browser.state.normalization = effective;
                 }
+                coordinator.onNormalizationSubstituted(
+                    effective,
+                    substitutionReason.notAtThisView(requested, effective)
+                );
             },
 
             // Resolved lazily: the browser does not hold its contact matrix view

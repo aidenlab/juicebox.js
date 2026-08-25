@@ -40,6 +40,7 @@ import {normalizeTrackConfigs} from "./normalizeSession.js"
 import {unmappedUrl, unmappedIndexUrl} from "./urlMapper.js"
 import {isSynchable} from "./syncGroup.js"
 import {SENTINEL_ZOOM} from "./sentinelZoom.js"
+import {substitutionReason} from "./normalizationWidget.js"
 
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
@@ -84,7 +85,7 @@ class HICBrowser {
      * The field, not the object. The getter hands back the live `State`, so
      * `browser.state.normalization = x` still writes canonical state from
      * outside -- and two production sites do exactly that, `createWidgets`'
-     * `normalizationUnavailable` and `init`. `normalization` is not one of the
+     * `normalizationSubstituted` and `init`. `normalization` is not one of the
      * canonical six and `setView` does not take it; what it has instead is one
      * enforcer, `#resolveNormalization`. See `docs/state-manipulation.md`.
      */
@@ -299,6 +300,7 @@ class HICBrowser {
             // and when.
             if (config.normalization) {
                 this.state.normalization = await this.#resolveNormalization(config.normalization);
+                await this.#announceSubstitution(config.normalization, this.state.normalization);
             }
 
             if (config.cycle) {
@@ -1046,9 +1048,16 @@ class HICBrowser {
             this.contactMatrixView.getViewDimensions()
         );
 
-        restored.normalization = await this.#resolveNormalization(restored.normalization);
+        const requestedNormalization = restored.normalization;
+        restored.normalization = await this.#resolveNormalization(requestedNormalization);
 
         this.#state = restored;
+
+        // After the assignment, because the announcement is scoped to the view
+        // it is about and that view is the one now in force. Before `update()`
+        // and `onLocusChange`, which follow: both run on this same view, so
+        // neither retires it (#372, ADR-0012).
+        await this.#announceSubstitution(requestedNormalization, restored.normalization);
 
         const eventData = {
             state: this.state,
@@ -1140,6 +1149,47 @@ class HICBrowser {
         }
 
         return available[0];
+    }
+
+    /**
+     * Tell the user when the answer differs from the request.
+     *
+     * Both of `#resolveNormalization`'s callers ask this immediately after
+     * asking it, which is what makes one enforcer also one notification path
+     * (#372, ADR-0012 decision 1). Split from the enforcer rather than folded
+     * into it so the enforcer stays a pure question with a pure answer -- it is
+     * asked in a restore and in `init`, and only the callers know which view
+     * the answer is about.
+     *
+     * Two of the three reasons are chosen here, and the question that separates
+     * them is asked of the *primary* file, not of the control map's presence.
+     * With a control map loaded `getNormalizationOptions` returns an
+     * intersection, and a normalization missing from an intersection is missing
+     * for one of two quite different causes: the primary file never had it, or
+     * the primary file has it and the control map does not. Only the second is
+     * fixed by unloading the control map, and telling a user to unload a map
+     * that will not bring their vector back is worse than telling them nothing.
+     * So the primary file is asked directly. The third reason belongs to the
+     * render pass and is worded there.
+     *
+     * @param {string|undefined} requested - what was asked for
+     * @param {string} resolved - what will be drawn
+     */
+    async #announceSubstitution(requested, resolved) {
+
+        if (undefined === requested || requested === resolved) {
+            return;
+        }
+
+        const inPrimaryFile = this.dataset && this.dataset.getNormalizationOptions
+            ? (await this.dataset.getNormalizationOptions()).includes(requested)
+            : false;
+
+        const reason = inPrimaryFile
+            ? substitutionReason.notInBothMaps(requested, resolved)
+            : substitutionReason.notInFile(requested, resolved);
+
+        this.coordinator.onNormalizationSubstituted(resolved, reason);
     }
 
     /**

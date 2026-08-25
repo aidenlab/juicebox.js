@@ -62,7 +62,12 @@ const dataset = ({
         bpResolutions: resolutions,
         getBinSizeForZoomIndex: (i) => resolutions[i],
         getZoomIndexForBinSize: (b) => resolutions.indexOf(b),
-        hasNormalizationVector: (norm) => normalizations.includes(norm),
+        // Async, as `Dataset.hasNormalizationVector` is (js/hicDataset.js:322).
+        // It was a plain function here until #372, and a plain function is
+        // exactly what hid the production bug: an un-awaited call returns a
+        // Promise, and every Promise is truthy, so the check could never say
+        // "no" against the real dataset while passing here.
+        hasNormalizationVector: async (norm) => normalizations.includes(norm),
         getMatrix: async () => ({getZoomDataByIndex: () => zd}),
         // A declared rung is an identity here; the sentinel path has its own
         // suite. See ADR-0010.
@@ -124,7 +129,7 @@ const recordingObserver = () => {
     return {
         seen,
         colorScaleChanged: (s) => seen.scales.push(s),
-        normalizationUnavailable: (req, eff) => seen.fallbacks.push([req, eff]),
+        normalizationSubstituted: (req, eff) => seen.fallbacks.push([req, eff]),
         loadingChanged: (b) => seen.loading.push(b)
     }
 }
@@ -379,7 +384,7 @@ describe('ImageTileSource normalization fallback', () => {
     it('does not consult the dataset when normalization is already NONE', async () => {
         let asked = false
         const ds = dataset()
-        ds.hasNormalizationVector = () => { asked = true; return true }
+        ds.hasNormalizationVector = async () => { asked = true; return true }
         await collect(makeSource().tilesFor(request({dataset: ds})))
         expect(asked).toBe(false)
     })

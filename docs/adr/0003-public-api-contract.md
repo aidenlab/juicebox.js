@@ -313,3 +313,61 @@ rather than re-reasoned.
 candidates and 160 commits, including two that deleted a module (`StateManager`)
 and one that removed a wire format (`?juiceboxURL=`). The half of the contract
 that drifted is the half nothing executes.
+
+---
+
+## Appended — 2026-08-25: `config.colorScale`'s threshold is a directive
+
+Appended, not revised, per the rule above. This adds a clause to the contract
+rather than re-measuring it: the surface did not change, but something a host may
+rely on was true only by accident and is now stated.
+
+**A `colorScale` on a config names the contrast the map opens at. The first
+render draws at that threshold; it does not compute one and overwrite it.**
+
+This was never written down, and until #575 it was not reliably true. The
+mechanism is a cache seed: `contactMatrixView.setColorScale` files the threshold
+in `imageTileSource.thresholdCache` under `colorScaleKey(state, displayMode)`,
+and the first render pass reads the same key back. Where the key matches, the
+host's value stands. Where it does not, `#ensureColorScale` refetches contact
+records and replaces the threshold with the 95th percentile of the data.
+
+Before #575, `init` seeded that cache *above* the normalization enforcer, so the
+key carried the **requested** normalization while the render looked up the
+**resolved** one. The two agree only when nothing was substituted. So the
+directive was honoured when the request happened to be valid and silently
+discarded when it was not — which is not a contract, it is a coin flip.
+
+### Why this is a contract rather than a hint
+
+`toJSON` writes `colorScale` into every saved session (`hicBrowser.js:1365`), and
+session restore comes back through `init`'s config. So the population relying on
+this is not a hypothetical embedder reading an options table — it is **every
+published juicebox link**. A link reopening at a different contrast than the one
+it was saved at is the same class of harm ADR-0009 decision 2 argues against for
+`pixelSize` and origin: a link that no longer shows what it was made to show.
+
+The measurement tables above cannot see this. They record which *members* a
+consumer calls, and this is a claim about what a member *does* with a field.
+`browser.config` and `restoreSession` are both in the tables; the behaviour that
+makes them worth calling was not.
+
+### What follows
+
+- **The ordering in `init` is load-bearing and commented as such.** The
+  `config.colorScale` branch sits below the normalization write. Moving it back
+  up reintroduces the defect silently — nothing throws, a threshold is just
+  different. `test/testRestoreNormalization.js` pins which normalization the seed
+  lands under; `test/testImageTileSource.js` pins that a matching seed suppresses
+  the automatic threshold and a mismatched one does not.
+- **The threshold is still per-normalization.** Nothing here says it should be.
+  A host's "open at this contrast" is arguably not a statement about
+  normalization at all, and keying it that way is what made the ordering matter
+  in the first place. #575 fixed the ordering rather than the keying, deliberately
+  — decoupling the seed from `colorScaleKey` touches the render path's cache
+  protocol and belongs on its own card, argued on its own merits.
+- **The comparison modes are excluded, and were already.** `#ensureColorScale`
+  returns early for `AOB`, `BOA` and `AMB`: a signed scale's threshold is
+  user-driven and never derived from the data, so there is no automatic value for
+  a host directive to be overwritten by. CONTEXT.md's *Color scale* entry states
+  this distinction.

@@ -262,14 +262,6 @@ class HICBrowser {
                 this.coordinator.onDisplayMode(config.displayMode);
             }
 
-            if (config.colorScale) {
-                if (config.normalization) {
-                    this.state.normalization = config.normalization;
-                }
-                this.contactMatrixView.setColorScale(config.colorScale);
-                this.coordinator.onColorScale(this.contactMatrixView.getColorScale());
-            }
-
             const promises = [];
 
             if (config.tracks) {
@@ -301,6 +293,34 @@ class HICBrowser {
             if (config.normalization) {
                 this.state.normalization = await this.#resolveNormalization(config.normalization);
                 await this.#announceSubstitution(config.normalization, this.state.normalization);
+            }
+
+            // Below the normalization write, and pinned there (#575). A host's
+            // `colorScale` carries a threshold it means to be drawn at, and the
+            // only thing that makes that threshold survive the first render is
+            // the cache entry `setColorScale` seeds -- keyed, through
+            // `colorScaleKey`, on `state.normalization`. `#ensureColorScale`
+            // reads that key back on the first pass with the *resolved*
+            // normalization in force, so a seed written any earlier is filed
+            // under a value that is not the one looked up: the lookup misses,
+            // `autoThreshold` runs, and the host's threshold is overwritten by
+            // one computed from the data.
+            //
+            // Above the seam this branch used to sit above, it also wrote
+            // `state.normalization` from `config.normalization` unvalidated --
+            // a second enforcer for the invariant ADR-0009 decision 5 says has
+            // one or none. Moving the branch is what removes it; the write is
+            // not deleted, it is the one below.
+            //
+            // The reordering costs a repaint of the colour-scale widget, which
+            // is all `onColorScale` does (`browserCoordinator.js:281`). It now
+            // lands after the track and normalization-vector loads rather than
+            // before them -- behind the spinner and the interaction shield
+            // raised at the top of this method, and read by nothing on either
+            // load path.
+            if (config.colorScale) {
+                this.contactMatrixView.setColorScale(config.colorScale);
+                this.coordinator.onColorScale(this.contactMatrixView.getColorScale());
             }
 
             if (config.cycle) {

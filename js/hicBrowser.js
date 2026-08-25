@@ -1231,12 +1231,17 @@ class HICBrowser {
      * Take a sync state published by a sibling browser.
      *
      * The guard is `isSynchable` from `syncGroup.js` -- the same expression
-     * `pairSynchable` and `canBeSynched` read, so #562 left the `synchable`
-     * rule written down once. The guard itself stays here rather than being
+     * `pairSynchable` reads, so #562 left the `synchable` rule written down
+     * once. (`canBeSynched` was the third reader until #566 deleted it with the
+     * `config.synchState` rung.) The guard itself stays here rather than being
      * left to the callers: `syncToOtherBrowsers` walks `synchedBrowsers`, a set
      * `registry.sync()` last rebuilt, so a browser whose host flipped
      * `synchable` since then is still in it. That was master's behaviour and
      * the ticket does not change what syncing does.
+     *
+     * It does *not* check that this browser's dataset knows the chromosomes the
+     * sync state names -- `canBeSynched` was the only code that did, and it
+     * guarded a rung nothing took. Filed rather than fixed here (#605).
      */
     async syncState(targetState) {
         if (!targetState || !isSynchable(this) || !this.state) {

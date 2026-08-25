@@ -49,7 +49,7 @@ what is actually unblocked.
 | ~~**#559**~~ | `setActiveDataset` loses its `state` parameter | ✅ **landed** — the parameter is gone from all five `dataLoader` sites, the `config.locus` door now reaches `setState`, and **the gate's `rungs` field moved on all 450 records while not one `state` field did** |
 | ~~**#560**~~ | `resolutionChanged` tells the truth on restore | ✅ **landed** — the flag is computed against the state going out of force, and **not one of the gate's 450 records moved** |
 | ~~**#561**~~ | Normalization is validated against the loaded dataset at restore | ✅ **landed** — a normalization the loaded dataset does not offer is coerced to `NONE` in the chokepoint, `NONE` short-circuiting ahead of the dataset |
-| ~~**#562**~~ | The sync trio splits three ways | ✅ **landed** — `canBeSynched` to `syncGroup.js`, `getSyncState` to `State`, `StateManager.syncState` deleted; **the `synchable` guard on `HICBrowser.syncState` stayed**, see below |
+| ~~**#562**~~ | The sync trio splits three ways | ✅ **landed** — `canBeSynched` to `syncGroup.js` (and deleted outright by #566), `getSyncState` to `State`, `StateManager.syncState` deleted; **the `synchable` guard on `HICBrowser.syncState` stayed**, see below |
 | ~~**#563**~~ | `StateManager` folds into `State`, the setters go, and the discipline is written down | ✅ **landed** — `StateManager` is gone, the state is a private field on `HICBrowser` with one writer, and **neither golden moved**; the find was in the fixture, see below |
 
 **#560, #561 and #562 were a parallel branch** off #559; #563 was the join, and all three legs went in first. This is the first
@@ -112,9 +112,9 @@ gained is not visible in a snapshot; `test/testRestoreBackDoor.js` trapped `acti
 asserted every state installed during that load came out of the chokepoint. **#563 made that
 structural**: the field is private, there is nowhere to write it from, and what the file asserts now
 is that the state left standing is one the chokepoint produced. **The `synchState`
-branch was fixed but cannot be exercised in production: the rung is unreachable (#566), so #559's
-third acceptance criterion is narrowed to a test that pins both the unreachability and the branch's
-correctness for when #566 lifts it.**
+branch was fixed but could not be exercised in production: the rung was unreachable (#566), so
+#559's third acceptance criterion was narrowed to a test pinning both the unreachability and the
+branch's correctness. #566 has since deleted the rung, and those two tests went with it.**
 
 **One thing #558 broke quietly and #559 had to finish.** The chokepoint installs a *clone*, so the
 state a rung hands it stops being the state in force the moment it is accepted — and `onMapLoaded`
@@ -191,7 +191,7 @@ than rediscovered one at a time.
 | ~~**#510**~~ | Aug 2026 | Was the frontier. Promoted from a candidate-5 follow-up by ADR-0009 | ✅ **fixed**, before the gate, exactly as ADR-0009 sequenced it |
 | **#372** | Jul 2026 | Its **validation half is #561**. Restore is the first moment a valid normalization set exists | ✅ narrowing recorded on the issue; open, `ready-for-human` — "tell the user" is an error-UX decision nobody has made |
 | ~~**#528**~~ | Aug 2026 | **Answered by ADR-0009.** It asked whether a numeric seventh state token (`normalization: "2000"`) should be rejected or coerced; decisions 2 and 5 say coerce, at restore, against the dataset | ✅ **closed** — #561 coerces it, and the restore golden pins `"2000"` in, `"NONE"` out, at both viewports |
-| **#280** | 2018 | **Hypothesis weakened by #566** — the rung it blames is unreachable, not racy. See below | linked both ways with #562; still open, needs the repro, do **not** close on the reading |
+| **#280** | 2018 | **Hypothesis retired by #566** — the rung it blamed was unreachable, and is now deleted. See below | re-pointed at the peer-sync step; still open, needs the repro, do **not** close on the reading |
 | **#473** | Aug 2026 | Same in-flight hazard as #469, on `TrackPair` rather than `ContactMatrixView`. Candidate 6 changed who owns state mutation | **neither easier nor harder** — the identity check `testRepaintDuringReset.js` pins is unaffected by the fold. Still open, `needs-triage` |
 | ~~**#125**~~ | 2020 | Asked how `state` should be encoded for `loadHicFile`. The syntax in the question was always right; `docs/url.md` now documents v0 and v1 per ADR-0006 decision 2 | ✅ **answered and closed** |
 | ~~**#283**~~ | 2018 | Share produced `?juiceboxURL=undefined`. Moot — nothing writes that format since #506; only the adapter that refuses it remains | ✅ **closed as moot** |
@@ -200,30 +200,31 @@ than rediscovered one at a time.
 
 "Load two maps by URL, share the link, reopen it — the maps are synced about 30% of the time."
 
-The `synchState` branch of the load ladder consults `canBeSynched` **before** the dataset is
-assigned, and `canBeSynched` returns false when `activeDataset` is undefined. So on a shared
-two-map URL, whichever browser loses the load race falls through to the `else` branch and opens at
-`State.default` instead of synced. A race would produce exactly the reported intermittency.
+The original reading blamed the `synchState` branch of the load ladder, which consulted
+`canBeSynched` **before** the dataset was assigned. **That reading is dead.** #566 found the rung
+*unreachable* rather than racy — every first load carrying a `synchState` took the fallback, not 30%
+of the time but always — and then deleted it: it was the 2017 mechanism for syncing a new panel,
+superseded three months later by the peer-sync step at the end of `loadHicFile`, with no caller in
+the nine years since.
 
-**Not reproduced, and the mechanism is now doubtful.** #566 found the `config.synchState` rung
-*unreachable* rather than racy: `clearDataset()` runs four lines above it, so `canBeSynched` is
-never true and every first load carrying a `synchState` takes the fallback — not 30% of the time,
-always. A rung nothing takes cannot produce intermittency, so either #280 is a different bug or the
-reading is wrong about which door it comes through.
+**Where the hypothesis moves.** The order-dependent code on a two-map load is the step that replaced
+the rung: `registry.sync()` and then the `isCompatible` peer filter, both at the *end* of
+`loadHicFile`. Whichever browser finishes loading first has no compatible peer to find and opens at
+its own state; the second finds the first and syncs to it. That is genuinely a function of load
+order, which is what "sometimes" would have to come from.
 
-**#562 landed without testing it**, deliberately: the check needs the repro, not another reading,
-and #562 moved `canBeSynched` without changing what it answers. **#280 stays open and stays linked.**
-The next honest move is to run its repro against a build with #566 lifted; until then it does not
-belong in candidate 6's Outcome box.
+**Still not reproduced, and that is what it needs.** #280 stays open, `ready-for-human`, re-pointed
+at the peer sync. The next honest move is the repro, not a third reading.
 
 ## Filed during candidate 6, still open
 
 | Issue | State | What it is |
 |---|---|---|
+| **#605** | `needs-triage` | `HICBrowser.syncState` does not check that the dataset knows the chromosomes a sync state names. `canBeSynched` was the only code that did, and #566 deleted it with the rung it guarded — but the paths that actually reach `syncState` never had the check, so it is a gap made visible rather than one introduced |
 | **#575** | `needs-triage` | `init` writes `state.normalization` unvalidated in its `config.colorScale` branch, 35 lines above the validated write that overwrites it. Found by the review axes on #563; older than the candidate, transient in effect |
-| **#566** | `needs-triage` | The `config.synchState` restore rung is unreachable — `clearDataset()` runs four lines above a guard that needs a dataset. Pinned both ways in `testRestoreBackDoor.js`: unreachable today, correct for when this lifts |
+| ~~**#566**~~ | ✅ **closed** | The `config.synchState` restore rung was unreachable — `clearDataset()` ran four lines above a guard that needs a dataset. **Deleted rather than repaired**: superseded in Dec 2017 by the peer-sync step at the end of `loadHicFile`, no caller since. `canBeSynched` and the golden's fifth column went with it; see the amendment to ADR-0009 |
 | **#372** | `ready-for-human` | Narrowed to its notification half; the validation half landed in #561 |
-| **#280** | — | Still open, still unreproduced; #566 weakened its mechanism. Needs the repro, not another reading |
+| **#280** | — | Still open, still unreproduced; #566 retired its mechanism and re-pointed it at the peer sync. Needs the repro, not another reading |
 
 ## The release note this candidate owes
 

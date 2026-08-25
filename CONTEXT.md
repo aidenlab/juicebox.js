@@ -248,13 +248,15 @@ a browser is where the other columns end too.
 **Restore door** — a *different* set of doors from the entry paths above, and
 the word is overloaded on purpose because ADR-0009 uses it that way. An entry
 path is where a **config** comes in; a restore door is where a **state** comes
-in, one stage further down. There are five, and they are branches rather than
-published methods: `dataLoader.loadHicFile` walks a four-**rung** ladder — a
-config-level `locus`, a `state` token, a `synchState`, and the `State.default()`
-fallback — and `dataLoader.loadLiveContactMap` is a fifth door walking its own
-copy of the middle of that ladder. Only two rungs reach `browser.setState`.
-`test/testRestoreGolden.js` snapshots all five (#557); the `synchState` rung is
-unreachable today (#566).
+in, one stage further down. There are four, and they are branches rather than
+published methods: `dataLoader.loadHicFile` walks a three-**rung** ladder — a
+config-level `locus`, a `state` token, and the `State.default()` fallback — and
+`dataLoader.loadLiveContactMap` is a fourth door walking its own copy of the
+middle of that ladder. Only two rungs reach `browser.setState`.
+`test/testRestoreGolden.js` snapshots all four (#557). There was a fifth, a
+`config.synchState` rung, deleted by #566: it was unreachable, and the job it
+was written for in 2017 had been taken over by the sync step at the end of a
+load.
 
 A **stated viewport** is a `{width, height}` a fixture declares rather than
 measures. The test environment is `node`, JSDOM is opt-in per suite and does no

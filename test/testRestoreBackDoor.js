@@ -12,14 +12,21 @@
  *
  * #558 routed `setState` through the chokepoint, which incidentally fixed the
  * three rungs that assign and then immediately call it: the unvalidated state
- * was overwritten a line later. The two rungs it did not reach are the ones
- * this file is about -- `config.locus` goes on to `parseGotoInput` and
- * `config.synchState` to a sync, and on both the raw state used to stand.
+ * was overwritten a line later. The rung it did not reach is the one this file
+ * is about -- `config.locus` goes on to `parseGotoInput`, and there the raw
+ * state used to stand.
+ *
+ * A `config.synchState` rung used to be the second such rung, and #559's third
+ * acceptance criterion was about it. That rung is gone: it was unreachable
+ * (`clearDataset()` ran above a guard needing a dataset) and superseded in 2017
+ * by the sync step at the end of `loadHicFile`, so #566 deleted it rather than
+ * repairing it. The two tests that pinned it -- unreachable today, correct if
+ * lifted -- went with it.
  *
  * `testRestoreGolden.js` (#557) counts `setActiveDataset(state)` per door and
  * that count is now zero everywhere, which says the parameter stopped being
  * *passed*. It cannot say the parameter is gone, nor that nothing else writes
- * `activeState` on the way past. That is what the three claims here are:
+ * `activeState` on the way past. That is what the two claims here are:
  *
  * 1. The parameter does not exist, and a caller who passes one anyway installs
  *    no state. A count of zero would survive the door being left ajar.
@@ -29,20 +36,8 @@
  *    later -- would be seen. Since #563 the field is `HICBrowser`'s private
  *    `#state` and there is nowhere else to write it from, so what is asserted
  *    here is that the state left standing is one the chokepoint produced.
- * 3. The same trap on the `config.synchState` door. **That rung is unreachable
- *    in production today** (#566): `loadHicFile` opens with `clearDataset()`,
- *    four lines above a guard that returns false without an `activeDataset`,
- *    so a config carrying a `synchState` silently takes the fallback rung. Both
- *    halves are pinned -- that it is unreachable, and that its code is correct
- *    for when #566 makes it reachable -- because a ticket that left the branch
- *    untested until then would be leaving it untested at exactly the moment it
- *    starts running.
  *
- * The third acceptance criterion of #559 is narrowed for that reason: there is
- * no production restore via `synchState` to validate, and this file says so
- * with a test rather than with a comment that could quietly go stale.
- *
- * A fourth claim is here because closing the door moved what a *host* sees. The
+ * A third claim is here because closing the door moved what a *host* sees. The
  * chokepoint installs a clone (#558), so the state a rung hands it stops being
  * the state in force the moment it is accepted -- and once the `config.locus`
  * rung goes through the chokepoint, the object it handed over is a whole-genome
@@ -169,50 +164,5 @@ describe('the state parameter is gone from setActiveDataset (#559)', () => {
         expect(published[0]).toBe(browser.state)
         expect(published[0].chr1).toBe(CHR1)
         expect(published[0].chr2).toBe(CHR1)
-    })
-
-    test('the config.synchState rung is unreachable, so no restore takes it (#566)', async () => {
-
-        const browser = embed()
-        await browser.loadHicFile({url: HIC_URL}, true)
-
-        const synchState = browser.getSyncState()
-        expect(synchState).toBeDefined()
-
-        const sync = vi.spyOn(HICBrowser.prototype, 'syncState')
-
-        // Primed — a dataset is already loaded — and the rung is still not
-        // taken: `clearDataset()` runs first and `canBeSynched` returns false
-        // without an `activeDataset`.
-        await browser.loadHicFile({url: HIC_URL, synchState}, true)
-
-        expect(sync).not.toHaveBeenCalled()
-    })
-
-    test('when the rung is reachable, it installs the dataset and then goes through the chokepoint', async () => {
-
-        const browser = embed()
-        await browser.loadHicFile({url: HIC_URL, state: new State(CHR1, CHR1, ZOOM, 40, 40, 2, 'NONE')}, true)
-
-        const synchState = browser.getSyncState()
-
-        // #566, and only #566: the guard four lines below it is what makes the
-        // rung dead, so neutralising the clear is what a fix would amount to.
-        // Nothing else about the door is stubbed.
-        vi.spyOn(HICBrowser.prototype, 'clearDataset').mockImplementation(() => undefined)
-
-        const installs = trapStateInstalls(browser)
-        const sync = vi.spyOn(HICBrowser.prototype, 'syncState')
-
-        await browser.loadHicFile({url: HIC_URL, synchState}, true)
-
-        expect(sync).toHaveBeenCalled()
-
-        // The sibling's view arrives through `State.sync`, which is itself a
-        // `setView` call, and the freshly installed dataset is then re-clamped
-        // against by `setState`. Either way, the state left standing is one the
-        // chokepoint shaped.
-        expect(installed(installs).length).toBeGreaterThan(0)
-        expect(browser.state).toBe(installed(installs).at(-1))
     })
 })

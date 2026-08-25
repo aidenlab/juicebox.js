@@ -257,7 +257,7 @@ For BP coordinates, always go through `state.getLocus(dataset, viewDimensions)`.
 
 - `js/hicState.js` — `State` class. Canonical fields, all translators, `setView`, `getLocus`, helpers (`_adjustPixelSize`, `clampXY`).
 - `js/interactionHandler.js` — bridges UI events to translators. Should not mutate state fields directly.
-- `js/syncGroup.js` — the sync-group rule: which browsers pair (`pairSynchable`) and whether one may take a published state (`canBeSynched`). The only reader of `synchable` (#562).
+- `js/syncGroup.js` — the sync-group rule: which browsers pair (`pairSynchable`) and whether one browser is in the group at all (`isSynchable`). The only reader of `synchable` (#562). `canBeSynched` lived here too until #566 deleted it with the `config.synchState` rung.
 - `js/hicBrowser.js` — public API methods, mostly thin delegations to `interactionHandler`; the state itself (a private field), `setState`, and `resolveNormalization`. `js/stateManager.js` used to hold the field and the restore path; #563 folded it away once the behaviour had left it.
 - `js/dataLoader.js` — session/URL ingestion path.
 - `test/testState.js` — characterization tests for every translator and the chokepoint. The behavioral contract.

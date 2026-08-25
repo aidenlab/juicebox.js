@@ -111,7 +111,24 @@ class NormalizationWidget {
         this.substitutionMarker = document.createElement('i');
         this.substitutionMarker.className = 'fa fa-info-circle hic-normalization-substitution-marker';
         this.substitutionMarker.style.display = 'none';
+        this.substitutionMarker.setAttribute('role', 'button');
+        this.substitutionMarker.setAttribute('tabindex', '0');
         this.container.appendChild(this.substitutionMarker);
+
+        // The reason, as text on the page. The marker alone only says "look
+        // here"; a `title` alone is a hover delay on a small glyph and nothing
+        // at all on touch. Clicking is the affordance that actually answers the
+        // question, and it is a note rather than a dialog because ADR-0012 is
+        // that a substitution is not an error.
+        this.substitutionNote = document.createElement('div');
+        this.substitutionNote.className = 'hic-normalization-substitution-note';
+        this.substitutionNote.style.display = 'none';
+        this.container.appendChild(this.substitutionNote);
+
+        this.substitutionMarker.addEventListener('click', event => {
+            event.stopPropagation();
+            this.toggleSubstitutionNote();
+        });
 
         /** The view the standing announcement is about, or undefined if there is none. */
         this.substitutionScope = undefined;
@@ -134,14 +151,32 @@ class NormalizationWidget {
     announceSubstitution(reason, scope) {
         this.substitutionScope = viewScope(scope);
         this.container.title = reason;
+        // On the marker too, not merely inherited from the container: the marker
+        // is what a user points at, and an ancestor's title is a slower, vaguer
+        // answer to the same gesture.
+        this.substitutionMarker.title = reason;
         this.substitutionMarker.style.display = 'block';
+        // A new reason starts closed. Leaving the previous note open would leave
+        // the old sentence on screen under a marker that now means something
+        // else.
+        this.substitutionNote.textContent = reason;
+        this.substitutionNote.style.display = 'none';
+    }
+
+    /** Show the reason as text, or put it away. The marker's click handler. */
+    toggleSubstitutionNote() {
+        const showing = 'none' !== this.substitutionNote.style.display;
+        this.substitutionNote.style.display = showing ? 'none' : 'block';
     }
 
     /** Take the announcement down, whatever it said. Idempotent. */
     clearSubstitution() {
         this.substitutionScope = undefined;
         this.container.title = NO_SUBSTITUTION_TITLE;
+        this.substitutionMarker.title = '';
         this.substitutionMarker.style.display = 'none';
+        this.substitutionNote.textContent = '';
+        this.substitutionNote.style.display = 'none';
     }
 
     /**

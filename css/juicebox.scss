@@ -733,14 +733,42 @@ $default-font-family: 'Open Sans', sans-serif;
   select {
     width: 75%;
   }
-  // Shown only while a normalization substitution stands (#372, ADR-0012). It
-  // carries no click target on purpose: the reason it announces lives in the
-  // container's title, and the remedy is the selector it sits beside.
+  // Shown only while a normalization substitution stands (#372, ADR-0012).
+  // Sized to be noticed and clicked: at 12px it read as a rendering speck, and
+  // a marker nobody notices is the silence this issue is about. Amber and an
+  // information glyph, because a substitution is not a failure.
+  position: relative;
   i.hic-normalization-substitution-marker {
     flex: 0 0 auto;
-    margin-left: 5px;
-    font-size: 12px;
+    margin-left: 6px;
+    font-size: 18px;
+    line-height: 1;
     color: #d9822b;
+    cursor: pointer;
+  }
+  i.hic-normalization-substitution-marker:hover,
+  i.hic-normalization-substitution-marker:focus,
+  i.hic-normalization-substitution-marker:active {
+    color: #b3651b;
+  }
+  // The reason, as text, anchored under the widget. Non-modal by decision: it
+  // explains, it does not interrupt.
+  .hic-normalization-substitution-note {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 1024;
+    width: max-content;
+    max-width: 260px;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.35;
+    text-align: left;
+    color: #333;
+    background-color: #fff;
+    border: 1px solid #d9822b;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     cursor: default;
   }
 }

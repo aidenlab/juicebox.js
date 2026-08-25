@@ -815,11 +815,38 @@
 .hic-normalization-selector-container select {
   width: 75%;
 }
+.hic-normalization-selector-container {
+  position: relative;
+}
 .hic-normalization-selector-container i.hic-normalization-substitution-marker {
   flex: 0 0 auto;
-  margin-left: 5px;
-  font-size: 12px;
+  margin-left: 6px;
+  font-size: 18px;
+  line-height: 1;
   color: #d9822b;
+  cursor: pointer;
+}
+.hic-normalization-selector-container i.hic-normalization-substitution-marker:hover,
+.hic-normalization-selector-container i.hic-normalization-substitution-marker:focus,
+.hic-normalization-selector-container i.hic-normalization-substitution-marker:active {
+  color: #b3651b;
+}
+.hic-normalization-selector-container .hic-normalization-substitution-note {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1024;
+  width: max-content;
+  max-width: 260px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+  color: #333;
+  background-color: #fff;
+  border: 1px solid #d9822b;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   cursor: default;
 }
 

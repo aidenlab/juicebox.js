@@ -78,6 +78,64 @@ describe('a normalization substitution is announced in the widget (#372)', () =>
         expect(widget.container.title).toContain('KR')
     })
 
+    test('the marker carries the reason itself, not only its container', () => {
+
+        // Inherited `title` means the tooltip is the *container's*, and hovering
+        // the glyph relies on ancestor lookup plus the browser's ~1s delay. The
+        // marker is the thing a user points at, so it answers for itself.
+        widget.announceSubstitution(substitutionReason.notInFile('KR', 'NONE'), VIEW)
+
+        expect(widget.substitutionMarker.title).toContain('KR')
+    })
+
+    test('clicking the marker reveals the reason as text on the page', () => {
+
+        // The affordance #372 is actually about. A `title` is a ~1s hover delay
+        // on a 16px glyph and nothing at all on touch -- discoverable only by
+        // someone who already suspects it is there, which is the silence this
+        // issue has been open about since 2022.
+        const reason = substitutionReason.notInFile('KR', 'NONE')
+        widget.announceSubstitution(reason, VIEW)
+
+        expect(widget.substitutionNote.style.display).toBe('none')
+
+        widget.substitutionMarker.dispatchEvent(new fixture.window.Event('click'))
+
+        expect(widget.substitutionNote.style.display).not.toBe('none')
+        expect(widget.substitutionNote.textContent).toContain(reason)
+    })
+
+    test('clicking the marker again puts the note away', () => {
+
+        widget.announceSubstitution(substitutionReason.notInFile('KR', 'NONE'), VIEW)
+
+        widget.substitutionMarker.dispatchEvent(new fixture.window.Event('click'))
+        widget.substitutionMarker.dispatchEvent(new fixture.window.Event('click'))
+
+        expect(widget.substitutionNote.style.display).toBe('none')
+    })
+
+    test('clearing takes the note down with the marker', () => {
+
+        widget.announceSubstitution(substitutionReason.notInFile('KR', 'NONE'), VIEW)
+        widget.substitutionMarker.dispatchEvent(new fixture.window.Event('click'))
+
+        widget.clearSubstitutionIfStale(OTHER_CHROMOSOME)
+
+        expect(markerShowing()).toBe(false)
+        expect(widget.substitutionNote.style.display).toBe('none')
+    })
+
+    test('a fresh announcement does not inherit the last one open note', () => {
+
+        widget.announceSubstitution(substitutionReason.notInFile('KR', 'NONE'), VIEW)
+        widget.substitutionMarker.dispatchEvent(new fixture.window.Event('click'))
+
+        widget.announceSubstitution(substitutionReason.notAtThisView('VC', 'NONE'), OTHER_ZOOM)
+
+        expect(widget.substitutionNote.style.display).toBe('none')
+    })
+
     test('the announcement survives a pan, which cannot make it false', () => {
 
         widget.announceSubstitution(substitutionReason.notInFile('KR', 'NONE'), VIEW)

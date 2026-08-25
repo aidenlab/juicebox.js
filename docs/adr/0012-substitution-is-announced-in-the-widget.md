@@ -31,9 +31,14 @@ link that opens correctly on `NONE` is not an error, and a modal raised mid-rend
 says it is. The widget already displays the effective value; what was missing was
 the reason. Cases 1 and 2 now share one notification path, fired from
 `#resolveNormalization`'s two call sites and from the render pass, and both land
-as a visible marker on the selector plus a `title` carrying the reason. A `title`
-alone was rejected: invisible on touch, no affordance, and the same silence the
-report has been open about since 2022.
+as a visible marker on the selector. A `title` alone was rejected: invisible on
+touch, no affordance, and the same silence the report has been open about since
+2022 — and hand-testing showed a marker plus a title is barely better, because an
+18px-or-smaller glyph whose only answer is a one-second hover delay still leaves
+the user with no idea what it is for. So the marker is a **click target**: it
+carries the reason in its own `title`, and clicking it opens a small non-modal
+note that states the reason as text on the page. The note is not a dialog — it
+explains without interrupting, which is the whole distinction this ADR draws.
 
 **2. The reason is transient and is not an eighth state field.** It rides as an
 argument on the notification, is held only by the widget, and is cleared on

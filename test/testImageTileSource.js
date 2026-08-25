@@ -465,6 +465,54 @@ describe('ImageTileSource automatic color scale', () => {
         await collect(makeSource({observer}).tilesFor(request()))
         expect(observer.seen.scales).toEqual([])
     })
+
+    /**
+     * The read side of #575. A host that passes `config.colorScale` is naming
+     * the contrast it wants drawn -- `toJSON` writes one into every saved
+     * session, so this is what a published link reopens at, not a niche
+     * embedder option. See ADR-0003's 2026-08-25 appendix.
+     *
+     * `setColorScale` is the only thing that makes that threshold survive: it
+     * seeds the threshold cache, and the seed is keyed on the normalization in
+     * the state it is handed. So the directive is honoured exactly when the
+     * seed key and the key the first pass looks up are the same value -- which
+     * is what pins `hicBrowser.init`'s ordering. The write side, which
+     * normalization `init` actually seeds under, is in
+     * `testRestoreNormalization.js`.
+     */
+    it("honours a host's threshold when the seed key matches the normalization in force", async () => {
+        const observer = recordingObserver()
+        const ds = dataset({records: manyRecords})
+        const source = makeSource({observer})
+        const inForce = state({normalization: 'KR'})
+
+        source.setColorScale({...scale(), threshold: 1234}, 'A', inForce)
+
+        await collect(source.tilesFor(request({dataset: ds, state: inForce})))
+
+        // No scale-only probe: the seed answered the question, so nothing was
+        // refetched and `autoThreshold` never ran.
+        expect(scaleFetches(ds)).toBe(0)
+        expect(source.getColorScale('A').threshold).toBe(1234)
+    })
+
+    it("discards a host's threshold when the seed was keyed on a different normalization", async () => {
+        // The defect #575 fixes, stated as behaviour rather than as ordering:
+        // seed under one normalization, render under another, and the host's
+        // 1234 is silently replaced by the 95th percentile of the data. This is
+        // what `init` did to every config carrying a `colorScale` alongside a
+        // `normalization` that got substituted.
+        const observer = recordingObserver()
+        const ds = dataset({records: manyRecords})
+        const source = makeSource({observer})
+
+        source.setColorScale({...scale(), threshold: 1234}, 'A', state({normalization: 'KR'}))
+
+        await collect(source.tilesFor(request({dataset: ds, state: state({normalization: 'NONE'})})))
+
+        expect(scaleFetches(ds)).toBe(1)
+        expect(source.getColorScale('A').threshold).toBe(96)
+    })
 })
 
 describe('ImageTileSource loading signal', () => {

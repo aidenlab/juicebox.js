@@ -310,6 +310,93 @@ describe('normalization is validated against the loaded dataset at restore (#561
         expect(announcement(browser)).not.toMatch(/control map/i)
     })
 
+    /**
+     * A host's `colorScale` threshold is seeded into the tile source's cache
+     * under the normalization in force at the moment `setColorScale` runs
+     * (`imageTileSource.js:129`, through `colorScaleKey`). #575 moved that
+     * branch below the enforcer so the value it is filed under is the resolved
+     * one -- which is the only thing that makes the threshold survive the first
+     * render, since `#ensureColorScale` reads the same key back and recomputes
+     * on a miss.
+     *
+     * Asserted on the key rather than on the render: `ContactMatrixView.update`
+     * is stubbed in this fixture, so the read side is driven in
+     * `testImageTileSource.js`. What is claimed here is the half only a real
+     * `init` can show -- which normalization the seed ends up under.
+     */
+    const seededKeys = browser => Object.keys(browser.contactMatrixView.imageTileSource.thresholdCache)
+
+    const hostScale = threshold => ({
+        threshold, r: 255, g: 0, b: 0,
+        setThreshold(t) { this.threshold = t }
+    })
+
+    test('a host colorScale is seeded under the resolved normalization, not the requested one', async () => {
+
+        // `KR` is not offered, so the enforcer answers `VC`. A seed written
+        // before the enforcer ran would be filed under `KR` -- a key the first
+        // render never looks up.
+        offered = ['VC']
+
+        const browser = embed()
+
+        await browser.init({
+            url: HIC_URL,
+            state: savedWith('NONE'),
+            normalization: 'KR',
+            colorScale: hostScale(1234)
+        })
+
+        expect(browser.state.normalization).toBe('VC')
+
+        const keys = seededKeys(browser)
+        expect(keys.length).toBe(1)
+        expect(keys[0]).toContain('_VC_')
+        expect(keys[0]).not.toContain('_KR_')
+        expect(browser.contactMatrixView.imageTileSource.thresholdCache[keys[0]]).toBe(1234)
+    })
+
+    test('a host colorScale is seeded under the requested normalization when nothing is substituted', async () => {
+
+        // The case that worked before #575 and has to keep working: no
+        // substitution, so requested and resolved are the same value and the
+        // seed lands under it either way.
+        offered = ['NONE', 'VC', 'KR']
+
+        const browser = embed()
+
+        await browser.init({
+            url: HIC_URL,
+            state: savedWith('NONE'),
+            normalization: 'KR',
+            colorScale: hostScale(1234)
+        })
+
+        expect(browser.state.normalization).toBe('KR')
+        expect(seededKeys(browser)[0]).toContain('_KR_')
+    })
+
+    test('the moved colorScale branch still announces the substitution', async () => {
+
+        // The branch now runs after `#announceSubstitution` rather than before
+        // it. Nothing on the colour-scale path calls `clearSubstitution`, and
+        // this is what says so -- an announcement raised and then walked over
+        // by the reorder would put #372 back with a marker in it.
+        offered = ['VC']
+
+        const browser = embed()
+
+        await browser.init({
+            url: HIC_URL,
+            state: savedWith('NONE'),
+            normalization: 'KR',
+            colorScale: hostScale(1234)
+        })
+
+        expect(announcement(browser)).toContain('KR')
+        expect(announcement(browser)).toContain('VC')
+    })
+
     test('a coerced top-level config.normalization announces it too', async () => {
 
         // The second of `#resolveNormalization`'s two doors. It is the same

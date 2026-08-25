@@ -259,7 +259,7 @@ has to be re-derived from the HTML.
 
 **The pattern, proven eight times: ADR → gate first → tickets → Outcome box on the card.** Candidate
 9 added the corollary — a candidate scoped as needing no ADR can still owe one, and it comes due on
-the last ticket, when the readers finally have to agree. **ADR-0010 is the next free number** (0007
+the last ticket, when the readers finally have to agree. **ADR-0014 is the next free number** (0007
 was reserved for #477 and never written; the gap in `docs/adr/` is deliberate).
 
 **Skill:** `/grill-with-docs` on any of the three — all are `ready-for-human`, meaning a decision

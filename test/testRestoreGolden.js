@@ -9,14 +9,17 @@
  * from #502 is the input for all three, so a fixture added there is covered on
  * every seam.
  *
- * ## The five doors
+ * ## The four doors
  *
- * `dataLoader.loadHicFile` walks a four-rung ladder -- a config-level `locus`, a
- * `state` token, a `synchState`, and the `State.default()` fallback -- and
- * `dataLoader.loadLiveContactMap` is a fifth door walking its own copy of the
+ * `dataLoader.loadHicFile` walks a three-rung ladder -- a config-level `locus`, a
+ * `state` token, and the `State.default()` fallback -- and
+ * `dataLoader.loadLiveContactMap` is a fourth door walking its own copy of the
  * middle of it. Only two rungs reach `browser.setState`.
  *
- * All five are here, not the two candidate 6 touches. #504 is the reason: the
+ * There were five until #566, whose `config.synchState` column is described in
+ * finding 3 below.
+ *
+ * All four are here, not the two candidate 6 touches. #504 is the reason: the
  * live-map path had drifted from the file path and lost a rung of the same
  * ladder -- a numeric `state` crashed on one path and opened the default view on
  * the other -- and nothing caught it. A golden scoped to the doors you are
@@ -94,17 +97,17 @@
  *    negative `x` for that reason. A negative origin outside the live column is
  *    therefore **baseline**, not a regression -- it is finding 1 showing through,
  *    since no door clamps.
- * 3. **The `config.synchState` rung is unreachable.** Its guard is
- *    `canBeSynched(browser, config.synchState)`, and `canBeSynched`
- *    returns false without an `activeDataset` -- which `loadHicFile` has just
- *    cleared, four lines earlier, by calling `clearDataset()`. So a config
- *    carrying a `synchState` silently takes the fallback rung instead. The door
- *    is driven *primed* -- against a browser that has already loaded the map --
- *    precisely so the snapshot shows that priming does not help: the record says
- *    `primedWith`, and still reports the fallback. Sync between browsers works;
- *    it goes through `registry.sync()` and `browser.syncState()` and never
- *    through this rung. Recorded, not fixed; filed as #566, which also names the
- *    two candidate 6 tickets that assume the rung is live.
+ * 3. **The `config.synchState` rung was unreachable, and is now gone.** Its
+ *    guard needed an `activeDataset` that `loadHicFile` had just cleared four
+ *    lines earlier, so a config carrying a `synchState` silently took the
+ *    fallback rung -- cold or primed alike, which is why this file drove that
+ *    door *primed* and still recorded the fallback. Filed as #566, and #566
+ *    deleted the rung rather than repairing it: it was the 2017 mechanism for
+ *    syncing a newly created panel, superseded three months later by the sync
+ *    step at the end of `loadHicFile`, and no caller had supplied the key
+ *    since. Its column left this file with it. Sync between browsers is
+ *    untouched -- it goes through `registry.sync()` and `browser.syncState()`
+ *    and never went through this rung.
  *
  * ## Updating a snapshot — the convention
  *
@@ -242,7 +245,7 @@
  *   `loadLiveContactMap` decodes the same `config.state` and calls the same
  *   chokepoint, so it inherits the coercion without being touched. That it moved
  *   in step with the file path is the answer to #504's lesson: the two doors
- *   agree here, which is exactly what the fifth column exists to show.
+ *   agree here, which is exactly what the live column exists to show.
  * - **Both columns moved by the same amount, and that is the point.** A clamp
  *   moves one viewport column and not the other (the #558 tally above); a
  *   normalization is not a function of the viewport, so a movement that
@@ -268,6 +271,21 @@
  *
  * Nothing was rejected -- every record still reads `"outcome": "restores"`.
  * Coerced, never refused (ADR-0009 decisions 2 and 5).
+ *
+ * ### The #566 tally
+ *
+ * **92 records left the file and none of the remaining 368 moved.** The
+ * `config.synchState` column is gone -- 46 browser configs x 2 viewports x 1
+ * door -- because the rung it drove is gone. That is the whole of the diff, and
+ * it is the one shape the update convention says to look for: a column removed
+ * on purpose, and every surviving byte identical, which is what "deleting an
+ * unreachable rung changes nothing reachable" looks like in a snapshot. The
+ * column had recorded the fallback for every fixture in any case, so nothing
+ * that was ever observed there stopped being observed -- the fallback door is
+ * still driven, still per fixture, still in both columns.
+ *
+ * The historical tallies above still name the door; they are the record of what
+ * those tickets moved when it existed, and are left as they were written.
  *
  * @see docs/adr/0009-restore-is-a-translator.md — the decisions this gate guards
  * @see test/data/wireFormatCorpus.js — the inputs
@@ -362,10 +380,6 @@ function renderPresented(config) {
         rendered.state = renderPresentedState(config.state)
     }
 
-    if ('synchState' in config) {
-        rendered.synchState = config.synchState
-    }
-
     if ('liveContactMap' in config) {
         const {chromosomes, ...extent} = config.liveContactMap
         rendered.liveContactMap = {chromosomes: `${chromosomes.length} — the restoreDataset table`, ...extent}
@@ -415,36 +429,14 @@ function renderState(state, dataset, viewport) {
 }
 
 /**
- * `State.getSyncState`, computed off a state that has not been restored
- * yet.
- *
- * This is the one door whose input does not exist in any wire format: a
- * `synchState` is what a *sibling browser* publishes, so it can only be
- * synthesized. Synthesizing it with the same expression `getSyncState` uses is
- * what makes it the fixture's own view rather than an invented one -- the door
- * is then asked the honest question, "restore this view the way a sibling would
- * hand it to you", and its answer is comparable with the other four columns.
- */
-function syncStateFrom(state, dataset) {
-    return {
-        chr1Name: dataset.chromosomes[state.chr1]?.name,
-        chr2Name: dataset.chromosomes[state.chr2]?.name,
-        binSize: dataset.bpResolutions[state.zoom],
-        binX: state.x,
-        binY: state.y,
-        pixelSize: state.pixelSize,
-    }
-}
-
-/**
- * The five doors, each with the spelling of the view it accepts.
+ * The four doors, each with the spelling of the view it accepts.
  *
  * `present` receives the state the fixture's config decodes to -- `decodeState`
  * is the ladder's own `state` rung, so the intent is the view the fixture
  * *means*, whether it spelled it as a `state=` token, as session JSON, or not at
  * all (in which case the intent is the default view and every door is still
  * asked). Returning the fixture's own material rather than a literal is what
- * keeps the columns comparable: five spellings, one view.
+ * keeps the columns comparable: four spellings, one view.
  */
 const RESTORE_DOORS = [
     {
@@ -466,24 +458,6 @@ const RESTORE_DOORS = [
         // take different halves of `decodeState`, and handing the door a
         // pre-decoded object would erase that.
         present: (intent, dataset, browserConfig) => ({state: browserConfig.state}),
-    },
-    {
-        id: 'config.synchState — the sibling rung',
-        // **Primed, because the rung is unreachable cold.** The ladder's guard is
-        // `canBeSynched(browser, config.synchState)`, and `canBeSynched`
-        // returns false when `activeDataset` is undefined -- which it is, because
-        // the ladder does not set the dataset until *inside* one of its branches.
-        // So a first load carrying a `synchState` silently takes the fallback rung
-        // instead; only a re-load into a browser that already holds a map can
-        // reach it.
-        //
-        // That is a finding, and #557 changes no behaviour, so it is recorded
-        // both ways: the priming load is named in the snapshot, and the `rungs`
-        // field of every *unprimed* door shows what a cold load does. Driving
-        // this door cold as well would have produced a fifth column identical to
-        // the fallback's and said less than this note does.
-        prime: true,
-        present: (intent, dataset) => ({synchState: syncStateFrom(intent, dataset)}),
     },
     {
         id: 'State.default() — the fallback rung',
@@ -556,7 +530,7 @@ function rungCounter() {
  *
  * The DOM and the stubs are `test/utils/restoreFixture.js`'s (#571), which is
  * where the `update` stubs, the network tripwire and the composed
- * `withContainers()` now live for all five restore suites. This file needs the
+ * `withContainers()` now live for all the restore suites. This file needs the
  * `another()` container factory for the reason that helper exists -- one embed
  * per drive -- and nothing else about the DOM. It does not navigate, because no
  * door here reads `window.location`.
@@ -591,13 +565,6 @@ async function drive(door, dom, rungs, browserConfig, intent, viewport) {
         height: viewport.height,
     })
 
-    if (door.prime) {
-        record.primedWith = 'loadHicFile({url}) — a bare load, so that a dataset is active'
-        await browser.loadHicFile({url: browserConfig.url}, true)
-    }
-
-    // After the priming load, so the counts below belong to the door and not to
-    // the load that made the door reachable.
     rungs.take()
 
     record.outcome = 'restores'
@@ -647,12 +614,11 @@ const DECODING_FIXTURES = [...selfContained, ...viaLoader].filter(f => f.outcome
  * the door nobody is touching: #504's live path is in the table precisely because
  * it drifted while nothing watched it.
  */
-test('all five restore doors are driven, and exactly one of them is the live path', () => {
+test('all four restore doors are driven, and exactly one of them is the live path', () => {
 
     expect(RESTORE_DOORS.map(door => door.id)).toEqual([
         'config.locus — the goto rung',
         'config.state — the restore rung',
-        'config.synchState — the sibling rung',
         'State.default() — the fallback rung',
         'loadLiveContactMap — the live door',
     ])

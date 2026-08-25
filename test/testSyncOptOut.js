@@ -6,9 +6,13 @@
  * `HICBrowser.syncState`'s own guard -- was the only thing stopping the
  * "sync with a compatible browser" step at the end of `loadHicFile`, since that
  * step's filter never looked at the flag. The split moved the reading to
- * `canBeSynched`, so this pins the behaviour rather than the reader: load a map
+ * `isSynchable`, so this pins the behaviour rather than the reader: load a map
  * into an opted-out browser next to a compatible peer, and it must open at its
  * own state.
+ *
+ * `canBeSynched` was the third reader until #566 deleted it along with the
+ * `config.synchState` rung it was the only production caller of. That changes
+ * nothing here: the guard on `HICBrowser.syncState` is what this suite drives.
  */
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 

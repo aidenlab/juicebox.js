@@ -36,7 +36,6 @@ import Track2D from './track2D.js'
 
 import {decodeState} from "./sessionCodec.js"
 import {mapTrackConfig} from "./urlMapper.js"
-import {canBeSynched} from "./syncGroup.js"
 import {substitutionReason} from "./normalizationWidget.js"
 
 /**
@@ -142,15 +141,18 @@ class DataLoader {
             // A rung installs the dataset and then hands its state to
             // `setState`, the chokepoint -- in that order, because `clampXY`
             // reads the dataset. Until #559 the install carried the state with
-            // it, unvalidated. Two rungs hid that -- `config.locus` went on to
-            // `parseGotoInput` and `config.synchState` to a sync, and neither
-            // reached `setState`, so the raw state stood. ADR-0009 decision 1.
+            // it, unvalidated. The `config.locus` rung hid that: it went on to
+            // `parseGotoInput` and never reached `setState`, so the raw state
+            // stood. ADR-0009 decision 1.
             //
-            // The `synchState` rung is the one that does not read in that order:
-            // it syncs against the outgoing dataset first and re-validates
-            // against the incoming one only if they differ. It is also the rung
-            // nothing takes -- `clearDataset()` above it means `canBeSynched` is
-            // never true (#566) -- so it is left in the shape it had.
+            // There were four rungs until #566. A `config.synchState` rung sat
+            // between `config.state` and the fallback, and was the 2017
+            // mechanism for syncing a newly created panel to its siblings. It
+            // was superseded three months later by the sync step at the end of
+            // this method -- sync on map load, not on browser creation -- and
+            // was unreachable besides, since `clearDataset()` above runs before
+            // a guard that needs a dataset. Nothing had supplied the key in the
+            // nine years since. See the amendment to ADR-0009.
             //
             // No rung keeps hold of what it handed over. The chokepoint installs
             // a *clone* (#558), so the object passed in stops being the state in
@@ -165,14 +167,6 @@ class DataLoader {
             } else if (config.state) {
                 this.browser.setActiveDataset(dataset);
                 await this.browser.setState(decodeState(config.state, reportUnknownStateType));
-            } else if (canBeSynched(this.browser, config.synchState)) {
-                await this.browser.syncState(config.synchState);
-                // syncState already sets the dataset, but ensure it's set with current dataset
-                if (this.browser.dataset !== dataset) {
-                    const synched = this.browser.state;
-                    this.browser.setActiveDataset(dataset);
-                    await this.browser.setState(synched);
-                }
             } else {
                 this.browser.setActiveDataset(dataset);
                 await this.browser.setState(State.default());

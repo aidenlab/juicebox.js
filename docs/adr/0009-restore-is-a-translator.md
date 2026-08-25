@@ -247,3 +247,49 @@ an error-surface question this candidate should not be deciding in passing.
   isolation and none of them drives a restore. That is the gap the golden fills,
   and it is why "lands in the module with the repo's strongest tests" was not by
   itself an argument for skipping one.
+
+## Amendment — 2026-08-25, #566
+
+**One of the four `dataLoader.loadHicFile` branches this ADR enumerates no
+longer exists**, and fact 4's three `synchable` checks are now two. The ladder is `config.locus`, `config.state`, `State.default()`.
+The `config.synchState` rung was deleted rather than repaired.
+
+The decision above is unchanged; what changed is the count of branches it
+applies to, and this is recorded here rather than edited into the Decision
+section because the enumeration was true when it was written.
+
+**Why deleted rather than repaired.** #557's gate found the rung unreachable:
+`loadHicFile` opens with `clearDataset()`, four lines above a guard that returns
+false without a dataset, so every config carrying a `synchState` took the
+fallback — cold or primed alike. The question that left open was whether the
+rung was a feature to fix or a fossil to remove, and the archaeology answers it:
+the rung arrived in `830f4e7` (Sep 2017, *"Set initial synch state of new
+browser panels"*), and `b71d163` (Dec 2017, *"sync on map load, not browser
+creation"*) replaced it with the peer-sync step that still runs at the end of
+`loadHicFile`. It was superseded three months after it was written. Nothing has
+supplied the key since: not `session.js`, not `sessionCodec.js`, not
+juicebox-web, not Spacewalk, and `README.md` documents `loadHicFile({url,
+name})`. `loadLiveContactMap` never had the rung, so the "same ladder" claim
+#504 enforces already excluded it.
+
+**What went with it.** `canBeSynched` — decision 6 above placed it in
+`syncGroup.js`, and the rung was its only production caller. `isSynchable` and
+`pairSynchable` stay; `synchable` is still read in one expression, now by two
+readers rather than three. The golden's fifth column went too: 92 records left
+`testRestoreGolden.js.snap` and every surviving byte is identical, which is what
+deleting an unreachable branch is supposed to look like.
+
+**Two things deliberately not done.** The key is ignored silently rather than
+warned about — juicebox ignores every other unrecognised config key without
+comment, and a warning for this one would outlive the memory of why. And
+`HICBrowser.syncState` is left as it is: `canBeSynched` was the only code that
+checked a sync state's chromosome names against the receiving dataset, and the
+inbound gate that survives does not. That is a real gap, but it predates this
+change on the path that actually runs, so it is filed rather than folded into a
+deletion — #605.
+
+**#280 loses its leading hypothesis.** "Shared URL maps not always synced" was
+read as a race on this rung; a rung nothing takes cannot be intermittent. The
+order-dependent code is the peer-sync step — `registry.sync()` and the
+`isCompatible` peer filter, both at the end of a load. #280 stays open and is
+re-pointed there; it still needs its repro rather than another reading.

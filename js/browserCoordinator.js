@@ -135,8 +135,8 @@ class BrowserCoordinator {
 
         // 5. Update resolution selector
         if (this.widgets.resolutionSelector) {
-            this.browser.resolutionLocked = false;
-            this.widgets.resolutionSelector.setResolutionLock(false);
+            // Bookkeeping, not the user asking: never mirrored. ADR-0014 decision 3.
+            this.browser.setResolutionLocked(false);
             this.widgets.resolutionSelector.updateResolutions(this.browser.state.zoom);
         }
 
@@ -216,8 +216,9 @@ class BrowserCoordinator {
         // 3. Update resolution selector
         if (this.widgets.resolutionSelector) {
             if (resolutionChanged) {
-                this.browser.resolutionLocked = false;
-                this.widgets.resolutionSelector.setResolutionLock(false);
+                // Reached on the sync hot path. Local, never mirrored -- a peer
+                // whose own resolution moved clears its own lock. ADR-0014.
+                this.browser.setResolutionLocked(false);
             }
             if (chrChanged !== false) {
                 const isWholeGenome = this.browser.dataset.isWholeGenome(state.chr1);

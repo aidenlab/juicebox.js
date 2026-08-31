@@ -1301,6 +1301,45 @@ class HICBrowser {
     }
 
     /**
+     * Set the resolution lock: the field, the padlock, and -- when the user is
+     * the one asking -- the peers.
+     *
+     * The one writer for a **view preference** (`CONTEXT.md`), and the first of
+     * the category to mirror across a sync group (ADR-0014). Three callers used
+     * to write `resolutionLocked` and separately remember to call
+     * `setResolutionLock` on the widget; forgetting the second half is a padlock
+     * that lies about the browser it sits on, so the pairing lives here instead
+     * of in each of them. The constructor's `this.resolutionLocked = false` is
+     * left alone: it declares the field, and it runs before either the widget or
+     * `synchedBrowsers` exists.
+     *
+     * `mirror` is opt-in rather than opt-out, and only the widget's click passes
+     * it. The coordinator's two auto-clears sit on the sync hot path and stay
+     * local -- they already land on each browser independently, so fanning them
+     * out would broadcast during a drag to redo work that has happened anyway
+     * (ADR-0014 decision 3).
+     *
+     * No recursion guard is needed and none is written: `pairSynchable` pairs
+     * every compatible combination, so one hop reaches the whole group, and the
+     * hop below does not pass `mirror`.
+     *
+     * @param {boolean} locked
+     * @param {Object} [options]
+     * @param {boolean} [options.mirror=false] - fan out to the sync group
+     */
+    setResolutionLocked(locked, {mirror = false} = {}) {
+
+        this.resolutionLocked = locked;
+        this.coordinator?.widgets?.resolutionSelector?.setResolutionLock(locked);
+
+        if (mirror) {
+            for (const browser of [...this.synchedBrowsers]) {
+                browser.setResolutionLocked(locked);
+            }
+        }
+    }
+
+    /**
      * Synchronize this browser's state to other synched browsers.
      * Called separately from rendering to keep concerns separated.
      */

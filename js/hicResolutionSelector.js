@@ -55,9 +55,11 @@ class ResolutionSelector {
         this.resolutionLockElement.className = 'fa fa-unlock';
         this.resolutionLockElement.setAttribute('aria-hidden', 'true');
         this.labelContainerElement.appendChild(this.resolutionLockElement);
+        // The only writer that mirrors. `setResolutionLocked` repaints this
+        // padlock on the way through, so there is no `setResolutionLock` call
+        // here -- and the peers get theirs the same way. ADR-0014.
         this.labelContainerElement.addEventListener('click', () => {
-            this.browser.resolutionLocked = !this.browser.resolutionLocked;
-            this.setResolutionLock(this.browser.resolutionLocked);
+            this.browser.setResolutionLocked(!this.browser.resolutionLocked, {mirror: true});
         });
 
         this.resolutionSelectorElement = document.createElement('select');

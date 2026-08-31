@@ -4,19 +4,24 @@ import {withContainers} from './utils/browserFixture.js'
 import {withStubbedLoads} from './utils/stubbedLoads.js'
 
 /**
- * The resolution lock mirrors across a sync group; its auto-clears do not.
+ * The resolution lock mirrors across a sync group, on every transition.
  *
  * ADR-0014 draws the line between what *syncs* (canonical state, on every
- * update) and what *mirrors* (a view preference, on the user's action only),
- * and the resolution lock is the first preference on the mirror side. Both
- * halves need pinning, and the second is the one that would rot silently: a
- * later refactor routing the coordinator's auto-clears through the same call
- * with `mirror: true` would put a fan-out on the sync hot path, and nothing
- * about the feature would look broken.
+ * update) and what *mirrors* (a view preference, on any transition), and the
+ * resolution lock is the first preference on the mirror side. Whatever voids the
+ * lock on one browser voids it on all of them -- the padlock clicked open, a
+ * resolution change, a map load -- because parity is the point of the feature
+ * and a lock that survived on one panel would be a padlock the group has stopped
+ * agreeing with.
+ *
+ * What makes that affordable is the no-op guard, and that is the claim here most
+ * likely to rot: drop it and the suite still passes on behaviour while every
+ * resolution change in a never-locked session broadcasts to say nothing
+ * happened. It gets its own test for that reason.
  *
  * Two embeds throughout, per the house rule in `testDeleteAllUnsync.js` -- a
- * mirror that reached the whole page rather than the sync group would pass
- * every single-embed assertion.
+ * mirror that reached the whole page rather than the sync group would pass every
+ * single-embed assertion.
  */
 
 const session = (...urls) => ({browsers: urls.map(url => ({url}))})
@@ -96,9 +101,9 @@ describe('mirroring the resolution lock across a sync group', () => {
         expect([a.resolutionLocked, b.resolutionLocked]).toEqual([true, false])
     })
 
-    it('leaves peers alone when the coordinator auto-clears the lock', async () => {
-        // The claim that would rot silently. Both browsers are locked; only the
-        // one whose resolution actually changed comes back unlocked.
+    it('unlocks the peers too when a resolution change voids the lock', async () => {
+        // The auto-clear on the sync hot path. A peer that kept its lock here is
+        // the rung-mismatch divergence ADR-0014 decision 3 exists to close.
         const mine = registryForContainer(dom.container)
         await mine.restoreSession(session('https://example.com/a.hic', 'https://example.com/b.hic'))
         const [a, b] = mine.browsers
@@ -106,6 +111,56 @@ describe('mirroring the resolution lock across a sync group', () => {
 
         a.coordinator.onLocusChange({state: a.state, resolutionChanged: true, chrChanged: false})
 
-        expect([a.resolutionLocked, b.resolutionLocked]).toEqual([false, true])
+        expect([a.resolutionLocked, b.resolutionLocked]).toEqual([false, false])
+    })
+
+    it('unlocks the peers when a map is loaded into one panel', async () => {
+        // Decision 3b. Driven through the coordinator rather than through
+        // `loadHicFile`, which the fixture stubs wholesale -- the stub stands in
+        // for the network read and so never reaches `onMapLoaded` at all.
+        const mine = registryForContainer(dom.container)
+        await mine.restoreSession(session('https://example.com/a.hic', 'https://example.com/b.hic'))
+        const [a, b] = mine.browsers
+        a.setResolutionLocked(true, {mirror: true})
+        expect(b.resolutionLocked).toBe(true)
+
+        a.coordinator.onMapLoaded(a.dataset, a.state, a.dataset.datasetType)
+
+        expect([a.resolutionLocked, b.resolutionLocked]).toEqual([false, false])
+    })
+
+    it('still holds its peers after clearDataset, which is what lets a map load reach them', async () => {
+        // The mechanical precondition the test above rests on, and the one that
+        // could be taken away by a change that looks like tidying. Every map
+        // load opens with `clearDataset()`, which strips this browser from its
+        // peers' sets but deliberately leaves its own standing (#492) -- so the
+        // load can still address the group on its way past. Make that symmetric
+        // and decision 3b stops working, silently.
+        const mine = registryForContainer(dom.container)
+        await mine.restoreSession(session('https://example.com/a.hic', 'https://example.com/b.hic'))
+        const [a, b] = mine.browsers
+
+        a.clearDataset()
+
+        expect([...a.synchedBrowsers]).toEqual([b])
+        expect([...b.synchedBrowsers]).toEqual([])
+    })
+
+    it('does not fan out when the value already holds', async () => {
+        // The guard, asserted on the fan-out rather than on the field -- the
+        // field would read `false` either way. A never-locked session takes this
+        // path on every resolution change, which is why it must cost nothing.
+        const mine = registryForContainer(dom.container)
+        await mine.restoreSession(session('https://example.com/a.hic', 'https://example.com/b.hic'))
+        const [a, b] = mine.browsers
+        expect([a.resolutionLocked, b.resolutionLocked]).toEqual([false, false])
+
+        let reached = 0
+        const spied = b.setResolutionLocked.bind(b)
+        b.setResolutionLocked = (...args) => { reached += 1; return spied(...args) }
+
+        a.setResolutionLocked(false, {mirror: true})
+
+        expect(reached).toBe(0)
     })
 })

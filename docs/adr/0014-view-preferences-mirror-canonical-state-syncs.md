@@ -39,7 +39,7 @@ falls into exactly one:
 | Category | Travels the sync group as | Examples |
 | --- | --- | --- |
 | **Canonical state** | the sync payload, on every update | the seven `State` fields |
-| **View preference** | a mirror, on the user's action only | resolution lock; crosshairs, when they land |
+| **View preference** | a mirror, on every transition | resolution lock; crosshairs, when they land |
 | **Dataset choice** | nothing | normalization, colour scale, background colour, display mode, tracks, control map |
 
 A **view preference** is defined by three properties together: the user sets it,
@@ -54,11 +54,41 @@ own resolution changes clear its lock — and that divergence is accepted rather
 than designed out. The alternative, a group-level property, would have removed
 per-browser control and introduced a second thing that owns state.
 
-**3. Only the user's action mirrors — never the system's bookkeeping.** The
-resolution lock is auto-cleared by the coordinator on every resolution change,
-which is the sync hot path. Those clears stay local. They already land on each
-browser independently, so fanning them out would broadcast during a drag to
-redo work that has happened anyway.
+**3. Every transition mirrors, not only the user's click.** The lock is a claim
+about the group, so whatever voids it on one browser voids it on all of them: the
+padlock clicked open, the coordinator's auto-clear on a resolution change, and
+the auto-clear on a map load.
+
+This was decided the other way first — mirror the click, keep the auto-clears
+local, on the argument that a resolution change already reaches each browser
+independently. That argument is true in the common case and false in the one that
+matters: a peer whose dataset lacks the matching rung reports `zoomChanged:
+false`, keeps its lock, and shows an icon the rest of the group has stopped
+agreeing with. Since parity is the whole point of the feature (see Context),
+tolerating a parity break was incoherent — it optimized a cost while leaving the
+goal unmet.
+
+The cost is genuinely small. Pan and drag report `resolutionChanged: false`, so
+the fan-out fires per *rung crossing*, not per frame, and each hop is a boolean
+and two class toggles. What makes it small is decision 3a.
+
+**3a. A write that changes nothing does nothing.** `setResolutionLocked` returns
+early when the value already holds. Without that, every resolution change in a
+never-locked session would fan out to announce that nothing happened, and a
+mirrored clear would do O(N²) hops as each peer's own auto-clear re-broadcast.
+With it, the hot path is one comparison, fan-out happens only on a real
+transition, and the recursion question does not arise: a peer set to a value it
+already holds stops there. No other guard is written, and none is needed.
+
+**3b. The map-load clear is included, on the collaborator's call.** A new map in
+one panel unlocks the group. The narrower reading — that only a *resolution*
+change should void the lock, since a map load is a panel reset rather than a
+resolution move — was considered and set aside as more subtlety than the feature
+warrants. Mechanically it works because `clearDataset()` removes the loading
+browser from its peers' sets but deliberately leaves its own standing (#492), so
+the browser can still reach the group on its way past. **Consequence:** a map
+load that changes genome unlocks the peers and *then* drops out of their group,
+which is the intended reading of "a new map voids the lock" but is worth knowing.
 
 **4. Mirroring does not ride in the sync payload.** It is a separate fan-out over
 the same `synchedBrowsers` set. Two reasons: the sync payload is sent on every
@@ -106,7 +136,8 @@ to do with mirroring.
   peer is locked too, its own wheel and drag honour the lock, so no resolution
   change propagates back. The dropdown and locus-goto paths are unaffected, and
   neither defect is fixed.
-- Padlocks can still disagree, but only when a peer's dataset lacks the matching
-  resolution rung. Named, not defended against.
+- Padlocks agree in every case reachable through the UI. The rung-mismatch
+  divergence that decision 3 originally accepted is closed by mirroring the
+  auto-clears.
 - The next "why doesn't X sync?" request has a written answer, and re-opening it
   means superseding this ADR rather than re-arguing from scratch.

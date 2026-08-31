@@ -135,8 +135,10 @@ class BrowserCoordinator {
 
         // 5. Update resolution selector
         if (this.widgets.resolutionSelector) {
-            // Bookkeeping, not the user asking: never mirrored. ADR-0014 decision 3.
-            this.browser.setResolutionLocked(false);
+            // A new map voids the group's lock, not just this browser's.
+            // Reaches the peers because `clearDataset()` leaves this browser's
+            // own `synchedBrowsers` standing (#492). ADR-0014 decision 3.
+            this.browser.setResolutionLocked(false, {mirror: true});
             this.widgets.resolutionSelector.updateResolutions(this.browser.state.zoom);
         }
 
@@ -216,9 +218,10 @@ class BrowserCoordinator {
         // 3. Update resolution selector
         if (this.widgets.resolutionSelector) {
             if (resolutionChanged) {
-                // Reached on the sync hot path. Local, never mirrored -- a peer
-                // whose own resolution moved clears its own lock. ADR-0014.
-                this.browser.setResolutionLocked(false);
+                // The resolution moved, so the lock is void everywhere. Safe on
+                // the sync hot path because a peer already unlocked is a
+                // no-op that stops there. ADR-0014 decision 3.
+                this.browser.setResolutionLocked(false, {mirror: true});
             }
             if (chrChanged !== false) {
                 const isWholeGenome = this.browser.dataset.isWholeGenome(state.chr1);

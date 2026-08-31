@@ -1301,8 +1301,8 @@ class HICBrowser {
     }
 
     /**
-     * Set the resolution lock: the field, the padlock, and -- when the user is
-     * the one asking -- the peers.
+     * Set the resolution lock: the field, the padlock, and -- on a real
+     * transition -- the peers.
      *
      * The one writer for a **view preference** (`CONTEXT.md`), and the first of
      * the category to mirror across a sync group (ADR-0014). Three callers used
@@ -1313,15 +1313,28 @@ class HICBrowser {
      * left alone: it declares the field, and it runs before either the widget or
      * `synchedBrowsers` exists.
      *
-     * `mirror` is opt-in rather than opt-out, and only the widget's click passes
-     * it. The coordinator's two auto-clears sit on the sync hot path and stay
-     * local -- they already land on each browser independently, so fanning them
-     * out would broadcast during a drag to redo work that has happened anyway
-     * (ADR-0014 decision 3).
+     * **Every transition mirrors, not just the user's click.** The lock is a
+     * claim about the group, so whatever voids it on one browser voids it on all
+     * of them -- a resolution change, a map load, or the padlock being clicked
+     * open. The alternative, mirroring only the click, left the padlocks free to
+     * disagree in exactly the case that had already been flagged: a peer whose
+     * dataset lacks the matching rung reports `zoomChanged: false`, keeps its
+     * lock, and shows an icon the group has stopped agreeing with. Parity was
+     * the point of the feature, so tolerating a parity break was incoherent.
      *
-     * No recursion guard is needed and none is written: `pairSynchable` pairs
-     * every compatible combination, so one hop reaches the whole group, and the
-     * hop below does not pass `mirror`.
+     * `changed` is what makes that affordable. Without it every resolution
+     * change in a never-locked session would fan out to announce that nothing
+     * happened, and a mirrored clear would do O(N^2) hops as each peer's own
+     * auto-clear re-broadcast. With it the hot path is one comparison, fan-out
+     * happens only on a real transition, and the recursion question does not
+     * arise: a peer set to a value it already holds stops there.
+     *
+     * The map-load clear reaches the peers through a set `clearDataset()` has
+     * half torn down -- it removes this browser from *their* sets but leaves
+     * this browser's own, deliberately, because it is still on the page and
+     * `registry.sync()` re-pairs it (`hicBrowser.js:676`, #492). That asymmetry
+     * is documented intent, and it is what lets a map load say "the group's lock
+     * is void" on its way past.
      *
      * @param {boolean} locked
      * @param {Object} [options]
@@ -1329,7 +1342,13 @@ class HICBrowser {
      */
     setResolutionLocked(locked, {mirror = false} = {}) {
 
+        const changed = this.resolutionLocked !== locked;
         this.resolutionLocked = locked;
+
+        if (!changed) {
+            return;
+        }
+
         this.coordinator?.widgets?.resolutionSelector?.setResolutionLock(locked);
 
         if (mirror) {

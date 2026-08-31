@@ -124,6 +124,27 @@ is the thing `initRegistry(container, config)` returns, and the unit of
 isolation that lets two embeds coexist on a page — see `docs/adr/0004`.
 _Avoid_: browser session, browser context, embed.
 
+**Sync group** — the set of browsers a browser publishes its canonical state to.
+Membership is a rule rather than a container: a browser joins when it has not
+opted out and its dataset is compatible with the other's. What travels the group
+is canonical state and, by deliberate exception, view preferences — never dataset
+choices. See `docs/adr/0014`.
+_Avoid_: sync set, linked browsers.
+
+**View preference** — a setting the user makes on one browser that changes how
+that browser interprets a gesture, without being part of what the view *is*.
+Three properties define the category: the user sets it, it is scoped to a single
+browser, and it is absent from canonical state. The **resolution lock** is the
+first one named. This is the distinction that decides what crosses a sync group,
+and it is the reason normalization and the colour scale do not — `docs/adr/0014`.
+
+**Resolution lock** — the padlock beside the resolution selector, and the view
+preference it holds: while it is closed, a zoom gesture changes pixel size rather
+than moving to a different resolution rung.
+_Avoid_: **scale lock**, which collides with both *colour scale* and *pixel
+size*. The lock is honoured on local gesture paths only; sync is not one of them
+— issue #608.
+
 **Alert dialog** — the modal a load failure or an unavailable option is reported
 in, one per registry, built in that registry's container on first use
 (`registry.presentAlert`). Distinct from igv-ui's `Alert` singleton, which is

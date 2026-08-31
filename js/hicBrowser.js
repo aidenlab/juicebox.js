@@ -1301,6 +1301,64 @@ class HICBrowser {
     }
 
     /**
+     * Set the resolution lock: the field, the padlock, and -- on a real
+     * transition -- the peers.
+     *
+     * The one writer for a **view preference** (`CONTEXT.md`), and the first of
+     * the category to mirror across a sync group (ADR-0014). Three callers used
+     * to write `resolutionLocked` and separately remember to call
+     * `setResolutionLock` on the widget; forgetting the second half is a padlock
+     * that lies about the browser it sits on, so the pairing lives here instead
+     * of in each of them. The constructor's `this.resolutionLocked = false` is
+     * left alone: it declares the field, and it runs before either the widget or
+     * `synchedBrowsers` exists.
+     *
+     * **Every transition mirrors, not just the user's click.** The lock is a
+     * claim about the group, so whatever voids it on one browser voids it on all
+     * of them -- a resolution change, a map load, or the padlock being clicked
+     * open. The alternative, mirroring only the click, left the padlocks free to
+     * disagree in exactly the case that had already been flagged: a peer whose
+     * dataset lacks the matching rung reports `zoomChanged: false`, keeps its
+     * lock, and shows an icon the group has stopped agreeing with. Parity was
+     * the point of the feature, so tolerating a parity break was incoherent.
+     *
+     * `changed` is what makes that affordable. Without it every resolution
+     * change in a never-locked session would fan out to announce that nothing
+     * happened, and a mirrored clear would do O(N^2) hops as each peer's own
+     * auto-clear re-broadcast. With it the hot path is one comparison, fan-out
+     * happens only on a real transition, and the recursion question does not
+     * arise: a peer set to a value it already holds stops there.
+     *
+     * The map-load clear reaches the peers through a set `clearDataset()` has
+     * half torn down -- it removes this browser from *their* sets but leaves
+     * this browser's own, deliberately, because it is still on the page and
+     * `registry.sync()` re-pairs it (`hicBrowser.js:676`, #492). That asymmetry
+     * is documented intent, and it is what lets a map load say "the group's lock
+     * is void" on its way past.
+     *
+     * @param {boolean} locked
+     * @param {Object} [options]
+     * @param {boolean} [options.mirror=false] - fan out to the sync group
+     */
+    setResolutionLocked(locked, {mirror = false} = {}) {
+
+        const changed = this.resolutionLocked !== locked;
+        this.resolutionLocked = locked;
+
+        if (!changed) {
+            return;
+        }
+
+        this.coordinator?.widgets?.resolutionSelector?.setResolutionLock(locked);
+
+        if (mirror) {
+            for (const browser of [...this.synchedBrowsers]) {
+                browser.setResolutionLocked(locked);
+            }
+        }
+    }
+
+    /**
      * Synchronize this browser's state to other synched browsers.
      * Called separately from rendering to keep concerns separated.
      */

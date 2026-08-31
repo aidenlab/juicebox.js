@@ -2,6 +2,8 @@ import {describe, it, expect} from 'vitest'
 import {registryForContainer} from '../js/browserRegistry.js'
 import {withContainers} from './utils/browserFixture.js'
 import {withStubbedLoads} from './utils/stubbedLoads.js'
+import Genome from '../js/genome.js'
+import State from '../js/hicState.js'
 
 /**
  * The resolution lock mirrors across a sync group, on every transition.
@@ -144,6 +146,53 @@ describe('mirroring the resolution lock across a sync group', () => {
 
         expect([...a.synchedBrowsers]).toEqual([b])
         expect([...b.synchedBrowsers]).toEqual([])
+    })
+
+    it('holds its rung against a locked peer, and keeps both locks', async () => {
+        // #608, and the case that made the whole feature look broken: a locked
+        // zoom in one panel unlocked both. `State.sync` re-derived a rung from
+        // the publisher's bpPerPixel without consulting the receiver's lock, the
+        // receiver moved off the rung it was pinned to, its lock auto-cleared
+        // for having moved, and the mirror sent that clear back to the origin.
+        //
+        // Locked, the receiver follows the *scale* and holds the rung: same
+        // zoom, same pixelSize, no `zoomChanged`, no clear, nothing to mirror.
+        const mine = registryForContainer(dom.container)
+        await mine.restoreSession(session('https://example.com/a.hic', 'https://example.com/b.hic'))
+        const [a, b] = mine.browsers
+        for (const browser of [a, b]) {
+            browser.genome = new Genome(browser.dataset.genomeId, browser.dataset.chromosomes)
+            await browser.setState(new State(1, 1, 4, 0, 0, 1.5, 'NONE'))
+        }
+        a.setResolutionLocked(true, {mirror: true})
+
+        // The locked wheel zoom: rung frozen, pixelSize past the rung ratio, so
+        // an unlocked receiver would drop to the 50kb rung and take both locks
+        // down with it.
+        a.state.pixelSize = 2.6
+        await b.syncState(a.getSyncState())
+
+        expect(b.state.zoom).toBe(4)
+        expect(b.state.pixelSize).toBeCloseTo(2.6, 6)
+        expect([a.resolutionLocked, b.resolutionLocked]).toEqual([true, true])
+    })
+
+    it('still re-derives the peer\'s rung when nothing is locked', async () => {
+        // The other side of the same branch: unlocked, sync keeps its old
+        // behaviour and follows the publisher onto whatever rung its scale
+        // implies. The fix above is a branch, not a replacement.
+        const mine = registryForContainer(dom.container)
+        await mine.restoreSession(session('https://example.com/a.hic', 'https://example.com/b.hic'))
+        const [a, b] = mine.browsers
+        for (const browser of [a, b]) {
+            browser.genome = new Genome(browser.dataset.genomeId, browser.dataset.chromosomes)
+            await browser.setState(new State(1, 1, 4, 0, 0, 1.5, 'NONE'))
+        }
+
+        a.state.pixelSize = 2.6
+        await b.syncState(a.getSyncState())
+
+        expect(b.state.zoom).toBe(5)
     })
 
     it('does not fan out when the value already holds', async () => {

@@ -490,11 +490,26 @@ class State {
         const chr2 = genome.getChromosome(targetState.chr2Name)
 
         const bpPerPixelTarget = targetState.binSize / targetState.pixelSize
-        // Matched against `browser.getResolutions()` rather than the raw
-        // `bpResolutions` array so a peer sitting at the sentinel rung is a rung
-        // this browser can follow it to. Same reason as everywhere else: array
-        // position and zoom index are not the same number.
-        const zoomNew = browser.findMatchingZoomIndex(bpPerPixelTarget, browser.getResolutions())
+
+        // The lock holds against a peer exactly as it holds against a local
+        // gesture -- same branch, same shape as `updateWithLoci`. Sync was the
+        // one path that never asked, which made the lock defeatable by touching
+        // a *different* browser: a locked peer re-derived a rung from the
+        // publisher's bpPerPixel, moved off the rung it was pinned to, and then
+        // had its lock auto-cleared for having moved. #608.
+        //
+        // What a locked receiver follows is the *scale*, not the rung: the
+        // pixelSize below solves for the publisher's bpPerPixel against the rung
+        // being held, so the two views stay aligned while their resolutions
+        // deliberately differ. That divergence is the point of the lock.
+        //
+        // Unlocked, matched against `browser.getResolutions()` rather than the
+        // raw `bpResolutions` array so a peer sitting at the sentinel rung is a
+        // rung this browser can follow it to. Same reason as everywhere else:
+        // array position and zoom index are not the same number.
+        const zoomNew = (true === browser.resolutionLocked)
+            ? this.zoom
+            : browser.findMatchingZoomIndex(bpPerPixelTarget, browser.getResolutions())
         const binSizeNew = dataset.binSizeForZoom(zoomNew)
 
         const xBinNew = targetState.binX * (targetState.binSize / binSizeNew)

@@ -115,6 +115,27 @@ change does not alter that. It is a real gap, and deliberately a separate one:
 adding a field to the wire format engages ADR-0006 and ADR-0011 and has nothing
 to do with mirroring.
 
+**8. The lock holds against a peer exactly as it holds against a local gesture.**
+`State.sync` consults the receiver's `resolutionLocked` and, when set, holds the
+rung and solves `pixelSize` for the publisher's `bpPerPixel` — the same branch,
+in the same shape, that `updateWithLoci` has always had.
+
+This was originally filed away as #608 and deferred, on the reasoning that it was
+a product decision (a locked browser *stops following its peers' resolution*)
+rather than a repair, and that mirroring would incidentally mitigate it because a
+locked peer's own gestures honour its lock. **That reasoning was wrong, and
+testing found it.** A peer receiving a sync is not gesturing, and sync was the
+one path that never asked about the lock. The observed behaviour: lock two
+synced browsers, wheel-zoom one, and the receiver re-derives a rung from the
+publisher's scale, moves off the rung it was pinned to, auto-clears its lock for
+having moved — and the mirror sends that clear back, so **both** padlocks open.
+
+Mirroring made it worse rather than better, which is what makes this
+inseparable from the mirroring work rather than a follow-up to it: decisions 1–7
+describe a feature that does not survive its first gesture without this.
+
+Unlocked, `sync` is unchanged.
+
 ## Considered and rejected
 
 - **Mirror everything a widget holds.** Rejected on the colour scale, which is
@@ -123,19 +144,18 @@ to do with mirroring.
   mirroring it would silently rewrite what a user saved. A rule that damages the
   clearest case is the wrong rule.
 - **A group-level property.** See decision 2.
-- **Fix the lock instead of mirroring it.** `State.sync` ignores the receiver's
-  `resolutionLocked`, so a locked browser follows a peer's resolution change
-  anyway, and the coordinator then clears the lock it just defeated. That is a
-  genuine defect and it is filed as #608 — but fixing it means a locked browser
-  *stops following its peers' resolution*, which is a product decision about what
-  "synced" means, not a repair. It is deliberately not bundled here.
+- **Fix the lock instead of mirroring it.** This was originally deferred to #608
+  as a product decision rather than a repair. Testing showed it is not separable:
+  see decision 8.
 
 ## Consequences
 
-- Mirroring the lock **incidentally mitigates** #608 on gesture paths: once the
-  peer is locked too, its own wheel and drag honour the lock, so no resolution
-  change propagates back. The dropdown and locus-goto paths are unaffected, and
-  neither defect is fixed.
+- A locked group holds its rungs and stays visually aligned. Two locked browsers
+  may sit on *different* rungs — each holds its own and matches the other's
+  `bpPerPixel` — which is the intended reading of the lock, not a defect.
+- A locked receiver that cannot reach the published scale within
+  `MAX_PIXEL_SIZE` clamps, and the two views diverge visually until the lock
+  comes off. Same ceiling a locked sweep zoom already hits.
 - Padlocks agree in every case reachable through the UI. The rung-mismatch
   divergence that decision 3 originally accepted is closed by mirroring the
   auto-clears.

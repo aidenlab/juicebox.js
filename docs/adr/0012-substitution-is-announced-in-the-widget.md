@@ -2,6 +2,9 @@
 
 **Status:** Accepted
 **Date:** 2026-08-25
+**Amended:** 2026-09-03 — decision 4 answers the question it deferred; see
+*Restated, and answered* below and the last of the explicit no-s. No decision is
+reversed: the amendment closes #600 in the direction decision 3 already required.
 **Related:** #372 (the 2022 report this settles), ADR-0009 decision 5 (which
 deferred the error UX to here), ADR-0003 (public API contract), #425 (the missing
 `Alert` import that made the original failure silent), #561, #600 (case 3's
@@ -103,4 +106,8 @@ that cannot work, which is worse than the silence this ADR is replacing.
   documented exception at `docs/state-manipulation.md:237`. Routing either through
   `browser.setNormalization` would trigger a repaint from inside a render pass —
   case 3's hook fires from inside a tile fetch — which is a re-entrancy hazard,
-  not a cleanup.
+  not a cleanup. They share one implementation, `HICBrowser.substituteNormalization`,
+  so "sticky, written direct, no repaint" is one rule in one place rather than a
+  convention each mid-render caller re-implements. Case 1 does not join them: its
+  state write belongs to `#resolveNormalization`'s caller, and its reason is one of
+  the other two.

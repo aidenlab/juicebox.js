@@ -36,7 +36,6 @@ import Track2D from './track2D.js'
 
 import {decodeState} from "./sessionCodec.js"
 import {mapTrackConfig} from "./urlMapper.js"
-import {substitutionReason} from "./normalizationWidget.js"
 
 /**
  * How this module reports a `config.state` that is neither a state token nor a
@@ -82,32 +81,19 @@ class DataLoader {
      * reason is rebuilt from what the browser already knows: `state.normalization`
      * is what was asked for at the moment the vector was refused.
      *
-     * And the substitution is made sticky, which is #600 restated. The issue was
-     * filed while this hook was still believed to be a read-failure channel, and
-     * asked for the widget update to be deleted; decision 4 retired that premise,
-     * leaving the opposite defect. Decision 3 says state is rewritten to name what
-     * is drawn -- the two sibling paths, `#resolveNormalization` and
-     * `createWidgets`' `normalizationSubstituted`, both do it -- and this one did
-     * not, so the widget read `NONE` while canonical state still read `KR` and the
-     * next render pass re-asked for a vector the file had already refused.
-     *
-     * The write is direct rather than through `browser.setNormalization`, for the
-     * same reason `createWidgets` writes directly: the hook fires from inside a
-     * tile fetch, so repainting from it is a re-entrancy hazard. It is the
-     * exception documented at `docs/state-manipulation.md`.
+     * And it is sticky, which is #600 restated. The issue was filed while this
+     * hook was still believed to be a read-failure channel, and asked for the
+     * widget update to be deleted; decision 4 retired that premise, leaving the
+     * opposite defect -- the widget read `NONE` while canonical state still read
+     * `KR`, so the next render pass re-asked for a vector the file had already
+     * refused. `browser.substituteNormalization` is where the rest of that rule
+     * lives, shared with the mid-render caller in `createWidgets`; the guard on
+     * an absent or already-`NONE` request is its, not this hook's.
      *
      * @returns {(str: string) => void} the callback, closed over this browser
      */
     #announceStrawSubstitution() {
-        return () => {
-            const requested = this.browser.state?.normalization;
-            if (!requested || 'NONE' === requested) return;
-            this.browser.state.normalization = 'NONE';
-            this.browser.coordinator.onNormalizationSubstituted(
-                'NONE',
-                substitutionReason.notAtThisView(requested, 'NONE')
-            );
-        };
+        return () => this.browser.substituteNormalization(this.browser.state?.normalization, 'NONE');
     }
 
     /**

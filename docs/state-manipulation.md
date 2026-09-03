@@ -234,7 +234,7 @@ The replacement is followed by a render and the application continues normally �
 
 **The state field has exactly one writer.** `browser.state` and its `activeState` alias are getters over a private field; the setters that used to stand beside them are gone (#563, ADR-0009 decision 7). Reading canonical state is unrestricted, here as everywhere; *replacing* it is `setState`.
 
-That is the field, not the object. The getter hands back the live `State`, so a `browser.state.<field> = x` from outside is still reachable — and for `normalization`, three production sites do it (see the next section). For the canonical six, the discipline that stops it is the same one it always was: they are written through translators, by convention, and `setView` is where the invariants are enforced.
+That is the field, not the object. The getter hands back the live `State`, so a `browser.state.<field> = x` from outside is still reachable — and for `normalization` three production sites do it: `HICBrowser.init`, and the two mid-render callers that both go through `HICBrowser.substituteNormalization` — `imageTileSource` (via the observer in `createWidgets`) and hic-straw's `alert` hook (via `dataLoader`), which write directly because they run inside a render pass and `setNormalization` repaints (#600, ADR-0012 decision 3). For the canonical six, the discipline that stops it is the same one it always was: they are written through translators, by convention, and `setView` is where the invariants are enforced.
 
 ## What is NOT a state mutation
 

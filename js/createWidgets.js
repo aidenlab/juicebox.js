@@ -25,7 +25,7 @@ import LocusGoto from "./hicLocusGoto.js"
 import ResolutionSelector from "./hicResolutionSelector.js"
 import ColorScaleWidget from "./hicColorScaleWidget.js"
 import ControlMapWidget from "./controlMapWidget.js"
-import NormalizationWidget, {substitutionReason} from "./normalizationWidget.js"
+import NormalizationWidget from "./normalizationWidget.js"
 import {getNavbarContainer} from "./layoutController.js"
 import SweepZoom from "./sweepZoom.js"
 import ScrollbarWidget from "./scrollbarWidget.js"
@@ -101,20 +101,12 @@ function createWidgets(browser) {
             // failure and the widget is the surface. Same notification path as
             // the restore-time coercion, different reason -- here the remedy is
             // to pan or zoom.
-            normalizationSubstituted: (requested, effective) => {
-                // The source never writes canonical state, so the correction
-                // lands here. Still outside the setView chokepoint, as it was
-                // before -- routing it through `browser.setNormalization` would
-                // repaint from inside a render pass. See the known
-                // inconsistency noted in docs/state-manipulation.md.
-                if (browser.state) {
-                    browser.state.normalization = effective;
-                }
-                coordinator.onNormalizationSubstituted(
-                    effective,
-                    substitutionReason.notAtThisView(requested, effective)
-                );
-            },
+            // The source never writes canonical state, so the correction lands
+            // on the browser -- which holds the whole rule, shared with the
+            // other mid-render caller in `dataLoader`: sticky, written direct,
+            // no repaint from inside a render pass.
+            normalizationSubstituted: (requested, effective) =>
+                browser.substituteNormalization(requested, effective),
 
             // Resolved lazily: the browser does not hold its contact matrix view
             // until this function has returned.

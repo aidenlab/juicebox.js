@@ -84,10 +84,11 @@ class HICBrowser {
      *
      * The field, not the object. The getter hands back the live `State`, so
      * `browser.state.normalization = x` still writes canonical state from
-     * outside -- and two production sites do exactly that, `createWidgets`'
-     * `normalizationSubstituted` and `init`. `normalization` is not one of the
-     * canonical six and `setView` does not take it; what it has instead is one
-     * enforcer, `#resolveNormalization`. See `docs/state-manipulation.md`.
+     * outside -- and three production sites do exactly that, `createWidgets`'
+     * `normalizationSubstituted`, `dataLoader.#announceStrawSubstitution` (#600)
+     * and `init`. `normalization` is not one of the canonical six and `setView`
+     * does not take it; what it has instead is one enforcer,
+     * `#resolveNormalization`. See `docs/state-manipulation.md`.
      */
     #state
 

@@ -4,8 +4,8 @@
 **Date:** 2026-08-25
 **Related:** #372 (the 2022 report this settles), ADR-0009 decision 5 (which
 deferred the error UX to here), ADR-0003 (public API contract), #425 (the missing
-`Alert` import that made the original failure silent), #561, `CONTEXT.md`
-(*Substitution*)
+`Alert` import that made the original failure silent), #561, #600 (case 3's
+missing state write, restated under decision 4), `CONTEXT.md` (*Substitution*)
 
 ## Context
 
@@ -70,6 +70,13 @@ This also undermines **#600**, which was filed against the same mistaken premise
 The path is a substitution, not a failure, so the question that issue asks needs
 restating before it can be answered.
 
+Restated, and answered: #600 observed a real divergence — the widget said `NONE`
+while state still said `KR` — and, believing the path to be a failure, proposed
+deleting the widget update. Under this decision the remedy is the other one.
+Case 3 keeps its announcement and gains the state write decision 3 requires of
+every substitution, so it is sticky like the other two and the next render pass
+stops re-asking for a vector the file has already refused.
+
 **5. Which of the first two reasons applies is asked of the primary file.** With a
 control map loaded the offered set is an intersection, and a normalization missing
 from an intersection is missing for one of two causes with different remedies: the
@@ -92,7 +99,8 @@ that cannot work, which is worse than the silence this ADR is replacing.
   `await` is what makes decision 1 observable at all; the unit fixture missed it
   because its dataset double was synchronous where the real one is not.
 
-- **Case 2's direct `state.normalization` write stays outside the chokepoint.** It
-  is the documented exception at `docs/state-manipulation.md:237`. Routing it
-  through `browser.setNormalization` would trigger a repaint from inside a render
-  pass, which is a re-entrancy hazard, not a cleanup.
+- **Cases 2 and 3 write `state.normalization` outside the chokepoint.** It is the
+  documented exception at `docs/state-manipulation.md:237`. Routing either through
+  `browser.setNormalization` would trigger a repaint from inside a render pass —
+  case 3's hook fires from inside a tile fetch — which is a re-entrancy hazard,
+  not a cleanup.

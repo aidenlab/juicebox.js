@@ -294,6 +294,20 @@ class HICBrowser {
             if (config.normalization) {
                 this.state.normalization = await this.#resolveNormalization(config.normalization);
                 await this.#announceSubstitution(config.normalization, this.state.normalization);
+
+                // And the selector catches up, because it cannot have been
+                // right before this line (#603). The mechanism is written down
+                // at `NormalizationWidget.reselect`; what is this call site's
+                // own is where it sits. It cannot move up, for the same reason
+                // the resolution above it cannot: `loadNormalizationFile`
+                // pushes types into `dataset.normalizationTypes`, and the
+                // enforcer reads exactly that set, so asking above the
+                // `Promise.all` would substitute away a normalization one of
+                // those files is about to supply. And it is after
+                // `#announceSubstitution` on purpose -- nothing on this path
+                // calls `clearSubstitution`, so a marker just raised survives
+                // it.
+                await this.coordinator.onNormalizationResolved(this.state.normalization);
             }
 
             // Below the normalization write, and pinned there (#575). A host's

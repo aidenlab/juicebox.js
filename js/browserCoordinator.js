@@ -319,6 +319,25 @@ class BrowserCoordinator {
     }
 
     /**
+     * Orchestrate the selector catching up with a normalization that has just
+     * been resolved.
+     *
+     * Distinct from `onNormalizationSubstituted`, which is the case where the
+     * answer differs from the request: that one also carries a reason and
+     * raises the marker. This is the quiet half -- the request survived, but the
+     * selector was built before the answer existed -- so it moves the selection
+     * and says nothing. Why the selector can be behind at all is written down
+     * once, at `NormalizationWidget.reselect` (#603).
+     *
+     * @param {string} normalization - the resolved normalization, as the state holds it
+     */
+    async onNormalizationResolved(normalization) {
+        if (this.widgets.normalizationWidget) {
+            await this.widgets.normalizationWidget.reselect(normalization);
+        }
+    }
+
+    /**
      * Orchestrate component updates for normalization file load status.
      * 
      * @param {string} status - Load status ("start" or "stop")

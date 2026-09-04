@@ -225,7 +225,73 @@ class NormalizationWidget {
         }
     }
 
+    /**
+     * Re-select the entry naming `normalization`, leaving the list alone.
+     *
+     * `updateOptions` decides what is selected by reading
+     * `browser.state.normalization` at the moment it runs, and on the `init`
+     * path it runs from inside the norm-vector-file load -- above the validated
+     * write of `config.normalization` (#603). Nothing else re-reads the state
+     * afterwards, so the selector can sit on a normalization that was never
+     * resolved. This is the re-selection that closes that gap, and it is a
+     * re-selection rather than a second `updateOptions` because the list itself
+     * is already right: only which entry is marked selected is stale, and
+     * asking for the list again means another `getNormalizationOptions()`,
+     * which on a `.hic` file reads the normalization vector index off the wire.
+     * The one case that does rebuild is the one where re-selecting cannot work
+     * -- a value with no entry to select.
+     *
+     * Waits on the list build first. `onNormVectorIndexLoad` calls
+     * `updateOptions` without awaiting it, so a rebuild can still be in flight
+     * here -- and a rebuild landing after this re-selection would overwrite it
+     * with the same stale reading again.
+     *
+     * Does **not** touch the substitution announcement, deliberately: only the
+     * change handler and `onNormalizationChange` clear it, because only a user
+     * answering the question makes it false (#372, ADR-0012).
+     *
+     * @param {string} normalization - the resolved normalization, as the state holds it
+     */
+    async reselect(normalization) {
+
+        await this._optionsUpdate;
+
+        if (this.normalizationSelector.value === normalization) {
+            return;
+        }
+
+        const offered = Array.from(this.normalizationSelector.options)
+            .some(option => option.value === normalization);
+
+        // A value with no entry to select means the list was built against a
+        // different set than the one the resolution read -- so rebuild rather
+        // than deselect everything, which is what a bare programmatic set would
+        // leave behind.
+        if (offered) {
+            this.setNormalizationProgrammatically(normalization);
+        } else {
+            await this.updateOptions();
+        }
+    }
+
+    /**
+     * Rebuild the `<option>` list from the dataset's offered normalizations.
+     *
+     * The in-flight build is kept so `reselect` can wait for it. What is kept
+     * is a *settled* copy: `onNormVectorIndexLoad` calls this without awaiting
+     * it, so a failed option read used to be nobody's rejection, and handing it
+     * to `reselect` bare would route it into `init` and turn a failed list
+     * build into a failed load -- the opposite of the load path's coerce-never-
+     * reject rule (ADR-0009 decision 2). Callers that do await get the real
+     * promise, rejection and all.
+     */
     async updateOptions() {
+        const update = this.#buildOptions();
+        this._optionsUpdate = update.catch(() => undefined);
+        return update;
+    }
+
+    async #buildOptions() {
         const labels = {
             NONE: 'None',
             VC: 'Coverage',

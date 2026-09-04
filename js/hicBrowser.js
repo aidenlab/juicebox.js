@@ -84,10 +84,11 @@ class HICBrowser {
      *
      * The field, not the object. The getter hands back the live `State`, so
      * `browser.state.normalization = x` still writes canonical state from
-     * outside -- and two production sites do exactly that, `createWidgets`'
-     * `normalizationSubstituted` and `init`. `normalization` is not one of the
-     * canonical six and `setView` does not take it; what it has instead is one
-     * enforcer, `#resolveNormalization`. See `docs/state-manipulation.md`.
+     * outside -- and three production sites do exactly that: `init`, and the two
+     * mid-render callers that both reach it through `substituteNormalization`
+     * below (#600). `normalization` is not one of the canonical six and
+     * `setView` does not take it; what it has instead is one enforcer,
+     * `#resolveNormalization`. See `docs/state-manipulation.md`.
      */
     #state
 
@@ -1269,6 +1270,45 @@ class HICBrowser {
             this.#state.normalization = normalization;
         }
         this.coordinator.onNormalizationChange(this.#state?.normalization);
+    }
+
+    /**
+     * Record a substitution: the view is being drawn with something other than
+     * what was asked for, because what was asked for is not on offer here.
+     *
+     * The sibling of `setNormalization` above, and deliberately not a call to
+     * it. `setNormalization` is the user answering the question and repaints on
+     * the way out; a substitution is discovered *during* a render pass -- by
+     * `imageTileSource`, or by hic-straw's `alert` hook from inside a tile
+     * fetch -- and repainting from there is a re-entrancy hazard, not a
+     * cleanup. So the write is direct, which is the exception documented at
+     * `docs/state-manipulation.md`.
+     *
+     * Sticky, per ADR-0012 decision 3: state is rewritten to name what is
+     * drawn, so a zoom back out to a resolution that does carry the vector
+     * stays on the substitute until the user asks again. Keeping the request in
+     * state and re-attempting each pass is the lie ADR-0009 removed.
+     *
+     * Both mid-render callers land here rather than each writing the triple out
+     * themselves, so "sticky, direct, no repaint" is one rule in one place.
+     * `#announceSubstitution` does not: it is the restore-time coercion, whose
+     * state write belongs to `#resolveNormalization`'s caller and whose reason
+     * is one of the other two.
+     *
+     * @param {string|undefined} requested - what the render pass asked for
+     * @param {string} effective - what it can actually draw with
+     */
+    substituteNormalization(requested, effective) {
+
+        if (!this.#state || !requested || requested === effective) {
+            return;
+        }
+
+        this.#state.normalization = effective;
+        this.coordinator.onNormalizationSubstituted(
+            effective,
+            substitutionReason.notAtThisView(requested, effective)
+        );
     }
 
     async shiftPixels(dx, dy) {

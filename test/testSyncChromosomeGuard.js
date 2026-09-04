@@ -30,6 +30,15 @@ import State from '../js/hicState.js'
 
 const session = (...urls) => ({browsers: urls.map(url => ({url}))})
 
+/**
+ * A sync state as a peer publishes it, shaped like `State.getSyncState` -- the
+ * bin size and pixel size name the receiver's own rung, so the origin arrives
+ * unrescaled and a successful sync is legible as a bare `did it happen`. Rung
+ * re-derivation has its own tests, in `testResolutionLockMirror.js`.
+ */
+const published = (chr1Name, chr2Name) =>
+    ({chr1Name, chr2Name, binSize: 50000, binX: 3, binY: 4, pixelSize: 1})
+
 /** Two browsers on the same genome, each at a state of its own, ready to sync. */
 async function twoBrowsers(container) {
     const registry = registryForContainer(container)
@@ -64,9 +73,7 @@ describe('syncing a state naming a chromosome the receiver does not have', () =>
         shrinkToChr1(b)
         const before = b.state.clone()
 
-        await expect(b.syncState({
-            chr1Name: 'chr17', chr2Name: 'chr17', binSize: 50000, binX: 3, binY: 4, pixelSize: 2
-        })).resolves.toBeUndefined()
+        await expect(b.syncState(published('chr17', 'chr17'))).resolves.toBeUndefined()
 
         expect(b.state).toEqual(before)
         expect(a.state.chr1).toBe(1)
@@ -79,7 +86,7 @@ describe('syncing a state naming a chromosome the receiver does not have', () =>
         shrinkToChr1(b)
         const onLocusChange = vi.spyOn(b.coordinator, 'onLocusChange')
 
-        await b.syncState({chr1Name: 'chr17', chr2Name: 'chr17', binSize: 50000, binX: 3, binY: 4, pixelSize: 2})
+        await b.syncState(published('chr17', 'chr17'))
 
         expect(onLocusChange).not.toHaveBeenCalled()
     })
@@ -91,7 +98,7 @@ describe('syncing a state naming a chromosome the receiver does not have', () =>
         shrinkToChr1(b)
         const before = b.state.clone()
 
-        await b.syncState({chr1Name: 'chr1', chr2Name: 'chr17', binSize: 50000, binX: 3, binY: 4, pixelSize: 2})
+        await b.syncState(published('chr1', 'chr17'))
 
         expect(b.state).toEqual(before)
     })
@@ -105,10 +112,7 @@ describe('syncing a state naming a chromosome the receiver does not have', () =>
         const [, b] = await twoBrowsers(dom.container)
         shrinkToChr1(b)
 
-        // A bin size and pixel size that name the receiver's own rung, so the
-        // origin arrives unrescaled and the sync is legible as a bare `did it
-        // happen`. Rung re-derivation has its own tests.
-        await b.syncState({chr1Name: '1', chr2Name: '1', binSize: 50000, binX: 3, binY: 4, pixelSize: 1})
+        await b.syncState(published('1', '1'))
 
         expect(b.state.chr1).toBe(1)
         expect(b.state.chr2).toBe(1)

@@ -131,6 +131,15 @@ is canonical state and, by deliberate exception, view preferences — never data
 choices. See `docs/adr/0014`.
 _Avoid_: sync set, linked browsers.
 
+**Sync state** — canonical state as a *peer* reads it: chromosomes by name and a
+bin size rather than a zoom index, because the receiving browser may order its
+chromosomes differently and offer a different resolution array. A projection
+(`State.getSyncState(dataset)`), consumed by `State.sync` on the other side.
+Membership decides who is handed one; whether a particular one can be acted on
+is a separate question, because a receiver's genome need not know every name a
+peer can publish — `canResolveSyncState` in `js/syncGroup.js`, issue #605.
+_Avoid_: sync payload, target state.
+
 **View preference** — a setting the user makes on one browser that changes how
 that browser interprets a gesture, without being part of what the view *is*.
 Three properties define the category: the user sets it, it is scoped to a single

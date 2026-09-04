@@ -38,7 +38,7 @@ import InteractionHandler from "./interactionHandler.js"
 import DataLoader from "./dataLoader.js"
 import {normalizeTrackConfigs} from "./normalizeSession.js"
 import {unmappedUrl, unmappedIndexUrl} from "./urlMapper.js"
-import {isSynchable} from "./syncGroup.js"
+import {isSynchable, canResolveSyncState} from "./syncGroup.js"
 import {SENTINEL_ZOOM} from "./sentinelZoom.js"
 import {substitutionReason} from "./normalizationWidget.js"
 
@@ -1254,12 +1254,14 @@ class HICBrowser {
      * `synchable` since then is still in it. That was master's behaviour and
      * the ticket does not change what syncing does.
      *
-     * It does *not* check that this browser's dataset knows the chromosomes the
-     * sync state names -- `canBeSynched` was the only code that did, and it
-     * guarded a rung nothing took. Filed rather than fixed here (#605).
+     * The second half of the gate is `canResolveSyncState`, also from
+     * `syncGroup.js`: a state naming a chromosome this browser's genome cannot
+     * place is skipped silently rather than carried into `State.sync`, which
+     * would throw on it (#605). It sits beside the membership rule but outside
+     * it -- see the comment there.
      */
     async syncState(targetState) {
-        if (!targetState || !isSynchable(this) || !this.state) {
+        if (!targetState || !isSynchable(this) || !this.state || !canResolveSyncState(this.genome, targetState)) {
             return;
         }
 

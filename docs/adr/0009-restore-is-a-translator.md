@@ -288,6 +288,17 @@ inbound gate that survives does not. That is a real gap, but it predates this
 change on the path that actually runs, so it is filed rather than folded into a
 deletion — #605.
 
+*Closed since.* #605 found the gap reachable — `Dataset.isCompatible`
+short-circuits to `true` on a known genome-id pair without comparing
+chromosomes, so a whole-genome map and a subset map labelled with the same
+genome id pair, and the subset receives a name it cannot place. `syncState` now
+carries the check itself, and skips such a state silently. It is **not**
+`canBeSynched`'s expression restored: that asked the dataset's exact,
+case-sensitive `getChrIndexFromName`, which is stricter than the aliasing
+`genome.getChromosome` lookup `State.sync` actually consumes, so restoring it
+verbatim would have refused peer states that sync correctly today. The guard is
+asked of the genome, so what it admits is exactly what sync can use.
+
 **#280 loses its leading hypothesis.** "Shared URL maps not always synced" was
 read as a race on this rung; a rung nothing takes cannot be intermittent. The
 order-dependent code is the peer-sync step — `registry.sync()` and the

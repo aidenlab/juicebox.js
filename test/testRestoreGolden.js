@@ -86,15 +86,18 @@
  *    outside the chromosome.** `loadLiveContactMap` decodes `config.state`,
  *    calls `setState`, and then unconditionally calls `parseGotoInput` on the
  *    live extent -- so the state a live session carries never survives its own
- *    load. And because `parseLocusString` converts to 0-based by subtracting one,
- *    an extent starting at 0 becomes `-1` bp, which nothing clamps, so every live
- *    record in this file has a **negative** origin. Recorded, not fixed; filed
- *    as #567.
+ *    load (#650). And because `parseLocusString` converts to 0-based by
+ *    subtracting one, an extent starting at 0 became `-1` bp, which nothing
+ *    clamps, so every live record in this file had a **negative** origin. That
+ *    half is fixed: #567 made the formatter add the one back, and the live
+ *    column now opens at `0, 0`.
  *
- *    The live door is the worst case, not the only one: the same subtraction
+ *    The live door was the worst case, not the only one: the same subtraction
  *    reaches the file path's `locus` door whenever the projected locus starts at
  *    bp 0, and roughly a sixth of the `config.locus` records here carry a small
- *    negative `x` for that reason. A negative origin outside the live column is
+ *    negative `x` for that reason. #567 did not touch that door -- its input is
+ *    the fixture's locus, not a formatter of juicebox's -- and #649 is where
+ *    `updateWithLoci` would clamp it. A negative origin outside the live column is
  *    therefore **baseline**, not a regression -- it is finding 1 showing through,
  *    since no door clamps.
  * 3. **The `config.synchState` rung was unreachable, and is now gone.** Its
@@ -125,8 +128,8 @@
  * - A **door changing which rung it takes** -- ADR-0009 decision 1 routes every
  *   door through the chokepoint, so `rungs` moves for the doors that skipped it.
  * - A **clamp arriving** -- an `x` or `y` outside `[0, chromosome/binSize]`
- *   coming back inside it. Every live-door record is negative today and some
- *   `config.locus` records are too, so those are the ones to read first. Expect a clamp to move one viewport column and
+ *   coming back inside it. Some `config.locus` records are negative today, so
+ *   those are the ones to read first. Expect a clamp to move one viewport column and
  *   not the other; that asymmetry is the evidence it is a clamp and not a
  *   coincidence, and it is the whole reason there are two columns.
  * - A **`pixelSize` cap arriving** -- a value above `MAX_PIXEL_SIZE` coming down
@@ -152,6 +155,7 @@
  * | 2026-08-22 | all — the `rungs` field only, on every door | #559. `setActiveDataset` loses its `state` parameter, so the count of calls carrying one leaves the file, and the `config.locus` door reaches `setState` where it did not before. Tally below. |
  * | 2026-08-22 | 10 fixtures — the `normalization` field only, on the `config.state` and live doors, both columns | #561. A restored normalization is coerced against the loaded dataset. Tally below. |
  * | 2026-08-24 | `session-gzip-data-uri` — one entry **added**, none moved | **#518**, ADR-0011 decision 2. The corpus fixture that used to reject now decodes, so this suite — which runs the decoding fixtures — sees it for the first time. An addition rather than a movement: a fixture with no prior entry has nothing to disagree with. The decoded session is one browser naming `https://example.org/a.hic`, which is what the fixture's note has always said its payload holds. Logged so that "one new entry and nothing else changed" is a claim a reader of the diff can check; the movement itself is logged in `testDecoderGolden.js`. |
+ * | 2026-09-14 | all — the live door only, both columns | #567. The live extent's locus string gains the one `parseLocusString` takes away, so the live door opens at `0, 0`. Tally below. |
  *
  * ### The #558 tally
  *
@@ -286,6 +290,31 @@
  *
  * The historical tallies above still name the door; they are the record of what
  * those tickets moved when it existed, and are left as they were written.
+ *
+ * ### The #567 tally
+ *
+ * **92 records of 368 moved -- the live door, every fixture, both columns --
+ * and nothing on the other three doors.** One cause, seen two ways:
+ *
+ * - **The origin -- 92 records.** `x` and `y` go from `-0.00004` (square) and
+ *   `-0.00002` (wide) to `0`, and each `locus` goes from `chr1:-1-...` to
+ *   `chr1:0-...`. The end of the wide column's x locus loses its overhang too,
+ *   `40000003` to `40000000`, because the origin it projects from is now whole.
+ * - **The fit -- the same records' `pixelSize`, and `zoom` in the wide column.**
+ *   The extent `parseGotoInput` was handed was `10000001` bp, one more than the
+ *   declared 10 Mb, so it never divided evenly into the viewport: `pixelSize`
+ *   was `1.99999980000002` in both columns, and at 400px tall the wide column
+ *   could not fit 400 bins of 25 kb and dropped to zoom 5. The extent is now
+ *   exactly 10 Mb, so the square column reads `pixelSize: 2` at the same zoom
+ *   and the wide one reads zoom 6 at `pixelSize: 1`.
+ *
+ * Neither is a clamp, and the symmetry is how to tell: the origin moved in both
+ * columns, which the update convention names as the signature of the input
+ * changing rather than the clamp. `rungs`, `normalization`, `chr1`, `chr2` and
+ * `outcome` did not move anywhere. The live door's `state` rung is still
+ * overwritten by `parseGotoInput` (#650), and `updateWithLoci` still does not
+ * clamp (#649). `test/testLiveDoorOrigin.js` asserts the non-negative origin by
+ * name.
  *
  * @see docs/adr/0009-restore-is-a-translator.md — the decisions this gate guards
  * @see test/data/wireFormatCorpus.js — the inputs

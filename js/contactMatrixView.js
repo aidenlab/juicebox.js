@@ -30,10 +30,7 @@ import HICEvent from './hicEvent.js'
 import * as hicUtils from './hicUtils.js'
 import {getLocus} from "./genomicUtils.js"
 import {getOffset} from "./utils.js"
-
-const DRAG_THRESHOLD = 2
-const DOUBLE_TAP_DIST_THRESHOLD = 20
-const DOUBLE_TAP_TIME_THRESHOLD = 300
+import GestureRecognizer from "./gestureRecognizer.js"
 
 const doLegacyTrack2DRendering = false
 
@@ -77,6 +74,10 @@ class ContactMatrixView {
         this.yGuideElement = viewportElement.querySelector("div[id$='-y-guide']");
 
         this.displayMode = 'A';
+
+        // Holds the in-progress gesture. This view only converts events to
+        // viewport pixels and carries out the intents it names. See CONTEXT.md.
+        this.gestureRecognizer = new GestureRecognizer();
 
         /**
          * The handlers this view puts on `document`, so `dispose()` can take
@@ -392,313 +393,189 @@ class ContactMatrixView {
         }
     }
 
+    /**
+     * Wire the viewport's mouse, wheel and key events to the gesture
+     * recognizer, and carry out what it recognizes.
+     *
+     * What stays here is what the recognizer must not hold: converting each
+     * event to viewport pixels, and registering listeners. Each event keeps the
+     * coordinate source it has always read -- `offsetX` for drag, double-click
+     * and wheel, client-minus-rect for the sweep, page-minus-offset for the
+     * crosshairs. They agree only when the page is laid out simply, and JSDOM
+     * cannot tell them apart, so unifying them is a behaviour change to make
+     * deliberately, not here.
+     */
     addMouseHandlers(viewportElement) {
 
-        let startX = 0;
-        let startY = 0;
-        let currentX = 0;
-        let currentY = 0;
+        if (this.browser.isMobile) return;
 
-        let isMouseDown = false;
-        let isSweepZooming = false;
-        let mouseDown
-        let mouseLast
-        let mouseOver;
+        const recognizer = this.gestureRecognizer;
 
-        const panMouseUpOrMouseOut = () => {
-            if (this.isDragging) {
-                this.isDragging = false;
-                this.browser.eventBus.post(HICEvent("DragStopped"));
+        viewportElement.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (this.browser.menuElement?.style.display === 'block') {
+                this.browser.hideMenu();
             }
-            isMouseDown = false;
-            mouseDown = mouseLast = undefined;
-        };
 
-        this.isDragging = false;
+            const { top, left } = viewportElement.getBoundingClientRect()
+            this.carryOut(recognizer.mouseDown({
+                x: e.offsetX,
+                y: e.offsetY,
+                sweepX: e.clientX - left,
+                sweepY: e.clientY - top,
+                altKey: e.altKey
+            }));
+        })
 
-        if (!this.browser.isMobile) {
+        viewportElement.addEventListener('mousemove', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
 
-            viewportElement.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+            const { top, left } = getOffset(viewportElement)
+            const rect = viewportElement.getBoundingClientRect();
 
-                if (this.browser.menuElement?.style.display === 'block') {
-                    this.browser.hideMenu();
-                }
+            const pointer =
+                {
+                    x: e.pageX - left,
+                    y: e.pageY - top
+                };
+            pointer.xNormalized = pointer.x / rect.width;
+            pointer.yNormalized = pointer.y / rect.height;
 
-                mouseLast = { x: e.offsetX, y: e.offsetY };
-                mouseDown = { x: e.offsetX, y: e.offsetY };
+            this.browser.coordinator.onUpdateContactMapMousePosition(pointer);
 
-                if (e.altKey) {
-                    isSweepZooming = true
+            this.carryOut(recognizer.mouseMove({
+                x: e.offsetX,
+                y: e.offsetY,
+                sweepX: e.clientX - rect.left,
+                sweepY: e.clientY - rect.top,
+                pointer
+            }));
+        })
 
-                    const { top, left } = viewportElement.getBoundingClientRect()
-                    startX = e.clientX - left
-                    startY = e.clientY - top
+        viewportElement.addEventListener('mouseup', () => this.carryOut(recognizer.mouseUp()))
 
-                    this.sweepZoom.initialize(startX, startY);
-                }
+        viewportElement.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.carryOut(recognizer.doubleClick({ x: e.offsetX, y: e.offsetY }));
+        })
 
-                isMouseDown = true;
-            })
+        viewportElement.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.carryOut(recognizer.wheel({ x: e.offsetX, y: e.offsetY, deltaY: e.deltaY }));
+        })
 
-            viewportElement.addEventListener('mousemove', (e) => {
+        viewportElement.addEventListener('mouseover', () => this.carryOut(recognizer.mouseOver()))
+        viewportElement.addEventListener('mouseout', () => this.carryOut(recognizer.mouseOut()))
 
-                e.preventDefault();
-                e.stopPropagation();
+        viewportElement.addEventListener('mouseleave', () => {
+            this.browser.layoutController.xAxisRuler.unhighlightWholeChromosome();
+            this.browser.layoutController.yAxisRuler.unhighlightWholeChromosome();
+            this.carryOut(recognizer.mouseLeave());
+        })
 
-                const coords =
-                    {
-                        x: e.offsetX,
-                        y: e.offsetY
-                    };
+        this.addDocumentListener('keydown', (e) => this.carryOut(recognizer.keyDown({ shiftKey: e.shiftKey })))
 
-                const { top, left } = getOffset(viewportElement)
+        this.addDocumentListener('keyup', () => this.carryOut(recognizer.keyUp()))
 
-                const xy =
-                    {
-                        x: e.pageX - left,
-                        y: e.pageY - top
-                    };
-
-                const { width, height } = viewportElement.getBoundingClientRect();
-                xy.xNormalized = xy.x / width;
-                xy.yNormalized = xy.y / height;
-
-                this.browser.coordinator.onUpdateContactMapMousePosition(xy);
-
-                if (this.willShowCrosshairs) {
-                    this.browser.updateCrosshairs(xy);
-                    this.browser.showCrosshairs();
-                }
-
-                if (isMouseDown) {
-                    if (isSweepZooming) {
-
-                        const { left, top } = viewportElement.getBoundingClientRect();
-                        currentX = e.clientX - left;
-                        currentY = e.clientY - top;
-                        const width = Math.abs(currentX - startX);
-                        const height = Math.abs(currentY - startY);
-
-                        const config =
-                            {
-                                left: `${Math.min(startX, currentX)}px`,
-                                top: `${Math.min(startY, currentY)}px`,
-                                width: `${width}px`,
-                                height: `${height}px`,
-                            }
-
-
-                        this.sweepZoom.update(config);
-
-                    } else if (mouseDown.x && Math.abs(coords.x - mouseDown.x) > DRAG_THRESHOLD) {
-                        this.isDragging = true;
-                        const dx = mouseLast.x - coords.x;
-                        const dy = mouseLast.y - coords.y;
-                        this.browser.shiftPixels(dx, dy).catch(err => console.error('Error in shiftPixels:', err));
-                    }
-                    mouseLast = coords;
-                }
-            })
-
-            viewportElement.addEventListener('mouseup', panMouseUpOrMouseOut)
-
-            viewportElement.addEventListener('dblclick', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const mouseX = e.offsetX;
-                const mouseY = e.offsetY;
-                this.browser.zoomAndCenter(1, mouseX, mouseY);
-            })
-
-            viewportElement.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const zoomFactor = 0.008;
-                // deltaY > 0 means scroll down (zoom out), deltaY < 0 means scroll up (zoom in)
-                // For juicebox: scaleFactor > 1 = zoom in, scaleFactor < 1 = zoom out
-                const scaleFactor = e.deltaY > 0 ? 1 - zoomFactor : 1 + zoomFactor;
-                const anchorPx = e.offsetX;
-                const anchorPy = e.offsetY;
-
-                this.browser.interactions.handleWheelZoom(anchorPx, anchorPy, scaleFactor)
-                    .catch(err => console.error('Error in handleWheelZoom:', err));
-            })
-
-            viewportElement.addEventListener('mouseover', () => mouseOver = true)
-            viewportElement.addEventListener('mouseout', () => mouseOver = undefined)
-
-
-            viewportElement.addEventListener('mouseleave', () => {
-                this.browser.layoutController.xAxisRuler.unhighlightWholeChromosome();
-                this.browser.layoutController.yAxisRuler.unhighlightWholeChromosome();
-                panMouseUpOrMouseOut();
-            })
-
-            this.addDocumentListener('keydown', (e) => {
-                if (!this.willShowCrosshairs && mouseOver && e.shiftKey) {
-                    this.willShowCrosshairs = true;
-                    this.browser.eventBus.post(HICEvent('DidShowCrosshairs', 'DidShowCrosshairs'));
-                }
-            })
-
-            this.addDocumentListener('keyup', () => {
-                this.browser.hideCrosshairs();
-                this.willShowCrosshairs = undefined;
-                this.browser.eventBus.post(HICEvent('DidHideCrosshairs', 'DidHideCrosshairs'));
-            })
-
-            this.addDocumentListener('mouseup', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                if (isSweepZooming) {
-                    isSweepZooming = false;
-
-                    const sweepRect =
-                        {
-                            xPixel: Math.min(startX, currentX),
-                            yPixel: Math.min(startY, currentY),
-                            width: Math.abs(currentX - startX),
-                            height: Math.abs(currentY - startY)
-                        };
-
-                    this.sweepZoom.commit(sweepRect).catch(err => console.error('Error in sweepZoom.commit:', err));
-                }
-            })
-        }
+        this.addDocumentListener('mouseup', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.carryOut(recognizer.documentMouseUp());
+        })
     }
 
     /**
-     * Add touch handlers.  Touches are mapped to one of the following application level events
-     *  - double tap, equivalent to double click
-     *  - move
-     *  - pinch
+     * Wire the viewport's touch events to the gesture recognizer: double tap,
+     * one-finger pan and pinch. Touch coordinates are page-minus-rect.
      *
-     * @param $viewport
+     * Touch-move is throttled here, not in the recognizer, which has no clock.
      */
-
     addTouchHandlers(viewportElement) {
-        let lastTouch, pinch;
 
-        const translateTouchCoordinates = (e, target) => {
-            const rect = target.getBoundingClientRect();
-            return {
-                x: e.pageX - rect.left,
-                y: e.pageY - rect.top
-            };
+        const recognizer = this.gestureRecognizer;
+
+        const touchesIn = (ev) => {
+            const rect = viewportElement.getBoundingClientRect();
+            return Array.from(ev.targetTouches, ({ pageX, pageY }) => ({ x: pageX - rect.left, y: pageY - rect.top }));
         };
 
         viewportElement.ontouchstart = (ev) => {
             ev.preventDefault();
             ev.stopPropagation();
-
-            let touchCoords = translateTouchCoordinates(ev.targetTouches[0], viewportElement);
-            let offsetX = touchCoords.x;
-            let offsetY = touchCoords.y;
-            const count = ev.targetTouches.length;
-            const timeStamp = ev.timeStamp || Date.now();
-            let resolved = false;
-
-            if (count === 2) {
-                touchCoords = translateTouchCoordinates(ev.targetTouches[1], viewportElement);
-                offsetX = (offsetX + touchCoords.x) / 2;
-                offsetY = (offsetY + touchCoords.y) / 2;
-            }
-
-            if (lastTouch && (timeStamp - lastTouch.timeStamp < DOUBLE_TAP_TIME_THRESHOLD) && count > 1 && lastTouch.count === 1) {
-                lastTouch = { x: offsetX, y: offsetY, timeStamp, count };
-                return;
-            }
-
-            if (lastTouch && (timeStamp - lastTouch.timeStamp < DOUBLE_TAP_TIME_THRESHOLD)) {
-                const dx = lastTouch.x - offsetX;
-                const dy = lastTouch.y - offsetY;
-                const dist = Math.hypot(dx, dy);
-                const direction = (lastTouch.count === 2 || count === 2) ? -1 : 1;
-
-                if (dist < DOUBLE_TAP_DIST_THRESHOLD) {
-                    this.browser.zoomAndCenter(direction, offsetX, offsetY);
-                    lastTouch = undefined;
-                    resolved = true;
-                }
-            }
-
-            if (!resolved) {
-                lastTouch = { x: offsetX, y: offsetY, timeStamp, count };
-            }
+            this.carryOut(recognizer.touchStart({ touches: touchesIn(ev), timeStamp: ev.timeStamp || Date.now() }));
         };
 
         viewportElement.ontouchmove = hicUtils.throttle((ev) => {
             ev.preventDefault();
             ev.stopPropagation();
-
-            if (ev.targetTouches.length === 2) {
-                const touchCoords1 = translateTouchCoordinates(ev.targetTouches[0], viewportElement);
-                const touchCoords2 = translateTouchCoordinates(ev.targetTouches[1], viewportElement);
-
-                const t = {
-                    x1: touchCoords1.x,
-                    y1: touchCoords1.y,
-                    x2: touchCoords2.x,
-                    y2: touchCoords2.y
-                };
-
-                pinch ? (pinch.end = t) : (pinch = { start: t });
-            } else {
-                const touchCoords = translateTouchCoordinates(ev.targetTouches[0], viewportElement);
-                const offsetX = touchCoords.x;
-                const offsetY = touchCoords.y;
-
-                if (lastTouch) {
-                    const dx = lastTouch.x - offsetX;
-                    const dy = lastTouch.y - offsetY;
-                    if (!isNaN(dx) && !isNaN(dy)) {
-                        this.isDragging = true;
-                        this.browser.shiftPixels(dx, dy).catch(err => console.error('Error in shiftPixels:', err));
-                    }
-                }
-
-                lastTouch = {
-                    x: offsetX,
-                    y: offsetY,
-                    timeStamp: ev.timeStamp || Date.now(),
-                    count: ev.targetTouches.length
-                };
-            }
+            this.carryOut(recognizer.touchMove({ touches: touchesIn(ev), timeStamp: ev.timeStamp || Date.now() }));
         }, 50);
 
         viewportElement.ontouchend = (ev) => {
             ev.preventDefault();
             ev.stopPropagation();
-
-            if (pinch && pinch.end) {
-                const { start, end } = pinch;
-                const dxStart = start.x2 - start.x1;
-                const dyStart = start.y2 - start.y1;
-                const dxEnd = end.x2 - end.x1;
-                const dyEnd = end.y2 - end.y1;
-
-                const distStart = Math.hypot(dxStart, dyStart);
-                const distEnd = Math.hypot(dxEnd, dyEnd);
-                const scale = distEnd / distStart;
-
-                const anchorX = (start.x1 + start.x2) / 2;
-                const anchorY = (start.y1 + start.y2) / 2;
-
-                if (scale < 0.8 || scale > 1.2) {
-                    lastTouch = undefined;
-                    this.browser.pinchZoom(anchorX, anchorY, scale);
-                }
-            } else if (this.isDragging) {
-                this.isDragging = false;
-                this.browser.eventBus.post(HICEvent("DragStopped"));
-            }
-
-            pinch = undefined;
+            this.carryOut(recognizer.touchEnd());
         };
+    }
+
+    /**
+     * Carry out the intents the gesture recognizer named, in order. Each goes
+     * where it went before the recognizer existed: through the browser's
+     * forwarding methods, the interaction handler, the sweep zoom, or the bus.
+     */
+    carryOut(intents) {
+        for (const intent of intents) {
+            switch (intent.type) {
+                case 'pan':
+                    this.browser.shiftPixels(intent.dx, intent.dy).catch(err => console.error('Error in shiftPixels:', err));
+                    break;
+                case 'dragStopped':
+                    this.browser.eventBus.post(HICEvent("DragStopped"));
+                    break;
+                case 'zoomAndCenter':
+                    this.browser.zoomAndCenter(intent.direction, intent.x, intent.y);
+                    break;
+                case 'wheelZoom':
+                    this.browser.interactions.handleWheelZoom(intent.x, intent.y, intent.scaleFactor)
+                        .catch(err => console.error('Error in handleWheelZoom:', err));
+                    break;
+                case 'pinchZoom':
+                    this.browser.pinchZoom(intent.x, intent.y, intent.scale);
+                    break;
+                case 'sweepStart':
+                    this.sweepZoom.initialize(intent.x, intent.y);
+                    break;
+                case 'sweepUpdate':
+                    this.sweepZoom.update({
+                        left: `${intent.left}px`,
+                        top: `${intent.top}px`,
+                        width: `${intent.width}px`,
+                        height: `${intent.height}px`,
+                    });
+                    break;
+                case 'sweepCommit':
+                    this.sweepZoom.commit(intent.rect).catch(err => console.error('Error in sweepZoom.commit:', err));
+                    break;
+                case 'showCrosshairs':
+                    this.browser.eventBus.post(HICEvent('DidShowCrosshairs', 'DidShowCrosshairs'));
+                    break;
+                case 'moveCrosshairs':
+                    this.browser.updateCrosshairs(intent.pointer);
+                    this.browser.showCrosshairs();
+                    break;
+                case 'hideCrosshairs':
+                    this.browser.hideCrosshairs();
+                    this.browser.eventBus.post(HICEvent('DidHideCrosshairs', 'DidHideCrosshairs'));
+                    break;
+                default:
+                    throw new Error(`ContactMatrixView: unknown gesture intent '${intent.type}'`);
+            }
+        }
     }
 
     async render2DTracks(track2DList, dataset, state) {

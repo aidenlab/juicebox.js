@@ -12,6 +12,8 @@
  * it by name, so a regression fails here rather than as a snapshot diff.
  */
 import {describe, expect, test, vi} from 'vitest'
+import {restoreDataset} from './utils/restoreDataset.js'
+import {restoreFixture} from './utils/restoreFixture.js'
 
 vi.mock('../js/hicDataset.js', async () => {
     const {restoreDataset, datasetModule} = await import('./utils/restoreDataset.js')
@@ -19,8 +21,6 @@ vi.mock('../js/hicDataset.js', async () => {
 })
 
 const {default: HICBrowser} = await import('../js/hicBrowser.js')
-const {restoreDataset} = await import('./utils/restoreDataset.js')
-const {restoreFixture} = await import('./utils/restoreFixture.js')
 
 describe('the live door opens inside its extent (#567)', () => {
 

@@ -137,6 +137,9 @@
  * - A **normalization coerced against the dataset** (ADR-0009 decision 5).
  * - **`setActiveDataset(state)` disappearing**, as decision 1 removes the
  *   parameter. It went from every door at once, in #559.
+ * - **A door's own input corrected** -- a locus juicebox formats for itself
+ *   being formatted right. It moves one door in both columns by the same
+ *   amount, which is what tells it apart from a clamp. #567.
  *
  * And what does **not**: a `locus` projection moving without its `state` moving
  * -- `getLocus` is a pure function of the fields above it, so that combination
@@ -309,8 +312,9 @@
  *   and the wide one reads zoom 6 at `pixelSize: 1`.
  *
  * Neither is a clamp, and the symmetry is how to tell: the origin moved in both
- * columns, which the update convention names as the signature of the input
- * changing rather than the clamp. `rungs`, `normalization`, `chr1`, `chr2` and
+ * columns, which the update convention reads as a change to what the door is
+ * handed rather than to the clamp -- here a door's own input corrected, the
+ * movement class listed above. `rungs`, `normalization`, `chr1`, `chr2` and
  * `outcome` did not move anywhere. The live door's `state` rung is still
  * overwritten by `parseGotoInput` (#650), and `updateWithLoci` still does not
  * clamp (#649). `test/testLiveDoorOrigin.js` asserts the non-negative origin by

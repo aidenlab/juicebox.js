@@ -332,8 +332,12 @@ class DataLoader {
             this.browser.setActiveDataset(dataset);
             await this.browser.setState(decodeState(config.state, reportUnknownStateType));
 
-            // Navigate to the data region so it fills the viewport
-            const locus = config.locus || `${lcm.chromosomes[1].name}:${lcm.genomicStart}-${lcm.genomicEnd}`;
+            // Navigate to the data region so it fills the viewport. A locus
+            // string is 1-based -- `parseLocusString` subtracts one -- and the
+            // extent is 0-based, so the start gains the one back, as the locus
+            // box and the gene lookup do. The end needs nothing: a 1-based
+            // inclusive end is a 0-based exclusive one. #567.
+            const locus = config.locus || `${lcm.chromosomes[1].name}:${lcm.genomicStart + 1}-${lcm.genomicEnd}`;
             await this.browser.parseGotoInput(locus);
 
             // The same expression the file path uses. This said 'livecontactmap'

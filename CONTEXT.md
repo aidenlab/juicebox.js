@@ -52,6 +52,14 @@ mutations flow through. Nothing outside `js/hicState.js` writes state fields.
 BP loci, a peer browser's state) into arguments for the chokepoint: `panShift`,
 `updateWithLoci`, `setWithZoom` and friends.
 
+**Gesture recognizer** — what decides which gesture raw input on the viewport
+is: drag, sweep, double-click, double-tap, pinch, wheel, or crosshairs held with
+shift. It holds the in-progress gesture and names the intent, and does nothing
+to the view itself — each intent is carried out elsewhere and reaches the
+chokepoint through a translator. #580.
+_Avoid_: gesture handler, interaction handler (the module that carries intents
+out).
+
 **Restore** — session and URL restore installing a whole new `State`, handed
 through the chokepoint like any translator, so a restored view is clamped
 silently, never rejected. The only writer of `browser.state`. ADR-0009.

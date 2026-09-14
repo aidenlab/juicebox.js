@@ -217,9 +217,8 @@ class GestureRecognizer {
                 this.lastTouch = undefined
                 intents.push({type: 'pinchZoom', x: (start.x1 + start.x2) / 2, y: (start.y1 + start.y2) / 2, scale})
             }
-        } else if (this.dragging) {
-            this.dragging = false
-            intents.push({type: 'dragStopped'})
+        } else {
+            intents.push(...this.stopDrag())
         }
 
         this.pinch = undefined
@@ -227,13 +226,16 @@ class GestureRecognizer {
     }
 
     releaseMouse() {
-        const intents = []
-        if (this.dragging) {
-            this.dragging = false
-            intents.push({type: 'dragStopped'})
-        }
         this.mouseDownAt = this.mouseLast = undefined
-        return intents
+        return this.stopDrag()
+    }
+
+    /** End a drag, naming it only if one was under way. */
+    stopDrag() {
+        if (!this.dragging) return []
+
+        this.dragging = false
+        return [{type: 'dragStopped'}]
     }
 
     sweepRectangle() {

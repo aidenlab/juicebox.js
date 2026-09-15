@@ -272,6 +272,15 @@ which is why the auto colour-scale heuristics branch on `isLive`.
 **Track pair** — one 1D track rendered on both axes by a pair of renderers
 (`js/trackPair.js`).
 
+**Pending track** — a 1D track a load has named but not yet finished loading,
+shown as a placeholder row in its place with its name and a spinner. A restore
+does not wait for it: the map is usable while it is pending. It is still part
+of the session, so a save made meanwhile keeps it. It becomes a track pair when
+it loads and is gone if it fails. There is no timeout: slow and hung look the
+same, so the user can dismiss a pending track, which drops it from the session.
+#588.
+_Avoid_: loading track, track placeholder (the row, not the track).
+
 ## Data access
 
 **Gate** — a data host refusing a request a browser is able to make. Two are

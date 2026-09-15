@@ -134,6 +134,13 @@ it interprets a gesture without being part of what the view *is*: user-set, per
 browser, absent from canonical state. It decides what crosses a sync group, and
 is why normalization and the colour scale do not. ADR-0014.
 
+**Zoom anchor** — the screen point whose genomic position a wheel or pinch zoom
+holds fixed: the map grows or shrinks about the cursor, not about the centre of
+the view. Carried by canonical state after the zoom, so what is drawn next
+already honours it without being told where the point was. #435.
+_Avoid_: bare "anchor" — the first shift-clicked browser in a target set is also
+called the anchor.
+
 **Resolution lock** — the padlock beside the resolution selector, and the view
 preference it holds: while closed, a zoom gesture changes pixel size rather than
 the resolution rung.
@@ -220,7 +227,8 @@ chromosome pair, bin size, unit, grid position, normalization, display mode —
 and not by pan position or pixel size, which only change where it is painted.
 
 **Viewport** — the element the contact map is painted into
-(`contactMatrixView.viewportElement`). Not the `--hic-viewport-*` custom
+(`contactMatrixView.viewportElement`). Always square: a non-square viewport is
+not supported. Not the `--hic-viewport-*` custom
 properties, which despite the name size the whole browser (`.hic-root`).
 
 **Track tile** — unrelated to image tiles despite the word: a buffered span of 1D

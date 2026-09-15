@@ -98,10 +98,17 @@ const botChallengeMessage =
  * @param {Error} error - the error the load failed with
  */
 function presentError(registry, prefix, error) {
+    registry.presentAlert(`${prefix}: ${errorMessage(error)}`);
+}
+
+/**
+ * What the user is told about `error`: the words `presentError` puts after its prefix. Separate so a
+ * report naming several failures can phrase each one the way a lone failure is phrased. #663.
+ */
+function errorMessage(error) {
 
     if (isBotChallenge(error)) {
-        registry.presentAlert(`${prefix}: ${botChallengeMessage}`);
-        return;
+        return botChallengeMessage;
     }
 
     const httpMessages =
@@ -114,8 +121,7 @@ function presentError(registry, prefix, error) {
     // hic-straw and igv both throw Error(statusText) with the numeric status on error.code, so
     // that is the only reliable key. Codes arrive as either numbers or strings; object keys
     // normalize both. See issue #442.
-    const msg = Object.hasOwn(httpMessages, error.code) ? httpMessages[error.code] : error.message;
-    registry.presentAlert(`${prefix}: ${msg}`);
+    return Object.hasOwn(httpMessages, error.code) ? httpMessages[error.code] : error.message;
 }
 
-export { createDOMFromHTMLString, getOffset, parseRgbString, prettyPrint, extractName, presentError, isBotChallenge, hitTestBbox }
+export { createDOMFromHTMLString, getOffset, parseRgbString, prettyPrint, extractName, presentError, errorMessage, isBotChallenge, hitTestBbox }

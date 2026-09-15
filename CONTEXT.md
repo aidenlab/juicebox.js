@@ -27,9 +27,12 @@ classify itself — not an error. Inside the repo, prefer `isLive`. Declared in
 
 **The disguise** — a live contact map deliberately made to look like a `.hic`
 dataset: same `Dataset`, same rendering path, same canonical state. Where it does
-not hold, say so rather than treating live as a variant of file; `autoThreshold`
-and `loadLiveContactMap` are the known divergences. The real work lives in
-hic-straw; juicebox.js holds a thin adapter.
+not hold, say so rather than treating live as a variant of file; `autoThreshold`,
+`loadLiveContactMap` and sync membership are the known divergences. A live map is
+a Spacewalk-only outlier, exempt from the file-map sync-membership rules of
+ADR-0016: `loadLiveContactMap` does not recompute sync groups, and that is
+deliberate (#638). The real work lives in hic-straw; juicebox.js holds a thin
+adapter.
 
 **Canonical state** — the seven fields on `State` (`js/hicState.js`) that fully
 and unambiguously specify the view: `chr1`, `chr2`, `x`, `y`, `zoom`,

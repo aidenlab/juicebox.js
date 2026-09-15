@@ -18,6 +18,7 @@ vi.mock('igv-ui', () => ({
 }));
 
 const { default: DataLoader } = await import("../js/dataLoader.js");
+const { default: Track2D } = await import("../js/track2D.js");
 
 const presented = [];
 const laidOut = [];
@@ -48,17 +49,32 @@ function deferredCreateTrack() {
     return pending;
 }
 
+/** loadTracks reaches for layout dimensions and the track gutter; neither is under test. */
+function reset() {
+    createTrack.mockReset();
+    vi.restoreAllMocks();
+    presented.length = 0;
+    laidOut.length = 0;
+    global.document.querySelector = () => ({ style: {} });
+    global.getComputedStyle = () => ({ getPropertyValue: () => "0" });
+}
+
+function config2D(name) {
+    return { name, url: `https://example.org/${name}.bedpe`, format: "bedpe" };
+}
+
+function challengeError() {
+    const error = Error("405 Method Not Allowed");
+    error.code = 405;
+    error.headers = new Headers({ 'x-amzn-waf-action': 'captcha' });
+    return error;
+}
+
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 
 describe("1D tracks load in parallel", function () {
 
-    beforeEach(() => {
-        createTrack.mockReset();
-        presented.length = 0;
-        laidOut.length = 0;
-        global.document.querySelector = () => ({ style: {} });
-        global.getComputedStyle = () => ({ getPropertyValue: () => "0" });
-    });
+    beforeEach(reset);
 
     test("starts every track before any of them finishes", async function () {
         const pending = deferredCreateTrack();
@@ -113,11 +129,7 @@ describe("1D tracks load in parallel", function () {
 describe("track load failures make one report", function () {
 
     beforeEach(() => {
-        createTrack.mockReset();
-        presented.length = 0;
-        laidOut.length = 0;
-        global.document.querySelector = () => ({ style: {} });
-        global.getComputedStyle = () => ({ getPropertyValue: () => "0" });
+        reset();
         createTrack.mockImplementation(async ({ name }) => {
             if ("b" === name) throw Error("Not Found");
             if ("d" === name) {
@@ -157,6 +169,56 @@ describe("track load failures make one report", function () {
         const load = new DataLoader(stubBrowser()).loadTracksOrThrow([config("b")]);
 
         await expect(load).rejects.toThrow(/^Not Found$/);
+    });
+
+    test("names a bot challenge per track and explains it once", async function () {
+        createTrack.mockImplementation(async ({ name }) => {
+            if ("a" === name) return { name };
+            throw challengeError();
+        });
+
+        await new DataLoader(stubBrowser()).loadTracks(["a", "b", "c"].map(config));
+
+        expect(presented).toHaveLength(1);
+        expect(presented[0]).toContain("b: blocked by bot protection; c: blocked by bot protection");
+        expect(presented[0].match(/allowlist/g)).toHaveLength(1);
+        expect(presented[0]).not.toContain("405");
+    });
+
+});
+
+describe("a load mixing 1D and 2D tracks", function () {
+
+    beforeEach(reset);
+
+    test("reports 1D and 2D failures together, in session order", async function () {
+        createTrack.mockImplementation(async ({ name }) => {
+            if ("c" === name) throw Error("Not Found");
+            return { name };
+        });
+        vi.spyOn(Track2D, "loadTrack2D").mockRejectedValue(Error("Bad bedpe"));
+
+        const browser = stubBrowser();
+        await new DataLoader(browser).loadTracks([config("a"), config2D("b"), config("c")]);
+
+        expect(laidOut).toEqual([["a"]]);
+        expect(browser.tracks2D).toEqual([]);
+        expect(presented).toEqual(["Error loading tracks: b: Bad bedpe; c: Not Found"]);
+    });
+
+    test("keeps the good 2D tracks when another 2D track fails", async function () {
+        createTrack.mockImplementation(async ({ name }) => ({ name }));
+        vi.spyOn(Track2D, "loadTrack2D").mockImplementation(async ({ name }) => {
+            if ("c" === name) throw Error("Bad bedpe");
+            return { name };
+        });
+
+        const browser = stubBrowser();
+        await new DataLoader(browser).loadTracks([config("a"), config2D("b"), config2D("c")]);
+
+        expect(laidOut).toEqual([["a"]]);
+        expect(browser.tracks2D).toEqual([{ name: "b" }]);
+        expect(presented).toEqual(["Error loading tracks: c: Bad bedpe"]);
     });
 
 });

@@ -478,16 +478,20 @@ class DataLoader {
      * The work both of the two above do, minus what each does about failure.
      *
      * The spinner is *started* here and stopped by each caller, rather than
-     * wrapped around this whole method, so that `loadTracks` keeps the exact
-     * order it has always had: report first, then put the spinner away. That
-     * order is observable -- the alert is modal -- and the split was required to
-     * leave the public method byte-identical in behaviour.
+     * wrapped around this whole method, so that `loadTracks` keeps the order
+     * it has always had: report first, then put the spinner away. That order
+     * is observable -- the alert is modal.
      *
      * Every track loads concurrently and settles on its own (#663, ADR-0017
      * decision 6). Whatever loaded is laid out in session order, even when
      * another track in the same load failed; then the failures, if any, are
      * thrown as one error. A load of a single track throws that track's own
      * error, so the one-track report reads exactly as it always has.
+     *
+     * The one error of a multi-track load is a plain `Error` whose message is
+     * already phrased for the user -- one `name: reason` per failed track, in
+     * session order -- and carries no `code`. A host reports it as it stands.
+     * A bot challenge is named per track and explained once, at the end.
      *
      * @param {Array<Object>} configs - Array of track configuration objects
      * @returns {Promise<void>}
@@ -546,10 +550,14 @@ class DataLoader {
         } else if (failures.length > 0) {
             // Session order, 2D failures included, so the report reads like the session does.
             failures.sort((a, b) => configs.indexOf(a.config) - configs.indexOf(b.config));
-            const lines = failures.map(({config, error}) => `${extractName(config)}: ${errorMessage(error)}`);
-            const error = Error(lines.join('; '));
-            error.failures = failures;
-            throw error;
+            const lines = failures.map(({config, error}) => isBotChallenge(error) ?
+                `${extractName(config)}: blocked by bot protection` :
+                `${extractName(config)}: ${errorMessage(error)}`);
+            const challenge = failures.find(({error}) => isBotChallenge(error));
+            if (challenge) {
+                lines.push(errorMessage(challenge.error));
+            }
+            throw Error(lines.join('; '));
         }
     }
 

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Parallel track load — one bad track, one report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/juicebox.css">
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            margin: 16px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .summary {
+            font-family: Menlo, Consolas, monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            padding: 8px;
+            min-height: 3em;
+            margin-bottom: 12px;
+        }
+
+        .note {
+            max-width: 62em;
+            font-size: 13px;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Parallel track load (#663)</h2>
+
+<p class="note">
+    Each button loads a set of tracks into the map below. <b>Good</b> tracks load; <b>bad</b>
+    tracks point at a missing object or an unresolvable host. What to check, per ADR-0017
+    decision 6:
+</p>
+<ul class="note">
+    <li>Every good track is laid out even when a bad one is in the same set.</li>
+    <li>Tracks lay out in the order they were listed, whatever order they finish in. The
+        RefSeq genes file is listed first and is the slowest to arrive.</li>
+    <li>Failures raise <b>one</b> alert naming each failed track — or, for
+        <code>loadTracksOrThrow</code>, no alert and one rejection, shown in the box below.</li>
+    <li>A single bad track alerts as it always has: <i>Error loading track NAME: reason</i>.</li>
+</ul>
+<p class="note">
+    The box lists the tracks laid out after each load, in gutter order. Tracks accumulate;
+    <b>Reload page</b> starts clean.
+</p>
+
+<div class="controls">
+    <button id="all-good">All good</button>
+    <button id="one-bad">Good + one bad</button>
+    <button id="two-bad">Good + two bad</button>
+    <button id="or-throw">Good + two bad, via loadTracksOrThrow</button>
+    <button id="single-bad">Single bad track</button>
+    <button id="mixed-2d">1D + bad 2D + bad 1D</button>
+    <button id="restore">Restore a session with bad tracks</button>
+    <button id="reload">Reload page</button>
+</div>
+
+<div class="summary" id="summary">Loading map…</div>
+
+<div id="app-container"></div>
+
+<script type="module">
+
+    import hic from '../js/index.js'
+    import {devMapUrl} from '../dev-proxy/map-url.js'
+
+    // Dev-only: routes reads on hosts that answer localhost with a bot challenge
+    // (encodeproject.org today) through the dev server's proxy -- the bigWig below
+    // needs it. See the README, "Loading maps from hosts that serve a bot challenge".
+    hic.setUrlMapper(devMapUrl)
+
+    // Verified reachable from a browser. Do NOT repoint at hicfiles.s3.amazonaws.com or
+    // dnazoo -- those hosts gate on User-Agent and serve 403 to any browser.
+    const map = {
+        url: 'https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/r.hic',
+        name: 'GM12878 diploid (r) — hg38',
+        nvi: '43762184328,25419',
+        locus: 'chr8:127,000,000-130,000,000'
+    }
+
+    // `format` is set on every track: a format-less .txt.gz is routed to the 2D loader.
+    const genes = () => ({
+        name: 'RefSeq Genes (good, slow)',
+        url: 'https://s3.amazonaws.com/igv.org.genomes/hg38/refGene.sorted.txt.gz',
+        type: 'annotation',
+        format: 'refgene',
+        color: '#1f77b4'
+    })
+
+    const bigwig = () => ({
+        name: 'ENCODE bigWig (good, fast)',
+        url: 'https://www.encodeproject.org/files/ENCFF754TJH/@@download/ENCFF754TJH.bigWig',
+        format: 'bigwig',
+        color: '#65d313'
+    })
+
+    // Missing object on a real host: S3 answers 404, so the report reads "Not found".
+    const missing = () => ({
+        name: 'Missing bigWig (bad)',
+        url: 'https://s3.amazonaws.com/igv.org.genomes/hg38/does-not-exist-663.bigWig',
+        format: 'bigwig'
+    })
+
+    // A host that never resolves: a network error, not an HTTP status.
+    const unresolvable = () => ({
+        name: 'Unresolvable host (bad)',
+        url: 'https://no-such-host-663.invalid/track.bigWig',
+        format: 'bigwig'
+    })
+
+    const missing2D = () => ({
+        name: 'Missing bedpe (bad 2D)',
+        url: 'https://s3.amazonaws.com/igv.org.genomes/hg38/does-not-exist-663.bedpe',
+        format: 'bedpe'
+    })
+
+    const container = document.getElementById('app-container')
+    const summary = document.getElementById('summary')
+
+    const laidOut = browser => browser.trackPairs.map(pair => pair.x.track.name)
+
+    function report(browser, what, started, outcome) {
+        const seconds = ((performance.now() - started) / 1000).toFixed(1)
+        const tracks2D = (browser.tracks2D ?? []).map(track => track.name)
+        summary.textContent = [
+            `${what} — settled in ${seconds}s`,
+            outcome,
+            `1D laid out: ${laidOut(browser).join(' | ') || '—'}`,
+            `2D loaded:   ${tracks2D.join(' | ') || '—'}`
+        ].join('\n')
+    }
+
+    async function load(browser, what, configs) {
+        summary.textContent = `${what} — loading…`
+        const started = performance.now()
+        await browser.loadTracks(configs)
+        report(browser, what, started, 'loadTracks resolved (any failure was the alert)')
+    }
+
+    async function loadOrThrow(browser, what, configs) {
+        summary.textContent = `${what} — loading…`
+        const started = performance.now()
+        try {
+            await browser.loadTracksOrThrow(configs)
+            report(browser, what, started, 'loadTracksOrThrow resolved')
+        } catch (error) {
+            report(browser, what, started, `loadTracksOrThrow rejected once:\n  ${error.message}`)
+        }
+    }
+
+    ;(async function () {
+
+        const started = performance.now()
+        const browser = await hic.init(container, map)
+        report(browser, 'Map loaded', started, 'no tracks yet')
+
+        const on = (id, fn) => document.getElementById(id).addEventListener('click', fn)
+
+        on('all-good', () => load(browser, 'All good', [genes(), bigwig()]))
+        on('one-bad', () => load(browser, 'Good + one bad', [genes(), missing(), bigwig()]))
+        on('two-bad', () => load(browser, 'Good + two bad', [genes(), missing(), bigwig(), unresolvable()]))
+        on('or-throw', () => loadOrThrow(browser, 'Good + two bad, via loadTracksOrThrow',
+            [genes(), missing(), bigwig(), unresolvable()]))
+        on('single-bad', () => load(browser, 'Single bad track', [missing()]))
+        on('mixed-2d', () => load(browser, '1D + bad 2D + bad 1D', [genes(), missing2D(), unresolvable()]))
+        on('reload', () => location.reload())
+
+        // A restore still waits for its tracks in this ticket (the rest of #588 changes
+        // that), so the summary is written once the whole session has settled.
+        on('restore', async () => {
+            summary.textContent = 'Restore — loading…'
+            const restoreStarted = performance.now()
+            await hic.restoreSession(container, {
+                browsers: [{...map, tracks: [genes(), missing(), bigwig(), unresolvable()]}]
+            })
+            report(hic.getCurrentBrowser(), 'Restore', restoreStarted,
+                'restoreSession resolved (expect one alert naming both bad tracks)')
+        })
+
+    })()
+
+</script>
+
+</body>
+</html>

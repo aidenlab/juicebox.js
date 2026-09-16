@@ -25,7 +25,7 @@ import {FileUtils} from 'igv-utils'
 import Dataset, { HiCDataset } from './hicDataset.js'
 import State from './hicState.js'
 import Genome from './genome.js'
-import {extractName, presentError, isBotChallenge} from "./utils.js"
+import {extractName, presentError, errorMessage, isBotChallenge} from "./utils.js"
 import {isFile} from "./fileUtils.js"
 import HICEvent from './hicEvent.js'
 import EventBus from './eventBus.js'
@@ -478,10 +478,20 @@ class DataLoader {
      * The work both of the two above do, minus what each does about failure.
      *
      * The spinner is *started* here and stopped by each caller, rather than
-     * wrapped around this whole method, so that `loadTracks` keeps the exact
-     * order it has always had: report first, then put the spinner away. That
-     * order is observable -- the alert is modal -- and the split was required to
-     * leave the public method byte-identical in behaviour.
+     * wrapped around this whole method, so that `loadTracks` keeps the order
+     * it has always had: report first, then put the spinner away. That order
+     * is observable -- the alert is modal.
+     *
+     * Every track loads concurrently and settles on its own (#663, ADR-0017
+     * decision 6). Whatever loaded is laid out in session order, even when
+     * another track in the same load failed; then the failures, if any, are
+     * thrown as one error. A load of a single track throws that track's own
+     * error, so the one-track report reads exactly as it always has.
+     *
+     * The one error of a multi-track load is a plain `Error` whose message is
+     * already phrased for the user -- one `name: reason` per failed track, in
+     * session order -- and carries no `code`. A host reports it as it stands.
+     * A bot challenge is named per track and explained once, at the end.
      *
      * @param {Array<Object>} configs - Array of track configuration objects
      * @returns {Promise<void>}
@@ -490,62 +500,21 @@ class DataLoader {
 
         this.browser.contactMatrixView.startSpinner();
 
+        const settled = await Promise.allSettled(configs.map(config => this.#loadTrack(config)));
+
+        const failures = [];
         const tracks = [];
-        const promises2D = [];
+        const pending2D = [];
 
-        for (let config of configs) {
-            const fileName = isFile(config.url)
-                ? config.url.name
-                : config.filename || await FileUtils.getFilename(config.url);
-
-            const extension = hicUtils.getExtension(fileName);
-
-            if (['fasta', 'fa'].includes(extension)) {
-                config.type = config.format = 'sequence';
-            }
-
-            // What the *load* discovers, and only that: a missing `max` means
-            // autoscale, and the height comes from the live layout. Neither
-            // is a question a session document can answer.
-            //
-            // The annotation colour and display mode used to be defaulted
-            // here too, conditioned on `config.type === 'annotation'`. They
-            // were a second copy of two `normalizeTrackConfigs` rules, kept
-            // through #533 because a track added at runtime met no normalize
-            // stage. It meets one at `HICBrowser.loadTracks` now, so the copy
-            // is gone and this loader defaults nothing a config carries
-            // (#536).
-            if (config.max === undefined) {
-                config.autoscale = true;
-            }
-
-            const { trackHeight } = getLayoutDimensions();
-            config.height = trackHeight;
-
-            // 2D tracks: bedpe/interact by format or extension, or a juicebox
-            // loops/peaks list (.txt) for which igv.js can't infer a 1D format.
-            // Note: hicUtils.getExtension() strips .txt as an aux extension, so
-            // test the raw filename rather than `extension` for the .txt case.
-            const lowerName = fileName.toLowerCase();
-            const is2D = ['bedpe', 'interact'].includes(config.format)
-                || ['bedpe', 'interact'].includes(extension)
-                || (config.format === undefined
-                    && (lowerName.endsWith('.txt') || lowerName.endsWith('.txt.gz')));
-            if (is2D) {
-                promises2D.push(Track2D.loadTrack2D(config, this.browser.genome));
+        settled.forEach((outcome, i) => {
+            if ('rejected' === outcome.status) {
+                failures.push({config: configs[i], error: outcome.reason});
+            } else if (outcome.value.track2D) {
+                pending2D.push({config: configs[i], track2D: outcome.value.track2D});
             } else {
-                // igv reads the track through its own bundled loaders, which juicebox cannot
-                // reach into — the config's `url` is the only lever. mapTrackConfig carries the
-                // original alongside so toJSON can serialize it. See issue #450.
-                const track = await igv.createTrack(mapTrackConfig(config), this.browser);
-
-                if (typeof track.postInit === 'function') {
-                    await track.postInit();
-                }
-
-                tracks.push(track);
+                tracks.push(outcome.value.track);
             }
-        }
+        });
 
         if (tracks.length > 0) {
             this.browser.layoutController.updateLayoutWithTracks(tracks);
@@ -560,12 +529,103 @@ class DataLoader {
             await this.browser.updateLayout();
         }
 
-        if (promises2D.length > 0) {
-            const tracks2D = await Promise.all(promises2D);
-            if (tracks2D && tracks2D.length > 0) {
+        if (pending2D.length > 0) {
+            const settled2D = await Promise.all(pending2D.map(({track2D}) => track2D));
+            const tracks2D = [];
+            settled2D.forEach(({track, error}, i) => {
+                if (error) {
+                    failures.push({config: pending2D[i].config, error});
+                } else {
+                    tracks2D.push(track);
+                }
+            });
+            if (tracks2D.length > 0) {
                 this.browser.tracks2D = this.browser.tracks2D.concat(tracks2D);
                 this.browser.coordinator.onTrackLoad2D(this.browser.tracks2D);
             }
+        }
+
+        if (1 === configs.length && 1 === failures.length) {
+            throw failures[0].error;
+        } else if (failures.length > 0) {
+            // Session order, 2D failures included, so the report reads like the session does.
+            failures.sort((a, b) => configs.indexOf(a.config) - configs.indexOf(b.config));
+            const lines = failures.map(({config, error}) => isBotChallenge(error) ?
+                `${extractName(config)}: blocked by bot protection` :
+                `${extractName(config)}: ${errorMessage(error)}`);
+            const challenge = failures.find(({error}) => isBotChallenge(error));
+            if (challenge) {
+                lines.push(errorMessage(challenge.error));
+            }
+            throw Error(lines.join('; '));
+        }
+    }
+
+    /**
+     * Load one track config, up to but not including layout.
+     *
+     * Resolves `{track}` for a 1D track. A 2D track resolves `{track2D}`, the
+     * pending load itself: it is started here, with the 1D loads, but -- as
+     * before #663 -- not waited on until the 1D tracks are laid out.
+     *
+     * @param {Object} config - a track configuration object
+     * @returns {Promise<{track: Object}|{track2D: Promise<Object>}>}
+     */
+    async #loadTrack(config) {
+        const fileName = isFile(config.url)
+            ? config.url.name
+            : config.filename || await FileUtils.getFilename(config.url);
+
+        const extension = hicUtils.getExtension(fileName);
+
+        if (['fasta', 'fa'].includes(extension)) {
+            config.type = config.format = 'sequence';
+        }
+
+        // What the *load* discovers, and only that: a missing `max` means
+        // autoscale, and the height comes from the live layout. Neither
+        // is a question a session document can answer.
+        //
+        // The annotation colour and display mode used to be defaulted
+        // here too, conditioned on `config.type === 'annotation'`. They
+        // were a second copy of two `normalizeTrackConfigs` rules, kept
+        // through #533 because a track added at runtime met no normalize
+        // stage. It meets one at `HICBrowser.loadTracks` now, so the copy
+        // is gone and this loader defaults nothing a config carries
+        // (#536).
+        if (config.max === undefined) {
+            config.autoscale = true;
+        }
+
+        const { trackHeight } = getLayoutDimensions();
+        config.height = trackHeight;
+
+        // 2D tracks: bedpe/interact by format or extension, or a juicebox
+        // loops/peaks list (.txt) for which igv.js can't infer a 1D format.
+        // Note: hicUtils.getExtension() strips .txt as an aux extension, so
+        // test the raw filename rather than `extension` for the .txt case.
+        const lowerName = fileName.toLowerCase();
+        const is2D = ['bedpe', 'interact'].includes(config.format)
+            || ['bedpe', 'interact'].includes(extension)
+            || (config.format === undefined
+                && (lowerName.endsWith('.txt') || lowerName.endsWith('.txt.gz')));
+        if (is2D) {
+            // Settled into a value at once: a 2D load that fails before the 1D
+            // layout is done must not surface as an unhandled rejection.
+            const track2D = Track2D.loadTrack2D(config, this.browser.genome)
+                .then(track => ({track}), error => ({error}));
+            return {track2D};
+        } else {
+            // igv reads the track through its own bundled loaders, which juicebox cannot
+            // reach into — the config's `url` is the only lever. mapTrackConfig carries the
+            // original alongside so toJSON can serialize it. See issue #450.
+            const track = await igv.createTrack(mapTrackConfig(config), this.browser);
+
+            if (typeof track.postInit === 'function') {
+                await track.postInit();
+            }
+
+            return {track};
         }
     }
 

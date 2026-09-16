@@ -17,7 +17,12 @@ vi.mock('igv', async (importOriginal) => {
 // values with it. The dialog is a track pair's furniture, not what is under test here.
 vi.mock('igv-ui', async (importOriginal) => ({ ...(await importOriginal()), DataRangeDialog: class {} }));
 
-const { withBrowser } = await import('./utils/browserFixture.js');
+const { withBrowser, withContainers } = await import('./utils/browserFixture.js');
+const { withStubbedLoads } = await import('./utils/stubbedLoads.js');
+const { registryForContainer } = await import('../js/browserRegistry.js');
+const { default: EventBus } = await import('../js/eventBus.js');
+const { default: Track2D } = await import('../js/track2D.js');
+const { default: DataLoader } = await import('../js/dataLoader.js');
 const { restoreDataset } = await import('./utils/restoreDataset.js');
 const { decodeState } = await import('../js/sessionCodec.js');
 const { default: HICBrowser } = await import('../js/hicBrowser.js');
@@ -279,7 +284,6 @@ describe("a restore does not show the map spinner for its tracks", function () {
 
     test("the map spinner is down while the restore waits on its tracks, and the restore still waits", async function () {
         const { browser } = context;
-        const { default: DataLoader } = await import('../js/dataLoader.js');
 
         vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined);
         vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined);
@@ -313,6 +317,220 @@ describe("a restore does not show the map spinner for its tracks", function () {
         // What is left of the restore once its tracks are in is the map's again, so it spins.
         expect(setColorScale).toHaveBeenCalled();
         expect(spinningWhileResolving).toBe(1);
+    });
+
+});
+
+/**
+ * A pending track can be dismissed, and a load that settles after its placeholder is gone -- dismissed,
+ * its browser disposed or reset, or its session replaced -- is discarded silently. See issue #665 and
+ * docs/adr/0017-restore-does-not-await-tracks.md, decisions 4 and 8.
+ */
+describe("a pending track can be dismissed", function () {
+
+    const context = withBrowser();
+    const alerts = [];
+
+    beforeEach(async () => {
+        vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined);
+        vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined);
+        vi.spyOn(TrackPair.prototype, 'updateViews').mockImplementation(async () => undefined);
+        context.browser.setActiveDataset(restoreDataset({ name: "map", url: "https://example.org/map.hic" }));
+        await context.browser.setState(decodeState(undefined));
+
+        createTrack.mockReset();
+        alerts.length = 0;
+        vi.spyOn(context.browser.registry, 'presentAlert').mockImplementation(message => alerts.push(message));
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => vi.restoreAllMocks());
+
+    const dismissControl = (browser, name) => [...browser.layoutController.xTracks.querySelectorAll('.x-track-canvas-container')]
+        .find(el => name === el.querySelector('.x-track-label').textContent)
+        ?.querySelector('.x-track-dismiss');
+
+    test("a placeholder has a remove control, and using it removes the row", async function () {
+        const { browser } = context;
+        const pending = deferredCreateTrack();
+
+        const load = browser.loadTracks(["a", "b"].map(config));
+        await flush();
+
+        dismissControl(browser, "a").click();
+
+        expect(rows(browser).map(row => row.name)).toEqual(["b"]);
+        expect(yRowCount(browser)).toBe(1);
+        expect(browser.trackPairs.map(pair => pair.track.name)).toEqual(["b"]);
+
+        pending.get("a").resolve();
+        pending.get("b").resolve();
+        await load;
+    });
+
+    test("a loaded track has no remove control of the placeholder's", async function () {
+        const { browser } = context;
+        createTrack.mockImplementation(async ({ name }) => track(name));
+
+        await browser.loadTracks([config("a")]);
+
+        expect(dismissControl(browser, "a")).toBeNull();
+    });
+
+    test("a dismissed track that later loads does not appear", async function () {
+        const { browser } = context;
+        const pending = deferredCreateTrack();
+        const loaded = vi.fn();
+        EventBus.globalBus.subscribe("TrackXYPairLoad", loaded);
+
+        const load = browser.loadTracks(["a", "b"].map(config));
+        await flush();
+        dismissControl(browser, "a").click();
+
+        pending.get("a").resolve();
+        pending.get("b").resolve();
+        await load;
+
+        expect(rows(browser)).toEqual([{ name: "b", spinning: false }]);
+        expect(browser.toJSON().tracks.map(t => t.name)).toEqual(["b"]);
+        expect(loaded.mock.calls.map(([event]) => event.data.track.name)).toEqual(["b"]);
+        expect(alerts).toEqual([]);
+    });
+
+    test("a dismissed track that later fails raises no alert, and the rest of its load still reports", async function () {
+        const { browser } = context;
+        const pending = deferredCreateTrack();
+
+        const load = browser.loadTracks(["a", "b", "c"].map(config));
+        await flush();
+        dismissControl(browser, "a").click();
+
+        pending.get("a").reject(Error("Not Found"));
+        pending.get("b").reject(Error("Forbidden"));
+        pending.get("c").resolve();
+        await load;
+
+        expect(rows(browser).map(row => row.name)).toEqual(["c"]);
+        expect(alerts).toEqual(["Error loading tracks: b: Forbidden"]);
+    });
+
+    test("loadTracksOrThrow resolves when its only track was dismissed and then failed", async function () {
+        const { browser } = context;
+        const pending = deferredCreateTrack();
+
+        const load = browser.loadTracksOrThrow([config("a")]);
+        await flush();
+        dismissControl(browser, "a").click();
+        pending.get("a").reject(Error("Not Found"));
+
+        await expect(load).resolves.toBeUndefined();
+    });
+
+    for (const [how, teardown] of [["disposed", browser => browser.dispose()], ["reset", browser => browser.reset()]]) {
+
+        test(`a load that settles after its browser was ${how} writes nothing and raises no alert`, async function () {
+            const { browser } = context;
+            const pending = deferredCreateTrack();
+            let track2DLoaded;
+            vi.spyOn(Track2D, 'loadTrack2D').mockImplementation(() => new Promise(resolve => track2DLoaded = resolve));
+
+            const load = browser.loadTracks([...["a", "b"].map(config), { name: "loops", url: "https://example.org/loops.bedpe" }]);
+            await flush();
+
+            teardown(browser);
+            const trackPairs = [...browser.trackPairs];
+            const tracks2D = [...browser.tracks2D];
+            const loaded = vi.spyOn(browser.layoutController, 'fillPendingTrack');
+
+            pending.get("a").resolve();
+            pending.get("b").reject(Error("Not Found"));
+            track2DLoaded({ name: "loops" });
+            await load;
+
+            expect(loaded).not.toHaveBeenCalled();
+            expect(browser.trackPairs).toEqual(trackPairs);
+            expect(browser.tracks2D).toEqual(tracks2D);
+            expect(alerts).toEqual([]);
+        });
+    }
+
+});
+
+describe("a restore whose browser goes while its tracks load", function () {
+
+    const context = withBrowser();
+
+    afterEach(() => vi.restoreAllMocks());
+
+    for (const [how, teardown] of [["reset", browser => browser.reset()], ["disposed", browser => browser.dispose()]]) {
+
+        test(`stands down once its browser is ${how}, writing nothing more to it`, async function () {
+            const { browser } = context;
+
+            vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined);
+            const update = vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined);
+            vi.spyOn(DataLoader.prototype, 'loadHicFile').mockImplementation(async function (config) {
+                this.browser.setActiveDataset(restoreDataset(config));
+                await this.browser.setState(decodeState(undefined));
+            });
+
+            let tracksLoaded;
+            vi.spyOn(DataLoader.prototype, 'loadTracks').mockImplementation(() => new Promise(resolve => tracksLoaded = resolve));
+            const setColorScale = vi.spyOn(ContactMatrixView.prototype, 'setColorScale');
+
+            const restore = browser.init({ url: "https://example.org/map.hic", tracks: [config("a")], colorScale: "1,255,0,0" });
+            await vi.waitFor(() => expect(tracksLoaded).toBeDefined());
+
+            teardown(browser);
+            const { contactMatrixView, userInteractionShield } = browser;
+            const shieldDisplay = userInteractionShield.style.display;
+            const disableUpdates = contactMatrixView.disableUpdates;
+            const updates = update.mock.calls.length;
+
+            tracksLoaded();
+            await expect(restore).resolves.toBeUndefined();
+
+            expect(setColorScale).not.toHaveBeenCalled();
+            expect(update.mock.calls.length).toBe(updates);
+            expect(contactMatrixView.spinnerCount).toBe(0);
+            expect(userInteractionShield.style.display).toBe(shieldDisplay);
+            expect(contactMatrixView.disableUpdates).toBe(disableUpdates);
+        });
+    }
+
+});
+
+describe("a load that settles after another restore replaced the session", function () {
+
+    const dom = withContainers();
+    withStubbedLoads();
+
+    afterEach(() => vi.restoreAllMocks());
+
+    test("writes nothing to the new session and raises no alert", async function () {
+        // The fixture stands track loads down for a restore; this one is the subject.
+        DataLoader.prototype.loadTracks.mockRestore();
+        const registry = registryForContainer(dom.container);
+        const alerts = [];
+        vi.spyOn(registry, 'presentAlert').mockImplementation(message => alerts.push(message));
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        createTrack.mockReset();
+        const pending = deferredCreateTrack();
+
+        await registry.restoreSession({ browsers: [{ url: "https://example.org/map.hic" }] });
+        const load = registry.browsers[0].loadTracks(["a", "b"].map(config));
+        await vi.waitFor(() => expect(pending.size).toBe(2));
+
+        await registry.restoreSession({ browsers: [{ url: "https://example.org/map.hic" }] });
+        const [replacement] = registry.browsers;
+
+        pending.get("a").resolve();
+        pending.get("b").reject(Error("Not Found"));
+        await load;
+
+        expect(replacement.trackPairs).toEqual([]);
+        expect(rows(replacement)).toEqual([]);
+        expect(alerts).toEqual([]);
     });
 
 });

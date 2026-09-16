@@ -44,6 +44,7 @@ function stubBrowser() {
         showTrackLabelAndGutter: false,
         layoutController: {
             reservePendingTracks: (configs) => configs.map(() => ({ isPendingTrack: true })),
+            hasPendingTrack: () => true,
             fillPendingTrack: () => ({ updateViews: async () => undefined }),
             removePendingTrack: () => true
         },

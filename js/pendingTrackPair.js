@@ -13,6 +13,11 @@ import {extractName} from './utils.js'
  * swaps it for the track pair when the track loads, and removes it when the
  * load fails. #664, ADR-0017 decision 3.
  *
+ * It carries a remove control where a track pair has its gear. There is no
+ * timeout on a track load, so dismissing the row is how the user gets out of a
+ * hung one; the load it was reserved for is discarded when it settles. #665,
+ * ADR-0017 decisions 4 and 8.
+ *
  * Everything that walks `trackPairs` sees it. It draws nothing, and
  * `isPendingTrack` is what the walkers that read the track itself skip it by --
  * not `pending`, which `TrackPair` already uses for a queued repaint.
@@ -43,6 +48,22 @@ class PendingTrackPair {
         for (const renderer of [this.x, this.y]) {
             renderer.spinnerElement.innerHTML = '<i class="fa fa-spinner fa-spin"></i>'
         }
+
+        const dismissElement = document.createElement('div')
+        dismissElement.className = 'x-track-dismiss'
+        dismissElement.title = 'Remove track'
+        dismissElement.innerHTML = '<i class="fa fa-times"></i>'
+        dismissElement.addEventListener('click', async e => {
+            // Not the row's own click, which toggles every track label.
+            e.preventDefault()
+            e.stopPropagation()
+            try {
+                await this.browser.layoutController.dismissPendingTrack(this)
+            } catch (error) {
+                console.error(error)
+            }
+        })
+        this.x.viewportElement.appendChild(dismissElement)
     }
 
     async updateViews() {

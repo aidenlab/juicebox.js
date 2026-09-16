@@ -1001,6 +1001,19 @@ div[id$=x-track-container] div[id$=x-tracks] .x-track-canvas-container .x-track-
   justify-content: center;
   color: #7F7F7F;
 }
+div[id$=x-track-container] div[id$=x-tracks] .x-track-canvas-container .x-track-dismiss {
+  position: absolute;
+  top: 0;
+  right: -16px;
+  margin-top: 4px;
+  width: 16px;
+  text-align: center;
+  color: #7F7F7F;
+  cursor: pointer;
+}
+div[id$=x-track-container] div[id$=x-tracks] .x-track-canvas-container .x-track-dismiss:hover {
+  color: #444;
+}
 
 div[id$=content-container] {
   display: flex;

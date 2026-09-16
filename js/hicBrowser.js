@@ -238,6 +238,16 @@ class HICBrowser {
     }
 
     async init(config) {
+
+        // A restore outlives its browser if the browser is reset or disposed
+        // while the tracks load -- another restore replacing the session
+        // disposes it. The track load stands down then (#665, ADR-0017
+        // decision 8), and so does the rest of this: nothing below writes to a
+        // browser that is no longer the one this started in. A reset rebuilds
+        // the contact matrix view, so the one held here is the test.
+        const {contactMatrixView} = this;
+        const superseded = () => this.isDisposed || this.contactMatrixView !== contactMatrixView;
+
         this.contactMatrixView.disableUpdates = true;
 
         // The map spinner means the map is loading, and only that: tracks show
@@ -284,6 +294,9 @@ class HICBrowser {
             if (tracksLoaded) {
                 stopMapSpinner();
                 await tracksLoaded;
+                if (superseded()) {
+                    return;
+                }
                 this.contactMatrixView.startSpinner();
                 mapSpinning = true;
             }
@@ -355,10 +368,12 @@ class HICBrowser {
             }
 
         } finally {
-            stopMapSpinner();
-            this.userInteractionShield.style.display = 'none';
-            this.contactMatrixView.disableUpdates = false;
-            this.contactMatrixView.update();
+            if (!superseded()) {
+                stopMapSpinner();
+                this.userInteractionShield.style.display = 'none';
+                this.contactMatrixView.disableUpdates = false;
+                this.contactMatrixView.update();
+            }
         }
     }
 
@@ -734,6 +749,14 @@ class HICBrowser {
         this.eventBus.clear();
 
         this.registry.releaseSlot(this);
+    }
+
+    /**
+     * Whether `dispose()` has run and no `reset()` has brought the browser back.
+     * Internal: a load that outlives its browser reads it to stand down (#665).
+     */
+    get isDisposed() {
+        return this.#disposed;
     }
 
     /**

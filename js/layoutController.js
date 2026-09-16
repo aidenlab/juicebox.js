@@ -156,18 +156,15 @@ class LayoutController {
      * Turn a placeholder into the track pair of the track it was reserved for,
      * in whatever position the placeholder holds now.
      *
-     * A placeholder no longer in `trackPairs` -- the rows were cleared while the
-     * track loaded -- has nowhere to put the track, and the track is dropped.
-     * The pair is sized but not drawn; that is the caller's `updateViews`.
+     * The placeholder has to still be in `trackPairs` (`hasPendingTrack`): a
+     * track whose row is gone is the caller's to discard. The pair is sized but
+     * not drawn; that is the caller's `updateViews`.
      *
-     * @returns {TrackPair|undefined} - the new pair, or undefined if the row is gone
+     * @returns {TrackPair} - the new pair
      */
     fillPendingTrack(placeholder, track) {
 
         const index = this.browser.trackPairs.indexOf(placeholder)
-        if (-1 === index) {
-            return undefined
-        }
 
         const { trackHeight } = getLayoutDimensions()
 
@@ -205,7 +202,16 @@ class LayoutController {
     }
 
     /**
-     * Take away the row of a pending track that failed to load. Unlike
+     * Whether a pending track's row is still there to fill: not dismissed, and
+     * not cleared with the rest of the rows.
+     */
+    hasPendingTrack(placeholder) {
+        return this.browser.trackPairs.includes(placeholder)
+    }
+
+    /**
+     * Take away the row of a pending track that failed to load, or was
+     * dismissed. Unlike
      * `removeTrackXYPair` it posts no `TrackXYPairRemoval`: no track was loaded.
      *
      * @returns {boolean} - whether there was a row to remove
@@ -224,6 +230,17 @@ class LayoutController {
         this.#applyTrackOrder()
 
         return true
+    }
+
+    /**
+     * Take away the row of a pending track the user dismissed. The track leaves
+     * the session with it; its load keeps running, and is discarded when it
+     * settles, because its row is gone (#665, ADR-0017 decisions 4 and 8).
+     */
+    async dismissPendingTrack(placeholder) {
+        if (this.removePendingTrack(placeholder)) {
+            await this.browser.updateLayout()
+        }
     }
 
     #applyTrackOrder() {

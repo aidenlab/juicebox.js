@@ -18,6 +18,9 @@ import {extractName} from './utils.js'
  * hung one; the load it was reserved for is discarded when it settles. #665,
  * ADR-0017 decisions 4 and 8.
  *
+ * It is part of the session: `HICBrowser.toJSON` writes it from `config`, so a
+ * save made while it loads keeps it. #666, ADR-0017 decision 5.
+ *
  * Everything that walks `trackPairs` sees it. It draws nothing, and
  * `isPendingTrack` is what the walkers that read the track itself skip it by --
  * not `pending`, which `TrackPair` already uses for a queued repaint.

@@ -36,6 +36,8 @@ import {restoreSession} from "./session.js"
  * Calling in twice with the same element finds the same registry and replaces
  * its contents; a different element gets a different registry, which is #384.
  *
+ * Like `restoreSession`, it resolves before the session's tracks have loaded.
+ *
  * @param {Element} container - the host element this embed occupies.
  * @param {Object} config - a browser config or a session.
  * @returns {Promise<BrowserRegistry>}

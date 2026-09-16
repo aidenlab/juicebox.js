@@ -465,8 +465,10 @@ class DataLoader {
      * placeholder row is reserved before any track is fetched, becomes the
      * track pair when that track loads, and is removed if it fails (#664,
      * decision 3). The map spinner is not raised -- the rows are the indicator.
-     * The promise still settles only once every track in `configs` has; then the
-     * failures, if any, are thrown as one error.
+     * A 2D track has no row and is added when it arrives (decision 7). The
+     * promise still settles only once every track in `configs` has; then the
+     * failures, if any, are thrown as one error. A restore does not wait for it
+     * (#667, decision 1).
      *
      * A load cannot be cancelled, so a track that settles after its placeholder
      * is gone is discarded silently: not laid out, not reported (#665, ADR-0017
@@ -500,11 +502,15 @@ class DataLoader {
         const placeholders = layoutController.reservePendingTracks(oneD.map(({config}) => config));
         oneD.forEach((entry, i) => entry.placeholder = placeholders[i]);
 
-        const loads = prepared.map(({config, error, is2D, placeholder}) => {
+        // This load's 2D tracks as they arrive, by session position, so each is
+        // placed among its siblings in session order whatever order they land in.
+        const arrived2D = new Map();
+
+        const loads = prepared.map(({config, error, is2D, placeholder}, index) => {
             if (error) {
                 return Promise.reject(error);
             } else if (is2D) {
-                return this.#loadTrack2D(config);
+                return this.#loadTrack2D(config, layoutController, arrived2D, index);
             } else {
                 return this.#loadTrack1D(config, layoutController, placeholder);
             }
@@ -522,20 +528,12 @@ class DataLoader {
         }
 
         const failures = [];
-        const tracks2D = [];
 
         settled.forEach((outcome, i) => {
             if ('rejected' === outcome.status) {
                 failures.push({config: configs[i], error: outcome.reason});
-            } else if (outcome.value?.track2D) {
-                tracks2D.push(outcome.value.track2D);
             }
         });
-
-        if (tracks2D.length > 0) {
-            this.browser.tracks2D = this.browser.tracks2D.concat(tracks2D);
-            this.browser.coordinator.onTrackLoad2D(this.browser.tracks2D);
-        }
 
         if (1 === configs.length && 1 === failures.length) {
             throw failures[0].error;
@@ -654,15 +652,37 @@ class DataLoader {
     }
 
     /**
-     * Load one 2D track. It has no row and no indicator (ADR-0017 decision 7);
-     * it is added to the browser's 2D tracks with the rest of its load.
+     * Load one 2D track. It has no row and no indicator, and draws when it
+     * arrives rather than with the rest of its load (ADR-0017 decision 7, #667).
+     * It goes before the first of its load's 2D tracks to have arrived from
+     * later in the session, so once the load is in its 2D tracks follow the
+     * browser's earlier ones in session order. A track arriving after its
+     * browser is gone is dropped.
      *
      * @param {Object} config - a 2D track configuration object
-     * @returns {Promise<{track2D: Object}>}
+     * @param {LayoutController} layoutController - the layout its load started in
+     * @param {Map<number, Object>} arrived - this load's arrived 2D tracks, by session position
+     * @param {number} index - this track's session position
+     * @returns {Promise<void>}
      */
-    async #loadTrack2D(config) {
+    async #loadTrack2D(config, layoutController, arrived, index) {
         const track2D = await Track2D.loadTrack2D(config, this.browser.genome);
-        return {track2D};
+
+        if (!this.#isCurrent(layoutController)) {
+            return;
+        }
+
+        arrived.set(index, track2D);
+
+        const {tracks2D} = this.browser;
+        const later = [...arrived]
+            .filter(([position, track]) => position > index && tracks2D.includes(track))
+            .sort(([a], [b]) => a - b)
+            .map(([, track]) => tracks2D.indexOf(track));
+        const at = later.length > 0 ? later[0] : tracks2D.length;
+
+        this.browser.tracks2D = [...tracks2D.slice(0, at), track2D, ...tracks2D.slice(at)];
+        this.browser.coordinator.onTrackLoad2D(this.browser.tracks2D);
     }
 
     /**

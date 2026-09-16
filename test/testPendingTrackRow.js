@@ -366,17 +366,32 @@ describe("a pending track is a placeholder row", function () {
 
 });
 
-describe("a restore does not show the map spinner for its tracks", function () {
+/**
+ * A restore does not wait for its tracks: it resolves once the map is usable, and its tracks arrive
+ * after. A 1D track is a pending track meanwhile; a 2D track has no indicator and draws when it
+ * arrives. See issue #667 and docs/adr/0017-restore-does-not-await-tracks.md, decisions 1 and 7.
+ */
+describe("a restore does not wait for its tracks", function () {
 
     const context = withBrowser();
+    const alerts = [];
 
-    afterEach(() => vi.restoreAllMocks());
+    const map = { url: "https://example.org/map.hic" };
+    const config2D = name => ({ name, url: `https://example.org/${name}.bedpe` });
 
-    test("the map spinner is down while the restore waits on its tracks, and the restore still waits", async function () {
-        const { browser } = context;
+    /** A Track2D.loadTrack2D whose every call waits until the test settles it by track name. */
+    function deferredLoadTrack2D() {
+        const pending = new Map();
+        vi.spyOn(Track2D, 'loadTrack2D').mockImplementation(config => new Promise((resolve, reject) => {
+            pending.set(config.name, { resolve: () => resolve({ name: config.name, config, toJSON: () => ({ name: config.name }) }), reject });
+        }));
+        return pending;
+    }
 
+    beforeEach(() => {
         vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined);
         vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined);
+        vi.spyOn(TrackPair.prototype, 'updateViews').mockImplementation(async () => undefined);
         vi.spyOn(DataLoader.prototype, 'loadHicFile').mockImplementation(async function (config) {
             this.browser.contactMatrixView.startSpinner();
             this.browser.setActiveDataset(restoreDataset(config));
@@ -384,29 +399,96 @@ describe("a restore does not show the map spinner for its tracks", function () {
             this.browser.contactMatrixView.stopSpinner();
         });
 
-        let tracksLoaded;
-        vi.spyOn(DataLoader.prototype, 'loadTracks').mockImplementation(() => new Promise(resolve => tracksLoaded = resolve));
+        createTrack.mockReset();
+        alerts.length = 0;
+        vi.spyOn(context.browser.registry, 'presentAlert').mockImplementation(message => alerts.push(message));
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    });
 
-        let spinningWhileResolving;
-        const setColorScale = vi.spyOn(ContactMatrixView.prototype, 'setColorScale').mockImplementation(function () {
-            spinningWhileResolving = this.spinnerCount;
-        });
-        vi.spyOn(browser.coordinator, 'onColorScale').mockImplementation(() => undefined);
+    afterEach(() => vi.restoreAllMocks());
 
-        let restored = false;
-        const restore = browser.init({ url: "https://example.org/map.hic", tracks: [config("a")], colorScale: "1,255,0,0" }).then(() => restored = true);
-        await flush();
+    test("a 1D track that never settles leaves a usable map, the track a dismissable placeholder", async function () {
+        const { browser } = context;
+        deferredCreateTrack();
 
-        expect(restored).toBe(false);
+        await browser.init({ ...map, tracks: [config("a")] });
+
+        expect(browser.userInteractionShield.style.display).toBe('none');
+        expect(browser.contactMatrixView.disableUpdates).toBe(false);
         expect(browser.contactMatrixView.spinnerCount).toBe(0);
+        expect(rows(browser)).toEqual([{ name: "a", spinning: true }]);
 
-        tracksLoaded();
-        await restore;
+        dismissControl(browser, "a").click();
+        expect(rows(browser)).toEqual([]);
+    });
+
+    test("a 2D track that never settles leaves a usable map", async function () {
+        const { browser } = context;
+        deferredLoadTrack2D();
+
+        await browser.init({ ...map, tracks: [config2D("loops")] });
+
+        expect(browser.userInteractionShield.style.display).toBe('none');
+        expect(browser.contactMatrixView.disableUpdates).toBe(false);
         expect(browser.contactMatrixView.spinnerCount).toBe(0);
+        expect(browser.tracks2D).toEqual([]);
+    });
 
-        // What is left of the restore once its tracks are in is the map's again, so it spins.
+    test("the session's normalization and colour scale are applied before any track settles", async function () {
+        const { browser } = context;
+        deferredCreateTrack();
+        deferredLoadTrack2D();
+        const resolved = vi.spyOn(browser.coordinator, 'onNormalizationResolved');
+        const setColorScale = vi.spyOn(ContactMatrixView.prototype, 'setColorScale');
+
+        await browser.init({ ...map, tracks: [config("a"), config2D("loops")], normalization: "NONE", colorScale: "1,255,0,0" });
+
+        expect(resolved).toHaveBeenCalledWith("NONE");
         expect(setColorScale).toHaveBeenCalled();
-        expect(spinningWhileResolving).toBe(1);
+    });
+
+    test("a 2D track draws when it arrives, while a 1D track still pends", async function () {
+        const { browser } = context;
+        deferredCreateTrack();
+        const pending2D = deferredLoadTrack2D();
+        const onTrackLoad2D = vi.spyOn(browser.coordinator, 'onTrackLoad2D');
+
+        await browser.init({ ...map, tracks: [config("a"), config2D("loops")] });
+        pending2D.get("loops").resolve();
+        await vi.waitFor(() => expect(browser.tracks2D.map(track => track.name)).toEqual(["loops"]));
+
+        expect(onTrackLoad2D).toHaveBeenCalledWith(browser.tracks2D);
+        expect(rows(browser)).toEqual([{ name: "a", spinning: true }]);
+    });
+
+    test("a 2D track that fails after the restore resolved is still reported", async function () {
+        const { browser } = context;
+        const pending2D = deferredLoadTrack2D();
+
+        await browser.init({ ...map, tracks: [config2D("loops")] });
+        pending2D.get("loops").reject(Error("Not Found"));
+
+        await vi.waitFor(() => expect(alerts).toHaveLength(1));
+        expect(browser.tracks2D).toEqual([]);
+    });
+
+    test("once every track arrives, however it arrived, the tracks and the saved session are in the order a restore has always given", async function () {
+        const { browser } = context;
+        const pending = deferredCreateTrack();
+        const pending2D = deferredLoadTrack2D();
+
+        await browser.init({ ...map, tracks: [config2D("p"), config("a"), config2D("q"), config("b"), config2D("r"), config("c")] });
+
+        for (const name of ["r", "c", "p", "a", "q", "b"]) {
+            (pending.get(name) ?? pending2D.get(name)).resolve();
+            await flush();
+        }
+
+        await vi.waitFor(() => expect(browser.tracks2D).toHaveLength(3));
+        expect(browser.trackPairs.map(pair => pair.track.name)).toEqual(["c", "b", "a"]);
+        expect(rows(browser)).toEqual(["c", "b", "a"].map(name => ({ name, spinning: false })));
+        expect(browser.tracks2D.map(track => track.name)).toEqual(["p", "q", "r"]);
+        expect(browser.toJSON().tracks.map(track => track.name)).toEqual(["c", "b", "a", "p", "q", "r"]);
     });
 
 });
@@ -543,46 +625,63 @@ describe("a pending track can be dismissed", function () {
 
 });
 
-describe("a restore whose browser goes while its tracks load", function () {
+/**
+ * A restore no longer waits on its tracks, so what it can be torn down during is its map: the `.hic`
+ * load, and the normalization vector files when it has them. #665, #667.
+ */
+describe("a restore whose browser goes while it loads its map", function () {
 
     const context = withBrowser();
 
     afterEach(() => vi.restoreAllMocks());
 
-    for (const [how, teardown] of [["reset", browser => browser.reset()], ["disposed", browser => browser.dispose()]]) {
-
-        test(`stands down once its browser is ${how}, writing nothing more to it`, async function () {
-            const { browser } = context;
-
-            vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined);
-            const update = vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined);
+    const stalls = [
+        ["the map", {}, stall => vi.spyOn(DataLoader.prototype, 'loadHicFile').mockImplementation(async function (config) {
+            this.browser.setActiveDataset(restoreDataset(config));
+            await this.browser.setState(decodeState(undefined));
+            await new Promise(resolve => stall(resolve));
+        })],
+        ["its normalization vectors", { normVectorFiles: ["https://example.org/map.nv"] }, stall => {
             vi.spyOn(DataLoader.prototype, 'loadHicFile').mockImplementation(async function (config) {
                 this.browser.setActiveDataset(restoreDataset(config));
                 await this.browser.setState(decodeState(undefined));
             });
+            vi.spyOn(DataLoader.prototype, 'loadNormalizationFile').mockImplementation(() => new Promise(resolve => stall(resolve)));
+        }]
+    ];
 
-            let tracksLoaded;
-            vi.spyOn(DataLoader.prototype, 'loadTracks').mockImplementation(() => new Promise(resolve => tracksLoaded = resolve));
-            const setColorScale = vi.spyOn(ContactMatrixView.prototype, 'setColorScale');
+    for (const [waitingOn, fields, stallOn] of stalls) {
+        for (const [how, teardown] of [["reset", browser => browser.reset()], ["disposed", browser => browser.dispose()]]) {
 
-            const restore = browser.init({ url: "https://example.org/map.hic", tracks: [config("a")], colorScale: "1,255,0,0" });
-            await vi.waitFor(() => expect(tracksLoaded).toBeDefined());
+            test(`stands down once its browser is ${how} while it waits on ${waitingOn}, writing nothing more to it`, async function () {
+                const { browser } = context;
 
-            teardown(browser);
-            const { contactMatrixView, userInteractionShield } = browser;
-            const shieldDisplay = userInteractionShield.style.display;
-            const disableUpdates = contactMatrixView.disableUpdates;
-            const updates = update.mock.calls.length;
+                vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined);
+                const update = vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined);
+                let release;
+                stallOn(resolve => release = resolve);
+                const setColorScale = vi.spyOn(ContactMatrixView.prototype, 'setColorScale');
 
-            tracksLoaded();
-            await expect(restore).resolves.toBeUndefined();
+                const restore = browser.init({ url: "https://example.org/map.hic", ...fields, colorScale: "1,255,0,0" });
+                await vi.waitFor(() => expect(release).toBeDefined());
 
-            expect(setColorScale).not.toHaveBeenCalled();
-            expect(update.mock.calls.length).toBe(updates);
-            expect(contactMatrixView.spinnerCount).toBe(0);
-            expect(userInteractionShield.style.display).toBe(shieldDisplay);
-            expect(contactMatrixView.disableUpdates).toBe(disableUpdates);
-        });
+                teardown(browser);
+                const { contactMatrixView, userInteractionShield } = browser;
+                const shieldDisplay = userInteractionShield.style.display;
+                const disableUpdates = contactMatrixView.disableUpdates;
+                const spinnerCount = contactMatrixView.spinnerCount;
+                const updates = update.mock.calls.length;
+
+                release();
+                await expect(restore).resolves.toBeUndefined();
+
+                expect(setColorScale).not.toHaveBeenCalled();
+                expect(update.mock.calls.length).toBe(updates);
+                expect(contactMatrixView.spinnerCount).toBe(spinnerCount);
+                expect(userInteractionShield.style.display).toBe(shieldDisplay);
+                expect(contactMatrixView.disableUpdates).toBe(disableUpdates);
+            });
+        }
     }
 
 });

@@ -117,13 +117,14 @@ function sessionTrack(config, {name, dataRange, color}) {
 }
 
 /**
- * What a pending track will show, read off its config the way a load reads it:
- * a data range only when the config fixes one (no `max` is autoscale).
+ * What a pending track will show, read off its config: a data range whenever
+ * the config sets either end of one, so neither is lost in a mid-load save.
+ * An autoscaled track has no range yet; it gets one only once igv loads it.
  */
 function pendingTrackLook({config, track}) {
     return {
         name: track.name,
-        dataRange: config.max === undefined ? undefined : {min: config.min, max: config.max},
+        dataRange: config.min === undefined && config.max === undefined ? undefined : {min: config.min, max: config.max},
         color: config.color
     }
 }

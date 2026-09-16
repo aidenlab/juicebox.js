@@ -60,6 +60,11 @@ function rows(browser) {
         }));
 }
 
+/** A row's remove control, found by the row's name; a loaded row has none. */
+const dismissControl = (browser, name) => [...browser.layoutController.xTracks.querySelectorAll('.x-track-canvas-container')]
+    .find(el => name === el.querySelector('.x-track-label').textContent)
+    ?.querySelector('.x-track-dismiss');
+
 const yRowCount = browser => browser.layoutController.yTracks.querySelectorAll('.y-track-canvas-container').length;
 
 describe("a pending track is a placeholder row", function () {
@@ -172,11 +177,39 @@ describe("a pending track is a placeholder row", function () {
         pending.get("a").resolve();
         await flush();
 
+        // Row order, which is the session's: each load puts its rows on top, so "b" -- last in
+        // the config -- is the first row, as it is once loaded.
         expect(browser.toJSON().tracks).toEqual([
             { url: "https://example.org/b.bigWig", format: "bigwig", name: "b", min: 0, max: 10, color: "rgb(255,0,0)" },
             { url: "https://example.org/a.bigWig", name: "a" }
         ]);
 
+        pending.get("b").resolve();
+        await load;
+    });
+
+    test("a pending track keeps a min its config sets without a max", async function () {
+        const { browser } = context;
+        deferredCreateTrack();
+
+        browser.loadTracks([{ ...config("a"), min: 5 }]);
+        await flush();
+
+        expect(browser.toJSON().tracks[0]).toHaveProperty("min", 5);
+    });
+
+    test("a track dismissed while another still pends is not written", async function () {
+        const { browser } = context;
+        const pending = deferredCreateTrack();
+
+        const load = browser.loadTracks(["a", "b"].map(config));
+        await flush();
+        dismissControl(browser, "a").click();
+        await flush();
+
+        expect(browser.toJSON().tracks.map(t => t.name)).toEqual(["b"]);
+
+        pending.get("a").resolve();
         pending.get("b").resolve();
         await load;
     });
@@ -403,9 +436,6 @@ describe("a pending track can be dismissed", function () {
 
     afterEach(() => vi.restoreAllMocks());
 
-    const dismissControl = (browser, name) => [...browser.layoutController.xTracks.querySelectorAll('.x-track-canvas-container')]
-        .find(el => name === el.querySelector('.x-track-label').textContent)
-        ?.querySelector('.x-track-dismiss');
 
     test("a placeholder has a remove control, and using it removes the row", async function () {
         const { browser } = context;

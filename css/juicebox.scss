@@ -916,6 +916,11 @@ div[id$="x-track-container"] {
         height: var(--track-height);
         margin-left: -($track-height/2);
         background-color: rgba(255, 255, 255, 0);
+        // A pending track's spinner (#664).
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #7F7F7F;
       }
     }
   }
@@ -1010,7 +1015,11 @@ div[id$="content-container"] {
         margin-right: var(--track-margin);
         background-color: white;
         .y-track-spinner {
-          display: block;
+          // A pending track's spinner (#664).
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #7F7F7F;
           position: absolute;
           top: 50%;
           left: 0;

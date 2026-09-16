@@ -446,12 +446,10 @@ class DataLoader {
             "Error loading tracks";
 
         try {
-            await this.#loadTracks(configs);
+            await this.loadTracksOrThrow(configs);
         } catch (error) {
             presentError(this.browser.registry, errorPrefix, error);
             console.error(error);
-        } finally {
-            this.browser.contactMatrixView.stopSpinner();
         }
     }
 
@@ -462,31 +460,15 @@ class DataLoader {
      * surface, and reached from one place: `HICBrowser.loadTracksOrThrow`, which
      * the target-set fan-out calls. #615.
      *
-     * @param {Array<Object>} configs - Array of track configuration objects
-     * @returns {Promise<void>}
-     */
-    async loadTracksOrThrow(configs) {
-
-        try {
-            await this.#loadTracks(configs);
-        } finally {
-            this.browser.contactMatrixView.stopSpinner();
-        }
-    }
-
-    /**
-     * The work both of the two above do, minus what each does about failure.
-     *
-     * The spinner is *started* here and stopped by each caller, rather than
-     * wrapped around this whole method, so that `loadTracks` keeps the order
-     * it has always had: report first, then put the spinner away. That order
-     * is observable -- the alert is modal.
-     *
      * Every track loads concurrently and settles on its own (#663, ADR-0017
-     * decision 6). Whatever loaded is laid out in session order, even when
-     * another track in the same load failed; then the failures, if any, are
-     * thrown as one error. A load of a single track throws that track's own
-     * error, so the one-track report reads exactly as it always has.
+     * decision 6). Each 1D track is a pending track from the start: its
+     * placeholder row is reserved before any track is fetched, becomes the
+     * track pair when that track loads, and is removed if it fails (#664,
+     * decision 3). The map spinner is not raised -- the rows are the indicator.
+     * The promise still settles only once every track in `configs` has; then the
+     * failures, if any, are thrown as one error. A load of a single track throws
+     * that track's own error, so the one-track report reads exactly as it always
+     * has.
      *
      * The one error of a multi-track load is a plain `Error` whose message is
      * already phrased for the user -- one `name: reason` per failed track, in
@@ -496,60 +478,57 @@ class DataLoader {
      * @param {Array<Object>} configs - Array of track configuration objects
      * @returns {Promise<void>}
      */
-    async #loadTracks(configs) {
+    async loadTracksOrThrow(configs) {
 
-        this.browser.contactMatrixView.startSpinner();
+        const prepared = configs.map(config => {
+            try {
+                return {config, is2D: this.#prepareTrack(config)};
+            } catch (error) {
+                return {config, error};
+            }
+        });
 
-        const settled = await Promise.allSettled(configs.map(config => this.#loadTrack(config)));
+        const oneD = prepared.filter(({error, is2D}) => !error && !is2D);
+        const placeholders = this.browser.layoutController.reservePendingTracks(oneD.map(({config}) => config));
+        oneD.forEach((entry, i) => entry.placeholder = placeholders[i]);
+
+        const loads = prepared.map(({config, error, is2D, placeholder}) => {
+            if (error) {
+                return Promise.reject(error);
+            } else if (is2D) {
+                return this.#loadTrack2D(config);
+            } else {
+                return this.#loadTrack1D(config, placeholder);
+            }
+        });
+
+        // Sized for the reserved rows before any of them is filled, so the map
+        // is laid out once for this load.
+        const reserved = placeholders.length > 0 ? this.browser.updateLayout() : undefined;
+
+        const settled = await Promise.allSettled(loads);
+        await reserved;
 
         const failures = [];
-        const tracks = [];
-        const pending2D = [];
+        const tracks2D = [];
 
         settled.forEach((outcome, i) => {
             if ('rejected' === outcome.status) {
                 failures.push({config: configs[i], error: outcome.reason});
-            } else if (outcome.value.track2D) {
-                pending2D.push({config: configs[i], track2D: outcome.value.track2D});
-            } else {
-                tracks.push(outcome.value.track);
+            } else if (outcome.value?.track2D) {
+                tracks2D.push(outcome.value.track2D);
             }
         });
 
-        if (tracks.length > 0) {
-            this.browser.layoutController.updateLayoutWithTracks(tracks);
-
-            const gearContainer = document.querySelector('.hic-igv-right-hand-gutter');
-            if (this.browser.showTrackLabelAndGutter) {
-                gearContainer.style.display = 'block';
-            } else {
-                gearContainer.style.display = 'none';
-            }
-
-            await this.browser.updateLayout();
-        }
-
-        if (pending2D.length > 0) {
-            const settled2D = await Promise.all(pending2D.map(({track2D}) => track2D));
-            const tracks2D = [];
-            settled2D.forEach(({track, error}, i) => {
-                if (error) {
-                    failures.push({config: pending2D[i].config, error});
-                } else {
-                    tracks2D.push(track);
-                }
-            });
-            if (tracks2D.length > 0) {
-                this.browser.tracks2D = this.browser.tracks2D.concat(tracks2D);
-                this.browser.coordinator.onTrackLoad2D(this.browser.tracks2D);
-            }
+        if (tracks2D.length > 0) {
+            this.browser.tracks2D = this.browser.tracks2D.concat(tracks2D);
+            this.browser.coordinator.onTrackLoad2D(this.browser.tracks2D);
         }
 
         if (1 === configs.length && 1 === failures.length) {
             throw failures[0].error;
         } else if (failures.length > 0) {
             // Session order, 2D failures included, so the report reads like the session does.
-            failures.sort((a, b) => configs.indexOf(a.config) - configs.indexOf(b.config));
             const lines = failures.map(({config, error}) => isBotChallenge(error) ?
                 `${extractName(config)}: blocked by bot protection` :
                 `${extractName(config)}: ${errorMessage(error)}`);
@@ -562,19 +541,17 @@ class DataLoader {
     }
 
     /**
-     * Load one track config, up to but not including layout.
-     *
-     * Resolves `{track}` for a 1D track. A 2D track resolves `{track2D}`, the
-     * pending load itself: it is started here, with the 1D loads, but -- as
-     * before #663 -- not waited on until the 1D tracks are laid out.
+     * What a track config needs before its load starts, and whether it is 2D.
+     * Synchronous, so a load's placeholder rows are reserved before anything is
+     * fetched.
      *
      * @param {Object} config - a track configuration object
-     * @returns {Promise<{track: Object}|{track2D: Promise<Object>}>}
+     * @returns {boolean} - whether the track is a 2D track
      */
-    async #loadTrack(config) {
+    #prepareTrack(config) {
         const fileName = isFile(config.url)
             ? config.url.name
-            : config.filename || await FileUtils.getFilename(config.url);
+            : config.filename || FileUtils.getFilename(config.url);
 
         const extension = hicUtils.getExtension(fileName);
 
@@ -605,17 +582,25 @@ class DataLoader {
         // Note: hicUtils.getExtension() strips .txt as an aux extension, so
         // test the raw filename rather than `extension` for the .txt case.
         const lowerName = fileName.toLowerCase();
-        const is2D = ['bedpe', 'interact'].includes(config.format)
+        return ['bedpe', 'interact'].includes(config.format)
             || ['bedpe', 'interact'].includes(extension)
             || (config.format === undefined
                 && (lowerName.endsWith('.txt') || lowerName.endsWith('.txt.gz')));
-        if (is2D) {
-            // Settled into a value at once: a 2D load that fails before the 1D
-            // layout is done must not surface as an unhandled rejection.
-            const track2D = Track2D.loadTrack2D(config, this.browser.genome)
-                .then(track => ({track}), error => ({error}));
-            return {track2D};
-        } else {
+    }
+
+    /**
+     * Load one 1D track into its placeholder row: the row becomes the track
+     * pair on load and is removed on failure. A track whose row has gone
+     * meanwhile is dropped.
+     *
+     * @param {Object} config - a 1D track configuration object
+     * @param {PendingTrackPair} placeholder - the row reserved for it
+     * @returns {Promise<void>}
+     */
+    async #loadTrack1D(config, placeholder) {
+        const {layoutController} = this.browser;
+
+        try {
             // igv reads the track through its own bundled loaders, which juicebox cannot
             // reach into — the config's `url` is the only lever. mapTrackConfig carries the
             // original alongside so toJSON can serialize it. See issue #450.
@@ -625,8 +610,36 @@ class DataLoader {
                 await track.postInit();
             }
 
-            return {track};
+            if (!layoutController.fillPendingTrack(placeholder, track)) {
+                return;
+            }
+        } catch (error) {
+            if (layoutController.removePendingTrack(placeholder)) {
+                await this.browser.updateLayout();
+            }
+            throw error;
         }
+
+        const gearContainer = document.querySelector('.hic-igv-right-hand-gutter');
+        if (this.browser.showTrackLabelAndGutter) {
+            gearContainer.style.display = 'block';
+        } else {
+            gearContainer.style.display = 'none';
+        }
+
+        await this.browser.updateLayout();
+    }
+
+    /**
+     * Load one 2D track. It has no row and no indicator (ADR-0017 decision 7);
+     * it is added to the browser's 2D tracks with the rest of its load.
+     *
+     * @param {Object} config - a 2D track configuration object
+     * @returns {Promise<{track2D: Object}>}
+     */
+    async #loadTrack2D(config) {
+        const track2D = await Track2D.loadTrack2D(config, this.browser.genome);
+        return {track2D};
     }
 
     /**

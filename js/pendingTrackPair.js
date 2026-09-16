@@ -1,0 +1,59 @@
+import TrackRenderer from './trackRenderer.js'
+import {extractName} from './utils.js'
+
+/**
+ * The placeholder row of a pending track (`CONTEXT.md`, *Pending track*): a 1D
+ * track a load has named but not yet finished loading.
+ *
+ * It holds the track's slot in `browser.trackPairs` from the moment the load
+ * starts, so the row sits in the track's position and the layout is sized once,
+ * not once per arriving track. It is built from the same renderers a track pair
+ * is -- the same x and y rows, reorder handle and label -- around a stand-in
+ * track carrying only the name, plus the track spinner. `LayoutController`
+ * swaps it for the track pair when the track loads, and removes it when the
+ * load fails. #664, ADR-0017 decision 3.
+ *
+ * Everything that walks `trackPairs` sees it. It draws nothing, and
+ * `pending` is what the walkers that read the track itself skip it by.
+ */
+class PendingTrackPair {
+
+    constructor(browser, config) {
+        this.browser = browser
+        this.config = config
+        this.pending = true
+        this.track = {name: extractName(config)}
+        this.x = undefined
+        this.y = undefined
+    }
+
+    init(xTracks, yTracks, trackHeight, order) {
+
+        this.x = new TrackRenderer(this.browser, this.track, 'x')
+        this.x.init(xTracks, trackHeight, order)
+
+        this.y = new TrackRenderer(this.browser, this.track, 'y')
+        this.y.init(yTracks, trackHeight, order)
+
+        // The name is the point of the row, so it shows whether or not the
+        // labels of loaded tracks are toggled on.
+        this.x.labelElement.style.display = 'block'
+
+        for (const renderer of [this.x, this.y]) {
+            renderer.spinnerElement.innerHTML = '<i class="fa fa-spinner fa-spin"></i>'
+        }
+    }
+
+    async updateViews() {
+    }
+
+    async repaintViews() {
+    }
+
+    dispose() {
+        this.x.dispose()
+        this.y.dispose()
+    }
+}
+
+export default PendingTrackPair

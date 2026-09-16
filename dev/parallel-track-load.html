@@ -43,7 +43,7 @@
 
 <body>
 
-<h2>Parallel track load (#663)</h2>
+<h2>Parallel track load (#663, #664)</h2>
 
 <p class="note">
     Each button loads a set of tracks into the map below. <b>Good</b> tracks load; <b>bad</b>
@@ -57,6 +57,17 @@
     <li>Failures raise <b>one</b> alert naming each failed track — or, for
         <code>loadTracksOrThrow</code>, no alert and one rejection, shown in the box below.</li>
     <li>A single bad track alerts as it always has: <i>Error loading track NAME: reason</i>.</li>
+</ul>
+<p class="note">
+    And per decision 3, a pending track is a placeholder row (#664):
+</p>
+<ul class="note">
+    <li>Every 1D track shows a row with its name and a small spinner the moment a button is
+        pressed, in the position it ends up in. 2D tracks get no row.</li>
+    <li>A row becomes the track as it arrives; a bad track's row is removed.</li>
+    <li>The large spinner in the centre of the map never shows for a track load, including
+        during <b>Restore</b> once the map itself has loaded.</li>
+    <li>The map is not resized as tracks arrive — only when a bad track's row is removed.</li>
 </ul>
 <p class="note">
     The box lists the tracks laid out after each load, in gutter order. Tracks accumulate;
@@ -136,7 +147,7 @@
     const container = document.getElementById('app-container')
     const summary = document.getElementById('summary')
 
-    const laidOut = browser => browser.trackPairs.map(pair => pair.x.track.name)
+    const laidOut = browser => browser.trackPairs.map(pair => pair.pending ? `${pair.track.name} (pending)` : pair.x.track.name)
 
     function report(browser, what, started, outcome) {
         const seconds = ((performance.now() - started) / 1000).toFixed(1)

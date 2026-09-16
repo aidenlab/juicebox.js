@@ -240,6 +240,18 @@ class HICBrowser {
     async init(config) {
         this.contactMatrixView.disableUpdates = true;
 
+        // The map spinner means the map is loading, and only that: tracks show
+        // their own placeholder rows (#664, ADR-0017 decision 3). So it comes
+        // down once the map's own loads are in, while this still waits on the
+        // tracks -- once, whichever of the two puts it away.
+        let mapSpinning = true;
+        const stopMapSpinner = () => {
+            if (mapSpinning) {
+                mapSpinning = false;
+                this.contactMatrixView.stopSpinner();
+            }
+        };
+
         try {
             this.contactMatrixView.startSpinner();
             this.userInteractionShield.style.display = 'block';
@@ -263,19 +275,15 @@ class HICBrowser {
                 this.coordinator.onDisplayMode(config.displayMode);
             }
 
-            const promises = [];
-
-            if (config.tracks) {
-                promises.push(this.dataLoader.loadTracks(config.tracks));
-            }
+            const tracksLoaded = config.tracks ? this.dataLoader.loadTracks(config.tracks) : undefined;
 
             if (config.normVectorFiles) {
-                config.normVectorFiles.forEach(nv => {
-                    promises.push(this.dataLoader.loadNormalizationFile(nv));
-                });
+                await Promise.all(config.normVectorFiles.map(nv => this.dataLoader.loadNormalizationFile(nv)));
             }
 
-            await Promise.all(promises);
+            stopMapSpinner();
+
+            await tracksLoaded;
 
             // The one config field still checked below the seam, and it stays
             // here on purpose: the set it is checked against is the loaded
@@ -330,9 +338,8 @@ class HICBrowser {
             // The reordering costs a repaint of the colour-scale widget, which
             // is all `onColorScale` does (`browserCoordinator.js:281`). It now
             // lands after the track and normalization-vector loads rather than
-            // before them -- behind the spinner and the interaction shield
-            // raised at the top of this method, and read by nothing on either
-            // load path.
+            // before them -- behind the interaction shield raised at the top of
+            // this method, and read by nothing on either load path.
             if (config.colorScale) {
                 this.contactMatrixView.setColorScale(config.colorScale);
                 this.coordinator.onColorScale(this.contactMatrixView.getColorScale());
@@ -345,7 +352,7 @@ class HICBrowser {
             }
 
         } finally {
-            this.contactMatrixView.stopSpinner();
+            stopMapSpinner();
             this.userInteractionShield.style.display = 'none';
             this.contactMatrixView.disableUpdates = false;
             this.contactMatrixView.update();
@@ -1578,10 +1585,15 @@ class HICBrowser {
             }
         }
 
-        if (this.trackPairs.length > 0 || this.tracks2D.length > 0) {
+        // A pending track's placeholder row is not written. ADR-0017 decision 5
+        // will write it from its config; until then a save made mid-load drops
+        // it, as it always has (#664).
+        const loadedTrackPairs = this.trackPairs.filter(trackPair => !trackPair.pending)
+
+        if (loadedTrackPairs.length > 0 || this.tracks2D.length > 0) {
             let tracks = []
             jsonOBJ.tracks = tracks
-            for (let trackRenderer of this.trackPairs) {
+            for (let trackRenderer of loadedTrackPairs) {
 
                 const track = trackRenderer.x.track
                 const config = track.config

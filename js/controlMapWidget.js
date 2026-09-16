@@ -21,6 +21,8 @@
  *
  */
 
+import {createDOMFromHTMLString} from './utils.js';
+
 /**
  * Created by dat on 3/21/17.
  */
@@ -218,14 +220,8 @@ class ControlMapHash {
 // the browser default of 300x150, and the toggle arrows sit inside the A/B
 // click target -- an unsized arrow spreads that target invisibly across the
 // locus box and the row below it (#673).
-function svgElement(markup) {
-    const template = document.createElement('template');
-    template.innerHTML = markup.trim();
-    return template.content.firstElementChild;
-}
-
 function toggleArrowsUp() {
-    return svgElement(`
+    return createDOMFromHTMLString(`
 <svg width="34px" height="34px" viewBox="0 0 34 34" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <title>Toggle Maps</title>
     <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -241,7 +237,7 @@ function toggleArrowsUp() {
 }
 
 function toggleArrowsDown() {
-    return svgElement(`
+    return createDOMFromHTMLString(`
 <svg width="34px" height="34px" viewBox="0 0 34 34" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <title>Toggle Maps</title>
     <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -257,7 +253,7 @@ function toggleArrowsDown() {
 }
 
 function cycleOutline() {
-    return svgElement(`
+    return createDOMFromHTMLString(`
 <svg width="34px" height="34px" viewBox="0 0 34 34" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <title>Cycle Maps</title>
     <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -272,7 +268,7 @@ function cycleOutline() {
 }
 
 function cycleSolid() {
-    return svgElement(`
+    return createDOMFromHTMLString(`
 <svg width="34px" height="34px" viewBox="0 0 34 34" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <title>Cycle Maps</title>
     <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">

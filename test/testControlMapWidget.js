@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest'
-import {JSDOM} from 'jsdom'
+import {withDOM} from './utils/browserFixture.js'
 import ControlMapWidget, {displayModeOptions} from '../js/controlMapWidget.js'
 
 describe('displayModeOptions', () => {
@@ -33,26 +33,21 @@ describe('displayModeOptions', () => {
 
 describe('ControlMapWidget icons', () => {
 
-    // test/setup.js mocks a global `document` that cannot parse markup, so the
-    // widget is built against a real one and the mock is put back afterwards.
+    // test/setup.js mocks a global `document` that cannot parse markup.
     function makeWidget() {
-        const mockedDocument = globalThis.document
-        const {document} = new JSDOM('<!doctype html><html><body></body></html>').window
-        globalThis.document = document
+        const {window, restore} = withDOM()
         try {
-            const navbar = document.createElement('div')
-            const widgetContainer = document.createElement('div')
+            const navbar = window.document.createElement('div')
+            const widgetContainer = window.document.createElement('div')
             widgetContainer.id = 'test-lower-hic-nav-bar-widget-container'
             navbar.appendChild(widgetContainer)
             return new ControlMapWidget({}, navbar)
         } finally {
-            globalThis.document = mockedDocument
+            restore()
         }
     }
 
-    // An <svg> with no size falls back to the browser default of 300x150. The
-    // toggle arrows sit inside the A/B click target, so an unsized icon spreads
-    // that target invisibly across the locus box and the row below it (#673).
+    // An unsized <svg> is 300x150 by default -- an invisible A/B click target (#673).
     it('sizes every icon, so no icon becomes a 300x150 click target', () => {
         const svgs = [...makeWidget().container.querySelectorAll('svg')]
         expect(svgs).toHaveLength(4)

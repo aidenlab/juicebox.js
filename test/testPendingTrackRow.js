@@ -28,6 +28,7 @@ const { decodeState } = await import('../js/sessionCodec.js');
 const { default: HICBrowser } = await import('../js/hicBrowser.js');
 const { default: ContactMatrixView } = await import('../js/contactMatrixView.js');
 const { default: TrackPair } = await import('../js/trackPair.js');
+const { setUrlMapper } = await import('../js/urlMapper.js');
 
 function config(name) {
     return { name, url: `https://example.org/${name}.bigWig`, format: "bigwig" };
@@ -58,6 +59,11 @@ function rows(browser) {
             spinning: null !== el.querySelector('.x-track-spinner .fa-spinner')
         }));
 }
+
+/** A row's remove control, found by the row's name; a loaded row has none. */
+const dismissControl = (browser, name) => [...browser.layoutController.xTracks.querySelectorAll('.x-track-canvas-container')]
+    .find(el => name === el.querySelector('.x-track-label').textContent)
+    ?.querySelector('.x-track-dismiss');
 
 const yRowCount = browser => browser.layoutController.yTracks.querySelectorAll('.y-track-canvas-container').length;
 
@@ -159,21 +165,105 @@ describe("a pending track is a placeholder row", function () {
         expect(alerts).toEqual(["Error loading tracks: b: No gutter"]);
     });
 
-    test("a session saved while a track pends is written as it is today, without the pending track", async function () {
+    test("a session saved while a track pends writes the pending track from its config, in its row's place", async function () {
+        const { browser } = context;
+        const pending = deferredCreateTrack();
+
+        const load = browser.loadTracks([
+            { ...config("a"), color: "rgb(0,0,255)" },
+            { ...config("b"), color: "rgb(255,0,0)", min: 0, max: 10 }
+        ]);
+        await flush();
+        pending.get("a").resolve();
+        await flush();
+
+        // Row order, which is the session's: each load puts its rows on top, so "b" -- last in
+        // the config -- is the first row, as it is once loaded.
+        expect(browser.toJSON().tracks).toEqual([
+            { url: "https://example.org/b.bigWig", format: "bigwig", name: "b", min: 0, max: 10, color: "rgb(255,0,0)" },
+            { url: "https://example.org/a.bigWig", name: "a" }
+        ]);
+
+        pending.get("b").resolve();
+        await load;
+    });
+
+    test("a pending track keeps a min its config sets without a max", async function () {
+        const { browser } = context;
+        deferredCreateTrack();
+
+        browser.loadTracks([{ ...config("a"), min: 5 }]);
+        await flush();
+
+        expect(browser.toJSON().tracks[0]).toHaveProperty("min", 5);
+    });
+
+    test("a track dismissed while another still pends is not written", async function () {
         const { browser } = context;
         const pending = deferredCreateTrack();
 
         const load = browser.loadTracks(["a", "b"].map(config));
         await flush();
-        pending.get("a").resolve();
+        dismissControl(browser, "a").click();
         await flush();
 
-        const tracks = browser.toJSON().tracks;
-        expect(tracks).toHaveLength(1);
-        expect(tracks[0].name).toBe("a");
+        expect(browser.toJSON().tracks.map(t => t.name)).toEqual(["b"]);
 
+        pending.get("a").resolve();
         pending.get("b").resolve();
         await load;
+    });
+
+    test("a pending track is written with its original urls, never a dev-proxy path", async function () {
+        const { browser } = context;
+        deferredCreateTrack();
+        setUrlMapper(url => "string" === typeof url ? `/__hic-proxy/${url}` : url);
+
+        try {
+            browser.loadTracks([{ ...config("a"), indexURL: "https://example.org/a.bigWig.idx" }]);
+            await flush();
+
+            expect(createTrack.mock.calls[0][0].url).toBe("/__hic-proxy/https://example.org/a.bigWig");
+            expect(browser.toJSON().tracks).toEqual([
+                { url: "https://example.org/a.bigWig", indexURL: "https://example.org/a.bigWig.idx", format: "bigwig", name: "a" }
+            ]);
+        } finally {
+            setUrlMapper(undefined);
+        }
+    });
+
+    test("a session saved while a track pends restores that track", async function () {
+        const { browser } = context;
+        deferredCreateTrack();
+
+        browser.loadTracks([config("a")]);
+        await flush();
+        const saved = browser.toJSON().tracks;
+
+        createTrack.mockReset();
+        createTrack.mockImplementation(async ({ name }) => track(name));
+        await browser.loadTracks(saved);
+
+        expect(createTrack.mock.calls.map(([c]) => [c.name, c.url, c.format]))
+            .toEqual([["a", "https://example.org/a.bigWig", "bigwig"]]);
+        expect(alerts).toEqual([]);
+    });
+
+    test("a track that failed is not written", async function () {
+        const { browser } = context;
+        const pending = deferredCreateTrack();
+
+        const load = browser.loadTracks(["a", "b"].map(config));
+        await flush();
+        pending.get("a").reject(Error("Not Found"));
+        pending.get("b").resolve();
+        await load;
+
+        expect(browser.toJSON().tracks.map(t => t.name)).toEqual(["b"]);
+    });
+
+    test("with no tracks at all, pending or loaded, the session has no tracks entry", function () {
+        expect(context.browser.toJSON()).not.toHaveProperty("tracks");
     });
 
     test("a loaded track with a repaint queued is still written to the session", async function () {
@@ -346,9 +436,6 @@ describe("a pending track can be dismissed", function () {
 
     afterEach(() => vi.restoreAllMocks());
 
-    const dismissControl = (browser, name) => [...browser.layoutController.xTracks.querySelectorAll('.x-track-canvas-container')]
-        .find(el => name === el.querySelector('.x-track-label').textContent)
-        ?.querySelector('.x-track-dismiss');
 
     test("a placeholder has a remove control, and using it removes the row", async function () {
         const { browser } = context;

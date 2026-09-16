@@ -2,7 +2,7 @@
 
 **Status:** Accepted — decided in the #588 grilling; partially implemented. Decision 6
 landed in #663, decision 3 in #664 (a restore still awaits its tracks there),
-decisions 4 and 8 in #665; the rest of #588 is pending. Until decision 1 lands, a
+decisions 4 and 8 in #665, decision 5 in #666; the rest of #588 is pending. Until decision 1 lands, a
 restore's interaction shield stays up while its tracks load, so a restored track that
 hangs cannot yet be dismissed.
 

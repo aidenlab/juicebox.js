@@ -63,6 +63,72 @@ class DisposedBrowserError extends Error {
     }
 }
 
+/**
+ * The session entry of a 1D track, or `undefined` when it names nothing a
+ * session can reload.
+ *
+ * @param {Object} config - what the track was loaded from
+ * @param {{name, dataRange, color}} look - what the track shows: the loaded
+ *   igv track itself, or for a pending track what its config asks for
+ */
+function sessionTrack(config, {name, dataRange, color}) {
+
+    // The original URL, not the one igv was given: with a dev proxy registered those
+    // differ, and a session must never carry a dev-server path. See issue #450.
+    const url = unmappedUrl(config)
+
+    if (typeof url === "string") {
+
+        const t = {url}
+
+        // The index is what makes a track random-access. Dropped, the
+        // reload does not fail -- it downgrades to a whole-file read,
+        // and only stalls once the view is zoomed in far enough for igv
+        // to ask for data. A session saved at 1kb over `hg38.fa` was
+        // fetching the whole three-gigabyte FASTA on restore, and never
+        // finishing; the same session saved zoomed out restored fine,
+        // because nothing had asked the sequence track for anything yet
+        // (#584).
+        const indexURL = unmappedIndexUrl(config)
+        if (typeof indexURL === "string") {
+            t.indexURL = indexURL
+        }
+
+        if (config.type) {
+            t.type = config.type
+        }
+        if (config.format) {
+            t.format = config.format
+        }
+        if (name) {
+            t.name = name
+        }
+        if (dataRange) {
+            t.min = dataRange.min
+            t.max = dataRange.max
+        }
+        if (color) {
+            t.color = color
+        }
+        return t
+    } else if ('sequence' === config.type) {
+        return {type: 'sequence', format: 'sequence'}
+    }
+}
+
+/**
+ * What a pending track will show, read off its config: a data range whenever
+ * the config sets either end of one, so neither is lost in a mid-load save.
+ * An autoscaled track has no range yet; it gets one only once igv loads it.
+ */
+function pendingTrackLook({config, track}) {
+    return {
+        name: track.name,
+        dataRange: config.min === undefined && config.max === undefined ? undefined : {min: config.min, max: config.max},
+        color: config.color
+    }
+}
+
 class HICBrowser {
 
     /**
@@ -1611,61 +1677,19 @@ class HICBrowser {
             }
         }
 
-        // A pending track's placeholder row is not written. ADR-0017 decision 5
-        // will write it from its config; until then a save made mid-load drops
-        // it, as it always has (#664).
-        const loadedTrackPairs = this.trackPairs.filter(trackPair => !trackPair.isPendingTrack)
-
-        if (loadedTrackPairs.length > 0 || this.tracks2D.length > 0) {
+        if (this.trackPairs.length > 0 || this.tracks2D.length > 0) {
             let tracks = []
             jsonOBJ.tracks = tracks
-            for (let trackRenderer of loadedTrackPairs) {
-
-                const track = trackRenderer.x.track
-                const config = track.config
-
-                // The original URL, not the one igv was given: with a dev proxy registered those
-                // differ, and a session must never carry a dev-server path. See issue #450.
-                const url = unmappedUrl(config)
-
-                if (typeof url === "string") {
-
-                    const t = {url}
-
-                    // The index is what makes a track random-access. Dropped, the
-                    // reload does not fail -- it downgrades to a whole-file read,
-                    // and only stalls once the view is zoomed in far enough for igv
-                    // to ask for data. A session saved at 1kb over `hg38.fa` was
-                    // fetching the whole three-gigabyte FASTA on restore, and never
-                    // finishing; the same session saved zoomed out restored fine,
-                    // because nothing had asked the sequence track for anything yet
-                    // (#584).
-                    const indexURL = unmappedIndexUrl(config)
-                    if (typeof indexURL === "string") {
-                        t.indexURL = indexURL
-                    }
-
-                    if (config.type) {
-                        t.type = config.type
-                    }
-                    if (config.format) {
-                        t.format = config.format
-                    }
-                    if (track.name) {
-                        t.name = track.name
-                    }
-                    if (track.dataRange) {
-                        t.min = track.dataRange.min
-                        t.max = track.dataRange.max
-                    }
-                    if (track.color) {
-                        t.color = track.color
-                    }
+            for (const trackPair of this.trackPairs) {
+                // A pending track is written from its config, so a save made
+                // while it loads keeps it. A failed or dismissed track has no
+                // row, so it is not written. ADR-0017 decision 5, #666.
+                const t = trackPair.isPendingTrack ?
+                    sessionTrack(trackPair.config, pendingTrackLook(trackPair)) :
+                    sessionTrack(trackPair.x.track.config, trackPair.x.track)
+                if (t) {
                     tracks.push(t)
-                } else if ('sequence' === config.type) {
-                    tracks.push({type: 'sequence', format: 'sequence'})
                 }
-
             }
             for (const track2D of this.tracks2D) {
                 if (typeof track2D.config.url === "string") {

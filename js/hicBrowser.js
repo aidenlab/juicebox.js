@@ -350,9 +350,10 @@ class HICBrowser {
 
             if (config.normVectorFiles) {
                 await Promise.all(config.normVectorFiles.map(nv => this.dataLoader.loadNormalizationFile(nv)));
-                if (superseded()) {
-                    return;
-                }
+            }
+
+            if (superseded()) {
+                return;
             }
 
             // The one config field still checked below the seam, and it stays

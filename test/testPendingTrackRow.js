@@ -625,47 +625,63 @@ describe("a pending track can be dismissed", function () {
 
 });
 
-describe("a restore whose browser goes while it waits on its normalization vectors", function () {
+/**
+ * A restore no longer waits on its tracks, so what it can be torn down during is its map: the `.hic`
+ * load, and the normalization vector files when it has them. #665, #667.
+ */
+describe("a restore whose browser goes while it loads its map", function () {
 
     const context = withBrowser();
 
     afterEach(() => vi.restoreAllMocks());
 
-    for (const [how, teardown] of [["reset", browser => browser.reset()], ["disposed", browser => browser.dispose()]]) {
-
-        test(`stands down once its browser is ${how}, writing nothing more to it`, async function () {
-            const { browser } = context;
-
-            vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined);
-            const update = vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined);
+    const stalls = [
+        ["the map", {}, stall => vi.spyOn(DataLoader.prototype, 'loadHicFile').mockImplementation(async function (config) {
+            this.browser.setActiveDataset(restoreDataset(config));
+            await this.browser.setState(decodeState(undefined));
+            await new Promise(resolve => stall(resolve));
+        })],
+        ["its normalization vectors", { normVectorFiles: ["https://example.org/map.nv"] }, stall => {
             vi.spyOn(DataLoader.prototype, 'loadHicFile').mockImplementation(async function (config) {
                 this.browser.setActiveDataset(restoreDataset(config));
                 await this.browser.setState(decodeState(undefined));
             });
+            vi.spyOn(DataLoader.prototype, 'loadNormalizationFile').mockImplementation(() => new Promise(resolve => stall(resolve)));
+        }]
+    ];
 
-            let vectorsLoaded;
-            vi.spyOn(DataLoader.prototype, 'loadNormalizationFile').mockImplementation(() => new Promise(resolve => vectorsLoaded = resolve));
-            const setColorScale = vi.spyOn(ContactMatrixView.prototype, 'setColorScale');
+    for (const [waitingOn, fields, stallOn] of stalls) {
+        for (const [how, teardown] of [["reset", browser => browser.reset()], ["disposed", browser => browser.dispose()]]) {
 
-            const restore = browser.init({ url: "https://example.org/map.hic", normVectorFiles: ["https://example.org/map.nv"], colorScale: "1,255,0,0" });
-            await vi.waitFor(() => expect(vectorsLoaded).toBeDefined());
+            test(`stands down once its browser is ${how} while it waits on ${waitingOn}, writing nothing more to it`, async function () {
+                const { browser } = context;
 
-            teardown(browser);
-            const { contactMatrixView, userInteractionShield } = browser;
-            const shieldDisplay = userInteractionShield.style.display;
-            const disableUpdates = contactMatrixView.disableUpdates;
-            const spinnerCount = contactMatrixView.spinnerCount;
-            const updates = update.mock.calls.length;
+                vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined);
+                const update = vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined);
+                let release;
+                stallOn(resolve => release = resolve);
+                const setColorScale = vi.spyOn(ContactMatrixView.prototype, 'setColorScale');
 
-            vectorsLoaded();
-            await expect(restore).resolves.toBeUndefined();
+                const restore = browser.init({ url: "https://example.org/map.hic", ...fields, colorScale: "1,255,0,0" });
+                await vi.waitFor(() => expect(release).toBeDefined());
 
-            expect(setColorScale).not.toHaveBeenCalled();
-            expect(update.mock.calls.length).toBe(updates);
-            expect(contactMatrixView.spinnerCount).toBe(spinnerCount);
-            expect(userInteractionShield.style.display).toBe(shieldDisplay);
-            expect(contactMatrixView.disableUpdates).toBe(disableUpdates);
-        });
+                teardown(browser);
+                const { contactMatrixView, userInteractionShield } = browser;
+                const shieldDisplay = userInteractionShield.style.display;
+                const disableUpdates = contactMatrixView.disableUpdates;
+                const spinnerCount = contactMatrixView.spinnerCount;
+                const updates = update.mock.calls.length;
+
+                release();
+                await expect(restore).resolves.toBeUndefined();
+
+                expect(setColorScale).not.toHaveBeenCalled();
+                expect(update.mock.calls.length).toBe(updates);
+                expect(contactMatrixView.spinnerCount).toBe(spinnerCount);
+                expect(userInteractionShield.style.display).toBe(shieldDisplay);
+                expect(contactMatrixView.disableUpdates).toBe(disableUpdates);
+            });
+        }
     }
 
 });

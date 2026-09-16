@@ -53,11 +53,15 @@ class PendingTrackPair {
         dismissElement.className = 'x-track-dismiss'
         dismissElement.title = 'Remove track'
         dismissElement.innerHTML = '<i class="fa fa-times"></i>'
-        dismissElement.addEventListener('click', e => {
+        dismissElement.addEventListener('click', async e => {
             // Not the row's own click, which toggles every track label.
             e.preventDefault()
             e.stopPropagation()
-            this.browser.layoutController.dismissPendingTrack(this)
+            try {
+                await this.browser.layoutController.dismissPendingTrack(this)
+            } catch (error) {
+                console.error(error)
+            }
         })
         this.x.viewportElement.appendChild(dismissElement)
     }

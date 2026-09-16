@@ -237,9 +237,9 @@ class LayoutController {
      * the session with it; its load keeps running, and is discarded when it
      * settles, because its row is gone (#665, ADR-0017 decisions 4 and 8).
      */
-    dismissPendingTrack(placeholder) {
+    async dismissPendingTrack(placeholder) {
         if (this.removePendingTrack(placeholder)) {
-            this.browser.updateLayout()
+            await this.browser.updateLayout()
         }
     }
 

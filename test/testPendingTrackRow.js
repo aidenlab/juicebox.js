@@ -456,6 +456,50 @@ describe("a pending track can be dismissed", function () {
 
 });
 
+describe("a restore whose browser goes while its tracks load", function () {
+
+    const context = withBrowser();
+
+    afterEach(() => vi.restoreAllMocks());
+
+    for (const [how, teardown] of [["reset", browser => browser.reset()], ["disposed", browser => browser.dispose()]]) {
+
+        test(`stands down once its browser is ${how}, writing nothing more to it`, async function () {
+            const { browser } = context;
+
+            vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined);
+            const update = vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined);
+            vi.spyOn(DataLoader.prototype, 'loadHicFile').mockImplementation(async function (config) {
+                this.browser.setActiveDataset(restoreDataset(config));
+                await this.browser.setState(decodeState(undefined));
+            });
+
+            let tracksLoaded;
+            vi.spyOn(DataLoader.prototype, 'loadTracks').mockImplementation(() => new Promise(resolve => tracksLoaded = resolve));
+            const setColorScale = vi.spyOn(ContactMatrixView.prototype, 'setColorScale');
+
+            const restore = browser.init({ url: "https://example.org/map.hic", tracks: [config("a")], colorScale: "1,255,0,0" });
+            await vi.waitFor(() => expect(tracksLoaded).toBeDefined());
+
+            teardown(browser);
+            const { contactMatrixView, userInteractionShield } = browser;
+            const shieldDisplay = userInteractionShield.style.display;
+            const disableUpdates = contactMatrixView.disableUpdates;
+            const updates = update.mock.calls.length;
+
+            tracksLoaded();
+            await expect(restore).resolves.toBeUndefined();
+
+            expect(setColorScale).not.toHaveBeenCalled();
+            expect(update.mock.calls.length).toBe(updates);
+            expect(contactMatrixView.spinnerCount).toBe(0);
+            expect(userInteractionShield.style.display).toBe(shieldDisplay);
+            expect(contactMatrixView.disableUpdates).toBe(disableUpdates);
+        });
+    }
+
+});
+
 describe("a load that settles after another restore replaced the session", function () {
 
     const dom = withContainers();

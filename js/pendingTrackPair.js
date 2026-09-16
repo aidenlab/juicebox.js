@@ -14,14 +14,15 @@ import {extractName} from './utils.js'
  * load fails. #664, ADR-0017 decision 3.
  *
  * Everything that walks `trackPairs` sees it. It draws nothing, and
- * `pending` is what the walkers that read the track itself skip it by.
+ * `isPendingTrack` is what the walkers that read the track itself skip it by --
+ * not `pending`, which `TrackPair` already uses for a queued repaint.
  */
 class PendingTrackPair {
 
     constructor(browser, config) {
         this.browser = browser
         this.config = config
-        this.pending = true
+        this.isPendingTrack = true
         this.track = {name: extractName(config)}
         this.x = undefined
         this.y = undefined

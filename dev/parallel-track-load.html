@@ -147,7 +147,7 @@
     const container = document.getElementById('app-container')
     const summary = document.getElementById('summary')
 
-    const laidOut = browser => browser.trackPairs.map(pair => pair.pending ? `${pair.track.name} (pending)` : pair.x.track.name)
+    const laidOut = browser => browser.trackPairs.map(pair => pair.isPendingTrack ? `${pair.track.name} (pending)` : pair.x.track.name)
 
     function report(browser, what, started, outcome) {
         const seconds = ((performance.now() - started) / 1000).toFixed(1)

@@ -22,6 +22,7 @@ const { restoreDataset } = await import('./utils/restoreDataset.js');
 const { decodeState } = await import('../js/sessionCodec.js');
 const { default: HICBrowser } = await import('../js/hicBrowser.js');
 const { default: ContactMatrixView } = await import('../js/contactMatrixView.js');
+const { default: TrackPair } = await import('../js/trackPair.js');
 
 function config(name) {
     return { name, url: `https://example.org/${name}.bigWig`, format: "bigwig" };
@@ -64,6 +65,7 @@ describe("a pending track is a placeholder row", function () {
         // A map to lay tracks out against; drawing it is not under test.
         vi.spyOn(ContactMatrixView.prototype, 'update').mockImplementation(async () => undefined);
         vi.spyOn(HICBrowser.prototype, 'update').mockImplementation(async () => undefined);
+        vi.spyOn(TrackPair.prototype, 'updateViews').mockImplementation(async () => undefined);
         context.browser.setActiveDataset(restoreDataset({ name: "map", url: "https://example.org/map.hic" }));
         await context.browser.setState(decodeState(undefined));
 
@@ -139,7 +141,6 @@ describe("a pending track is a placeholder row", function () {
     test("a track whose pair cannot be built fails like any other, and leaves no row", async function () {
         const { browser } = context;
         createTrack.mockImplementation(async ({ name }) => track(name));
-        const { default: TrackPair } = await import('../js/trackPair.js');
         const init = TrackPair.prototype.init;
         vi.spyOn(TrackPair.prototype, 'init').mockImplementation(function () {
             if ("b" === this.track.name) throw Error("No gutter");
@@ -165,6 +166,34 @@ describe("a pending track is a placeholder row", function () {
         const tracks = browser.toJSON().tracks;
         expect(tracks).toHaveLength(1);
         expect(tracks[0].name).toBe("a");
+
+        pending.get("b").resolve();
+        await load;
+    });
+
+    test("a loaded track with a repaint queued is still written to the session", async function () {
+        const { browser } = context;
+        createTrack.mockImplementation(async ({ name }) => track(name));
+
+        await browser.loadTracks([config("a")]);
+        browser.trackPairs[0].pending = true;   // TrackPair's own flag: an updateViews call waiting its turn
+
+        expect(browser.toJSON().tracks.map(t => t.name)).toEqual(["a"]);
+    });
+
+    test("an arriving track repaints its own row, not the whole browser", async function () {
+        const { browser } = context;
+        const pending = deferredCreateTrack();
+
+        const load = browser.loadTracks(["a", "b"].map(config));
+        await flush();
+        const updates = HICBrowser.prototype.update.mock.calls.length;
+
+        pending.get("a").resolve();
+        await flush();
+
+        expect(HICBrowser.prototype.update.mock.calls.length).toBe(updates);
+        expect(TrackPair.prototype.updateViews.mock.contexts.map(pair => pair.track.name)).toEqual(["a"]);
 
         pending.get("b").resolve();
         await load;
@@ -264,8 +293,14 @@ describe("a restore does not show the map spinner for its tracks", function () {
         let tracksLoaded;
         vi.spyOn(DataLoader.prototype, 'loadTracks').mockImplementation(() => new Promise(resolve => tracksLoaded = resolve));
 
+        let spinningWhileResolving;
+        const setColorScale = vi.spyOn(ContactMatrixView.prototype, 'setColorScale').mockImplementation(function () {
+            spinningWhileResolving = this.spinnerCount;
+        });
+        vi.spyOn(browser.coordinator, 'onColorScale').mockImplementation(() => undefined);
+
         let restored = false;
-        const restore = browser.init({ url: "https://example.org/map.hic", tracks: [config("a")] }).then(() => restored = true);
+        const restore = browser.init({ url: "https://example.org/map.hic", tracks: [config("a")], colorScale: "1,255,0,0" }).then(() => restored = true);
         await flush();
 
         expect(restored).toBe(false);
@@ -274,6 +309,10 @@ describe("a restore does not show the map spinner for its tracks", function () {
         tracksLoaded();
         await restore;
         expect(browser.contactMatrixView.spinnerCount).toBe(0);
+
+        // What is left of the restore once its tracks are in is the map's again, so it spins.
+        expect(setColorScale).toHaveBeenCalled();
+        expect(spinningWhileResolving).toBe(1);
     });
 
 });

@@ -600,6 +600,7 @@ class DataLoader {
     async #loadTrack1D(config, placeholder) {
         const {layoutController} = this.browser;
 
+        let trackPair;
         try {
             // igv reads the track through its own bundled loaders, which juicebox cannot
             // reach into — the config's `url` is the only lever. mapTrackConfig carries the
@@ -610,7 +611,8 @@ class DataLoader {
                 await track.postInit();
             }
 
-            if (!layoutController.fillPendingTrack(placeholder, track)) {
+            trackPair = layoutController.fillPendingTrack(placeholder, track);
+            if (!trackPair) {
                 return;
             }
         } catch (error) {
@@ -620,14 +622,9 @@ class DataLoader {
             throw error;
         }
 
-        const gearContainer = document.querySelector('.hic-igv-right-hand-gutter');
-        if (this.browser.showTrackLabelAndGutter) {
-            gearContainer.style.display = 'block';
-        } else {
-            gearContainer.style.display = 'none';
-        }
-
-        await this.browser.updateLayout();
+        // The row was sized when it was reserved, so nothing else moves: only
+        // this pair is drawn, not the whole browser.
+        await trackPair.updateViews();
     }
 
     /**

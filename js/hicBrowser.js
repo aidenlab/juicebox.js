@@ -241,9 +241,9 @@ class HICBrowser {
         this.contactMatrixView.disableUpdates = true;
 
         // The map spinner means the map is loading, and only that: tracks show
-        // their own placeholder rows (#664, ADR-0017 decision 3). So it comes
-        // down once the map's own loads are in, while this still waits on the
-        // tracks -- once, whichever of the two puts it away.
+        // their own placeholder rows (#664, ADR-0017 decision 3). So it is down
+        // while this waits on the tracks, and back up for the map work after
+        // them. Paired either way, whether or not the wait throws.
         let mapSpinning = true;
         const stopMapSpinner = () => {
             if (mapSpinning) {
@@ -281,9 +281,12 @@ class HICBrowser {
                 await Promise.all(config.normVectorFiles.map(nv => this.dataLoader.loadNormalizationFile(nv)));
             }
 
-            stopMapSpinner();
-
-            await tracksLoaded;
+            if (tracksLoaded) {
+                stopMapSpinner();
+                await tracksLoaded;
+                this.contactMatrixView.startSpinner();
+                mapSpinning = true;
+            }
 
             // The one config field still checked below the seam, and it stays
             // here on purpose: the set it is checked against is the loaded
@@ -1588,7 +1591,7 @@ class HICBrowser {
         // A pending track's placeholder row is not written. ADR-0017 decision 5
         // will write it from its config; until then a save made mid-load drops
         // it, as it always has (#664).
-        const loadedTrackPairs = this.trackPairs.filter(trackPair => !trackPair.pending)
+        const loadedTrackPairs = this.trackPairs.filter(trackPair => !trackPair.isPendingTrack)
 
         if (loadedTrackPairs.length > 0 || this.tracks2D.length > 0) {
             let tracks = []

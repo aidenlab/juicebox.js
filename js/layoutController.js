@@ -158,6 +158,7 @@ class LayoutController {
      *
      * A placeholder no longer in `trackPairs` -- the rows were cleared while the
      * track loaded -- has nowhere to put the track, and the track is dropped.
+     * The pair is sized but not drawn; that is the caller's `updateViews`.
      *
      * @returns {TrackPair|undefined} - the new pair, or undefined if the row is gone
      */
@@ -189,6 +190,12 @@ class LayoutController {
 
         placeholder.dispose()
         this.browser.trackPairs[index] = trackPair
+
+        trackPair.x.syncCanvas()
+        trackPair.y.syncCanvas()
+
+        const gearContainer = document.querySelector('.hic-igv-right-hand-gutter')
+        gearContainer.style.display = this.browser.showTrackLabelAndGutter ? 'block' : 'none'
 
         setTrackReorderArrowColors(this.browser.trackPairs)
 

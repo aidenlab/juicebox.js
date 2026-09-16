@@ -43,8 +43,8 @@ function stubBrowser() {
         tracks2D: [],
         showTrackLabelAndGutter: false,
         layoutController: {
-            reservePendingTracks: (configs) => configs.map(() => ({ pending: true })),
-            fillPendingTrack: (placeholder, track) => track,
+            reservePendingTracks: (configs) => configs.map(() => ({ isPendingTrack: true })),
+            fillPendingTrack: () => ({ updateViews: async () => undefined }),
             removePendingTrack: () => true
         },
         updateLayout: async () => undefined,

@@ -29,7 +29,7 @@ let reservations = 0;
  * enough of the seam for the loader to reserve, fill and remove rows against.
  */
 let trackPairs = [];
-const rows = () => trackPairs.map(({ name, pending }) => pending ? `${name}…` : name);
+const rows = () => trackPairs.map(({ name, isPendingTrack }) => isPendingTrack ? `${name}…` : name);
 
 function stubBrowser() {
     return {
@@ -41,14 +41,14 @@ function stubBrowser() {
             reservePendingTracks: (configs) => {
                 reservations++;
                 return configs.map(({ name }) => {
-                    const placeholder = { name, pending: true };
+                    const placeholder = { name, isPendingTrack: true };
                     trackPairs.unshift(placeholder);
                     return placeholder;
                 });
             },
             fillPendingTrack: (placeholder, track) => {
                 const index = trackPairs.indexOf(placeholder);
-                return -1 === index ? undefined : (trackPairs[index] = { name: track.name });
+                return -1 === index ? undefined : (trackPairs[index] = { name: track.name, updateViews: async () => undefined });
             },
             removePendingTrack: (placeholder) => {
                 const index = trackPairs.indexOf(placeholder);

@@ -306,27 +306,14 @@ class HICBrowser {
     async init(config) {
 
         // A restore outlives its browser if the browser is reset or disposed
-        // while the tracks load -- another restore replacing the session
-        // disposes it. The track load stands down then (#665, ADR-0017
-        // decision 8), and so does the rest of this: nothing below writes to a
-        // browser that is no longer the one this started in. A reset rebuilds
-        // the contact matrix view, so the one held here is the test.
+        // while it waits -- another restore replacing the session disposes it.
+        // Nothing below writes to a browser that is no longer the one this
+        // started in. A reset rebuilds the contact matrix view, so the one held
+        // here is the test.
         const {contactMatrixView} = this;
         const superseded = () => this.isDisposed || this.contactMatrixView !== contactMatrixView;
 
         this.contactMatrixView.disableUpdates = true;
-
-        // The map spinner means the map is loading, and only that: tracks show
-        // their own placeholder rows (#664, ADR-0017 decision 3). So it is down
-        // while this waits on the tracks, and back up for the map work after
-        // them. Paired either way, whether or not the wait throws.
-        let mapSpinning = true;
-        const stopMapSpinner = () => {
-            if (mapSpinning) {
-                mapSpinning = false;
-                this.contactMatrixView.stopSpinner();
-            }
-        };
 
         try {
             this.contactMatrixView.startSpinner();
@@ -351,20 +338,21 @@ class HICBrowser {
                 this.coordinator.onDisplayMode(config.displayMode);
             }
 
-            const tracksLoaded = config.tracks ? this.dataLoader.loadTracks(config.tracks) : undefined;
+            // Started, not awaited: a restore resolves once the map is usable,
+            // and its tracks arrive after (#667, ADR-0017 decisions 1 and 7).
+            // A 1D track is a pending track meanwhile, a 2D track draws when it
+            // arrives, and `loadTracks` reports failures itself and never
+            // rejects. A track settling after this browser is gone is dropped
+            // by the loader.
+            if (config.tracks) {
+                this.dataLoader.loadTracks(config.tracks);
+            }
 
             if (config.normVectorFiles) {
                 await Promise.all(config.normVectorFiles.map(nv => this.dataLoader.loadNormalizationFile(nv)));
-            }
-
-            if (tracksLoaded) {
-                stopMapSpinner();
-                await tracksLoaded;
                 if (superseded()) {
                     return;
                 }
-                this.contactMatrixView.startSpinner();
-                mapSpinning = true;
             }
 
             // The one config field still checked below the seam, and it stays
@@ -419,7 +407,7 @@ class HICBrowser {
             //
             // The reordering costs a repaint of the colour-scale widget, which
             // is all `onColorScale` does (`browserCoordinator.js:281`). It now
-            // lands after the track and normalization-vector loads rather than
+            // lands after the normalization-vector loads rather than
             // before them -- behind the interaction shield raised at the top of
             // this method, and read by nothing on either load path.
             if (config.colorScale) {
@@ -435,7 +423,7 @@ class HICBrowser {
 
         } finally {
             if (!superseded()) {
-                stopMapSpinner();
+                this.contactMatrixView.stopSpinner();
                 this.userInteractionShield.style.display = 'none';
                 this.contactMatrixView.disableUpdates = false;
                 this.contactMatrixView.update();

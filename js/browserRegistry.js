@@ -663,6 +663,9 @@ class BrowserRegistry {
      * The caption is not here -- it is a single page element outside every
      * container, so the exported `restoreSession` handles it. Everything else a
      * session carries belongs to one embed.
+     *
+     * Resolves once every browser's map is usable, before its tracks have
+     * loaded -- see the exported `restoreSession` (#667, ADR-0017 decision 1).
      */
     async restoreSession(session) {
 

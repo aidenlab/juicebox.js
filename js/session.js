@@ -67,6 +67,14 @@ function compressedSession() {
  * is the *registry's* -- restoring is something one embed does to itself, not a
  * page-wide operation aimed at a container. A host initializing a second embed
  * keeps the first one's DOM either way; #384.
+ *
+ * It resolves once every browser's map is usable -- its maps, normalization
+ * vectors, normalization and colour scale applied, and the interaction shield
+ * down -- and **before its tracks have loaded**. A 1D track still loading is a
+ * pending track, shown as a placeholder row; a 2D track draws when it arrives.
+ * A track that fails is reported in the alert dialog, possibly after this has
+ * resolved. There is no signal for "tracks loaded": a host that needs a track
+ * waits for it itself. #667, ADR-0017 decision 1.
  */
 async function restoreSession(container, session) {
 

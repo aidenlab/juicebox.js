@@ -996,6 +996,10 @@ div[id$=x-track-container] div[id$=x-tracks] .x-track-canvas-container .x-track-
   height: var(--track-height);
   margin-left: -var(--track-height)/2;
   background-color: rgba(255, 255, 255, 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7F7F7F;
 }
 
 div[id$=content-container] {
@@ -1092,7 +1096,10 @@ div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$
   background-color: white;
 }
 div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$=y-tracks] .y-track-canvas-container .y-track-spinner {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7F7F7F;
   position: absolute;
   top: 50%;
   left: 0;

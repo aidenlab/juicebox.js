@@ -4,6 +4,7 @@
 import Ruler from './ruler.js'
 import TrackPair, {setTrackReorderArrowColors} from './trackPair.js'
 import TrackRenderer from './trackRenderer.js';
+import PendingTrackPair from './pendingTrackPair.js';
 import {deleteBrowser} from './createBrowser.js'
 import HICEvent from "./hicEvent.js";
 import EventBus from "./eventBus.js";
@@ -122,36 +123,116 @@ class LayoutController {
         return this.contentContainer.querySelector("div[id$='-x-axis-scrollbar-container']");
     }
 
-    updateLayoutWithTracks(tracks) {
+    /**
+     * Reserve a placeholder row for each pending 1D track, in the position the
+     * track takes once it loads, and size the layout for them now -- so it does
+     * not move again as the tracks arrive (#664, ADR-0017 decision 3).
+     *
+     * Each track goes on top of the rows already there, in config order, which
+     * is the order a load has always laid its tracks out in.
+     *
+     * @param {Array<Object>} configs - the configs of the 1D tracks being loaded
+     * @returns {Array<PendingTrackPair>} - one per config, in config order
+     */
+    reservePendingTracks(configs) {
 
         const { trackHeight } = getLayoutDimensions()
 
-        this.resizeLayoutWithTrackXYPairCount(tracks.length + this.browser.trackPairs.length)
+        this.resizeLayoutWithTrackXYPairCount(configs.length + this.browser.trackPairs.length)
 
-        for (const track of tracks) {
+        const placeholders = configs.map(config => {
+            const placeholder = new PendingTrackPair(this.browser, config)
+            this.browser.trackPairs.unshift(placeholder)
+            placeholder.init(this.xTracks, this.yTracks, trackHeight, 0)
+            return placeholder
+        })
 
-            const trackPair = new TrackPair(this.browser, track)
-            this.browser.trackPairs.unshift(trackPair)
+        this.#applyTrackOrder()
 
+        return placeholders
+    }
+
+    /**
+     * Turn a placeholder into the track pair of the track it was reserved for,
+     * in whatever position the placeholder holds now.
+     *
+     * A placeholder no longer in `trackPairs` -- the rows were cleared while the
+     * track loaded -- has nowhere to put the track, and the track is dropped.
+     * The pair is sized but not drawn; that is the caller's `updateViews`.
+     *
+     * @returns {TrackPair|undefined} - the new pair, or undefined if the row is gone
+     */
+    fillPendingTrack(placeholder, track) {
+
+        const index = this.browser.trackPairs.indexOf(placeholder)
+        if (-1 === index) {
+            return undefined
+        }
+
+        const { trackHeight } = getLayoutDimensions()
+
+        const trackPair = new TrackPair(this.browser, track)
+
+        try {
             trackPair.x = new TrackRenderer(this.browser, track, 'x')
-            trackPair.x.init(this.xTracks, trackHeight, this.browser.trackPairs.indexOf(trackPair))
+            trackPair.x.init(this.xTracks, trackHeight, index)
 
             trackPair.y = new TrackRenderer(this.browser, track, 'y')
-            trackPair.y.init(this.yTracks, trackHeight, this.browser.trackPairs.indexOf(trackPair))
+            trackPair.y.init(this.yTracks, trackHeight, index)
 
             trackPair.init()
-
-            EventBus.globalBus.post(HICEvent("TrackXYPairLoad", trackPair))
+        } catch (error) {
+            // Half a pair is no row at all; the caller treats this as the track failing.
+            trackPair.x?.viewportElement?.remove()
+            trackPair.y?.viewportElement?.remove()
+            throw error
         }
 
-        for (const trackPair of this.browser.trackPairs) {
-            const order = `${ this.browser.trackPairs.indexOf(trackPair) }`
-            trackPair.x.viewportElement.style.order = order
-            trackPair.y.viewportElement.style.order = order
-        }
+        placeholder.dispose()
+        this.browser.trackPairs[index] = trackPair
+
+        trackPair.x.syncCanvas()
+        trackPair.y.syncCanvas()
+
+        const gearContainer = document.querySelector('.hic-igv-right-hand-gutter')
+        gearContainer.style.display = this.browser.showTrackLabelAndGutter ? 'block' : 'none'
 
         setTrackReorderArrowColors(this.browser.trackPairs)
 
+        EventBus.globalBus.post(HICEvent("TrackXYPairLoad", trackPair))
+
+        return trackPair
+    }
+
+    /**
+     * Take away the row of a pending track that failed to load. Unlike
+     * `removeTrackXYPair` it posts no `TrackXYPairRemoval`: no track was loaded.
+     *
+     * @returns {boolean} - whether there was a row to remove
+     */
+    removePendingTrack(placeholder) {
+
+        const index = this.browser.trackPairs.indexOf(placeholder)
+        if (-1 === index) {
+            return false
+        }
+
+        placeholder.dispose()
+        this.browser.trackPairs.splice(index, 1)
+
+        this.resizeLayoutWithTrackXYPairCount(this.browser.trackPairs.length)
+        this.#applyTrackOrder()
+
+        return true
+    }
+
+    #applyTrackOrder() {
+        for (const [index, trackPair] of this.browser.trackPairs.entries()) {
+            trackPair.x.viewportElement.style.order = `${ index }`
+            trackPair.y.viewportElement.style.order = `${ index }`
+        }
+
+        setTrackReorderArrowColors(this.browser.trackPairs)
     }
 
     removeAllTrackXYPairs() {

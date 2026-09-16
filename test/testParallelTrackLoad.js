@@ -21,15 +21,40 @@ const { default: DataLoader } = await import("../js/dataLoader.js");
 const { default: Track2D } = await import("../js/track2D.js");
 
 const presented = [];
-const laidOut = [];
+let reservations = 0;
+
+/**
+ * The rows as the layout holds them, top first: a pending track is `name…`, a loaded one `name`.
+ * Placeholder rows are covered against the real layout in testPendingTrackRow.js; this is only
+ * enough of the seam for the loader to reserve, fill and remove rows against.
+ */
+let trackPairs = [];
+const rows = () => trackPairs.map(({ name, isPendingTrack }) => isPendingTrack ? `${name}…` : name);
 
 function stubBrowser() {
     return {
         genome: undefined,
         tracks2D: [],
         showTrackLabelAndGutter: false,
-        contactMatrixView: { startSpinner: () => undefined, stopSpinner: () => undefined },
-        layoutController: { updateLayoutWithTracks: (tracks) => laidOut.push(tracks.map(t => t.name)) },
+        get trackPairs() { return trackPairs; },
+        layoutController: {
+            reservePendingTracks: (configs) => {
+                reservations++;
+                return configs.map(({ name }) => {
+                    const placeholder = { name, isPendingTrack: true };
+                    trackPairs.unshift(placeholder);
+                    return placeholder;
+                });
+            },
+            fillPendingTrack: (placeholder, track) => {
+                const index = trackPairs.indexOf(placeholder);
+                return -1 === index ? undefined : (trackPairs[index] = { name: track.name, updateViews: async () => undefined });
+            },
+            removePendingTrack: (placeholder) => {
+                const index = trackPairs.indexOf(placeholder);
+                return -1 !== index && Boolean(trackPairs.splice(index, 1));
+            }
+        },
         updateLayout: async () => undefined,
         coordinator: { onTrackLoad2D: () => undefined },
         registry: { presentAlert: (message) => presented.push(message) }
@@ -54,7 +79,8 @@ function reset() {
     createTrack.mockReset();
     vi.restoreAllMocks();
     presented.length = 0;
-    laidOut.length = 0;
+    reservations = 0;
+    trackPairs = [];
     global.document.querySelector = () => ({ style: {} });
     global.getComputedStyle = () => ({ getPropertyValue: () => "0" });
 }
@@ -96,12 +122,14 @@ describe("1D tracks load in parallel", function () {
 
         pending.get("c").resolve();
         await flush();
+        expect(rows()).toEqual(["c", "b…", "a…"]);
+
         pending.get("b").resolve();
         await flush();
         pending.get("a").resolve();
         await load;
 
-        expect(laidOut).toEqual([["a", "b", "c"]]);
+        expect(rows()).toEqual(["c", "b", "a"]);
     });
 
     test("lays out every good track when one track fails", async function () {
@@ -112,15 +140,16 @@ describe("1D tracks load in parallel", function () {
 
         await new DataLoader(stubBrowser()).loadTracks(["a", "b", "c", "d"].map(config));
 
-        expect(laidOut).toEqual([["a", "c", "d"]]);
+        expect(rows()).toEqual(["d", "c", "a"]);
     });
 
-    test("a load where every track succeeds lays out once and alerts nothing", async function () {
+    test("a load where every track succeeds reserves its rows once and alerts nothing", async function () {
         createTrack.mockImplementation(async ({ name }) => ({ name }));
 
         await new DataLoader(stubBrowser()).loadTracks(["a", "b"].map(config));
 
-        expect(laidOut).toEqual([["a", "b"]]);
+        expect(reservations).toBe(1);
+        expect(rows()).toEqual(["b", "a"]);
         expect(presented).toEqual([]);
     });
 
@@ -155,7 +184,7 @@ describe("track load failures make one report", function () {
         const load = new DataLoader(stubBrowser()).loadTracksOrThrow(["a", "b", "c", "d"].map(config));
 
         await expect(load).rejects.toThrow(/b: Not Found.*d: Access forbidden/);
-        expect(laidOut).toEqual([["a", "c"]]);
+        expect(rows()).toEqual(["c", "a"]);
         expect(presented).toEqual([]);
     });
 
@@ -201,7 +230,7 @@ describe("a load mixing 1D and 2D tracks", function () {
         const browser = stubBrowser();
         await new DataLoader(browser).loadTracks([config("a"), config2D("b"), config("c")]);
 
-        expect(laidOut).toEqual([["a"]]);
+        expect(rows()).toEqual(["a"]);
         expect(browser.tracks2D).toEqual([]);
         expect(presented).toEqual(["Error loading tracks: b: Bad bedpe; c: Not Found"]);
     });
@@ -216,7 +245,7 @@ describe("a load mixing 1D and 2D tracks", function () {
         const browser = stubBrowser();
         await new DataLoader(browser).loadTracks([config("a"), config2D("b"), config2D("c")]);
 
-        expect(laidOut).toEqual([["a"]]);
+        expect(rows()).toEqual(["a"]);
         expect(browser.tracks2D).toEqual([{ name: "b" }]);
         expect(presented).toEqual(["Error loading tracks: c: Bad bedpe"]);
     });

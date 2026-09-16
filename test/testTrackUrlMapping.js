@@ -42,8 +42,11 @@ function stubBrowser() {
         genome: undefined,
         tracks2D: [],
         showTrackLabelAndGutter: false,
-        contactMatrixView: { startSpinner: () => undefined, stopSpinner: () => undefined },
-        layoutController: { updateLayoutWithTracks: () => undefined },
+        layoutController: {
+            reservePendingTracks: (configs) => configs.map(() => ({ isPendingTrack: true })),
+            fillPendingTrack: () => ({ updateViews: async () => undefined }),
+            removePendingTrack: () => true
+        },
         updateLayout: async () => undefined,
         coordinator: { onTrackLoad2D: () => undefined },
         // An alert here is a test failure: these loads are expected to succeed.

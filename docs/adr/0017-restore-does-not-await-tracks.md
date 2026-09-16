@@ -1,7 +1,8 @@
 # ADR-0017 — A restore does not await tracks, and no track load has a timeout
 
 **Status:** Accepted — decided in the #588 grilling; partially implemented. Decision 6
-landed in #663; the rest of #588 is pending.
+landed in #663, decision 3 in #664 (a restore still awaits its tracks there); the rest
+of #588 is pending.
 
 **Date:** 2026-09-15
 **Related:** #588 (the work), #584 (where the hang was found), #587 (the unindexed

@@ -1,5 +1,8 @@
 import {describe, it, expect} from 'vitest'
 import {withDOM} from './utils/browserFixture.js'
+import {readFileSync} from 'node:fs'
+import {resolve} from 'node:path'
+import {execFileSync} from 'node:child_process'
 import ControlMapWidget, {displayModeOptions} from '../js/controlMapWidget.js'
 
 describe('displayModeOptions', () => {
@@ -63,4 +66,45 @@ describe('ControlMapWidget icons', () => {
             expect(svg.querySelector('path')).not.toBeNull()
         }
     })
+})
+
+describe('ControlMapWidget layout', () => {
+
+    // Compiled out of process: sass takes test/setup.js's mock `document` for a
+    // browser and fails to start (see testTargetBadgeCascade.js).
+    const cssDir = resolve(__dirname, '../css')
+    const libraryStylesheets = {
+        'css/juicebox.scss': execFileSync(process.execPath,
+            [resolve(__dirname, '../node_modules/sass/sass.js'), '--no-source-map', resolve(cssDir, 'juicebox.scss')],
+            {encoding: 'utf8'}),
+        'css/juicebox.css': readFileSync(resolve(cssDir, 'juicebox.css'), 'utf8'),
+    }
+
+    // The stylesheet lays the select, the toggle and the cycle icon out in a
+    // row. An inline display from show() overrides that, stacks them, and the
+    // widget grows taller than the navbar row, spilling up over the locus box.
+    for (const [sheet, css] of Object.entries(libraryStylesheets)) {
+        it(`lays its controls out in a row once shown, under ${sheet}`, () => {
+            const {window, restore} = withDOM()
+            try {
+                const style = window.document.createElement('style')
+                style.textContent = css
+                window.document.head.appendChild(style)
+
+                const navbar = window.document.createElement('div')
+                const widgetContainer = window.document.createElement('div')
+                widgetContainer.id = 'test-lower-hic-nav-bar-widget-container'
+                navbar.appendChild(widgetContainer)
+                window.document.body.appendChild(navbar)
+
+                const widget = new ControlMapWidget({}, navbar)
+                widget.hide()
+                expect(window.getComputedStyle(widget.container).display).toBe('none')
+                widget.show()
+                expect(window.getComputedStyle(widget.container).display).toBe('flex')
+            } finally {
+                restore()
+            }
+        })
+    }
 })

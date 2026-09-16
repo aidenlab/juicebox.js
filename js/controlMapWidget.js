@@ -76,10 +76,12 @@ class ControlMapWidget {
     }
 
     /**
-     * Show the control map widget container.
+     * Show the control map widget container. Clearing the inline display hands
+     * layout back to the stylesheet's flex row; forcing 'block' stacks the
+     * toggle under the select and spills the widget over the locus box (#674).
      */
     show() {
-        this.container.style.display = 'block';
+        this.container.style.display = '';
     }
 
     /**

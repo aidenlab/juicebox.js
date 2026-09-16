@@ -922,6 +922,20 @@ div[id$="x-track-container"] {
         justify-content: center;
         color: #7F7F7F;
       }
+      // A pending track's remove control, where a track pair has its gear (#665).
+      .x-track-dismiss {
+        position: absolute;
+        top: 0;
+        right: -16px;
+        margin-top: 4px;
+        width: 16px;
+        text-align: center;
+        color: #7F7F7F;
+        cursor: pointer;
+        &:hover {
+          color: #444;
+        }
+      }
     }
   }
 }

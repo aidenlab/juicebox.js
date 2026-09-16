@@ -466,7 +466,13 @@ class DataLoader {
      * track pair when that track loads, and is removed if it fails (#664,
      * decision 3). The map spinner is not raised -- the rows are the indicator.
      * The promise still settles only once every track in `configs` has; then the
-     * failures, if any, are thrown as one error. A load of a single track throws
+     * failures, if any, are thrown as one error.
+     *
+     * A load cannot be cancelled, so a track that settles after its placeholder
+     * is gone is discarded silently: not laid out, not reported (#665, ADR-0017
+     * decision 8). A dismissed row is gone for its own track; a browser disposed
+     * or reset -- a restore replacing the session disposes it -- is gone for the
+     * whole load, 2D tracks and all. A load of a single track throws
      * that track's own error, so the one-track report reads exactly as it always
      * has.
      *
@@ -488,8 +494,10 @@ class DataLoader {
             }
         });
 
+        const {layoutController} = this.browser;
+
         const oneD = prepared.filter(({error, is2D}) => !error && !is2D);
-        const placeholders = this.browser.layoutController.reservePendingTracks(oneD.map(({config}) => config));
+        const placeholders = layoutController.reservePendingTracks(oneD.map(({config}) => config));
         oneD.forEach((entry, i) => entry.placeholder = placeholders[i]);
 
         const loads = prepared.map(({config, error, is2D, placeholder}) => {
@@ -498,7 +506,7 @@ class DataLoader {
             } else if (is2D) {
                 return this.#loadTrack2D(config);
             } else {
-                return this.#loadTrack1D(config, placeholder);
+                return this.#loadTrack1D(config, layoutController, placeholder);
             }
         });
 
@@ -508,6 +516,10 @@ class DataLoader {
 
         const settled = await Promise.allSettled(loads);
         await reserved;
+
+        if (!this.#isCurrent(layoutController)) {
+            return;
+        }
 
         const failures = [];
         const tracks2D = [];
@@ -591,14 +603,17 @@ class DataLoader {
     /**
      * Load one 1D track into its placeholder row: the row becomes the track
      * pair on load and is removed on failure. A track whose row has gone
-     * meanwhile is dropped.
+     * meanwhile -- dismissed, cleared, or its browser torn down -- is dropped,
+     * and so is its failure: it resolves rather than rejects.
      *
      * @param {Object} config - a 1D track configuration object
+     * @param {LayoutController} layoutController - the layout the row was reserved in
      * @param {PendingTrackPair} placeholder - the row reserved for it
      * @returns {Promise<void>}
      */
-    async #loadTrack1D(config, placeholder) {
-        const {layoutController} = this.browser;
+    async #loadTrack1D(config, layoutController, placeholder) {
+
+        const rowIsGone = () => !this.#isCurrent(layoutController) || !layoutController.hasPendingTrack(placeholder);
 
         let trackPair;
         try {
@@ -611,20 +626,31 @@ class DataLoader {
                 await track.postInit();
             }
 
-            trackPair = layoutController.fillPendingTrack(placeholder, track);
-            if (!trackPair) {
+            if (rowIsGone()) {
                 return;
             }
+            trackPair = layoutController.fillPendingTrack(placeholder, track);
         } catch (error) {
-            if (layoutController.removePendingTrack(placeholder)) {
-                await this.browser.updateLayout();
+            if (rowIsGone()) {
+                return;
             }
+            layoutController.removePendingTrack(placeholder);
+            await this.browser.updateLayout();
             throw error;
         }
 
         // The row was sized when it was reserved, so nothing else moves: only
         // this pair is drawn, not the whole browser.
         await trackPair.updateViews();
+    }
+
+    /**
+     * Whether the browser a load started in is still there to write to: not
+     * disposed, and not reset since -- a reset builds a new layout, so the one
+     * the load reserved its rows in is gone.
+     */
+    #isCurrent(layoutController) {
+        return !this.browser.isDisposed && this.browser.layoutController === layoutController;
     }
 
     /**

@@ -46,9 +46,9 @@ function stubBrowser() {
                     return placeholder;
                 });
             },
+            hasPendingTrack: (placeholder) => trackPairs.includes(placeholder),
             fillPendingTrack: (placeholder, track) => {
-                const index = trackPairs.indexOf(placeholder);
-                return -1 === index ? undefined : (trackPairs[index] = { name: track.name, updateViews: async () => undefined });
+                return trackPairs[trackPairs.indexOf(placeholder)] = { name: track.name, updateViews: async () => undefined };
             },
             removePendingTrack: (placeholder) => {
                 const index = trackPairs.indexOf(placeholder);

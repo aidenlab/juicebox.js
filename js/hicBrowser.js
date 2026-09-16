@@ -737,6 +737,14 @@ class HICBrowser {
     }
 
     /**
+     * Whether `dispose()` has run and no `reset()` has brought the browser back.
+     * Internal: a load that outlives its browser reads it to stand down (#665).
+     */
+    get isDisposed() {
+        return this.#disposed;
+    }
+
+    /**
      * Refuse a published call on a disposed browser. Decision 6 of ADR-0005.
      */
     #assertNotDisposed(methodName) {

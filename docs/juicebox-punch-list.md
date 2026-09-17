@@ -1,6 +1,6 @@
 # Juicebox.js — Punch List
 
-**As of 2026-09-11, `v4.4.1`.** The architecture review closed at `v4.0.0` with eight of eleven
+**As of 2026-09-17, `v4.5.0`.** The architecture review closed at `v4.0.0` with eight of eleven
 candidates landed. The three left over are open issues, each waiting on a decision:
 [#580](https://github.com/aidenlab/juicebox.js/issues/580),
 [#581](https://github.com/aidenlab/juicebox.js/issues/581) and
@@ -27,8 +27,8 @@ sync-group and targeting work (ADR-0010 to ADR-0016), none of it a review candid
 
 Three repos are involved:
 - `~/JuiceboxDevelopment/juicebox.js`
-- `~/JuiceboxDevelopment/juicebox-web` — pinned `v4.4.1`
-- `~/SpacewalkDevelopment/spacewalk` — pinned `v4.4.1`
+- `~/JuiceboxDevelopment/juicebox-web` — pinned `v4.5.0`
+- `~/SpacewalkDevelopment/spacewalk` — pinned `v4.5.0`
 
 ---
 

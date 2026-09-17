@@ -500,3 +500,40 @@ exposed the bug — was already removed in juicebox-web `b20c7fb`.
 ### Consequence
 
 **Nothing was required of the release.**
+
+## Re-measurement — 2026-09-17, for the v4.5.0 release
+
+Appended, not revised. The tables above stay as the measurement they were.
+
+Measured against `juicebox.js` at `bump-version-4.5.0`, `juicebox-web` `master`
+and `spacewalk` `main`, both pinned to `#v4.4.1`.
+
+**Result: nothing undeclared in use, in either consumer.** Fifth release running.
+
+`js/publicApi.js` is byte-identical to v4.4.1. `toggleTarget`,
+`BrowserTargetChange` and `onSyncRefused` still have no consumer caller, the
+stable reading recorded for them since v4.3.0.
+
+### Inside the contract: `restoreSession` keeps its name and changes its meaning
+
+The measurement is a name check, and no name moved. The change this release makes
+is to what one declared name *promises*: `restoreSession` now resolves once every
+browser's maps, normalization and colour scale are applied and the interaction
+shield is down, with 1D and 2D tracks possibly still loading (#667, ADR-0017).
+Before, it resolved only after every track had settled.
+
+That is a host-visible change no textual measurement can find, so both consumers
+were read by hand at the call site:
+
+- **juicebox-web** — `js/initializationHelper.js` resyncs the control-map
+  dropdown after `await hic.restoreSession`. It reads maps, not tracks.
+- **Spacewalk** — `src/juicebox/juiceboxPanel.js` calls `getCurrentBrowser()` and
+  applies a locus. It reads maps, not tracks.
+
+Neither reads tracks after the await, so neither observes the earlier
+resolution as a change. A host that did want "tracks done" has no signal for it,
+which ADR-0017 records as deliberate.
+
+### Consequence
+
+**Nothing was required of the release.**

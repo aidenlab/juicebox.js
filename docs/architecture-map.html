@@ -28,7 +28,7 @@
       <header class="space-y-6 border-b border-stone-300 pb-8">
         <div>
           <h1 class="font-serif text-4xl tracking-tight">Module map — juicebox.js</h1>
-          <p class="text-sm text-slate-500 mt-2 font-mono">master · v4.5.0 · snapshot 10 September 2026 · file line counts re-checked 18 September · 8 of 11 candidates landed · 7, 10, 11 open as #580–#582 · nothing underway</p>
+          <p class="text-sm text-slate-500 mt-2 font-mono">master · v4.5.0 · snapshot 18 September 2026 · 8 of 11 candidates landed · 7, 10, 11 open as #580–#582 · nothing underway</p>
           <p class="text-sm text-slate-500 mt-1 font-mono">the shape, not the backlog — companion to <a class="underline" href="architecture-review.html">architecture-review.html</a></p>
         </div>
 
@@ -212,7 +212,7 @@ flowchart TB
             <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Unowned — arrived after the review · ADR-0015, ADR-0018</span>
           </div>
           <div class="p-5 space-y-3 text-sm">
-            <p class="font-mono text-xs text-slate-500">js/targetGroup.js · 290 lines · ADR-0015, ADR-0018</p>
+            <p class="font-mono text-xs text-slate-500">js/targetGroup.js · 292 lines · ADR-0015, ADR-0018</p>
             <p><strong>Interface:</strong> <span class="font-mono">fanOutTracks(originating, targets, configs)</span>, <span class="font-mono">fanOutMap(targets, config)</span> and <span class="font-mono">fanOutControlMap(targets, config)</span>, with <span class="font-mono">trackSkipReason</span> and <span class="font-mono">controlSkipReason</span>. <strong>Hides:</strong> which targeted browsers a load can reach, why the others are skipped, and reporting N loads as one outcome. The load itself is injected, so the rules are tested without a network.</p>
             <p><strong>Two shapes of fan-out, on purpose.</strong> Tracks load concurrently and are measured against the originating browser. Maps load one at a time, have no origin, and invert the skips: a primary map skips nothing, and a control map skips a panel after the read if that panel's own primary cannot pair with it. ADR-0018 records why.</p>
             <p><strong>Seam — not a sync group.</strong> A target set is an explicit shift-click gesture and reaches a <em>load</em>; a sync group is decided by the maps and carries <em>view state</em>. Keeping them apart is the whole of ADR-0015.</p>

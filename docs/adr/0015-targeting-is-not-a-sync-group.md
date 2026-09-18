@@ -2,8 +2,10 @@
 
 **Status:** Accepted
 **Date:** 2026-09-05
-**Amended:** 2026-09-18 — contact maps are no longer out of scope; see the
-amendment under *Consequences* and ADR-0018. No decision here is reversed.
+**Amended:** 2026-09-18 — contact maps are no longer out of scope, so decision
+1's *cargo* row now reads "dataset choices (tracks and contact maps)"; see the
+amendment under *Consequences* and ADR-0018. No decision here is reversed — a
+consequence is.
 **Related:** #615 (the feature), #588 (unbounded, serial track loads — whose
 blast radius this multiplies), ADR-0014 (what crosses a sync group, and the
 sentence this is the other half of), ADR-0004 (browser registry per container,

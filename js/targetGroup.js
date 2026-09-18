@@ -8,7 +8,9 @@
  * the distinction is the load-bearing part of the design -- membership here is
  * an explicit user gesture rather than a computed rule, the cargo is dataset
  * choices rather than canonical state, and the lifetime is until the user
- * re-aims rather than standing. See `docs/adr/0015` and `CONTEXT.md`.
+ * re-aims rather than standing. See `docs/adr/0015` and `CONTEXT.md`; for why
+ * the map fan-outs are serial, origin-free and skip differently from the track
+ * fan-out, `docs/adr/0018`.
  *
  * One file per mechanism, so the distinction is visible in the tree and not
  * only in the ADR. Like `pairSynchable` and `canResolveSyncState` next door,

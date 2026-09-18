@@ -1,11 +1,12 @@
 # Juicebox.js — Punch List
 
-**As of 2026-09-17, `v4.5.0`.** The architecture review closed at `v4.0.0` with eight of eleven
+**As of 2026-09-18, `v4.5.0` plus master.** The architecture review closed at `v4.0.0` with eight of eleven
 candidates landed. The three left over are open issues, each waiting on a decision:
 [#580](https://github.com/aidenlab/juicebox.js/issues/580),
 [#581](https://github.com/aidenlab/juicebox.js/issues/581) and
 [#582](https://github.com/aidenlab/juicebox.js/issues/582). Since then, v4.1–v4.4 shipped the
-sync-group and targeting work (ADR-0010 to ADR-0016), none of it a review candidate.
+sync-group and targeting work (ADR-0010 to ADR-0016), none of it a review candidate; since
+v4.5.0 the target set carries contact maps too (ADR-0018).
 
 > **This is the working scratchpad — the only one.** Thrash it freely; nothing else has to
 > agree with it. Where the durable facts live:
@@ -47,12 +48,12 @@ a decision comes first, then an ADR, then tickets.
 declined browser-level automation. For all three, what pins today's behaviour before anything
 moves is the *first* question.
 
-**Not yet a candidate: the hub is growing again.** `hicBrowser.js` went from 1235 to 1753 lines
-and `browserRegistry.js` from 429 to 799 across v4.1–v4.4. The pure rules came out as
+**Not yet a candidate: the hub is growing again.** `hicBrowser.js` went from 1235 to 1831 lines
+and `browserRegistry.js` from 429 to 846 across v4.1–v4.5 and the map broadcast. The pure rules came out as
 `syncGroup.js` and `targetGroup.js`; the wiring stayed in the hub. No card covers that code. The
 next architecture scan should start there, and add its cards to the existing review.
 
-**ADR-0017 is the next free number.** 0007 was reserved for #477 and never written; the gap is
+**ADR-0019 is the next free number.** 0007 was reserved for #477 and never written; the gap is
 deliberate.
 
 ---

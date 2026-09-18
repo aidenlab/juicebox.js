@@ -125,9 +125,11 @@ _Avoid_: sync badge, unsynced indicator.
 **Target set** — the browsers a *load* reaches: the ones the user has aimed at by
 shift-clicking their navbars, plus the current browser. Its members are
 **targeted browsers**. Not a sync group: membership is an explicit gesture, the
-cargo is dataset choices, and it lasts until the user re-aims. ADR-0015.
+cargo is dataset choices — tracks and contact maps — and it lasts until the user
+re-aims. A map reaches every target: one map to all of them, never one map per
+target. ADR-0015, ADR-0018.
 _Avoid_: selection, selected browsers (spent on the current browser), target
-group.
+group; distribute (one map per target is a different feature).
 
 **View preference** — a setting the user makes on one browser that changes how
 it interprets a gesture without being part of what the view *is*: user-set, per

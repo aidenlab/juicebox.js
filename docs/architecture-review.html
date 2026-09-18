@@ -28,7 +28,7 @@
       <header class="space-y-6 border-b border-stone-300 pb-8">
         <div>
           <h1 class="font-serif text-4xl tracking-tight">Architecture review — juicebox.js</h1>
-          <p class="text-sm text-slate-500 mt-2 font-mono">master · v4.4.0 · updated 10 September 2026</p>
+          <p class="text-sm text-slate-500 mt-2 font-mono">master · v4.5.0 · updated 18 September 2026</p>
           <p class="text-sm text-slate-500 mt-1 font-mono">the refactor backlog — what to fix next, and nothing else</p>
         </div>
 
@@ -439,7 +439,7 @@
             <li><a href="#c7" class="underline decoration-slate-500 underline-offset-2">7</a> · <a href="https://github.com/aidenlab/juicebox.js/issues/580">#580</a> — <strong>can its shape be planned at all?</strong> About 300 lines of gesture closures with no test surface to read the behaviour off. The largest remaining deepening.</li>
             <li><a href="#c11" class="underline decoration-slate-500 underline-offset-2">11</a> · <a href="https://github.com/aidenlab/juicebox.js/issues/582">#582</a> — <strong>split it?</strong> Cache ownership is safe and fixes a real stale-tile bug; the ordering half reaches into the published <span class="font-mono">TrackXYPairLoad</span> payload. Taking only the safe half may be the whole answer.</li>
           </ul>
-          <p class="text-sm text-slate-300"><strong>What comes after: a fresh scan of the sync and targeting code.</strong> It arrived after this review was written — the sync-group pairing rule and isolation mark (<a class="underline decoration-slate-500 underline-offset-2" href="adr/0016-sync-membership-is-static.md">ADR-0016</a>), the resolution lock mirrored across a group (<a class="underline decoration-slate-500 underline-offset-2" href="adr/0014-view-preferences-mirror-canonical-state-syncs.md">ADR-0014</a>), and target sets (<a class="underline decoration-slate-500 underline-offset-2" href="adr/0015-targeting-is-not-a-sync-group.md">ADR-0015</a>). The pure rules came out as small modules (<span class="font-mono">syncGroup.js</span>, <span class="font-mono">targetGroup.js</span>), but the wiring landed in <span class="font-mono">HICBrowser</span> and <span class="font-mono">BrowserRegistry</span>, which is why both grew. New cards, if that scan finds any, go in this document.</p>
+          <p class="text-sm text-slate-300"><strong>What comes after: a fresh scan of the sync and targeting code.</strong> It arrived after this review was written — the sync-group pairing rule and isolation mark (<a class="underline decoration-slate-500 underline-offset-2" href="adr/0016-sync-membership-is-static.md">ADR-0016</a>), the resolution lock mirrored across a group (<a class="underline decoration-slate-500 underline-offset-2" href="adr/0014-view-preferences-mirror-canonical-state-syncs.md">ADR-0014</a>), and target sets (<a class="underline decoration-slate-500 underline-offset-2" href="adr/0015-targeting-is-not-a-sync-group.md">ADR-0015</a>), now carrying contact maps as well as tracks (<a class="underline decoration-slate-500 underline-offset-2" href="adr/0018-a-contact-map-broadcasts-to-the-target-set.md">ADR-0018</a>). The pure rules came out as small modules (<span class="font-mono">syncGroup.js</span>, <span class="font-mono">targetGroup.js</span>), but the wiring landed in <span class="font-mono">HICBrowser</span> and <span class="font-mono">BrowserRegistry</span>, which is why both grew. New cards, if that scan finds any, go in this document.</p>
         </div>
       </section>
 

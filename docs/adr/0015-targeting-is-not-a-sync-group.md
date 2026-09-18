@@ -2,6 +2,10 @@
 
 **Status:** Accepted
 **Date:** 2026-09-05
+**Amended:** 2026-09-18 — contact maps are no longer out of scope, so decision
+1's *cargo* row now reads "dataset choices (tracks and contact maps)"; see the
+amendment under *Consequences* and ADR-0018. No decision here is reversed — a
+consequence is.
 **Related:** #615 (the feature), #588 (unbounded, serial track loads — whose
 blast radius this multiplies), ADR-0014 (what crosses a sync group, and the
 sentence this is the other half of), ADR-0004 (browser registry per container,
@@ -199,6 +203,12 @@ tracks; this pass narrows to 1D tracks and 2D annotations. So are 2D annotation
 attributes — colour, display mode, ordering, visibility — which are closer to view
 preferences, and which ADR-0014 already puts outside what travels between
 browsers.
+
+> **Amended 2026-09-18 (#680, #681).** Contact maps are now in scope: a primary
+> or control map broadcasts to the target set through `loadHicFileIntoTargets`
+> and `loadHicControlFileIntoTargets`. The map fan-out is serial where this one is
+> concurrent, has no originating browser, and inverts the skip set — ADR-0018
+> records why. The 2D annotation attributes above are still out of scope.
 
 **No user sees this until juicebox-web ships against it.** The track menu that
 would call `loadTracksIntoTargets` lives in juicebox-web, so the feature is

@@ -240,6 +240,12 @@ export const REGISTRY_SURFACE = [
     // exactly the failure #471 was. They are defined in `js/targetGroup.js` and
     // pinned by `test/testTargetGroup.js`.
     'loadTracksIntoTargets',
+    // Resolves to `{loaded, failed, skipped, genomeChanged}` -- the first three
+    // with their track meanings, so one code path reads both summaries, though
+    // `skipped` is always empty: a map carries its own genome, so nothing is
+    // skipped. `genomeChanged` is `[{browser, from, to}]`. Serial, not
+    // concurrent. #680.
+    'loadHicFileIntoTargets',
 
     // A session describes one embed; these are where one is actually written
     // and read. The exported `toJSON`/`restoreSession` delegate here.

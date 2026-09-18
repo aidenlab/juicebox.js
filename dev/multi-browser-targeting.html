@@ -85,8 +85,19 @@
     them as skipped — not as loaded, and not as an error.
 </p>
 
+<p class="note">
+    The <b>map</b> buttons broadcast one <code>.hic</code> map to every aimed panel
+    (#680) — through <code>registry.loadHicFileIntoTargets</code>. The rules are not the
+    track rules: a map carries its own genome, so nothing is skipped, the empty panel
+    takes it like any other, and the loads run <b>one after another</b>. A panel whose
+    genome the map replaced is listed under <code>genomeChanged</code> — and any tracks
+    it already had stay drawn over the new genome, which is exactly why that line exists.
+</p>
+
 <div class="controls">
     <button id="add-browser">Add browser (hg38)</button>
+    <button id="map-hg38">Broadcast hg38 map to targets</button>
+    <button id="map-mm10">Broadcast mm10 map to targets</button>
     <button id="load-1d">Load 1D track into targets</button>
     <button id="load-2d">Load 2D annotation into targets</button>
     <button id="load-both">Load both into targets</button>
@@ -166,6 +177,18 @@
     // hg38, and `format` is set deliberately: a format-less URL ending in .txt.gz is
     // routed to the 2D loader, so an annotation that says nothing about itself would
     // arrive as a broken 2D track rather than as genes. See js/dataLoader.js.
+    // The two primary-map broadcasts: one per genome, so either one changes the genome
+    // of some panel whichever way the aim is set. Both hosts answer a browser directly
+    // -- the 4DN bucket serves `Access-Control-Allow-Origin: *` and no User-Agent
+    // gate, measured 2026-09-18 -- so neither needs the dev proxy.
+    const broadcastMaps = {
+        hg38: hg38Maps[0],
+        mm10: {
+            url: 'https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/3a7bfc55-8582-498a-946a-300000f25f48/4DNFIFDYZOYP.hic',
+            name: '4DNFIFDYZOYP lung — mm10'
+        }
+    }
+
     const track1D = {
         url: 'https://s3.amazonaws.com/igv.org.genomes/hg38/refGene.sorted.txt.gz',
         type: 'annotation',
@@ -192,7 +215,14 @@
     // skip paths into one and leave the genome rule untested while looking fine.
     const built = []
 
-    const label = browser => browser.dataset ? (browser.config?.name || browser.id) : `${browser.id} (no map)`
+    // The dataset's name rather than `browser.config`'s: a map broadcast replaces the
+    // dataset but not the config the panel was built from. Numbered, because after a
+    // broadcast several panels carry the same map and the name alone cannot tell them
+    // apart.
+    const label = browser => {
+        const n = built.findIndex(entry => entry.browser === browser) + 1
+        return `#${n} ` + (browser.dataset ? (browser.dataset.name || browser.id) : `${browser.id} (no map)`)
+    }
 
     // One container, and therefore **one registry**: a target set never spans two
     // embeds -- it falls out of the per-container isolation of ADR-0004, and a fan-out
@@ -238,7 +268,11 @@
         summaryElement.textContent = [
             `loaded:  ${line(summary.loaded.map(label))}`,
             `skipped: ${line(summary.skipped.map(({browser, reason}) => `${label(browser)} [${reason}]`))}`,
-            `failed:  ${line(summary.failed.map(({browser, error}) => `${label(browser)}: ${error.message}`))}`
+            `failed:  ${line(summary.failed.map(({browser, error}) => `${label(browser)}: ${error.message}`))}`,
+            // Only a map broadcast carries it.
+            ...(summary.genomeChanged
+                ? [`genomeChanged: ${line(summary.genomeChanged.map(({browser, from, to}) => `${label(browser)} ${from} → ${to}`))}`]
+                : [])
         ].join('\n')
     }
 
@@ -248,6 +282,21 @@
     async function fanOut(configs) {
         summaryElement.textContent = 'loading…'
         renderSummary(await registry.loadTracksIntoTargets(configs))
+    }
+
+    // A broadcast changes what each loaded panel *is*, so the roster's expectations
+    // move with it -- otherwise every panel the map reached would read as wrong.
+    async function broadcastMap(genomeId) {
+        summaryElement.textContent = 'loading…'
+        const summary = await registry.loadHicFileIntoTargets(broadcastMaps[genomeId])
+        for (const entry of built) {
+            if (summary.loaded.includes(entry.browser)) {
+                entry.expectedGenome = genomeId
+            }
+        }
+        renderSummary(summary)
+        renderAim()
+        renderRoster()
     }
 
     /**
@@ -376,6 +425,8 @@
                 renderRoster()
             }))
 
+        document.getElementById('map-hg38').addEventListener('click', () => broadcastMap('hg38'))
+        document.getElementById('map-mm10').addEventListener('click', () => broadcastMap('mm10'))
         document.getElementById('load-1d').addEventListener('click', () => fanOut([track1D]))
         document.getElementById('load-2d').addEventListener('click', () => fanOut([track2D]))
         document.getElementById('load-both').addEventListener('click', () => fanOut([track1D, track2D]))

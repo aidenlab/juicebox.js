@@ -102,11 +102,42 @@ class DataLoader {
      *
      * NOTE: public API function
      *
+     * A bot challenge is reported in this embed's alert dialog before the
+     * rethrow; every other failure is only rethrown. The body is `#loadHicFile`
+     * below, shared with `loadHicFileOrThrow`, which reports nothing. #679.
+     *
      * @param {Object} config - Configuration object with url, name, locus, state, etc.
      * @param {boolean} noUpdates - If true, don't trigger UI updates
      * @returns {Promise<Dataset|undefined>} - The loaded dataset
      */
     async loadHicFile(config, noUpdates) {
+        return this.#loadHicFile(config, noUpdates,
+            error => presentError(this.browser.registry, "Error loading map", error));
+    }
+
+    /**
+     * `loadHicFile` without the report: a bot challenge is rethrown like any
+     * other failure, and no modal is raised.
+     *
+     * Internal in the sense the registry's `releaseSlot` is -- not declared
+     * surface, and reached from one place: `HICBrowser.loadHicFileOrThrow`,
+     * which the target-set fan-out will call (#680, #681). N panels aimed at one WAF-gated URL
+     * would otherwise raise N identical modals from one gesture. #679.
+     *
+     * @param {Object} config - as `loadHicFile` takes it
+     * @param {boolean} noUpdates - as `loadHicFile` takes it
+     * @returns {Promise<Dataset|undefined>} - The loaded dataset
+     */
+    async loadHicFileOrThrow(config, noUpdates) {
+        return this.#loadHicFile(config, noUpdates, () => undefined);
+    }
+
+    /**
+     * The map load both doors share. `reportChallenge` is called with a bot
+     * challenge in the catch, so a report lands before the spinner is put away,
+     * as it always has.
+     */
+    async #loadHicFile(config, noUpdates, reportChallenge) {
         if (!config.url) {
             console.log("No .hic url specified");
             return undefined;
@@ -266,7 +297,7 @@ class DataLoader {
             // tell is a response header it never sees. Everything else is left to the host, which
             // may already report the rethrow — see issue #441.
             if (isBotChallenge(error)) {
-                presentError(this.browser.registry, "Error loading map", error);
+                reportChallenge(error);
             }
 
             throw error;
@@ -370,11 +401,58 @@ class DataLoader {
      *
      * NOTE: public API function
      *
+     * A control map whose genome does not match the "A" map's is refused: the
+     * refusal is alerted and the promise resolves `undefined`. A bot challenge
+     * is alerted and rethrown. The body is `#loadHicControlFile` below, shared
+     * with `loadHicControlFileOrThrow`, which reports neither. #679.
+     *
      * @param {Object} config - Configuration object with url, name, nvi, etc.
      * @param {boolean} noUpdates - If true, don't trigger UI updates
      * @returns {Promise<Dataset|undefined>} - The loaded control dataset
      */
     async loadHicControlFile(config, noUpdates) {
+        return this.#loadHicControlFile(config, noUpdates, {
+            reportChallenge: error => presentError(this.browser.registry, "Error loading control map", error),
+            refuse: message => {
+                this.browser.registry.presentAlert(message);
+                return undefined;
+            }
+        });
+    }
+
+    /**
+     * `loadHicControlFile` without the reports, and with a refusal a caller
+     * can tell from a success: an incompatible map throws an `Error` whose
+     * `code` is `'control-incompatible'` -- a declared code, not a message to
+     * sniff (#471) -- and a bot challenge is rethrown like any other failure.
+     * No modal is raised.
+     *
+     * Internal in the sense the registry's `releaseSlot` is -- not declared
+     * surface, and reached from one place: `HICBrowser.loadHicControlFileOrThrow`,
+     * which the target-set fan-out will call. #679.
+     *
+     * @param {Object} config - as `loadHicControlFile` takes it
+     * @param {boolean} noUpdates - as `loadHicControlFile` takes it
+     * @returns {Promise<Dataset>} - The loaded control dataset
+     */
+    async loadHicControlFileOrThrow(config, noUpdates) {
+        return this.#loadHicControlFile(config, noUpdates, {
+            reportChallenge: () => undefined,
+            refuse: message => {
+                const error = new Error(message);
+                error.code = 'control-incompatible';
+                throw error;
+            }
+        });
+    }
+
+    /**
+     * The control load both doors share. Both hooks are called inside the
+     * try, so either door reports -- or throws -- before the spinner is put
+     * away, as the public one always has. What `refuse` returns is what the
+     * load resolves to.
+     */
+    async #loadHicControlFile(config, noUpdates, {reportChallenge, refuse}) {
         try {
             this.browser.userInteractionShield.style.display = 'block';
             this.browser.contactMatrixView.startSpinner();
@@ -407,16 +485,15 @@ class DataLoader {
 
                 return controlDataset;
             } else {
-                this.browser.registry.presentAlert(
+                return refuse(
                     '"B" map genome (' + controlDataset.genomeId + ') does not match "A" map genome (' +
                     this.browser.genome.id + ')'
                 );
-                return undefined;
             }
         } catch (error) {
             // Same reasoning as loadHicFile: report only the failure the host app cannot explain.
             if (isBotChallenge(error)) {
-                presentError(this.browser.registry, "Error loading control map", error);
+                reportChallenge(error);
             }
 
             throw error;

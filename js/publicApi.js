@@ -246,6 +246,12 @@ export const REGISTRY_SURFACE = [
     // skipped. `genomeChanged` is `[{browser, from, to}]`. Serial, not
     // concurrent. #680.
     'loadHicFileIntoTargets',
+    // The same four keys. `skipped` reasons are `'no-primary'` (the panel has no
+    // "A" map) and `'control-incompatible'` (its "A" map cannot pair with this
+    // "B" one, known only after the read) -- contract, like the track reasons,
+    // and defined and pinned in the same two files. `genomeChanged` is empty in
+    // practice. Serial. #681.
+    'loadHicControlFileIntoTargets',
 
     // A session describes one embed; these are where one is actually written
     // and read. The exported `toJSON`/`restoreSession` delegate here.

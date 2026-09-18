@@ -3,7 +3,7 @@
  *
  * `js/syncGroup.js` holds the rule for what a browser publishes its canonical
  * state to; this module holds the rules for what a load fans out to -- tracks,
- * and a primary map broadcast (#680). They
+ * a primary map broadcast (#680), and a control map broadcast (#681). They
  * are two different mechanisms for "one action reaching several browsers", and
  * the distinction is the load-bearing part of the design -- membership here is
  * an explicit user gesture rather than a computed rule, the cargo is dataset
@@ -165,17 +165,104 @@ async function fanOutTracks(originating, targets, configs, load = (browser, ownC
  * @returns {Promise<{loaded: Array, failed: Array, skipped: Array, genomeChanged: Array}>}
  */
 async function fanOutMap(targets, config, load = (browser, ownConfig) => browser.loadHicFileOrThrow(ownConfig)) {
+    return fanOutSerially(targets, config, load)
+}
+
+/**
+ * Why this target cannot take a control map, or `undefined` if it might.
+ *
+ * - **`'no-primary'`**: a control map is the "B" of a panel's "A", and this
+ *   panel has no "A". Read off `dataset`, not `genome`: `clearDataset()`
+ *   leaves the genome behind, so a panel whose last map load failed has a
+ *   genome and nothing to pair a control with.
+ *
+ * "Might", because the other skip cannot be known here: whether this panel's
+ * primary pairs with the control map is asked of the control dataset, after
+ * the read. That one is `'control-incompatible'`; see `fanOutControlMap`.
+ *
+ * @param {Object} target - a browser in the target set
+ * @returns {string|undefined} the skip reason, or `undefined` to load
+ */
+function controlSkipReason(target) {
+    return undefined === target.dataset ? 'no-primary' : undefined
+}
+
+/**
+ * Load one control ("B") map `config` into every browser in `targets` that can
+ * take it: the control broadcast. #681.
+ *
+ * Two skips, and the second is post-flight -- the first skip anywhere in the
+ * target set that is:
+ *
+ * - **`'no-primary'`**, known up front; see `controlSkipReason`. Nothing is
+ *   read for such a panel.
+ * - **`'control-incompatible'`**: this panel's primary cannot pair with the
+ *   control map. Compatibility is asked of the downloaded control dataset, so
+ *   it is known only after the read, and it arrives as the `code` that
+ *   `loadHicControlFileOrThrow` declares on what it throws (#679). The code,
+ *   never the message -- #471 is what sniffing a message costs.
+ *
+ * Both are *skips*, not failures, for ADR-0015 decision 5's reason: a mismatch
+ * is a declined placement, not an error.
+ *
+ * **Origin-free**, and more sharply than `fanOutMap`: compatibility is asked
+ * against each target's *own* primary, never the originating browser's.
+ * **Serial**, for `fanOutMap`'s reason. `genomeChanged` is kept for the shared
+ * shape and is empty in practice, since a control map never replaces a panel's
+ * genome.
+ *
+ * Display mode does not travel. A/B/ratio is a view preference, and ADR-0014
+ * keeps those out of what crosses between browsers; the fan-out changes no
+ * more of it than a single-panel control load does.
+ *
+ * **Raises no alert**, for the reasons `fanOutTracks` gives -- neither for an
+ * incompatible map, which the public loader would raise once per panel, nor
+ * for a bot challenge.
+ *
+ * @param {Array<Object>} targets - the resolved target set
+ * @param {Object} config - a map config, as `loadHicControlFile` takes it
+ * @param {Function} [load] - how one browser is loaded; the seam a test drives
+ * @returns {Promise<{loaded: Array, failed: Array, skipped: Array, genomeChanged: Array}>}
+ */
+async function fanOutControlMap(targets, config, load = (browser, ownConfig) => browser.loadHicControlFileOrThrow(ownConfig)) {
+    return fanOutSerially(targets, config, load, {
+        skipReason: controlSkipReason,
+        declinedReason: error => 'control-incompatible' === error?.code ? 'control-incompatible' : undefined
+    })
+}
+
+/**
+ * The serial fan-out both map broadcasts run on: one target at a time, each
+ * with its own shallow copy of `config`, no target's failure stopping the next.
+ *
+ * `skipReason` is asked before a target is loaded and `declinedReason` of what
+ * its load threw; either one naming a reason makes the target `skipped` rather
+ * than `loaded` or `failed`. The defaults skip nothing, which is the primary
+ * broadcast.
+ */
+async function fanOutSerially(targets, config, load, {skipReason = () => undefined, declinedReason = () => undefined} = {}) {
 
     const summary = {loaded: [], failed: [], skipped: [], genomeChanged: []}
 
     for (const target of targets) {
+
+        const skipped = skipReason(target)
+        if (undefined !== skipped) {
+            summary.skipped.push({browser: target, reason: skipped})
+            continue
+        }
 
         const from = target.genome?.id
 
         try {
             await load(target, {...config})
         } catch (error) {
-            summary.failed.push({browser: target, error})
+            const declined = declinedReason(error)
+            if (undefined === declined) {
+                summary.failed.push({browser: target, error})
+            } else {
+                summary.skipped.push({browser: target, reason: declined})
+            }
             continue
         }
 
@@ -190,4 +277,4 @@ async function fanOutMap(targets, config, load = (browser, ownConfig) => browser
     return summary
 }
 
-export {trackSkipReason, fanOutTracks, fanOutMap}
+export {trackSkipReason, fanOutTracks, fanOutMap, controlSkipReason, fanOutControlMap}

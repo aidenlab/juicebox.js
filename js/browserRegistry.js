@@ -2,7 +2,7 @@ import {AlertDialog} from 'igv-ui'
 import EventBus from './eventBus.js'
 import HICEvent from './hicEvent.js'
 import {pairSynchable, isolationReasons} from './syncGroup.js'
-import {fanOutTracks, fanOutMap} from './targetGroup.js'
+import {fanOutTracks, fanOutMap, fanOutControlMap} from './targetGroup.js'
 import {normalizeSession} from './normalizeSession.js'
 // A cycle, deliberately: `createBrowser.js` resolves its registry from a
 // container, and `restoreSession` below needs browsers built. Neither module
@@ -304,6 +304,29 @@ class BrowserRegistry {
      */
     async loadHicFileIntoTargets(config) {
         return fanOutMap(this.targetedBrowsers, config)
+    }
+
+    /**
+     * Load one control ("B") map into every targeted browser that can take it,
+     * one after another, and report what happened: the control broadcast
+     * (#681).
+     *
+     * NOTE: public API function
+     *
+     * Named for the browser door it multiplies, as `loadHicFileIntoTargets` is.
+     * The rules live in `fanOutControlMap` in `js/targetGroup.js`: no origin,
+     * serial, and two skips -- `'no-primary'` up front, and
+     * `'control-incompatible'` after the read, asked of each target's own
+     * primary.
+     *
+     * Raises no alert of its own, for an incompatible map or a bot challenge.
+     * The caller reports the summary.
+     *
+     * @param {Object} config - a map config, as `loadHicControlFile` takes it
+     * @returns {Promise<{loaded: Array, failed: Array, skipped: Array, genomeChanged: Array}>}
+     */
+    async loadHicControlFileIntoTargets(config) {
+        return fanOutControlMap(this.targetedBrowsers, config)
     }
 
     /**

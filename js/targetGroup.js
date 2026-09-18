@@ -191,8 +191,8 @@ function controlSkipReason(target) {
  * Load one control ("B") map `config` into every browser in `targets` that can
  * take it: the control broadcast. #681.
  *
- * Two skips, and the second is post-flight -- the first skip anywhere in the
- * target set that is:
+ * Two skips, and the second is post-flight -- the first in the target set
+ * that cannot be known before the read:
  *
  * - **`'no-primary'`**, known up front; see `controlSkipReason`. Nothing is
  *   read for such a panel.
@@ -202,8 +202,10 @@ function controlSkipReason(target) {
  *   `loadHicControlFileOrThrow` declares on what it throws (#679). The code,
  *   never the message -- #471 is what sniffing a message costs.
  *
- * Both are *skips*, not failures, for ADR-0015 decision 5's reason: a mismatch
- * is a declined placement, not an error.
+ * Both are *skips*, not failures, by analogy with ADR-0015 decision 5: a
+ * mismatch is a declined placement, not an error. The analogy rather than the
+ * decision itself, because decision 5 measures against the originating browser
+ * before the load, and this measures against the target's own primary after it.
  *
  * **Origin-free**, and more sharply than `fanOutMap`: compatibility is asked
  * against each target's *own* primary, never the originating browser's.
@@ -211,9 +213,9 @@ function controlSkipReason(target) {
  * shape and is empty in practice, since a control map never replaces a panel's
  * genome.
  *
- * Display mode does not travel. A/B/ratio is a view preference, and ADR-0014
- * keeps those out of what crosses between browsers; the fan-out changes no
- * more of it than a single-panel control load does.
+ * Display mode does not travel. It is a dataset choice of its own (ADR-0014),
+ * and this gesture's cargo is a control map, not a display mode; the fan-out
+ * changes no more of it than a single-panel control load does, which is none.
  *
  * **Raises no alert**, for the reasons `fanOutTracks` gives -- neither for an
  * incompatible map, which the public loader would raise once per panel, nor
@@ -239,6 +241,14 @@ async function fanOutControlMap(targets, config, load = (browser, ownConfig) => 
  * its load threw; either one naming a reason makes the target `skipped` rather
  * than `loaded` or `failed`. The defaults skip nothing, which is the primary
  * broadcast.
+ *
+ * @param {Array<Object>} targets - the resolved target set
+ * @param {Object} config - a map config, copied once per target
+ * @param {Function} load - how one browser is loaded
+ * @param {Object} [skips]
+ * @param {Function} [skips.skipReason] - target -> reason, or `undefined` to load
+ * @param {Function} [skips.declinedReason] - thrown error -> reason, or `undefined` for a failure
+ * @returns {Promise<{loaded: Array, failed: Array, skipped: Array, genomeChanged: Array}>}
  */
 async function fanOutSerially(targets, config, load, {skipReason = () => undefined, declinedReason = () => undefined} = {}) {
 

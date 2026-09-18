@@ -172,6 +172,22 @@ describe("loadHicControlFile refusing an incompatible map", function () {
 
 });
 
+// A refusal is a declined placement: the panel keeps the control map it had,
+// and so must keep that map's URL, or `toJSON` writes the refused map's URL
+// beside the kept map's name. Routine once a control map is broadcast (#681).
+describe("a refused control map leaves the panel as it was", function () {
+
+    test.each(["loadHicControlFile", "loadHicControlFileOrThrow"])("%s keeps the previous controlUrl", async function (door) {
+        const browser = stubBrowserWithIncompatibleMap([]);
+        browser.controlUrl = "https://example.org/kept.hic";
+        const dataLoader = new DataLoader(browser);
+
+        await dataLoader[door]({ url: "https://example.org/refused.hic" }).catch(() => undefined);
+
+        expect(browser.controlUrl).toBe("https://example.org/kept.hic");
+    });
+});
+
 describe("the OrThrow loaders stay silent", function () {
 
     beforeEach(() => {

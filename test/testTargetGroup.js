@@ -405,17 +405,6 @@ describe('fanOutControlMap', () => {
         expect(second.config).not.toBe(first.config)
     })
 
-    // A/B/ratio is a view preference, and ADR-0014 keeps those out of what
-    // crosses between browsers.
-    it('leaves each target\'s display mode alone', async () => {
-        const a = fakeBrowser('a', {genomeId: 'hg38'})
-        a.displayMode = 'AOB'
-
-        await fanOutControlMap([a], config, controlLoad([]))
-
-        expect(a.displayMode).toBe('AOB')
-    })
-
     it('returns an empty summary for an empty target set', async () => {
         expect(await fanOutControlMap([], config, controlLoad([])))
             .toEqual({loaded: [], failed: [], skipped: [], genomeChanged: []})

@@ -43,6 +43,7 @@ function fakeBrowser(name, {genomeId} = {}) {
         setIsolationReason: () => undefined,
         loadedConfigs: [],
         loadedMaps: [],
+        loadedControls: [],
         failing: false,
         unsyncSelf() {},
         async loadTracksOrThrow(configs) {
@@ -58,6 +59,19 @@ function fakeBrowser(name, {genomeId} = {}) {
             this.loadedMaps.push(config)
             this.dataset = {genomeId: config.genomeId, canSyncWith: () => false, isCompatible: () => false}
             this.genome = {id: config.genomeId}
+        },
+        // Refuses a control map on another genome the way the real loader does:
+        // after the read, with the declared code.
+        async loadHicControlFileOrThrow(config) {
+            if (this.failing) {
+                throw new Error(`boom in ${this.name}`)
+            }
+            if (config.genomeId !== this.genome?.id) {
+                const error = new Error(`"B" map genome (${config.genomeId}) does not match "A" map genome (${this.genome?.id})`)
+                error.code = 'control-incompatible'
+                throw error
+            }
+            this.loadedControls.push(config)
         },
         dispose() {
             this.unsyncSelf()
@@ -651,5 +665,54 @@ describe('loadHicFileIntoTargets', () => {
         expect(a.loadedMaps[0]).toEqual(config)
         expect(a.loadedMaps[0]).not.toBe(config)
         expect(b.loadedMaps[0]).not.toBe(a.loadedMaps[0])
+    })
+})
+
+describe('loadHicControlFileIntoTargets', () => {
+
+    const config = {url: 'https://example.com/control.hic', name: 'control', genomeId: 'hg38'}
+
+    it('loads the control into every aimed panel that can take it, and skips the rest', async () => {
+        const a = add('a', {genomeId: 'hg38'})
+        const empty = add('empty')
+        const mouse = add('mouse', {genomeId: 'mm10'})
+        const other = add('other', {genomeId: 'hg38'})
+        aim(a, empty, mouse)
+
+        // No container, so no alert dialog: an alert here would throw.
+        const summary = await registry.loadHicControlFileIntoTargets(config)
+
+        expect(summary.loaded).toEqual([a])
+        expect(summary.failed).toEqual([])
+        expect(summary.skipped).toEqual([
+            {browser: empty, reason: 'no-primary'},
+            {browser: mouse, reason: 'control-incompatible'}
+        ])
+        expect(summary.genomeChanged).toEqual([])
+        expect(other.loadedControls).toEqual([])
+    })
+
+    it('reports a failure rather than raising an alert, and carries on', async () => {
+        const a = add('a', {genomeId: 'hg38'})
+        const b = add('b', {genomeId: 'hg38'})
+        aim(a, b)
+        a.failing = true
+
+        const summary = await registry.loadHicControlFileIntoTargets(config)
+
+        expect(summary.loaded).toEqual([b])
+        expect(summary.failed.map(({browser}) => browser)).toEqual([a])
+    })
+
+    it('hands each target its own copy of the config', async () => {
+        const a = add('a', {genomeId: 'hg38'})
+        const b = add('b', {genomeId: 'hg38'})
+        aim(a, b)
+
+        await registry.loadHicControlFileIntoTargets(config)
+
+        expect(a.loadedControls[0]).toEqual(config)
+        expect(a.loadedControls[0]).not.toBe(config)
+        expect(b.loadedControls[0]).not.toBe(a.loadedControls[0])
     })
 })

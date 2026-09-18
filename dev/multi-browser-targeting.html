@@ -94,10 +94,21 @@
     it already had stay drawn over the new genome, which is exactly why that line exists.
 </p>
 
+<p class="note">
+    The <b>control</b> button broadcasts one hg38 <code>.hic</code> map as the
+    <b>"B"</b> map of every aimed panel (#681) — through
+    <code>registry.loadHicControlFileIntoTargets</code>. This one <em>does</em> skip, and
+    both skips are here to be seen: aim at everything and the empty panel is skipped
+    <code>[no-primary]</code> — nothing to be the "B" of — and the mm10 panel is skipped
+    <code>[control-incompatible]</code>, known only after its read. Neither raises a
+    modal. Each panel's A/B/ratio choice is left where the control load leaves it.
+</p>
+
 <div class="controls">
     <button id="add-browser">Add browser (hg38)</button>
     <button id="map-hg38">Broadcast hg38 map to targets</button>
     <button id="map-mm10">Broadcast mm10 map to targets</button>
+    <button id="control-hg38">Broadcast hg38 control map to targets</button>
     <button id="load-1d">Load 1D track into targets</button>
     <button id="load-2d">Load 2D annotation into targets</button>
     <button id="load-both">Load both into targets</button>
@@ -188,6 +199,12 @@
             name: '4DNFIFDYZOYP lung — mm10'
         }
     }
+
+    // The control broadcast. hg38, so across the default panels it pairs with the three
+    // hg38 primaries and is refused by the mm10 one. Panel 2's own primary, reused
+    // because it is known to answer a browser: panel 2 ends up with the same map as A
+    // and B, which is legal and harmless here.
+    const controlMap = {...hg38Maps[1], name: 'GM12878 diploid (a) as control — hg38'}
 
     const track1D = {
         url: 'https://s3.amazonaws.com/igv.org.genomes/hg38/refGene.sorted.txt.gz',
@@ -297,6 +314,12 @@
         renderSummary(summary)
         renderAim()
         renderRoster()
+    }
+
+    // A control map never changes a panel's genome, so the roster's expectations stay.
+    async function broadcastControl() {
+        summaryElement.textContent = 'loading…'
+        renderSummary(await registry.loadHicControlFileIntoTargets(controlMap))
     }
 
     /**
@@ -427,6 +450,7 @@
 
         document.getElementById('map-hg38').addEventListener('click', () => broadcastMap('hg38'))
         document.getElementById('map-mm10').addEventListener('click', () => broadcastMap('mm10'))
+        document.getElementById('control-hg38').addEventListener('click', () => broadcastControl())
         document.getElementById('load-1d').addEventListener('click', () => fanOut([track1D]))
         document.getElementById('load-2d').addEventListener('click', () => fanOut([track2D]))
         document.getElementById('load-both').addEventListener('click', () => fanOut([track1D, track2D]))

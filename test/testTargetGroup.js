@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest'
-import {trackSkipReason, fanOutTracks, fanOutMap} from '../js/targetGroup.js'
+import {trackSkipReason, fanOutTracks, fanOutMap, controlSkipReason, fanOutControlMap} from '../js/targetGroup.js'
 
 /**
  * The target-set rules -- see #615 and `docs/adr/0015`.
@@ -266,6 +266,147 @@ describe('fanOutMap', () => {
 
     it('returns an empty summary for an empty target set', async () => {
         expect(await fanOutMap([], config, mapLoad([])))
+            .toEqual({loaded: [], failed: [], skipped: [], genomeChanged: []})
+    })
+})
+
+describe('controlSkipReason', () => {
+
+    it('does not skip a target with a primary map', () => {
+        expect(controlSkipReason(fakeBrowser('a', {genomeId: 'hg38'}))).toBeUndefined()
+    })
+
+    // `clearDataset()` leaves the genome behind, so a genome alone is not a
+    // primary: a panel whose last map load failed has nothing to be the "B" of.
+    it('skips a target with no primary map, even one that kept its genome', () => {
+        const failedEarlier = fakeBrowser('failed-earlier')
+        failedEarlier.genome = {id: 'hg38'}
+
+        expect(controlSkipReason(fakeBrowser('empty'))).toBe('no-primary')
+        expect(controlSkipReason(failedEarlier)).toBe('no-primary')
+    })
+})
+
+describe('fanOutControlMap', () => {
+
+    const config = {url: 'https://example.com/control.hic', name: 'control'}
+
+    /**
+     * A loader that stands in for `loadHicControlFileOrThrow`: the browsers in
+     * `incompatible` refuse the map the way the real one does -- after the
+     * read, with the declared code -- and the rest take it as their control.
+     */
+    function controlLoad(record, {incompatible = new Set(), failing = new Set()} = {}) {
+        return async (browser, ownConfig) => {
+            record.push({event: 'start', browser, config: ownConfig})
+            await new Promise(resolve => setTimeout(resolve, 0))
+            record.push({event: 'end', browser})
+            if (incompatible.has(browser)) {
+                const error = new Error('"B" map genome (mm10) does not match "A" map genome (hg38)')
+                error.code = 'control-incompatible'
+                throw error
+            }
+            if (failing.has(browser)) {
+                throw new Error(`boom in ${browser.name}`)
+            }
+            browser.controlDataset = {name: ownConfig.name}
+        }
+    }
+
+    const started = record => record.filter(({event}) => 'start' === event).map(({browser}) => browser)
+
+    it('loads the control map into every target with a primary', async () => {
+        const a = fakeBrowser('a', {genomeId: 'hg38'})
+        const b = fakeBrowser('b', {genomeId: 'hg38'})
+        const record = []
+
+        const summary = await fanOutControlMap([a, b], config, controlLoad(record))
+
+        expect(summary).toEqual({loaded: [a, b], failed: [], skipped: [], genomeChanged: []})
+        expect(started(record)).toEqual([a, b])
+    })
+
+    it('skips a target with no primary map without reading anything for it', async () => {
+        const a = fakeBrowser('a', {genomeId: 'hg38'})
+        const empty = fakeBrowser('empty')
+        const record = []
+
+        const summary = await fanOutControlMap([a, empty], config, controlLoad(record))
+
+        expect(summary.loaded).toEqual([a])
+        expect(summary.skipped).toEqual([{browser: empty, reason: 'no-primary'}])
+        expect(started(record)).toEqual([a])
+    })
+
+    // Known only after the read, and a declined placement rather than an
+    // error -- ADR-0015 decision 5.
+    it('skips a target whose primary cannot pair with the control map', async () => {
+        const human = fakeBrowser('human', {genomeId: 'hg38'})
+        const mouse = fakeBrowser('mouse', {genomeId: 'mm10'})
+
+        const summary = await fanOutControlMap([human, mouse], config, controlLoad([], {incompatible: new Set([human])}))
+
+        expect(summary.loaded).toEqual([mouse])
+        expect(summary.failed).toEqual([])
+        expect(summary.skipped).toEqual([{browser: human, reason: 'control-incompatible'}])
+    })
+
+    // The code is the contract (#679), not the wording: a failure that merely
+    // reads like a mismatch is still a failure.
+    it('reads incompatibility off the declared code, not the message', async () => {
+        const a = fakeBrowser('a', {genomeId: 'hg38'})
+        const lookalike = async () => {
+            throw new Error('"B" map genome (mm10) does not match "A" map genome (hg38)')
+        }
+
+        const summary = await fanOutControlMap([a], config, lookalike)
+
+        expect(summary.skipped).toEqual([])
+        expect(summary.failed.map(({browser}) => browser)).toEqual([a])
+    })
+
+    it('reports a failing target without stopping the ones after it', async () => {
+        const a = fakeBrowser('a', {genomeId: 'hg38'})
+        const b = fakeBrowser('b', {genomeId: 'hg38'})
+        const c = fakeBrowser('c', {genomeId: 'hg38'})
+        const record = []
+
+        const summary = await fanOutControlMap([a, b, c], config, controlLoad(record, {failing: new Set([b])}))
+
+        expect(summary.loaded).toEqual([a, c])
+        expect(summary.failed.map(({browser}) => browser)).toEqual([b])
+        expect(summary.failed[0].error.message).toBe('boom in b')
+        expect(started(record)).toEqual([a, b, c])
+    })
+
+    it('loads the targets one after another, never overlapping', async () => {
+        const a = fakeBrowser('a', {genomeId: 'hg38'})
+        const b = fakeBrowser('b', {genomeId: 'hg38'})
+        const record = []
+
+        await fanOutControlMap([a, b], config, controlLoad(record))
+
+        expect(record.map(({event, browser}) => `${event} ${browser.name}`)).toEqual([
+            'start a', 'end a',
+            'start b', 'end b'
+        ])
+    })
+
+    it('hands each target its own copy of the config', async () => {
+        const a = fakeBrowser('a', {genomeId: 'hg38'})
+        const b = fakeBrowser('b', {genomeId: 'hg38'})
+        const record = []
+
+        await fanOutControlMap([a, b], config, controlLoad(record))
+
+        const [first, second] = record.filter(({event}) => 'start' === event)
+        expect(first.config).toEqual(config)
+        expect(first.config).not.toBe(config)
+        expect(second.config).not.toBe(first.config)
+    })
+
+    it('returns an empty summary for an empty target set', async () => {
+        expect(await fanOutControlMap([], config, controlLoad([])))
             .toEqual({loaded: [], failed: [], skipped: [], genomeChanged: []})
     })
 })

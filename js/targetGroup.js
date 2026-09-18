@@ -117,4 +117,74 @@ async function fanOutTracks(originating, targets, configs, load = (browser, ownC
     return summary
 }
 
-export {trackSkipReason, fanOutTracks}
+/**
+ * Load one map `config` into every browser in `targets`: the primary broadcast.
+ *
+ * Broadcast, not distribute -- every target takes the *same* map. #680.
+ *
+ * **Skips nothing**, so `skipped` is always empty. Both of `trackSkipReason`'s
+ * skips exist because a track has no genome of its own; a map carries one,
+ * built from the `.hic` file's own chromosome table, so a mismatched panel is
+ * simply one whose genome is about to change, and an empty panel is the best
+ * target there is. The key stays so a host can read both summaries with one
+ * code path.
+ *
+ * **Origin-free** for the same reason: `fanOutTracks` takes an originating
+ * browser because it is the track's genome declaration, and here nothing would
+ * read it.
+ *
+ * **Serial**, deliberately, where `fanOutTracks` is concurrent. `loadHicFile`
+ * ends by syncing the registry and then adopting a *peer's* sync state; run
+ * several at once and the group is recomputed against a half-loaded registry
+ * while each panel adopts whichever sibling finished first, so where the panels
+ * end up would depend on network order. The concurrency argument of ADR-0015
+ * decision 9 is about #588's unbounded track storm and does not carry: this is
+ * at most one indexed read per panel. `test/testTargetGroup.js` pins the order.
+ *
+ * **`genomeChanged`** reports the one fact a host cannot derive afterwards:
+ * which panels had a map on one genome and now have one on another. Nothing in
+ * the library clears a panel's tracks when its map is replaced, so those are
+ * the panels that may be drawing tracks at meaningless coordinates. A panel
+ * that was empty had no genome and so no such tracks, and is not reported. A
+ * genome-changed browser is also in `loaded`.
+ *
+ * Each target gets its own shallow copy of `config`: both loaders mutate what
+ * they are handed (`config.name`, and `config.nvi` from the lookup table).
+ * `locus` and `state` pass through untouched -- a host that puts one in the
+ * config means it for the whole broadcast.
+ *
+ * **Raises no alert**, for the reasons `fanOutTracks` gives; the default load
+ * is `loadHicFileOrThrow`, which rethrows a bot challenge unreported (#679).
+ *
+ * @param {Array<Object>} targets - the resolved target set
+ * @param {Object} config - a map config, as `loadHicFile` takes it
+ * @param {Function} [load] - how one browser is loaded; the seam a test drives
+ * @returns {Promise<{loaded: Array, failed: Array, skipped: Array, genomeChanged: Array}>}
+ */
+async function fanOutMap(targets, config, load = (browser, ownConfig) => browser.loadHicFileOrThrow(ownConfig)) {
+
+    const summary = {loaded: [], failed: [], skipped: [], genomeChanged: []}
+
+    for (const target of targets) {
+
+        const from = undefined === target.dataset ? undefined : target.genome?.id
+
+        try {
+            await load(target, {...config})
+        } catch (error) {
+            summary.failed.push({browser: target, error})
+            continue
+        }
+
+        summary.loaded.push(target)
+
+        const to = target.genome?.id
+        if (undefined !== from && from !== to) {
+            summary.genomeChanged.push({browser: target, from, to})
+        }
+    }
+
+    return summary
+}
+
+export {trackSkipReason, fanOutTracks, fanOutMap}

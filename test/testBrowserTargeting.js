@@ -42,6 +42,7 @@ function fakeBrowser(name, {genomeId} = {}) {
         synchedBrowsers: new Set(),
         setIsolationReason: () => undefined,
         loadedConfigs: [],
+        loadedMaps: [],
         failing: false,
         unsyncSelf() {},
         async loadTracksOrThrow(configs) {
@@ -49,6 +50,14 @@ function fakeBrowser(name, {genomeId} = {}) {
                 throw new Error(`boom in ${this.name}`)
             }
             this.loadedConfigs.push(configs)
+        },
+        async loadHicFileOrThrow(config) {
+            if (this.failing) {
+                throw new Error(`boom in ${this.name}`)
+            }
+            this.loadedMaps.push(config)
+            this.dataset = {genomeId: config.genomeId, canSyncWith: () => false, isCompatible: () => false}
+            this.genome = {id: config.genomeId}
         },
         dispose() {
             this.unsyncSelf()
@@ -582,5 +591,65 @@ describe('loadTracksIntoTargets', () => {
         expect(a.loadedConfigs[0][0]).toEqual(configs[0])
         expect(a.loadedConfigs[0][0]).not.toBe(configs[0])
         expect(b.loadedConfigs[0][0]).not.toBe(a.loadedConfigs[0][0])
+    })
+})
+
+describe('loadHicFileIntoTargets', () => {
+
+    // The fake loader installs `genomeId` as the map's genome, standing in for
+    // the chromosome table a real `.hic` file carries.
+    const config = {url: 'https://example.com/mouse.hic', name: 'mouse', genomeId: 'mm10'}
+
+    it('broadcasts the map to every targeted browser, empty or on another genome', async () => {
+        const a = add('a', {genomeId: 'hg38'})
+        const empty = add('empty')
+        const mouse = add('mouse', {genomeId: 'mm10'})
+        const other = add('other', {genomeId: 'hg38'})
+        aim(a, empty, mouse)
+
+        const summary = await registry.loadHicFileIntoTargets(config)
+
+        expect(summary.loaded).toEqual([a, empty, mouse])
+        expect(summary.skipped).toEqual([])
+        expect(summary.failed).toEqual([])
+        expect(summary.genomeChanged).toEqual([{browser: a, from: 'hg38', to: 'mm10'}])
+        expect(other.loadedMaps).toEqual([])
+    })
+
+    it('reaches only the current browser when nothing has been aimed at', async () => {
+        const a = add('a', {genomeId: 'hg38'})
+        const b = add('b', {genomeId: 'hg38'})
+        registry.select(a)
+
+        const summary = await registry.loadHicFileIntoTargets(config)
+
+        expect(summary.loaded).toEqual([a])
+        expect(b.loadedMaps).toEqual([])
+    })
+
+    it('reports a failure rather than raising an alert, and carries on', async () => {
+        const a = add('a', {genomeId: 'hg38'})
+        const b = add('b', {genomeId: 'hg38'})
+        const c = add('c', {genomeId: 'hg38'})
+        aim(a, b, c)
+        b.failing = true
+
+        // No container, so no alert dialog: an alert here would throw.
+        const summary = await registry.loadHicFileIntoTargets(config)
+
+        expect(summary.loaded).toEqual([a, c])
+        expect(summary.failed.map(({browser}) => browser)).toEqual([b])
+    })
+
+    it('hands each target its own copy of the config', async () => {
+        const a = add('a', {genomeId: 'hg38'})
+        const b = add('b', {genomeId: 'hg38'})
+        aim(a, b)
+
+        await registry.loadHicFileIntoTargets(config)
+
+        expect(a.loadedMaps[0]).toEqual(config)
+        expect(a.loadedMaps[0]).not.toBe(config)
+        expect(b.loadedMaps[0]).not.toBe(a.loadedMaps[0])
     })
 })

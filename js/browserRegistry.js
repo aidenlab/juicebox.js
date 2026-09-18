@@ -2,7 +2,7 @@ import {AlertDialog} from 'igv-ui'
 import EventBus from './eventBus.js'
 import HICEvent from './hicEvent.js'
 import {pairSynchable, isolationReasons} from './syncGroup.js'
-import {fanOutTracks} from './targetGroup.js'
+import {fanOutTracks, fanOutMap} from './targetGroup.js'
 import {normalizeSession} from './normalizeSession.js'
 // A cycle, deliberately: `createBrowser.js` resolves its registry from a
 // container, and `restoreSession` below needs browsers built. Neither module
@@ -283,6 +283,27 @@ class BrowserRegistry {
      */
     async loadTracksIntoTargets(configs) {
         return fanOutTracks(this.currentBrowser, this.targetedBrowsers, configs)
+    }
+
+    /**
+     * Load one map into every targeted browser, one after another, and report
+     * what happened: the primary broadcast (#680).
+     *
+     * NOTE: public API function
+     *
+     * Named for the browser door it multiplies, as `loadTracksIntoTargets` is.
+     * The rules live in `fanOutMap` in `js/targetGroup.js`: no origin, no
+     * skips, serial, and a fourth summary key naming the panels whose genome
+     * the map replaced.
+     *
+     * Raises no alert of its own, including for a bot challenge. The caller
+     * reports the summary.
+     *
+     * @param {Object} config - a map config, as `loadHicFile` takes it
+     * @returns {Promise<{loaded: Array, failed: Array, skipped: Array, genomeChanged: Array}>}
+     */
+    async loadHicFileIntoTargets(config) {
+        return fanOutMap(this.targetedBrowsers, config)
     }
 
     /**

@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest'
-import {trackSkipReason, fanOutTracks} from '../js/targetGroup.js'
+import {trackSkipReason, fanOutTracks, fanOutMap} from '../js/targetGroup.js'
 
 /**
  * The target-set rules -- see #615 and `docs/adr/0015`.
@@ -132,5 +132,128 @@ describe('fanOutTracks', () => {
         const a = fakeBrowser('a', {genomeId: 'hg38'})
         expect(await fanOutTracks(a, [], configs, recordingLoad([])))
             .toEqual({loaded: [], failed: [], skipped: []})
+    })
+})
+
+describe('fanOutMap', () => {
+
+    const config = {url: 'https://example.com/mouse.hic', name: 'mouse'}
+
+    /**
+     * A loader that installs the map's genome, as `loadHicFileOrThrow` does:
+     * the incoming map declares its own genome, and the browser takes it.
+     * Records when each load starts and ends, so the order is observable.
+     */
+    function mapLoad(record, {genomeId = 'mm10', failing = new Set()} = {}) {
+        return async (browser, ownConfig) => {
+            record.push({event: 'start', browser, config: ownConfig})
+            await new Promise(resolve => setTimeout(resolve, 0))
+            if (failing.has(browser)) {
+                record.push({event: 'end', browser})
+                throw new Error(`boom in ${browser.name}`)
+            }
+            browser.dataset = {}
+            browser.genome = {id: genomeId}
+            record.push({event: 'end', browser})
+        }
+    }
+
+    const started = record => record.filter(({event}) => 'start' === event).map(({browser}) => browser)
+
+    it('loads into every target, including an empty one, and skips nothing', async () => {
+        const a = fakeBrowser('a', {genomeId: 'mm10'})
+        const empty = fakeBrowser('empty')
+        const record = []
+
+        const summary = await fanOutMap([a, empty], config, mapLoad(record))
+
+        expect(summary.loaded).toEqual([a, empty])
+        expect(summary.failed).toEqual([])
+        expect(summary.skipped).toEqual([])
+        expect(started(record)).toEqual([a, empty])
+    })
+
+    it('loads into a target on another genome and reports the change', async () => {
+        const human = fakeBrowser('human', {genomeId: 'hg38'})
+        const mouse = fakeBrowser('mouse', {genomeId: 'mm10'})
+
+        const summary = await fanOutMap([human, mouse], config, mapLoad([]))
+
+        expect(summary.loaded).toEqual([human, mouse])
+        expect(summary.genomeChanged).toEqual([{browser: human, from: 'hg38', to: 'mm10'}])
+    })
+
+    // An empty panel had no genome, so it has no tracks drawn against one --
+    // the fact `genomeChanged` exists to report cannot be true of it.
+    it('does not report an empty target as a genome change', async () => {
+        const empty = fakeBrowser('empty')
+
+        const summary = await fanOutMap([empty], config, mapLoad([]))
+
+        expect(summary.genomeChanged).toEqual([])
+    })
+
+    // The serial decision (#680): `loadHicFile` ends by syncing the registry
+    // and adopting a peer's state, so concurrent loads would leave each panel
+    // wherever the network order put it. This fails if the fan-out is ever
+    // "optimised" back to `Promise.allSettled`.
+    it('loads the targets one after another, never overlapping', async () => {
+        const a = fakeBrowser('a', {genomeId: 'hg38'})
+        const b = fakeBrowser('b', {genomeId: 'hg38'})
+        const c = fakeBrowser('c')
+        const record = []
+
+        await fanOutMap([a, b, c], config, mapLoad(record))
+
+        expect(record.map(({event, browser}) => `${event} ${browser.name}`)).toEqual([
+            'start a', 'end a',
+            'start b', 'end b',
+            'start c', 'end c'
+        ])
+    })
+
+    it('reports a failing target without stopping the ones after it', async () => {
+        const a = fakeBrowser('a', {genomeId: 'hg38'})
+        const b = fakeBrowser('b', {genomeId: 'hg38'})
+        const c = fakeBrowser('c', {genomeId: 'hg38'})
+        const record = []
+
+        const summary = await fanOutMap([a, b, c], config, mapLoad(record, {failing: new Set([b])}))
+
+        expect(summary.loaded).toEqual([a, c])
+        expect(summary.failed.map(({browser}) => browser)).toEqual([b])
+        expect(summary.failed[0].error.message).toBe('boom in b')
+        expect(summary.genomeChanged.map(({browser}) => browser)).toEqual([a, c])
+        expect(started(record)).toEqual([a, b, c])
+    })
+
+    it('hands each target its own copy of the config', async () => {
+        const a = fakeBrowser('a', {genomeId: 'hg38'})
+        const b = fakeBrowser('b', {genomeId: 'hg38'})
+        const record = []
+
+        await fanOutMap([a, b], config, mapLoad(record))
+
+        const [first, second] = record.filter(({event}) => 'start' === event)
+        expect(first.config).toEqual(config)
+        expect(first.config).not.toBe(config)
+        expect(second.config).not.toBe(first.config)
+    })
+
+    it('leaves the caller\'s config unmutated when a loader writes to what it is handed', async () => {
+        const a = fakeBrowser('a', {genomeId: 'hg38'})
+        const mutating = async (browser, ownConfig) => {
+            ownConfig.name = 'renamed'
+            ownConfig.nvi = '123,456'
+        }
+
+        await fanOutMap([a], config, mutating)
+
+        expect(config).toEqual({url: 'https://example.com/mouse.hic', name: 'mouse'})
+    })
+
+    it('returns an empty summary for an empty target set', async () => {
+        expect(await fanOutMap([], config, mapLoad([])))
+            .toEqual({loaded: [], failed: [], skipped: [], genomeChanged: []})
     })
 })

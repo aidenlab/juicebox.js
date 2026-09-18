@@ -959,6 +959,19 @@ class HICBrowser {
     }
 
     /**
+     * `loadHicFile`, but a bot challenge is rethrown without an alert.
+     *
+     * Internal, and the one the target-set fan-out calls: a fan-out reports
+     * once per gesture, on the host's own notification surface, and four panels
+     * aimed at one WAF-gated URL must not raise four identical modals. Same
+     * loader body; only the reporting differs. #679.
+     */
+    async loadHicFileOrThrow(config, noUpdates) {
+        this.#assertNotDisposed('loadHicFileOrThrow');
+        return this.dataLoader.loadHicFileOrThrow(config, noUpdates);
+    }
+
+    /**
      * Load a live contact map via hic-straw LiveContactMap.
      *
      * NOTE: public API function
@@ -983,6 +996,20 @@ class HICBrowser {
     async loadHicControlFile(config, noUpdates) {
         this.#assertNotDisposed('loadHicControlFile');
         return this.dataLoader.loadHicControlFile(config, noUpdates);
+    }
+
+    /**
+     * `loadHicControlFile`, but it rejects instead of alerting.
+     *
+     * Internal, and the one the target-set fan-out calls. The public method
+     * alerts an incompatible control map and resolves `undefined`, so a caller
+     * cannot tell a refusal from a success; this one throws an `Error` whose
+     * `code` is `'control-incompatible'`, and rethrows a bot challenge
+     * unreported. #679.
+     */
+    async loadHicControlFileOrThrow(config, noUpdates) {
+        this.#assertNotDisposed('loadHicControlFileOrThrow');
+        return this.dataLoader.loadHicControlFileOrThrow(config, noUpdates);
     }
 
     async parseGotoInput(input) {

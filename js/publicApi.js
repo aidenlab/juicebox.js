@@ -104,6 +104,10 @@ export const NAMESPACE_SURFACE = [
  * (ADR-0016 decision 9); a host that wants the reason has `onSyncRefused`,
  * whose `message` is the same text. Nor is `dataset.missingChromosomes`, the
  * lookup behind the mark's coverage wording, although `dataset` is declared.
+ *
+ * Nor, new in #679, `loadHicFileOrThrow` and `loadHicControlFileOrThrow`: the
+ * two map loaders without their alerts, the way `loadTracksOrThrow` is
+ * `loadTracks` without its own, and reached only from the target-set fan-out.
  * Absence from this file is not permission, and naming them here is what makes
  * that decision visible.
  */

@@ -183,6 +183,18 @@ describe('fanOutMap', () => {
         expect(summary.genomeChanged).toEqual([{browser: human, from: 'hg38', to: 'mm10'}])
     })
 
+    // `clearDataset()` runs at the top of every map load and does not touch the
+    // genome or the tracks, so a panel whose last load failed has no dataset
+    // but still has tracks on its old genome. That is the case this key exists for.
+    it('reports a target that lost its dataset but kept its genome', async () => {
+        const failedEarlier = fakeBrowser('failed-earlier')
+        failedEarlier.genome = {id: 'hg38'}
+
+        const summary = await fanOutMap([failedEarlier], config, mapLoad([]))
+
+        expect(summary.genomeChanged).toEqual([{browser: failedEarlier, from: 'hg38', to: 'mm10'}])
+    })
+
     // An empty panel had no genome, so it has no tracks drawn against one --
     // the fact `genomeChanged` exists to report cannot be true of it.
     it('does not report an empty target as a genome change', async () => {

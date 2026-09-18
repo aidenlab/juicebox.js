@@ -2,7 +2,8 @@
  * The **target set**: the browsers a *load* reaches. Not a sync group.
  *
  * `js/syncGroup.js` holds the rule for what a browser publishes its canonical
- * state to; this module holds the rule for what a track load fans out to. They
+ * state to; this module holds the rules for what a load fans out to -- tracks,
+ * and a primary map broadcast (#680). They
  * are two different mechanisms for "one action reaching several browsers", and
  * the distinction is the load-bearing part of the design -- membership here is
  * an explicit user gesture rather than a computed rule, the cargo is dataset
@@ -144,9 +145,11 @@ async function fanOutTracks(originating, targets, configs, load = (browser, ownC
  * **`genomeChanged`** reports the one fact a host cannot derive afterwards:
  * which panels had a map on one genome and now have one on another. Nothing in
  * the library clears a panel's tracks when its map is replaced, so those are
- * the panels that may be drawing tracks at meaningless coordinates. A panel
- * that was empty had no genome and so no such tracks, and is not reported. A
- * genome-changed browser is also in `loaded`.
+ * the panels that may be drawing tracks at meaningless coordinates. Read off
+ * `genome`, not `dataset`: `clearDataset()` leaves the genome and the tracks
+ * behind, so a panel whose last load failed has no dataset but still has tracks
+ * on its old genome. A panel that never had a map has no genome and is not
+ * reported. A genome-changed browser is also in `loaded`.
  *
  * Each target gets its own shallow copy of `config`: both loaders mutate what
  * they are handed (`config.name`, and `config.nvi` from the lookup table).
@@ -167,7 +170,7 @@ async function fanOutMap(targets, config, load = (browser, ownConfig) => browser
 
     for (const target of targets) {
 
-        const from = undefined === target.dataset ? undefined : target.genome?.id
+        const from = target.genome?.id
 
         try {
             await load(target, {...config})

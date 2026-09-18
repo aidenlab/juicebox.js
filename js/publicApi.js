@@ -107,7 +107,7 @@ export const NAMESPACE_SURFACE = [
  *
  * Nor, new in #679, `loadHicFileOrThrow` and `loadHicControlFileOrThrow`: the
  * two map loaders without their alerts, the way `loadTracksOrThrow` is
- * `loadTracks` without its own, and reached only from the target-set fan-out.
+ * `loadTracks` without its own, and to be reached only from the target-set fan-out.
  * Absence from this file is not permission, and naming them here is what makes
  * that decision visible.
  */

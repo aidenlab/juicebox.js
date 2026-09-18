@@ -961,7 +961,7 @@ class HICBrowser {
     /**
      * `loadHicFile`, but a bot challenge is rethrown without an alert.
      *
-     * Internal, and the one the target-set fan-out calls: a fan-out reports
+     * Internal, and the one the target-set fan-out will call: a fan-out reports
      * once per gesture, on the host's own notification surface, and four panels
      * aimed at one WAF-gated URL must not raise four identical modals. Same
      * loader body; only the reporting differs. #679.
@@ -1001,7 +1001,7 @@ class HICBrowser {
     /**
      * `loadHicControlFile`, but it rejects instead of alerting.
      *
-     * Internal, and the one the target-set fan-out calls. The public method
+     * Internal, and the one the target-set fan-out will call. The public method
      * alerts an incompatible control map and resolves `undefined`, so a caller
      * cannot tell a refusal from a success; this one throws an `Error` whose
      * `code` is `'control-incompatible'`, and rethrows a bot challenge

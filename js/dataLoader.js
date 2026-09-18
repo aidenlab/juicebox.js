@@ -121,7 +121,7 @@ class DataLoader {
      *
      * Internal in the sense the registry's `releaseSlot` is -- not declared
      * surface, and reached from one place: `HICBrowser.loadHicFileOrThrow`,
-     * which the target-set fan-out calls. N panels aimed at one WAF-gated URL
+     * which the target-set fan-out will call (#680, #681). N panels aimed at one WAF-gated URL
      * would otherwise raise N identical modals from one gesture. #679.
      *
      * @param {Object} config - as `loadHicFile` takes it
@@ -429,7 +429,7 @@ class DataLoader {
      *
      * Internal in the sense the registry's `releaseSlot` is -- not declared
      * surface, and reached from one place: `HICBrowser.loadHicControlFileOrThrow`,
-     * which the target-set fan-out calls. #679.
+     * which the target-set fan-out will call. #679.
      *
      * @param {Object} config - as `loadHicControlFile` takes it
      * @param {boolean} noUpdates - as `loadHicControlFile` takes it

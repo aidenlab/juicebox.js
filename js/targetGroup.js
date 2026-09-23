@@ -144,14 +144,10 @@ async function fanOutTracks(originating, targets, configs, load = (browser, ownC
  * decision 9 is about #588's unbounded track storm and does not carry: this is
  * at most one indexed read per panel. `test/testTargetGroup.js` pins the order.
  *
- * **`genomeChanged`** reports the one fact a host cannot derive afterwards:
- * which panels had a map on one genome and now have one on another. Nothing in
- * the library clears a panel's tracks when its map is replaced, so those are
- * the panels that may be drawing tracks at meaningless coordinates. Read off
- * `genome`, not `dataset`: `clearDataset()` leaves the genome and the tracks
- * behind, so a panel whose last load failed has no dataset but still has tracks
- * on its old genome. A panel that never had a map has no genome and is not
- * reported. A genome-changed browser is also in `loaded`.
+ * A target whose genome the map replaces loses its tracks in the load, as a
+ * single-panel load does (ADR-0019). The summary had a `genomeChanged` key
+ * naming those panels until #682, which cleared the tracks it was there to warn
+ * about; a host that wants to know has `onGenomeChange`.
  *
  * Each target gets its own shallow copy of `config`: both loaders mutate what
  * they are handed (`config.name`, and `config.nvi` from the lookup table).
@@ -164,7 +160,7 @@ async function fanOutTracks(originating, targets, configs, load = (browser, ownC
  * @param {Array<Object>} targets - the resolved target set
  * @param {Object} config - a map config, as `loadHicFile` takes it
  * @param {Function} [load] - how one browser is loaded; the seam a test drives
- * @returns {Promise<{loaded: Array, failed: Array, skipped: Array, genomeChanged: Array}>}
+ * @returns {Promise<{loaded: Array, failed: Array, skipped: Array}>}
  */
 async function fanOutMap(targets, config, load = (browser, ownConfig) => browser.loadHicFileOrThrow(ownConfig)) {
     return fanOutSerially(targets, config, load)
@@ -211,9 +207,7 @@ function controlSkipReason(target) {
  *
  * **Origin-free**, and more sharply than `fanOutMap`: compatibility is asked
  * against each target's *own* primary, never the originating browser's.
- * **Serial**, for `fanOutMap`'s reason. `genomeChanged` is kept for the shared
- * shape and is empty in practice, since a control map never replaces a panel's
- * genome.
+ * **Serial**, for `fanOutMap`'s reason.
  *
  * Display mode does not travel. It is a dataset choice of its own (ADR-0014),
  * and this gesture's cargo is a control map, not a display mode; the fan-out
@@ -226,7 +220,7 @@ function controlSkipReason(target) {
  * @param {Array<Object>} targets - the resolved target set
  * @param {Object} config - a map config, as `loadHicControlFile` takes it
  * @param {Function} [load] - how one browser is loaded; the seam a test drives
- * @returns {Promise<{loaded: Array, failed: Array, skipped: Array, genomeChanged: Array}>}
+ * @returns {Promise<{loaded: Array, failed: Array, skipped: Array}>}
  */
 async function fanOutControlMap(targets, config, load = (browser, ownConfig) => browser.loadHicControlFileOrThrow(ownConfig)) {
     return fanOutSerially(targets, config, load, {
@@ -250,11 +244,11 @@ async function fanOutControlMap(targets, config, load = (browser, ownConfig) => 
  * @param {Object} [skips]
  * @param {Function} [skips.skipReason] - target -> reason, or `undefined` to load
  * @param {Function} [skips.declinedReason] - thrown error -> reason, or `undefined` for a failure
- * @returns {Promise<{loaded: Array, failed: Array, skipped: Array, genomeChanged: Array}>}
+ * @returns {Promise<{loaded: Array, failed: Array, skipped: Array}>}
  */
 async function fanOutSerially(targets, config, load, {skipReason = () => undefined, declinedReason = () => undefined} = {}) {
 
-    const summary = {loaded: [], failed: [], skipped: [], genomeChanged: []}
+    const summary = {loaded: [], failed: [], skipped: []}
 
     for (const target of targets) {
 
@@ -263,8 +257,6 @@ async function fanOutSerially(targets, config, load, {skipReason = () => undefin
             summary.skipped.push({browser: target, reason: skipped})
             continue
         }
-
-        const from = target.genome?.id
 
         try {
             await load(target, {...config})
@@ -279,11 +271,6 @@ async function fanOutSerially(targets, config, load, {skipReason = () => undefin
         }
 
         summary.loaded.push(target)
-
-        const to = target.genome?.id
-        if (undefined !== from && from !== to) {
-            summary.genomeChanged.push({browser: target, from, to})
-        }
     }
 
     return summary

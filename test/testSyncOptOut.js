@@ -72,6 +72,7 @@ function stubBrowser({ synchable, peer, synched }) {
         update: async () => undefined,
         dataset: undefined,
         clearDataset: () => undefined,
+        clearTracks: () => undefined,
         stopSpinner: () => undefined,
         contactMatrixView: { startSpinner: () => undefined },
         contactMapLabel: { textContent: '', title: '' },

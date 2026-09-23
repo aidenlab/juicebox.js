@@ -626,7 +626,6 @@ describe('loadHicFileIntoTargets', () => {
         expect(summary.loaded).toEqual([a, empty, mouse])
         expect(summary.skipped).toEqual([])
         expect(summary.failed).toEqual([])
-        expect(summary.genomeChanged).toEqual([{browser: a, from: 'hg38', to: 'mm10'}])
         expect(other.loadedMaps).toEqual([])
     })
 
@@ -688,7 +687,6 @@ describe('loadHicControlFileIntoTargets', () => {
             {browser: empty, reason: 'no-primary'},
             {browser: mouse, reason: 'control-incompatible'}
         ])
-        expect(summary.genomeChanged).toEqual([])
         expect(other.loadedControls).toEqual([])
     })
 

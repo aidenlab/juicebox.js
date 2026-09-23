@@ -165,6 +165,11 @@ class DataLoader {
             this.browser.genome = new Genome(dataset.genomeId, dataset.chromosomes);
 
             if (this.browser.genome.id !== previousGenomeId) {
+                // A genome change: the tracks belong to the genome the map
+                // replaced, so they go -- before the change is announced, so a
+                // host reacting to it sees an empty panel. A failed load never
+                // gets here and keeps them. #682, ADR-0019.
+                this.browser.clearTracks();
                 // Use coordinator instead of event bus for explicit, traceable genome change handling
                 this.browser.coordinator.onGenomeChange(this.browser.genome.id);
                 // Still post to event bus for cross-browser synchronization (if needed)
@@ -352,6 +357,8 @@ class DataLoader {
             this.browser.genome = new Genome(dataset.genomeId, dataset.chromosomes);
 
             if (this.browser.genome.id !== previousGenomeId) {
+                // As on the file path. #682, ADR-0019.
+                this.browser.clearTracks();
                 this.browser.coordinator.onGenomeChange(this.browser.genome.id);
                 EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
             }
@@ -737,7 +744,7 @@ class DataLoader {
      * It goes before the first of its load's 2D tracks to have arrived from
      * later in the session, so once the load is in its 2D tracks follow the
      * browser's earlier ones in session order. A track arriving after its
-     * browser is gone is dropped.
+     * browser is gone, or after a genome change, is dropped.
      *
      * @param {Object} config - a 2D track configuration object
      * @param {LayoutController} layoutController - the layout its load started in
@@ -746,9 +753,12 @@ class DataLoader {
      * @returns {Promise<void>}
      */
     async #loadTrack2D(config, layoutController, arrived, index) {
-        const track2D = await Track2D.loadTrack2D(config, this.browser.genome);
+        const {genome} = this.browser;
+        const track2D = await Track2D.loadTrack2D(config, genome);
 
-        if (!this.#isCurrent(layoutController)) {
+        // A genome change while it loaded cleared the annotations it would have
+        // joined, and it belongs to the genome that went with them (#682).
+        if (!this.#isCurrent(layoutController) || this.browser.genome?.id !== genome?.id) {
             return;
         }
 

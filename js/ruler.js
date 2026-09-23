@@ -90,7 +90,14 @@ class Ruler {
         // discard current tiles
         wholeGenomeContainerElement.innerHTML = '';
 
-        list = dataset.chromosomes.filter(chromosome => chromosome.name.toLowerCase() !== 'all');
+        // No map to lay out: a genome change resizes the track rows mid-load,
+        // between `clearDataset()` and the new dataset, and `onMapLoaded` lays
+        // the ruler out again once it is in. #682.
+        if (!dataset) {
+            return;
+        }
+
+        list =dataset.chromosomes.filter(chromosome => chromosome.name.toLowerCase() !== 'all');
 
         extent = list.reduce((sum, chromosome) => sum + chromosome.size, 0);
 

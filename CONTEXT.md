@@ -283,6 +283,14 @@ same, so the user can dismiss a pending track, which drops it from the session.
 #588.
 _Avoid_: loading track, track placeholder (the row, not the track).
 
+**Genome change** — a successful map load into a panel whose genome id differs
+from the one its previous map had. The id, not the assembly: hg38 to GRCh38 is a
+genome change. A panel's tracks — track pairs, pending tracks and 2D annotations
+— belong to its genome, so a genome change removes them all; the user's act of
+loading the other genome's map is the consent. A failed load is not a genome
+change: the old genome, and its tracks, stay. ADR-0019.
+_Avoid_: genome switch, assembly change.
+
 ## Data access
 
 **Gate** — a data host refusing a request a browser is able to make. Two are

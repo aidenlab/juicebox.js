@@ -90,8 +90,8 @@
     (#680) — through <code>registry.loadHicFileIntoTargets</code>. The rules are not the
     track rules: a map carries its own genome, so nothing is skipped, the empty panel
     takes it like any other, and the loads run <b>one after another</b>. A panel whose
-    genome the map replaced is listed under <code>genomeChanged</code> — and any tracks
-    it already had stay drawn over the new genome, which is exactly why that line exists.
+    genome the map replaces loses its tracks, pending ones and 2D annotations included,
+    exactly as a single-panel load does (#682).
 </p>
 
 <p class="note">
@@ -285,11 +285,7 @@
         summaryElement.textContent = [
             `loaded:  ${line(summary.loaded.map(label))}`,
             `skipped: ${line(summary.skipped.map(({browser, reason}) => `${label(browser)} [${reason}]`))}`,
-            `failed:  ${line(summary.failed.map(({browser, error}) => `${label(browser)}: ${error.message}`))}`,
-            // Only a map broadcast carries it.
-            ...(summary.genomeChanged
-                ? [`genomeChanged: ${line(summary.genomeChanged.map(({browser, from, to}) => `${label(browser)} ${from} → ${to}`))}`]
-                : [])
+            `failed:  ${line(summary.failed.map(({browser, error}) => `${label(browser)}: ${error.message}`))}`
         ].join('\n')
     }
 

@@ -293,14 +293,14 @@ class BrowserRegistry {
      *
      * Named for the browser door it multiplies, as `loadTracksIntoTargets` is.
      * The rules live in `fanOutMap` in `js/targetGroup.js`: no origin, no
-     * skips, serial, and a fourth summary key naming the panels whose genome
-     * the map replaced.
+     * skips, serial. A panel whose genome the map replaces loses its tracks,
+     * as in a single-panel load (#682, ADR-0019).
      *
      * Raises no alert of its own, including for a bot challenge. The caller
      * reports the summary.
      *
      * @param {Object} config - a map config, as `loadHicFile` takes it
-     * @returns {Promise<{loaded: Array, failed: Array, skipped: Array, genomeChanged: Array}>}
+     * @returns {Promise<{loaded: Array, failed: Array, skipped: Array}>}
      */
     async loadHicFileIntoTargets(config) {
         return fanOutMap(this.targetedBrowsers, config)
@@ -323,7 +323,7 @@ class BrowserRegistry {
      * The caller reports the summary.
      *
      * @param {Object} config - a map config, as `loadHicControlFile` takes it
-     * @returns {Promise<{loaded: Array, failed: Array, skipped: Array, genomeChanged: Array}>}
+     * @returns {Promise<{loaded: Array, failed: Array, skipped: Array}>}
      */
     async loadHicControlFileIntoTargets(config) {
         return fanOutControlMap(this.targetedBrowsers, config)

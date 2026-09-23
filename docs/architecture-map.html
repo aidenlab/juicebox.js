@@ -212,9 +212,9 @@ flowchart TB
             <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Unowned — arrived after the review · ADR-0015, ADR-0018</span>
           </div>
           <div class="p-5 space-y-3 text-sm">
-            <p class="font-mono text-xs text-slate-500">js/targetGroup.js · 292 lines · ADR-0015, ADR-0018</p>
+            <p class="font-mono text-xs text-slate-500">js/targetGroup.js · 279 lines · ADR-0015, ADR-0018</p>
             <p><strong>Interface:</strong> <span class="font-mono">fanOutTracks(originating, targets, configs)</span>, <span class="font-mono">fanOutMap(targets, config)</span> and <span class="font-mono">fanOutControlMap(targets, config)</span>, with <span class="font-mono">trackSkipReason</span> and <span class="font-mono">controlSkipReason</span>. <strong>Hides:</strong> which targeted browsers a load can reach, why the others are skipped, and reporting N loads as one outcome. The load itself is injected, so the rules are tested without a network.</p>
-            <p><strong>Two shapes of fan-out, on purpose.</strong> Tracks load concurrently and are measured against the originating browser. Maps load one at a time, have no origin, and invert the skips: a primary map skips nothing, and a control map skips a panel after the read if that panel's own primary cannot pair with it. ADR-0018 records why.</p>
+            <p><strong>Two shapes of fan-out, on purpose.</strong> Tracks load concurrently and are measured against the originating browser. Maps load one at a time, have no origin, and invert the skips: a primary map skips nothing, and a control map skips a panel after the read if that panel's own primary cannot pair with it. ADR-0018 records why. Both summaries are <span class="font-mono">{loaded, failed, skipped}</span>; a panel whose genome a map replaces loses its tracks in its own load, as any single-panel load does (ADR-0019), so the summary has nothing more to report.</p>
             <p><strong>Seam — not a sync group.</strong> A target set is an explicit shift-click gesture and reaches a <em>load</em>; a sync group is decided by the maps and carries <em>view state</em>. Keeping them apart is the whole of ADR-0015.</p>
           </div>
         </article>
@@ -230,7 +230,7 @@ flowchart TB
             <span class="text-xs uppercase tracking-wider text-slate-600 font-semibold">Partly carved · candidates 3, 6, 8, 9 landed · 10 open as #581 · growing again</span>
           </div>
           <div class="p-5 space-y-4 text-sm">
-            <p class="font-mono text-xs text-slate-500">js/hicBrowser.js · 1831 lines · the largest module on this map after nvi.js</p>
+            <p class="font-mono text-xs text-slate-500">js/hicBrowser.js · 1847 lines · the largest module on this map after nvi.js</p>
 
             <p><strong>This is the one module the redesign does not turn into a deep module, and it is worth being explicit about why.</strong> HICBrowser is the hub every tier reaches through. Its interface is not a set of methods anyone designed — it is the accumulated public surface two shipped host apps already depend on. You cannot shrink it by choosing to; you shrink it by moving behaviour out from under it into modules that <em>are</em> deep, and letting the members that only forwarded disappear with the thing they forwarded to.</p>
 
@@ -242,7 +242,7 @@ flowchart TB
               <div class="rounded border border-dashed border-slate-500 bg-slate-50 p-4 space-y-2">
                 <div class="text-xs uppercase tracking-wider text-slate-600">Still to move out — and what moved in</div>
                 <p><strong>#581 (candidate 10)</strong> — three load paths that reach back into <span class="font-mono">browser.userInteractionShield</span>, <span class="font-mono">contactMapLabel</span> and <span class="font-mono">browser.genome</span>.</p>
-                <p><strong>Moved in since v4.0.0</strong>, about 600 lines: the sync gate and isolation mark (ADR-0016), mirroring the resolution lock across a group (ADR-0014), the target-set load path (ADR-0015), a restore that does not await tracks (ADR-0017), the silent map loaders the map broadcasts call (ADR-0018), the normalization substitution notice (ADR-0012) and All as a zoom rung (ADR-0010). Each rule that could be pure went to its own module; the wiring stayed here. No candidate covers it yet.</p>
+                <p><strong>Moved in since v4.0.0</strong>, about 600 lines: the sync gate and isolation mark (ADR-0016), mirroring the resolution lock across a group (ADR-0014), the target-set load path (ADR-0015), a restore that does not await tracks (ADR-0017), the silent map loaders the map broadcasts call (ADR-0018), clearing a panel's tracks at a genome change (ADR-0019), the normalization substitution notice (ADR-0012) and All as a zoom rung (ADR-0010). Each rule that could be pure went to its own module; the wiring stayed here. No candidate covers it yet.</p>
               </div>
             </div>
 
@@ -385,7 +385,7 @@ flowchart TB
             <span class="text-xs uppercase tracking-wider text-slate-600 font-semibold">Open · #581 (candidate 10) · ports &amp; adapters · <em>this is the live-map seam</em></span>
           </div>
           <div class="p-5 space-y-4 text-sm">
-            <p class="font-mono text-xs text-slate-500">js/dataLoader.js · 809 lines</p>
+            <p class="font-mono text-xs text-slate-500">js/dataLoader.js · 819 lines</p>
             <p><strong>Three near-clones today.</strong> <span class="font-mono">loadHicFile</span> (186 lines: shield · label · spinner · <span class="font-mono">Dataset.loadDataset</span> · Genome · state ladder · nvi lookup · sync · notify). <span class="font-mono">loadLiveContactMap</span> (78 lines, with the state ladder <em>duplicated</em>, and a one-sided sync edge — #638). <span class="font-mono">loadHicControlFile</span> (66 lines).</p>
             <p><strong>Target:</strong> <span class="font-mono">loadMap(source, role)</span> — one interface, with the <span class="font-mono">.hic</span> file and the live contact map as <em>source adapters</em> rather than parallel functions.</p>
             <div class="rounded bg-amber-50 border border-amber-300 p-4 space-y-1">

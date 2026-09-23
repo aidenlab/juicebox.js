@@ -53,7 +53,7 @@ and `browserRegistry.js` from 429 to 846 across v4.1–v4.5 and the map broadcas
 `syncGroup.js` and `targetGroup.js`; the wiring stayed in the hub. No card covers that code. The
 next architecture scan should start there, and add its cards to the existing review.
 
-**ADR-0019 is the next free number.** 0007 was reserved for #477 and never written; the gap is
+**ADR-0020 is the next free number.** 0007 was reserved for #477 and never written; the gap is
 deliberate.
 
 ---

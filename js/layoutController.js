@@ -252,20 +252,34 @@ class LayoutController {
         setTrackReorderArrowColors(this.browser.trackPairs)
     }
 
+    /**
+     * Take away every row: track pairs and pending tracks alike. Each loaded
+     * track pair posts `TrackXYPairRemoval`, as `removeTrackXYPair` does; a
+     * pending track posts nothing, as when it is dismissed, and its load is
+     * discarded when it settles, because its row is gone.
+     *
+     * Draws nothing. Its caller is a genome change (`HICBrowser.clearTracks`),
+     * part of a map load that draws the panel once the new map is in. #682,
+     * ADR-0019 decisions 3 and 5.
+     */
     removeAllTrackXYPairs() {
 
         if (this.browser.trackPairs.length === 0 ) {
             return;
         }
 
-        for(let trackPair of this.browser.trackPairs) {
+        const removed = this.browser.trackPairs
+        this.browser.trackPairs = []
+
+        for (const trackPair of removed) {
             // discard DOM element's
             trackPair.dispose();
         }
-        this.browser.trackPairs = []
-        this.browser.updateLayout();
         this.resizeLayoutWithTrackXYPairCount(0)
 
+        for (const trackPair of removed.filter(trackPair => !trackPair.isPendingTrack)) {
+            EventBus.globalBus.post(HICEvent("TrackXYPairRemoval", trackPair));
+        }
     }
 
     removeTrackXYPair(trackXYPair) {

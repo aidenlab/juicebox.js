@@ -161,15 +161,7 @@ class DataLoader {
                 Object.assign({alert: this.#announceStrawSubstitution()}, config));
             dataset.name = name;
 
-            const previousGenomeId = this.browser.genome ? this.browser.genome.id : undefined;
-            this.browser.genome = new Genome(dataset.genomeId, dataset.chromosomes);
-
-            if (this.browser.genome.id !== previousGenomeId) {
-                // Use coordinator instead of event bus for explicit, traceable genome change handling
-                this.browser.coordinator.onGenomeChange(this.browser.genome.id);
-                // Still post to event bus for cross-browser synchronization (if needed)
-                EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
-            }
+            this.#installGenome(dataset);
 
             // A rung installs the dataset and then hands its state to
             // `setState`, the chokepoint -- in that order, because `clampXY`
@@ -310,6 +302,26 @@ class DataLoader {
     }
 
     /**
+     * Rebuild the browser's genome from a freshly read map, the step both map
+     * loads share. When the id differs from the previous map's -- a genome
+     * change -- the tracks belong to the genome the map replaced, so they go,
+     * before the change is announced, so a host reacting to it sees an empty
+     * panel. A failed load never gets here and keeps them. #682, ADR-0019.
+     */
+    #installGenome(dataset) {
+        const previousGenomeId = this.browser.genome ? this.browser.genome.id : undefined;
+        this.browser.genome = new Genome(dataset.genomeId, dataset.chromosomes);
+
+        if (this.browser.genome.id !== previousGenomeId) {
+            this.browser.clearTracks();
+            // Use coordinator instead of event bus for explicit, traceable genome change handling
+            this.browser.coordinator.onGenomeChange(this.browser.genome.id);
+            // Still post to event bus for cross-browser synchronization (if needed)
+            EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
+        }
+    }
+
+    /**
      * Load a live contact map via hic-straw LiveContactMap.
      * Routes through HiCDataset → Straw → LiveContactMap (HicFile interface).
      *
@@ -348,13 +360,7 @@ class DataLoader {
             const dataset = new HiCDataset({ liveContactMap: lcm });
             await dataset.init();
 
-            const previousGenomeId = this.browser.genome ? this.browser.genome.id : undefined;
-            this.browser.genome = new Genome(dataset.genomeId, dataset.chromosomes);
-
-            if (this.browser.genome.id !== previousGenomeId) {
-                this.browser.coordinator.onGenomeChange(this.browser.genome.id);
-                EventBus.globalBus.post(HICEvent("GenomeChange", this.browser.genome.id));
-            }
+            this.#installGenome(dataset);
 
             // The same ladder the file path walks. It used to be spelled
             // differently here and had lost the unknown-type rung, so a numeric
@@ -737,7 +743,7 @@ class DataLoader {
      * It goes before the first of its load's 2D tracks to have arrived from
      * later in the session, so once the load is in its 2D tracks follow the
      * browser's earlier ones in session order. A track arriving after its
-     * browser is gone is dropped.
+     * browser is gone, or after a genome change, is dropped.
      *
      * @param {Object} config - a 2D track configuration object
      * @param {LayoutController} layoutController - the layout its load started in
@@ -746,9 +752,24 @@ class DataLoader {
      * @returns {Promise<void>}
      */
     async #loadTrack2D(config, layoutController, arrived, index) {
-        const track2D = await Track2D.loadTrack2D(config, this.browser.genome);
+        const {genome} = this.browser;
 
-        if (!this.#isCurrent(layoutController)) {
+        // A genome change while it loaded cleared the annotations it would have
+        // joined, and it belongs to the genome that went with them: dropped,
+        // and so is its failure, as a pending track's is (#682).
+        const isGone = () => !this.#isCurrent(layoutController) || this.browser.genome?.id !== genome?.id;
+
+        let track2D;
+        try {
+            track2D = await Track2D.loadTrack2D(config, genome);
+        } catch (error) {
+            if (isGone()) {
+                return;
+            }
+            throw error;
+        }
+
+        if (isGone()) {
             return;
         }
 

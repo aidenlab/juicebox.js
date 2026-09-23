@@ -173,36 +173,15 @@ describe('fanOutMap', () => {
         expect(started(record)).toEqual([a, empty])
     })
 
-    it('loads into a target on another genome and reports the change', async () => {
+    // The summary is the three keys: `genomeChanged` went with #682, which
+    // clears a replaced genome's tracks in the load itself (ADR-0019).
+    it('loads into a target on another genome', async () => {
         const human = fakeBrowser('human', {genomeId: 'hg38'})
         const mouse = fakeBrowser('mouse', {genomeId: 'mm10'})
 
         const summary = await fanOutMap([human, mouse], config, mapLoad([]))
 
-        expect(summary.loaded).toEqual([human, mouse])
-        expect(summary.genomeChanged).toEqual([{browser: human, from: 'hg38', to: 'mm10'}])
-    })
-
-    // `clearDataset()` runs at the top of every map load and does not touch the
-    // genome or the tracks, so a panel whose last load failed has no dataset
-    // but still has tracks on its old genome. That is the case this key exists for.
-    it('reports a target that lost its dataset but kept its genome', async () => {
-        const failedEarlier = fakeBrowser('failed-earlier')
-        failedEarlier.genome = {id: 'hg38'}
-
-        const summary = await fanOutMap([failedEarlier], config, mapLoad([]))
-
-        expect(summary.genomeChanged).toEqual([{browser: failedEarlier, from: 'hg38', to: 'mm10'}])
-    })
-
-    // An empty panel had no genome, so it has no tracks drawn against one --
-    // the fact `genomeChanged` exists to report cannot be true of it.
-    it('does not report an empty target as a genome change', async () => {
-        const empty = fakeBrowser('empty')
-
-        const summary = await fanOutMap([empty], config, mapLoad([]))
-
-        expect(summary.genomeChanged).toEqual([])
+        expect(summary).toEqual({loaded: [human, mouse], failed: [], skipped: []})
     })
 
     // The serial decision (#680): `loadHicFile` ends by syncing the registry
@@ -235,7 +214,6 @@ describe('fanOutMap', () => {
         expect(summary.loaded).toEqual([a, c])
         expect(summary.failed.map(({browser}) => browser)).toEqual([b])
         expect(summary.failed[0].error.message).toBe('boom in b')
-        expect(summary.genomeChanged.map(({browser}) => browser)).toEqual([a, c])
         expect(started(record)).toEqual([a, b, c])
     })
 
@@ -266,7 +244,7 @@ describe('fanOutMap', () => {
 
     it('returns an empty summary for an empty target set', async () => {
         expect(await fanOutMap([], config, mapLoad([])))
-            .toEqual({loaded: [], failed: [], skipped: [], genomeChanged: []})
+            .toEqual({loaded: [], failed: [], skipped: []})
     })
 })
 
@@ -322,7 +300,7 @@ describe('fanOutControlMap', () => {
 
         const summary = await fanOutControlMap([a, b], config, controlLoad(record))
 
-        expect(summary).toEqual({loaded: [a, b], failed: [], skipped: [], genomeChanged: []})
+        expect(summary).toEqual({loaded: [a, b], failed: [], skipped: []})
         expect(started(record)).toEqual([a, b])
     })
 
@@ -407,6 +385,6 @@ describe('fanOutControlMap', () => {
 
     it('returns an empty summary for an empty target set', async () => {
         expect(await fanOutControlMap([], config, controlLoad([])))
-            .toEqual({loaded: [], failed: [], skipped: [], genomeChanged: []})
+            .toEqual({loaded: [], failed: [], skipped: []})
     })
 })

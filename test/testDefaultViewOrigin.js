@@ -40,6 +40,7 @@ function stubBrowser(recorded) {
         genome: undefined,
         dataset: undefined,
         clearDataset: () => undefined,
+        clearTracks: () => undefined,
         stopSpinner: () => undefined,
         contactMatrixView: { startSpinner: () => undefined },
         contactMapLabel: { textContent: '', title: '' },

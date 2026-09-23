@@ -240,17 +240,16 @@ export const REGISTRY_SURFACE = [
     // exactly the failure #471 was. They are defined in `js/targetGroup.js` and
     // pinned by `test/testTargetGroup.js`.
     'loadTracksIntoTargets',
-    // Resolves to `{loaded, failed, skipped, genomeChanged}` -- the first three
-    // with their track meanings, so one code path reads both summaries, though
-    // `skipped` is always empty: a map carries its own genome, so nothing is
-    // skipped. `genomeChanged` is `[{browser, from, to}]`. Serial, not
+    // Resolves to `{loaded, failed, skipped}` -- with their track meanings, so
+    // one code path reads both summaries, though `skipped` is always empty: a
+    // map carries its own genome, so nothing is skipped. A panel whose genome
+    // the map replaces loses its tracks (#682, ADR-0019). Serial, not
     // concurrent. #680.
     'loadHicFileIntoTargets',
-    // The same four keys. `skipped` reasons are `'no-primary'` (the panel has no
+    // The same three keys. `skipped` reasons are `'no-primary'` (the panel has no
     // "A" map) and `'control-incompatible'` (its "A" map cannot pair with this
     // "B" one, known only after the read) -- contract, like the track reasons,
-    // and defined and pinned in the same two files. `genomeChanged` is empty in
-    // practice. Serial. #681.
+    // and defined and pinned in the same two files. Serial. #681.
     'loadHicControlFileIntoTargets',
 
     // A session describes one embed; these are where one is actually written

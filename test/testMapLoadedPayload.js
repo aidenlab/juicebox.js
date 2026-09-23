@@ -50,6 +50,7 @@ const mapLoaded = vi.fn()
 function stubBrowser() {
     return {
         clearDataset: () => undefined,
+        clearTracks: () => undefined,
         stopSpinner: () => undefined,
         contactMatrixView: {startSpinner: () => undefined},
         contactMapLabel: {textContent: '', title: ''},

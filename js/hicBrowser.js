@@ -922,6 +922,22 @@ class HICBrowser {
     }
 
     /**
+     * Clear everything that belongs to the genome: track pairs, pending tracks
+     * and 2D annotations. A track has no genome of its own -- the panel's is its
+     * genome declaration -- so once the panel's genome changes its tracks are
+     * wrong data, not the user's work.
+     *
+     * Internal only -- not on the public API manifest. Called from the
+     * genome-change branch of both map-load paths, before the change is
+     * announced, so a host hearing of it sees an empty panel. Draws nothing:
+     * the load it is part of does. #682, ADR-0019.
+     */
+    clearTracks() {
+        this.layoutController.removeAllTrackXYPairs()
+        this.tracks2D = []
+    }
+
+    /**
      * Remove reference to self from all synchedBrowsers lists.
      */
     unsyncSelf() {

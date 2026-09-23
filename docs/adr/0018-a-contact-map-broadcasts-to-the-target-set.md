@@ -4,6 +4,10 @@
 primary broadcast) and #686 (#681, the control broadcast).
 
 **Date:** 2026-09-18
+**Amended:** 2026-09-23 — ADR-0019 settles #682: a genome change clears the
+panel's tracks. The `genomeChanged` key of decision 7 is removed before it
+shipped, and the *tracks survive the swap* consequence no longer holds; see the
+amendments under each.
 **Related:** #615 (the target set, and the collaborator's request that named
 maps), #680 (primary broadcast), #681 (control broadcast), #679
 (`loadHicFileOrThrow`, `loadHicControlFileOrThrow` and the declared
@@ -122,6 +126,11 @@ A/B/ratio display mode as dataset choices, but this gesture carries a map, not a
 display mode, and a broadcast changes each panel's display mode exactly as much
 as the single-panel load does.
 
+> **Amended 2026-09-23 (#682).** `genomeChanged` is removed; the summary is
+> `{loaded, failed, skipped}`. It existed to name the panels drawing stale tracks,
+> and ADR-0019 clears those tracks at the genome change. It had not shipped. A
+> host that wants to know which panels changed genome has `onGenomeChange`.
+
 ## Consequences
 
 **Four broadcast panels land in one sync group.** They hold the same map, so
@@ -140,6 +149,11 @@ broadcast reports these panels in `genomeChanged` and does not fix them. Whether
 to clear the tracks, warn about them or leave them is #682's question. It is the
 same behaviour as a single-panel load, and a broadcast just makes it more
 likely. Expect this to be filed as a bug too.
+
+> **Amended 2026-09-23 (#682).** No longer true. ADR-0019: a genome change clears
+> the panel's track pairs, pending tracks and 2D annotations, in a single-panel
+> load and in every broadcast target alike. A broadcast that moves four panels to
+> mm10 leaves four panels with no tracks.
 
 **Live contact maps are not broadcast.** Spacewalk drives them programmatically
 into one panel. There is no user gesture involved and nothing that would call a

@@ -215,6 +215,24 @@ describe('a genome change clears the panel\'s tracks (#682)', () => {
         expect(browser.tracks2D).toEqual([])
     })
 
+    test('a 2D track failing after the genome changed is dropped silently', async () => {
+        const browser = embed()
+        await browser.loadHicFile(map('hg38'), true)
+
+        let fail
+        vi.spyOn(Track2D, 'loadTrack2D').mockImplementation(() => new Promise((resolve, reject) => {
+            fail = () => reject(new Error('Not Found'))
+        }))
+        const tracks = browser.loadTracksOrThrow([{name: 'loops', url: 'https://example.org/loops.bedpe'}])
+        await flush()
+
+        await browser.loadHicFile(map('mm10'), true)
+        fail()
+
+        await expect(tracks).resolves.not.toThrow()
+        expect(browser.tracks2D).toEqual([])
+    })
+
     test('the live-map path clears the same way', async () => {
         const {browser, pending, tracks} = await populated(browser => browser.loadLiveContactMap(live('hg38'), true))
         const loaded = browser.trackPairs.filter(pair => !pair.isPendingTrack)

@@ -97,7 +97,7 @@ class Ruler {
             return;
         }
 
-        list =dataset.chromosomes.filter(chromosome => chromosome.name.toLowerCase() !== 'all');
+        list = dataset.chromosomes.filter(chromosome => chromosome.name.toLowerCase() !== 'all');
 
         extent = list.reduce((sum, chromosome) => sum + chromosome.size, 0);
 

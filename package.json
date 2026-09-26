@@ -1,6 +1,6 @@
 {
   "name": "juicebox.js",
-  "version": "4.5.0",
+  "version": "4.5.1",
   "type": "module",
   "main": "./dist/juicebox.esm.js",
   "module": "./dist/juicebox.esm.js",
@@ -57,7 +57,7 @@
     "@vitest/ui": "^4.0.7",
     "atob": "^2.1.2",
     "btoa": "^1.2.1",
-    "hic-straw": "github:aidenlab/hic-straw#v4.0.0",
+    "hic-straw": "github:aidenlab/hic-straw#v4.0.1",
     "igv": "3.8.5",
     "igv-ui": "github:igvteam/igv-ui#v1.5.9",
     "igv-utils": "github:igvteam/igv-utils#v1.7.1",

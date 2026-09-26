@@ -16,10 +16,15 @@ the `User-Agent` starts with `IGV` — a case-sensitive prefix match, measured
 2026-08-03. `IGV`, `IGVX`, `IGV/2.19.1` and `IGV-dev-proxy` all pass; `igv`,
 `Juicebox`, every browser value and an empty `User-Agent` are refused.
 
-**A browser cannot satisfy that gate**, because it cannot set `User-Agent`.
-Measured 2026-08-04: `fetch` and `XMLHttpRequest` both send the browser's own value
-whatever the caller asks for. So there is no client-side fix — only a request made
-from something that is not a browser.
+**A browser cannot be relied on to satisfy that gate.** Chrome still treats
+`User-Agent` as forbidden and sends its own value whatever the caller asks for
+(measured 2026-08-04). Firefox and Safari follow the current Fetch spec and *do* send
+a caller-set `User-Agent` — but it is not CORS-safelisted, so it forces a preflight,
+and a host whose CORS rules do not allow `user-agent` answers that preflight with
+`403`. ENCODE's `encode-public` bucket does exactly that, which is why hic-straw
+v4.0.1 sets `User-Agent: IGV` only under node (aidenlab/hic-straw#56, measured
+2026-09-26). So there is no client-side fix — only a request made from something that
+is not a browser.
 
 **`www.encodeproject.org`** was the second gate, and is no longer one. It sits
 behind AWS WAF, and a rule there once challenged browser-looking requests from
@@ -44,7 +49,8 @@ anything here: development against ENCODE works, proxied or direct.
 
 Ruled out during diagnosis, do not re-investigate: bucket permissions differing by
 requester; CORS on the data hosts (all return `Access-Control-Allow-Origin: *`);
-preflight failure; a juicebox.js regression.
+preflight failure; a juicebox.js regression. The preflight finding was measured in
+Chrome and holds only there — see the Firefox and Safari note above.
 
 That CORS finding covers the hosts serving `.hic` bytes, and only those. It does
 not generalise to every host a consumer fetches from: `aidenlab.org`, which

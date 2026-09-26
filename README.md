@@ -180,7 +180,7 @@ Note: The Vite dev server is required because the source files use bare npm impo
 
 Some data hosts refuse the request a browser is able to make, so their maps cannot be loaded in development without help. One gate is live today:
 
-- **A `User-Agent` allowlist** — `hicfiles.s3.amazonaws.com` and `dnazoo.s3.amazonaws.com` serve `403` unless the request carries an allowlisted `User-Agent`. No browser can comply: `User-Agent` is a forbidden header name in the Fetch spec, so the value the client libraries set is dropped before the request leaves.
+- **A `User-Agent` allowlist** — `hicfiles.s3.amazonaws.com` and `dnazoo.s3.amazonaws.com` serve `403` unless the request carries an allowlisted `User-Agent`. No browser can reliably comply: Chrome drops a caller-set `User-Agent`, while Firefox and Safari send it but must preflight it, and hosts that do not allow it in CORS refuse the preflight — so hic-straw sets it only under node.
 
 `www.encodeproject.org` is also routed through the proxy, but as a precaution rather than a live need: as of 2026-08-05 it serves `@@download` reads to any origin, so ENCODE maps and tracks load in development either way. It stays in the table because AWS WAF rules there have been switched on before and the entry costs one line.
 

@@ -1,0 +1,46 @@
+name: Publish to npm
+
+# Publishing a GitHub release publishes the tagged version to npm.
+#
+# Authentication is npm trusted publishing (OIDC): no npm token is stored in this repo. The
+# package's settings on npmjs.com must name this repository and this workflow file
+# (publish.yml) as a trusted publisher, and the job's environment (npm) as its environment.
+# Provenance is attached automatically.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write   # lets the job mint the OIDC token npm trusts
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Required reviewers on this environment make every publish wait for an approval
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24   # trusted publishing needs npm >= 11.5.1, which Node 24 ships
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - name: Check the release tag matches package.json
+        run: |
+          pkg="$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_NAME#v}" != "$pkg" ]; then
+            echo "::error::Release tag $GITHUB_REF_NAME does not match package.json version $pkg"
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - run: npx vitest run
+
+      # A GitHub pre-release goes to the `next` dist-tag, so `npm install juicebox.js` is unaffected
+      - name: Publish
+        run: npm publish --tag ${{ github.event.release.prerelease && 'next' || 'latest' }}

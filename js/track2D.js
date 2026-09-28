@@ -1,5 +1,6 @@
 import {igvxhr, StringUtils} from 'igv-utils'
 import {mapUrl} from './urlMapper.js'
+import {trackName} from './utils.js'
 
 class Track2D {
 
@@ -12,7 +13,7 @@ class Track2D {
     constructor(config, features) {
 
         this.config = config
-        this.name = config.name
+        this.name = trackName(config)
 
         if (config.color && validateColor(config.color)) {
             this.color = this.color = config.color    // If specified, this will override colors of individual records.

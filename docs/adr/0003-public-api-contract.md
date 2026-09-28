@@ -537,3 +537,37 @@ which ADR-0017 records as deliberate.
 ### Consequence
 
 **Nothing was required of the release.**
+
+## Re-measurement — 2026-09-28, for the v4.6.0 release
+
+Appended, not revised. The tables above stay as the measurement they were.
+
+Measured against `juicebox.js` at `bump-version-4.6.0`, `juicebox-web` `master`
+(committed pin `#v4.5.1`) and `spacewalk` `main` (pinned `#v4.5.0`).
+
+**Result: nothing undeclared in use, in either consumer.** Sixth release running.
+
+`js/publicApi.js` grows by two registry names, `loadHicFileIntoTargets` (#680)
+and `loadHicControlFileIntoTargets` (#681), which broadcast a contact map to the
+target set. Neither has a consumer caller yet. The two silent loaders they are
+built on, `loadHicFileOrThrow` and `loadHicControlFileOrThrow` (#679), are
+named in the file as deliberately undeclared, as `loadTracksOrThrow` is.
+
+### Inside the contract: two changes no name check can find
+
+- **A genome change clears the panel's tracks** (#682, ADR-0019), posting
+  `TrackXYPairRemoval` per loaded track pair before `GenomeChange` fires.
+  juicebox-web's toggle-index `GenomeChange` listener still wipes every panel's
+  index on top of that. The wipe is now redundant, and it was already wrong for
+  more than one panel; aidenlab/juicebox-web#87 removes it once juicebox-web
+  pins this release. Spacewalk loads no juicebox tracks and subscribes to no
+  `GenomeChange`.
+- **A track the host names nothing is named by juicebox** (#695): `name` and
+  `_derivedName` are written onto the caller's track config, and a saved
+  session carries the derived name. juicebox-web passes `name` on every track
+  config today, so it sees no change until aidenlab/juicebox-web#24 stops doing
+  that. Spacewalk loads no juicebox tracks.
+
+### Consequence
+
+**Nothing was required of the release.**

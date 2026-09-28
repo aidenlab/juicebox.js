@@ -651,6 +651,16 @@ class DataLoader {
 
         const extension = hicUtils.getExtension(fileName);
 
+        // A track the host names nothing is named here, as a contact map is:
+        // from its URL, decoded. igv would name a 1D track undecoded, and
+        // nothing names a 2D one. `_derivedName` is igv's: it lets a
+        // `track name=` line in the file replace a name that was only derived.
+        // A `data:` URL has no file name, and igv leaves it unnamed. #695.
+        if (!(config.name || config.label) && !String(config.url).startsWith('data:')) {
+            config.name = extractName(config);
+            config._derivedName = true;
+        }
+
         if (['fasta', 'fa'].includes(extension)) {
             config.type = config.format = 'sequence';
         }

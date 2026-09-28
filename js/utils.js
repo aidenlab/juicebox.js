@@ -43,8 +43,14 @@ function extractName(config) {
             return urlOrFile.name
         } else {
             const str = urlOrFile.split('?').shift()
-            const idx = urlOrFile.lastIndexOf("/")
-            return idx > 0 ? str.substring(idx + 1) : str
+            const idx = str.lastIndexOf("/")
+            const segment = idx > 0 ? str.substring(idx + 1) : str
+            try {
+                return decodeURIComponent(segment)
+            } catch {
+                // A stray '%' is not an escape; show the segment as written
+                return segment
+            }
         }
     } else {
         return config.name

@@ -79,14 +79,62 @@ describe("a track the host names nothing is named from its URL", function () {
         expect(context.browser.tracks2D.map(t => t.name)).toEqual(["loops_a.bedpe"]);
     });
 
+    test("a 2D .txt track is named by its decoded file name", async function () {
+        vi.spyOn(igvxhr, 'loadString').mockResolvedValue("chr1\t100\t200\tchr1\t300\t400\n");
+
+        await context.browser.loadTracks([{ url: "https://example.org/data/loops%5Fa.txt" }]);
+
+        expect(context.browser.tracks2D.map(t => t.name)).toEqual(["loops_a.txt"]);
+    });
+
+    test("a 2D track given only a label is named by it", async function () {
+        vi.spyOn(igvxhr, 'loadString').mockResolvedValue("chr1\t100\t200\tchr1\t300\t400\n");
+
+        await context.browser.loadTracks([{ url: "https://example.org/data/loops%5Fa.bedpe", label: "Loops" }]);
+
+        expect(context.browser.tracks2D.map(t => t.name)).toEqual(["Loops"]);
+    });
+
+    test("the placeholder row of a track given only a label shows the label", async function () {
+        let settle;
+        createTrack.mockImplementation(config => new Promise(resolve => settle = () => resolve(track(config))));
+
+        const load = context.browser.loadTracks([{ url: "https://example.org/data/sample%5Fa.bigWig", format: "bigwig", label: "Mine" }]);
+
+        const label = context.browser.layoutController.xTracks.querySelector('.x-track-label');
+        expect(label.textContent).toBe("Mine");
+
+        await new Promise(resolve => setTimeout(resolve, 0));
+        settle();
+        await load;
+    });
+
+    test("a data: URL track is left unnamed, placeholder row included", async function () {
+        let settle;
+        createTrack.mockImplementation(config => new Promise(resolve => settle = () => resolve(track(config))));
+
+        const load = context.browser.loadTracks([{ url: "data:application/gzip;base64,H4sIAAAAAAAAA/NIzcnJBwCCidH3BQAAAA==", format: "bed" }]);
+
+        const label = context.browser.layoutController.xTracks.querySelector('.x-track-label');
+        expect(label.textContent).toBe("");
+
+        await new Promise(resolve => setTimeout(resolve, 0));
+        settle();
+        await load;
+
+        const [[config]] = createTrack.mock.calls;
+        expect(config).not.toHaveProperty('name');
+        expect(config).not.toHaveProperty('_derivedName');
+    });
+
     test.each([
         ["a name", { name: "Mine" }, "Mine"],
         ["a label", { label: "Mine" }, undefined]
-    ])("a track given %s keeps it", async function (_, given, name) {
+    ])("a track given %s keeps it", async function (_, given, expectedName) {
         await context.browser.loadTracks([{ url: "https://example.org/data/sample%5Fa.bigWig", format: "bigwig", ...given }]);
 
         const [[config]] = createTrack.mock.calls;
-        expect(config.name).toBe(name);
+        expect(config.name).toBe(expectedName);
         expect(config.label).toBe(given.label);
         expect(config._derivedName).toBeUndefined();
     });

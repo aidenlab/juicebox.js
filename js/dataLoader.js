@@ -25,7 +25,7 @@ import {FileUtils} from 'igv-utils'
 import Dataset, { HiCDataset } from './hicDataset.js'
 import State from './hicState.js'
 import Genome from './genome.js'
-import {extractName, presentError, errorMessage, isBotChallenge} from "./utils.js"
+import {extractName, derivedTrackName, presentError, errorMessage, isBotChallenge} from "./utils.js"
 import {isFile} from "./fileUtils.js"
 import HICEvent from './hicEvent.js'
 import EventBus from './eventBus.js'
@@ -651,13 +651,14 @@ class DataLoader {
 
         const extension = hicUtils.getExtension(fileName);
 
-        // A track the host names nothing is named here, as a contact map is:
-        // from its URL, decoded. igv would name a 1D track undecoded, and
-        // nothing names a 2D one. `_derivedName` is igv's: it lets a
-        // `track name=` line in the file replace a name that was only derived.
-        // A `data:` URL has no file name, and igv leaves it unnamed. #695.
-        if (!(config.name || config.label) && !String(config.url).startsWith('data:')) {
-            config.name = extractName(config);
+        // A track the host names nothing is named here, so the placeholder
+        // row, igv and a 2D track all show one name. igv would name a 1D
+        // track undecoded, and nothing names a 2D one. `_derivedName` is
+        // igv's: it lets a `track name=` line in the file replace a name that
+        // was only derived. #695.
+        const derivedName = derivedTrackName(config);
+        if (derivedName) {
+            config.name = derivedName;
             config._derivedName = true;
         }
 

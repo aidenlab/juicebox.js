@@ -1,5 +1,5 @@
 import TrackRenderer from './trackRenderer.js'
-import {extractName} from './utils.js'
+import {trackName} from './utils.js'
 
 /**
  * The placeholder row of a pending track (`CONTEXT.md`, *Pending track*): a 1D
@@ -31,7 +31,7 @@ class PendingTrackPair {
         this.browser = browser
         this.config = config
         this.isPendingTrack = true
-        this.track = {name: extractName(config)}
+        this.track = {name: trackName(config)}
         this.x = undefined
         this.y = undefined
     }

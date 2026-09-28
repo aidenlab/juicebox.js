@@ -199,6 +199,6 @@ number space.
 ## Known divergence
 
 Spacewalk pins `igv` as `github:igvteam/igv.js#v3.8.0` while juicebox.js pins npm
-`igv` at exactly `3.8.5` — two distinct installs of igv in one application.
+`igv` at exactly `3.8.9` — two distinct installs of igv in one application.
 Predates v3.6.1, flagged in spacewalk PR #81, unresolved. Not a release blocker;
 noted here so a release does not rediscover it as a surprise.

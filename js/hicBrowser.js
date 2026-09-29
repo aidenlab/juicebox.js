@@ -464,7 +464,7 @@ class HICBrowser {
     }
 
     /**
-     * Show or hide the track labels, on both axes, and the gutters of this
+     * Show or hide the track labels, on x and y tracks alike, and the gutters of this
      * browser's track pairs -- this browser's only, never the page's (ADR-0004).
      * The setting is per browser and not part of the session.
      */

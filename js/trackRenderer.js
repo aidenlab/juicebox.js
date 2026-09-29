@@ -33,7 +33,7 @@ class TrackRenderer {
             this.trackReorderHandleElement.innerHTML = '<i class="fa fa-arrow-up"></i><i class="fa fa-arrow-down"></i>';
         }
 
-        // The track label (`CONTEXT.md`), on both axes. The y label reads
+        // The track label (`CONTEXT.md`), on x and y tracks alike. The y label reads
         // bottom-to-top, like the ruler beside it: that is CSS, not this.
         this.labelElement = document.createElement('div');
         this.labelElement.className = (this.axis === 'x') ? 'x-track-label' : 'y-track-label';

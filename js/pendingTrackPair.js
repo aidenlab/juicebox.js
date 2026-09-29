@@ -44,7 +44,7 @@ class PendingTrackPair {
         this.y = new TrackRenderer(this.browser, this.track, 'y')
         this.y.init(yTracks, trackHeight, order)
 
-        this.showLabelAndGutter()
+        this.showLabelAndGutter(true)
 
         for (const renderer of [this.x, this.y]) {
             renderer.spinnerElement.innerHTML = '<i class="fa fa-spinner fa-spin"></i>'
@@ -68,10 +68,11 @@ class PendingTrackPair {
     }
 
     /**
-     * The name is the point of the row, so it shows on both axes whether or not
-     * the labels of loaded tracks are toggled on. There is no gutter.
+     * The name is the point of the row, so it shows on both the x and y track
+     * whether or not the labels of loaded tracks are toggled on: `show`, the
+     * browser's setting, is ignored. There is no gutter.
      */
-    showLabelAndGutter() {
+    showLabelAndGutter(show) {
         this.x.labelElement.style.display = 'block'
         this.y.labelElement.style.display = 'block'
     }

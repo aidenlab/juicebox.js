@@ -56,7 +56,7 @@ const gutterShown = browser => xRows(browser)
 
 const click = (window, el) => el.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
 
-describe("track labels on both axes", function () {
+describe("track labels on x and y tracks", function () {
 
     const context = withContainers();
 
@@ -87,7 +87,7 @@ describe("track labels on both axes", function () {
         expect(labels(browser).y).toEqual([{ text: "Homo sapiens A3", title: "Homo sapiens A3", shown: true }]);
     });
 
-    test("renaming a track pair updates the labels on both axes", async function () {
+    test("renaming a track pair updates the labels on its x and y tracks", async function () {
         const browser = await browserIn(context.container);
         await browser.loadTracks([config("a")]);
 
@@ -99,7 +99,7 @@ describe("track labels on both axes", function () {
     });
 
     for (const axis of ['x', 'y']) {
-        test(`clicking a ${axis} track flips the labels and gutter on both axes`, async function () {
+        test(`clicking a ${axis} track flips the labels on x and y tracks, and the gutter`, async function () {
             const browser = await browserIn(context.container);
             await browser.loadTracks([config("a"), config("b")]);
 
@@ -119,7 +119,7 @@ describe("track labels on both axes", function () {
         });
     }
 
-    test("a pending track shows its name on both axes while labels are toggled off", async function () {
+    test("a pending track shows its name on its x and y tracks while labels are toggled off", async function () {
         const browser = await browserIn(context.container);
         await browser.loadTracks([config("a")]);
         click(context.window, xRows(browser)[0]);

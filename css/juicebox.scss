@@ -888,12 +888,13 @@ div[id$="x-track-container"] {
         }
       }
       .x-track-label {
+        // The box fits the name, up to half the track (#702).
         display: inline-block;
         position: absolute;
         top: 0;
         left: 0;
         height: 22px;
-        width: 120px;
+        max-width: calc(50% - 8px);
         margin-top: calc(0.125 * var(--track-height));
         padding-left: 4px;
         padding-right: 4px;
@@ -907,6 +908,7 @@ div[id$="x-track-container"] {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        background-color: rgba(255, 255, 255, 0.7);
       }
       .x-track-spinner {
         position: absolute;
@@ -1023,11 +1025,35 @@ div[id$="content-container"] {
         z-index: 666;
       }
       .y-track-canvas-container {
+        cursor: pointer;
         display: block;
         position: relative;
         height: 100%;
         margin-right: var(--track-margin);
         background-color: white;
+        .y-track-label {
+          // The x label turned to read bottom-to-top, like the ruler beside it:
+          // the end of the name sits at the top of the column, near the origin,
+          // and the left edge of the column mirrors the top of the x row (#702).
+          display: inline-block;
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 22px;
+          max-height: calc(50% - 8px);
+          margin-left: calc(0.125 * var(--track-height));
+          writing-mode: vertical-rl;
+          transform: rotate(180deg);
+          padding: 4px 1px;
+          font-family: $default-font-family;
+          font-size: 12px;
+          font-weight: 400;
+          text-align: center;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          background-color: rgba(255, 255, 255, 0.7);
+        }
         .y-track-spinner {
           // A pending track's spinner (#664).
           display: flex;

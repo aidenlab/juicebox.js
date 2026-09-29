@@ -274,6 +274,16 @@ which is why the auto colour-scale heuristics branch on `isLive`.
 **Track pair** — one 1D track rendered on both axes by a pair of renderers
 (`js/trackPair.js`).
 
+**x track** / **y track** — the two halves of a track pair: the x track runs
+along the top of the contact map, the y track down its left side. Both start
+at the origin, the map's top-left corner.
+_Avoid_: X-axis track, Y-axis track — *axis* is the ruler.
+
+**Track label** — a track's name, drawn on both its x track and its y track and
+shown or hidden for both at once. Per browser. On the y track it reads
+bottom-to-top, like the ruler beside it.
+_Avoid_: track title, track name (the property, not the thing drawn).
+
 **Pending track** — a 1D track a load has named but not yet finished loading,
 shown as a placeholder row in its place with its name and a spinner. A restore
 does not wait for it: the map is usable while it is pending. It is still part

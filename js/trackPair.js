@@ -85,8 +85,18 @@ class TrackPair {
     }
 
     setTrackLabelName(name) {
-        this.x.labelElement.textContent = name;
-        this.x.labelElement.title = name;
+        this.x.setLabelText(name);
+        this.y.setLabelText(name);
+    }
+
+    /**
+     * Show or hide this pair's track labels, on its x and y tracks, and its gutter.
+     */
+    showLabelAndGutter(show) {
+        const display = show ? 'block' : 'none';
+        this.x.labelElement.style.display = display;
+        this.y.labelElement.style.display = display;
+        this.gutterElement.style.display = display;
     }
 
     setColor(color) {
@@ -120,6 +130,7 @@ class TrackPair {
         const div = document.createElement('div');
         div.className = 'hic-igv-right-hand-gutter';
         parentElement.appendChild(div);
+        this.gutterElement = div;
         this.createTrackGearPopup(div);
     }
 

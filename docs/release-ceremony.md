@@ -9,7 +9,8 @@ happened.
 
 juicebox.js is an **embeddable component**. A release is not done when the tag is
 pushed — it is done when both consumers are pinned to it. Steps 1–5 are this repo;
-step 6 is the other two.
+step 6 is the other two. Since v4.6.0 a release also publishes to npm, and step 5
+gates on that.
 
 ## 1. Bump the version — three files
 
@@ -106,22 +107,50 @@ House style, from the existing releases:
   as `(#372)`. Link ADRs at the tag, not at master:
   `https://github.com/aidenlab/juicebox.js/blob/v<version>/docs/adr/....`
 
+### Publishing the release publishes to npm — after an approval
+
+`.github/workflows/publish.yml` runs on every published release and pushes the
+tagged version to npm, by trusted publishing with provenance. It runs in the `npm`
+environment, whose required reviewers make **every publish wait for Turner's
+approval**. Until it is approved, npm still serves the previous version.
+
+The workflow fails if the tag does not match `package.json`'s version, which is
+one more reason step 1 comes before step 4.
+
+Confirm before step 6:
+
+```
+gh run list --workflow publish.yml --limit 1
+npm view juicebox.js version
+```
+
+A consumer on an npm range cannot take the release until `npm view` shows it.
+
 ## 6. Repoint both consumers
 
-Two repos, each its own PR off a feature branch. Both pin
-`"juicebox.js": "github:aidenlab/juicebox.js#v<version>"`.
+Two repos, each its own PR off a feature branch. **They do not pin the same way.**
+juicebox-web moved to an npm range on 2026-09-29; Spacewalk still pins a `github:`
+tag. Check each repo's `package.json` rather than trusting this table — the pin
+style is changing.
 
-| Repo | Path | Branch | Section | Source dir | `package-lock.json` |
-|---|---|---|---|---|---|
-| juicebox-web | `../juicebox-web` | `master` | `devDependencies` | `js/` | **tracked — commit it** |
-| spacewalk | `../../SpacewalkDevelopment/spacewalk` | `main` | `dependencies` | `src/` | gitignored |
+| Repo | Path | Branch | Section | Pin | Source dir | `package-lock.json` |
+|---|---|---|---|---|---|---|
+| juicebox-web | `../juicebox-web` | `master` | `devDependencies` | npm: `"^<version>"` | `js/` | **tracked — commit it** |
+| spacewalk | `../../SpacewalkDevelopment/spacewalk` | `main` | `dependencies` | `"github:aidenlab/juicebox.js#v<version>"` | `src/` | gitignored |
+
+**An npm pin waits for the publish.** juicebox-web's bump cannot resolve until
+step 5's publish is approved and npm serves the new version. Spacewalk's `github:`
+pin resolves from the tag and can go as soon as the tag is pushed.
+
+**An npm range still needs a bump PR.** `^4.6.0` admits 4.7.0, but juicebox-web's
+committed lockfile holds the old version, and a clean install follows the
+lockfile. Raise the range floor to the new version and commit the lockfile with it.
 
 Spacewalk is **not** a sibling of this repo — it lives under
 `SpacewalkDevelopment/`, and its source is `src/`, not `js/`.
 
 **Check what juicebox-web actually pins before assuming a version step.** It has
-drifted to `#master` before and is on `#master` as this is written, which makes
-the bump a re-pin rather than a version bump.
+drifted to `#master` before, and has since moved to an npm range.
 
 **The two repos treat `package-lock.json` differently**, so the two bump PRs are
 not the same shape. Spacewalk gitignores it and its PR is a one-line
@@ -154,21 +183,24 @@ It reads the dot in `juicebox.js` as a path separator and writes a nested
 
 ### A plain `npm install` reuses the cached git resolution
 
-After changing the tag, `npm install` can leave the lockfile showing the new tag
-while `node_modules` still holds the **old commit**. Force the resolution and
-then confirm it:
+After changing a `github:` tag, `npm install` can leave the lockfile showing the
+new tag while `node_modules` still holds the **old commit**. Force the resolution
+and then confirm it:
 
 ```
-npm install juicebox.js@github:aidenlab/juicebox.js#v<version>
+npm install juicebox.js@github:aidenlab/juicebox.js#v<version>   # github: pin
+npm install juicebox.js@^<version>                               # npm pin
 node -e "console.log(require('./node_modules/juicebox.js/package.json').version)"
 ```
 
-Confirm before trusting any build check in the consumer. Anyone pulling the two
-bump PRs hits this too, so say so in the PR body.
+Confirm before trusting any build check in the consumer. Anyone pulling a
+`github:` bump PR hits this too, so say so in its PR body. An npm pin has no such
+cache trap. Its pullers run a plain `npm install`, and the lockfile decides.
 
 ### `files` governs a `github:` install exactly as it governs an npm one
 
-npm **packs** a git dependency; it does not clone it whole. Anything a consumer
+npm **packs** a git dependency; it does not clone it whole, and an npm publish
+ships the same packed tree. Anything a consumer
 imports must be listed in `files` in `package.json`, or it resolves to `Cannot
 find module` — with a green build here, because nothing in this repo exercises
 the packed tree.

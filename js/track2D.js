@@ -1,6 +1,6 @@
 import {igvxhr, StringUtils} from 'igv-utils'
 import {mapUrl} from './urlMapper.js'
-import {trackName} from './utils.js'
+import {trackName, filenameFromUrl} from './utils.js'
 
 class Track2D {
 
@@ -83,12 +83,13 @@ class Track2D {
 }
 
 
+// Read from the filename, not the raw URL, so an encoded or GEO download-link
+// `.bedpe` is parsed as one. #698.
 function isBedPE(config) {
 
-    if (typeof config.url === "string") {
-        return config.url.toLowerCase().indexOf(".bedpe") > 0
-    } else if (typeof config.name === "string") {
-        return config.name.toLowerCase().indexOf(".bedpe") > 0
+    const filename = config.filename || (typeof config.url === "string" ? filenameFromUrl(config.url) : config.name)
+    if (typeof filename === "string") {
+        return filename.toLowerCase().indexOf(".bedpe") > 0
     } else {
         return true  // Default
     }

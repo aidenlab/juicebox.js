@@ -5,6 +5,7 @@ import {HiCDataset} from '../js/hicDataset.js'
 import EventBus from '../js/eventBus.js'
 import BrowserRegistry from '../js/browserRegistry.js'
 import {initRegistry} from '../js/init.js'
+import {filenameFromUrl} from '../js/utils.js'
 import {NAMESPACE_SURFACE, BROWSER_SURFACE, REGISTRY_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COORDINATOR_CALLBACKS, COORDINATOR_PAYLOAD_SHAPES, EVENTS_POSTED, EVENT_PAYLOAD_SHAPES} from '../js/publicApi.js'
 
 /**
@@ -33,6 +34,12 @@ describe('namespace surface', () => {
         // already healthy, so the reverse check costs nothing here -- unlike the
         // browser instance, where it would mean classifying every member.
         expect(Object.keys(juicebox).sort()).toEqual([...NAMESPACE_SURFACE].sort())
+    })
+
+    it('exports the filename rule juicebox itself uses', () => {
+        // Identity, not type: a host that pairs files by this name must get the
+        // same answer juicebox routes and names tracks by. #698.
+        expect(juicebox.filenameFromUrl).toBe(filenameFromUrl)
     })
 })
 

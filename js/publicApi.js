@@ -76,7 +76,11 @@ export const NAMESPACE_SURFACE = [
     'getAllBrowsers',
     'igvxhr',
     'EventBus',
-    'setUrlMapper'
+    'setUrlMapper',
+    // The rule juicebox derives a track's or map's filename by, so a host need
+    // not keep its own copy of it. juicebox-web pairs a BAM with its index by
+    // it. #698.
+    'filenameFromUrl'
 ]
 
 /**

@@ -17,6 +17,15 @@ describe("extractName", function () {
         expect(extractName({url: "https://h.org/a/b.hic?x=/y/z"})).toBe("b.hic");
     });
 
+    test("takes the name from the file= parameter of a GEO download link", function () {
+        const url = "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM5182714&format=file&file=GSM5182714%5Fme%2D1k%2Eaca%2Ehic";
+        expect(extractName({url})).toBe("GSM5182714_me-1k.aca.hic");
+    });
+
+    test("reads file= only from a GEO download link", function () {
+        expect(extractName({url: "https://example.org/download/?file=other%2Ehic"})).toBe("");
+    });
+
     test("falls back to the raw segment when decoding throws", function () {
         expect(extractName({url: "https://h.org/a/100%.hic"})).toBe("100%.hic");
     });

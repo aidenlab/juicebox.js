@@ -36,25 +36,37 @@ function prettyPrint(number) {
     return integerPart.toLocaleString()
 }
 
-function extractName(config) {
-    if (config.name === undefined) {
-        const urlOrFile = config.url
-        if (isFile(urlOrFile)) {
-            return urlOrFile.name
-        } else {
-            const str = urlOrFile.split('?').shift()
-            const idx = str.lastIndexOf("/")
-            const segment = idx > 0 ? str.substring(idx + 1) : str
-            try {
-                return decodeURIComponent(segment)
-            } catch {
-                // A stray '%' is not an escape; show the segment as written
-                return segment
-            }
-        }
-    } else {
-        return config.name
+const GEO_DOWNLOAD = /^(https?:)?\/\/www\.ncbi\.nlm\.nih\.gov\/geo\/download\//
+
+/**
+ * The name of the file a URL points at: its last path segment, decoded -- or,
+ * for a GEO download link only, its `file=` parameter, decoded, since the path
+ * there names no file. A `File` gives its own name. The one place juicebox
+ * derives a filename, exported so a host need not keep a copy. #692, #698.
+ */
+function filenameFromUrl(urlOrFile) {
+    if (isFile(urlOrFile)) {
+        return urlOrFile.name
     }
+    const [path, query = ''] = urlOrFile.split('?')
+    const fileParam = GEO_DOWNLOAD.test(path) && query.split('&').find(param => param.startsWith('file='))
+    let raw
+    if (fileParam) {
+        raw = fileParam.substring('file='.length)
+    } else {
+        const idx = path.lastIndexOf("/")
+        raw = idx > 0 ? path.substring(idx + 1) : path
+    }
+    try {
+        return decodeURIComponent(raw)
+    } catch {
+        // A stray '%' is not an escape; show the name as written
+        return raw
+    }
+}
+
+function extractName(config) {
+    return config.name === undefined ? filenameFromUrl(config.url) : config.name
 }
 
 /**
@@ -149,4 +161,4 @@ function errorMessage(error) {
     return Object.hasOwn(httpMessages, error.code) ? httpMessages[error.code] : error.message;
 }
 
-export { createDOMFromHTMLString, getOffset, parseRgbString, prettyPrint, extractName, derivedTrackName, trackName, presentError, errorMessage, isBotChallenge, hitTestBbox }
+export { createDOMFromHTMLString, getOffset, parseRgbString, prettyPrint, filenameFromUrl, extractName, derivedTrackName, trackName, presentError, errorMessage, isBotChallenge, hitTestBbox }

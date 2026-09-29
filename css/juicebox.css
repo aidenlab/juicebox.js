@@ -973,7 +973,7 @@ div[id$=x-track-container] div[id$=x-tracks] .x-track-canvas-container .x-track-
   top: 0;
   left: 0;
   height: 22px;
-  width: 120px;
+  max-width: calc(50% - 8px);
   margin-top: calc(0.125 * var(--track-height));
   padding-left: 4px;
   padding-right: 4px;
@@ -987,6 +987,7 @@ div[id$=x-track-container] div[id$=x-tracks] .x-track-canvas-container .x-track-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  background-color: rgba(255, 255, 255, 0.7);
 }
 div[id$=x-track-container] div[id$=x-tracks] .x-track-canvas-container .x-track-spinner {
   position: absolute;
@@ -1102,11 +1103,32 @@ div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$
   z-index: 666;
 }
 div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$=y-tracks] .y-track-canvas-container {
+  cursor: pointer;
   display: block;
   position: relative;
   height: 100%;
   margin-right: var(--track-margin);
   background-color: white;
+}
+div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$=y-tracks] .y-track-canvas-container .y-track-label {
+  display: inline-block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 22px;
+  max-height: calc(50% - 8px);
+  margin-left: calc(0.125 * var(--track-height));
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  padding: 4px 1px;
+  font-family: "Open Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background-color: rgba(255, 255, 255, 0.7);
 }
 div[id$=content-container] div[id$=y-tracks-y-axis-viewport-y-scrollbar] div[id$=y-tracks] .y-track-canvas-container .y-track-spinner {
   display: flex;
@@ -1337,7 +1359,6 @@ div[id$=content-container] div[id$=x-scrollbar-container] div[id$=x-axis-scrollb
    Every element wearing a badge is a `.hic-root`, so the selectors match the
    same panels as before. A host that wants to restyle a badge must match this
    specificity too. */
-
 /* The target set (#615): a load reaches these panels. Deliberately a second
    class and a second visual, not the selected border -- a user still needs to
    see at a glance which panel the widgets are reading. */
@@ -1373,3 +1394,4 @@ div[id$=content-container] div[id$=x-scrollbar-container] div[id$=x-axis-scrollb
   cursor: pointer;
   color: #444;
 }
+

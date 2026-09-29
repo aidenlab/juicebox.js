@@ -85,8 +85,18 @@ class TrackPair {
     }
 
     setTrackLabelName(name) {
-        this.x.labelElement.textContent = name;
-        this.x.labelElement.title = name;
+        this.x.setLabelText(name);
+        this.y.setLabelText(name);
+    }
+
+    /**
+     * Show or hide this pair's track labels, on both axes, and its gutter.
+     */
+    showLabelAndGutter(show) {
+        const display = show ? 'block' : 'none';
+        this.x.labelElement.style.display = display;
+        this.y.labelElement.style.display = display;
+        this.x.viewportElement.querySelector('.hic-igv-right-hand-gutter').style.display = display;
     }
 
     setColor(color) {

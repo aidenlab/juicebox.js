@@ -31,31 +31,30 @@ class TrackRenderer {
             this.viewportElement.appendChild(this.trackReorderHandleElement);
 
             this.trackReorderHandleElement.innerHTML = '<i class="fa fa-arrow-up"></i><i class="fa fa-arrow-down"></i>';
-
-            this.labelElement = document.createElement('div');
-            this.labelElement.className = 'x-track-label';
-            this.viewportElement.appendChild(this.labelElement);
-
-            const labelText = this.track.name || '';
-            this.labelElement.textContent = labelText;
-            this.labelElement.title = labelText;
-
-            this.labelElement.style.display = this.browser.showTrackLabelAndGutter ? 'block' : 'none';
-
-            this.viewportElement.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.browser.toggleTrackLabelAndGutterState();
-                const displayState = this.browser.showTrackLabelAndGutter ? 'block' : 'none';
-                document.querySelectorAll('.x-track-label, .hic-igv-right-hand-gutter').forEach(el => {
-                    el.style.display = displayState;
-                });
-            });
         }
+
+        // The track label (`CONTEXT.md`), on both axes. The y label reads
+        // bottom-to-top, like the ruler beside it: that is CSS, not this.
+        this.labelElement = document.createElement('div');
+        this.labelElement.className = (this.axis === 'x') ? 'x-track-label' : 'y-track-label';
+        this.viewportElement.appendChild(this.labelElement);
+        this.setLabelText(this.track.name || '');
+        this.labelElement.style.display = this.browser.showTrackLabelAndGutter ? 'block' : 'none';
+
+        this.viewportElement.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.browser.toggleTrackLabelAndGutterState();
+        });
 
         this.spinnerElement = document.createElement('div');
         this.spinnerElement.className = (this.axis === 'x') ? 'x-track-spinner' : 'y-track-spinner';
         this.viewportElement.appendChild(this.spinnerElement);
+    }
+
+    setLabelText(text) {
+        this.labelElement.textContent = text;
+        this.labelElement.title = text;
     }
 
     dispose() {

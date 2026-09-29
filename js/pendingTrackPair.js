@@ -44,9 +44,7 @@ class PendingTrackPair {
         this.y = new TrackRenderer(this.browser, this.track, 'y')
         this.y.init(yTracks, trackHeight, order)
 
-        // The name is the point of the row, so it shows whether or not the
-        // labels of loaded tracks are toggled on.
-        this.x.labelElement.style.display = 'block'
+        this.showLabelAndGutter()
 
         for (const renderer of [this.x, this.y]) {
             renderer.spinnerElement.innerHTML = '<i class="fa fa-spinner fa-spin"></i>'
@@ -57,7 +55,7 @@ class PendingTrackPair {
         dismissElement.title = 'Remove track'
         dismissElement.innerHTML = '<i class="fa fa-times"></i>'
         dismissElement.addEventListener('click', async e => {
-            // Not the row's own click, which toggles every track label.
+            // Not the row's own click, which toggles the browser's track labels.
             e.preventDefault()
             e.stopPropagation()
             try {
@@ -67,6 +65,15 @@ class PendingTrackPair {
             }
         })
         this.x.viewportElement.appendChild(dismissElement)
+    }
+
+    /**
+     * The name is the point of the row, so it shows on both axes whether or not
+     * the labels of loaded tracks are toggled on. There is no gutter.
+     */
+    showLabelAndGutter() {
+        this.x.labelElement.style.display = 'block'
+        this.y.labelElement.style.display = 'block'
     }
 
     async updateViews() {

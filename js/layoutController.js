@@ -191,8 +191,7 @@ class LayoutController {
         trackPair.x.syncCanvas()
         trackPair.y.syncCanvas()
 
-        const gearContainer = document.querySelector('.hic-igv-right-hand-gutter')
-        gearContainer.style.display = this.browser.showTrackLabelAndGutter ? 'block' : 'none'
+        trackPair.showLabelAndGutter(this.browser.showTrackLabelAndGutter)
 
         setTrackReorderArrowColors(this.browser.trackPairs)
 

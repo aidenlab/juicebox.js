@@ -571,3 +571,30 @@ named in the file as deliberately undeclared, as `loadTracksOrThrow` is.
 ### Consequence
 
 **Nothing was required of the release.**
+
+## Re-measurement — 2026-09-29, for the v4.7.0 release
+
+Appended, not revised. The tables above stay as the measurement they were.
+
+Measured against `juicebox.js` at `bump-4.7.0`, `juicebox-web` `master`
+(committed pin `^4.6.0`, now an npm range rather than a `github:` tag) and
+`spacewalk` `main` (pinned `#v4.6.0`).
+
+**Result: nothing undeclared in use, in either consumer.** Seventh release running.
+
+`js/publicApi.js` grows by one namespace name, `filenameFromUrl` (#698): the
+rule juicebox derives a map's or track's filename by, exported so a host need
+not keep its own copy. It has no consumer caller yet;
+aidenlab/juicebox-web#96 will adopt it to pair a BAM with its index.
+
+### Inside the contract: a track config gains `filename`
+
+A track the host gives no `filename` now has one written onto its config
+(#698), derived by `filenameFromUrl`, before 1D/2D routing and igv's format
+inference read it. A saved session may carry it. Neither consumer sets
+`filename` on a track config, and Spacewalk loads no juicebox tracks, so
+neither observes the change beyond routing now reading the decoded name.
+
+### Consequence
+
+**Nothing was required of the release.**

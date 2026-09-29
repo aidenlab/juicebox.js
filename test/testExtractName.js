@@ -22,6 +22,10 @@ describe("extractName", function () {
         expect(extractName({url})).toBe("GSM5182714_me-1k.aca.hic");
     });
 
+    test("reads file= only from a GEO download link", function () {
+        expect(extractName({url: "https://example.org/download/?file=other%2Ehic"})).toBe("");
+    });
+
     test("falls back to the raw segment when decoding throws", function () {
         expect(extractName({url: "https://h.org/a/100%.hic"})).toBe("100%.hic");
     });

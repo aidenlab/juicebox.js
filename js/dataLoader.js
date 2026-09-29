@@ -25,7 +25,7 @@ import {FileUtils} from 'igv-utils'
 import Dataset, { HiCDataset } from './hicDataset.js'
 import State from './hicState.js'
 import Genome from './genome.js'
-import {extractName, derivedTrackName, presentError, errorMessage, isBotChallenge} from "./utils.js"
+import {filenameFromUrl, extractName, derivedTrackName,presentError, errorMessage, isBotChallenge} from "./utils.js"
 import {isFile} from "./fileUtils.js"
 import HICEvent from './hicEvent.js'
 import EventBus from './eventBus.js'
@@ -645,6 +645,14 @@ class DataLoader {
      * @returns {boolean} - whether the track is a 2D track
      */
     #prepareTrack(config) {
+        // A track the host gives no filename gets the one juicebox derives, so
+        // routing below and igv's own format inference both read a decoded
+        // name -- and a GEO download link's `file=` name. A `data:` URL names
+        // no file. #698.
+        if (!config.filename && !String(config.url).startsWith('data:')) {
+            config.filename = filenameFromUrl(config.url);
+        }
+
         const fileName = isFile(config.url)
             ? config.url.name
             : config.filename || FileUtils.getFilename(config.url);

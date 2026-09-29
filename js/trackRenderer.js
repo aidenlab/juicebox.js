@@ -78,7 +78,13 @@ class TrackRenderer {
             } else {
                 h = this.canvasElement.width
                 w = this.canvasElement.height
-                this.ctx.setTransform(0, 1, 1, 0, 0, 0);
+                // The tile is rendered horizontally by igv. A transpose
+                // (0, 1, 1, 0) would lay it along the y axis but it is a
+                // reflection, so every label came out mirrored. Rotate it a
+                // quarter turn clockwise instead: genome still runs down the
+                // axis, glyphs keep their handedness (text reads top to
+                // bottom), and the tile's top edge lands beside the map.
+                this.ctx.setTransform(0, 1, -1, 0, tile.buffer.height, 0);
             }
 
             this.ctx.clearRect(0, 0, w, h);

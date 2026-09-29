@@ -161,4 +161,4 @@ function errorMessage(error) {
     return Object.hasOwn(httpMessages, error.code) ? httpMessages[error.code] : error.message;
 }
 
-export { createDOMFromHTMLString, getOffset, parseRgbString, prettyPrint, filenameFromUrl, extractName,derivedTrackName, trackName, presentError, errorMessage, isBotChallenge, hitTestBbox }
+export { createDOMFromHTMLString, getOffset, parseRgbString, prettyPrint, filenameFromUrl, extractName, derivedTrackName, trackName, presentError, errorMessage, isBotChallenge, hitTestBbox }

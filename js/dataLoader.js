@@ -25,7 +25,7 @@ import {FileUtils} from 'igv-utils'
 import Dataset, { HiCDataset } from './hicDataset.js'
 import State from './hicState.js'
 import Genome from './genome.js'
-import {filenameFromUrl, extractName, derivedTrackName,presentError, errorMessage, isBotChallenge} from "./utils.js"
+import {filenameFromUrl, extractName, derivedTrackName, presentError, errorMessage, isBotChallenge} from "./utils.js"
 import {isFile} from "./fileUtils.js"
 import HICEvent from './hicEvent.js'
 import EventBus from './eventBus.js'

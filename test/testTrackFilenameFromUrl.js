@@ -82,6 +82,15 @@ describe("a track the host gives no filename gets one from its URL", function ()
         expect(createTrack).not.toHaveBeenCalled();
     });
 
+    test("a .bedpe from a GEO download link is parsed as BEDPE, not as a loops file", async function () {
+        // BEDPE carries its colour in column 10; a Juicebox loops file carries it in column 6.
+        vi.spyOn(igvxhr, 'loadString').mockResolvedValue("chr1\t100\t200\tchr1\t300\t400\t.\t0\t+\t+\t255,0,0\n");
+
+        await context.browser.loadTracks([{ url: `${GEO_DOWNLOAD}GSM5182714%5Floops%2Ebedpe` }]);
+
+        expect(context.browser.tracks2D[0].getColor()).toBe("rgb(255,0,0)");
+    });
+
     test("a filename the host supplies is kept", async function () {
         await context.browser.loadTracks([{ url: `${GEO_DOWNLOAD}x`, filename: "mine.bed" }]);
 

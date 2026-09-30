@@ -598,3 +598,28 @@ neither observes the change beyond routing now reading the decoded name.
 ### Consequence
 
 **Nothing was required of the release.**
+
+## Re-measurement — 2026-09-30, for the v4.8.0 release
+
+Appended, not revised. The tables above stay as the measurement they were.
+
+Measured against `juicebox.js` at `bump-4.8.0`, `juicebox-web` `master`
+(committed pin `^4.7.0`) and `spacewalk` `main` (pinned `#v4.6.0`; it was not
+moved to v4.7.0).
+
+**Result: nothing undeclared in use, in either consumer.** Eighth release running.
+
+`js/publicApi.js` is byte-identical to v4.7.0.
+
+### Inside the contract: the label toggle stays in its browser
+
+Clicking a track toggled the track labels and gutters of every browser on the
+page, while only the clicked browser's setting changed (#702). The toggle now
+reaches only its own browser's track pairs, as ADR-0004 promises. y tracks gain
+a `.y-track-label` element. Neither consumer references the label or gutter
+classes, `showTrackLabelAndGutter` or `toggleTrackLabelAndGutterState`, so
+neither observes anything beyond the new labels.
+
+### Consequence
+
+**Nothing was required of the release.**

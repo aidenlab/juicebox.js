@@ -142,6 +142,10 @@ class GestureRecognizer {
      * Entering with shift already held shows the crosshairs at once: a held
      * modifier does not repeat its keydown on macOS, so none is coming. #707.
      *
+     * Mouse-over and mouse-out bubble, so both also arrive as the pointer
+     * crosses the viewport's children: hence shown once here, and hidden by
+     * `mouseLeave`, never by `mouseOut`.
+     *
      * @param {{shiftKey, pointer}} input `pointer` as for `mouseMove`.
      */
     mouseOver({shiftKey, pointer} = {}) {

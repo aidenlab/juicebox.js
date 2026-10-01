@@ -232,6 +232,14 @@ describe('GestureRecognizer', () => {
                 expect(recognizer.keyUp()).toEqual([{type: 'hideCrosshairs'}])
                 expect(recognizer.mouseMove({x: 40, y: 60, pointer})).toEqual([])
             })
+
+            it('stays hidden when shift is released outside every viewport, and on re-entering without it', () => {
+                recognizer.mouseOver({shiftKey: true, pointer})
+                recognizer.mouseLeave()
+
+                expect(recognizer.keyUp()).toEqual([{type: 'hideCrosshairs'}])
+                expect(recognizer.mouseOver({shiftKey: false, pointer})).toEqual([])
+            })
         })
     })
 

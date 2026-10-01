@@ -433,18 +433,20 @@ class BrowserCoordinator {
      * with one shared highlight hears one position (ADR-0020 decision 5).
      * There is no separate "show": the first move after a hide is it.
      *
+     * Only while the source shows a chromosome pair. In the whole-genome view
+     * the guides and the echo still draw but the host is told nothing, and a
+     * view change into it under a still pointer is an `onCrosshairsHide`.
+     *
      * A callback that throws is logged and the rest still run: this is called
      * from inside `update()` and teardown, which have work left to do.
      *
      * @param {Object} position
-     * @param {string} position.chr1 - chromosome on the x axis; a real one in
-     *   the whole-genome view too, never `All`
+     * @param {string} position.chr1 - chromosome on the x axis; never `All`
      * @param {number} position.xBP
      * @param {string} position.chr2 - chromosome on the y axis
      * @param {number} position.yBP
      * @param {{startXBP: number, endXBP: number, startYBP: number, endYBP: number}} position.extents -
-     *   the visible bp extent on each axis. In the whole-genome view these run
-     *   along the whole genome, not along `chr1` and `chr2`.
+     *   the visible bp extent on each axis, along `chr1` and `chr2`
      */
     onCrosshairsMove(position) {
         for (const callback of this.externalCallbacks.onCrosshairsMove) {
@@ -458,8 +460,8 @@ class BrowserCoordinator {
 
     /**
      * Tell the host the crosshairs are gone: Shift was released, or the pointer
-     * left every viewport -- or the source lost its map or was disposed with
-     * them showing. From the source alone, as `onCrosshairsMove` is.
+     * left every viewport -- or the source went to the whole-genome view, lost
+     * its map or was disposed with them showing. From the source alone, as `onCrosshairsMove` is.
      */
     onCrosshairsHide() {
         for (const callback of this.externalCallbacks.onCrosshairsHide) {

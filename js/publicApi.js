@@ -352,7 +352,8 @@ export const COORDINATOR_CALLBACKS = [
     // The crosshairs, new in #709: where the source's pointer is, and that it
     // has gone. Once per pointer move, from the source only, never from an
     // echo -- and again when the view changes under a still pointer. There is
-    // no "show": the first move after a hide is it. ADR-0020 decision 5.
+    // no "show": the first move after a hide is it. Silent in the whole-genome
+    // view, where the guides still draw. ADR-0020 decision 5.
     'onCrosshairsMove',
     'onCrosshairsHide'
 ]
@@ -387,9 +388,9 @@ export const COORDINATOR_PAYLOAD_SHAPES = [
         callback: 'onControlMapLoaded',
         payload: ['controlDataset', 'browser']
     },
-    // `chr1` and `chr2` are chromosome *names*, and real ones in the
-    // whole-genome view too -- never `All`. `extents` is the visible bp on each
-    // axis, which is what replaces the old handler's viewport-fraction
+    // `chr1` and `chr2` are chromosome *names*, and never `All`: the host is not
+    // told in the whole-genome view. `extents` is the visible bp on each axis,
+    // along those two chromosomes, which is what replaces the old handler's viewport-fraction
     // interpolants. `onCrosshairsHide` is called with nothing. Delivery is
     // driven in `test/testCrosshairsHostCallbacks.js`.
     {

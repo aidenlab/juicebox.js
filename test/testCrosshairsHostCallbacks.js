@@ -61,16 +61,47 @@ describe('crosshairs host callbacks', () => {
         expect(heard).toEqual([])
     })
 
-    it('names a real chromosome in the whole-genome view, never All', () => {
+    /**
+     * The host is told only while the source shows a chromosome pair: in the
+     * whole-genome view the extents and the locus are in different frames.
+     * The guides and the echo carry on -- `testCrosshairsEcho.js`.
+     */
+    describe('in the whole-genome view', () => {
+
         // 500 kb per bin and 1 px per bin, from the genome's start.
-        const a = panel(dom.container, {state: {chr1: 0, chr2: 0, x: 0, y: 0, zoom: 0, pixelSize: 1}})
-        const heard = host(a)
+        const WHOLE_GENOME = {chr1: 0, chr2: 0, x: 0, y: 0, zoom: 0, pixelSize: 1}
 
-        // x: 105 Mb is 5 Mb into chr2, which lies after chr1's 100 Mb.
-        mouse(a, 'mouseover', {x: 210, y: 20, shiftKey: true})
+        it('tells the host nothing, on the callbacks or the old surface, though the guides are drawn', () => {
+            const a = panel(dom.container, {state: {...WHOLE_GENOME}})
+            const heard = host(a)
+            const legacy = legacyHost(a)
 
-        expect(heard).toHaveLength(1)
-        expect(heard[0][1]).toMatchObject({chr1: 'chr2', xBP: 5000000, chr2: 'chr1', yBP: 10000000})
+            mouse(a, 'mouseover', {x: 210, y: 20, shiftKey: true})
+            mouse(a, 'mousemove', {x: 220, y: 30, shiftKey: true})
+            expect(a.contactMatrixView.xGuideElement.style.display).toBe('block')
+            key('keyup', {key: 'Shift'})
+
+            expect(heard).toEqual([])
+            expect(legacy).toEqual([])
+        })
+
+        it('tells the host the crosshairs are hidden when the view goes there under a still pointer, and shown again when it comes back', async () => {
+            const a = panel(dom.container)
+            const chromosomes = {...a.state}
+            const heard = host(a)
+            const legacy = legacyHost(a)
+
+            mouse(a, 'mouseover', {x: 40, y: 60, shiftKey: true})
+            Object.assign(a.state, WHOLE_GENOME)
+            await a.update()
+            await a.update()
+            Object.assign(a.state, chromosomes)
+            await a.update()
+
+            expect(heard.map(([name]) => name)).toEqual(['move', 'hide', 'move'])
+            expect(legacy.map(([name]) => name))
+                .toEqual(['DidShowCrosshairs', 'handler', 'DidHideCrosshairs', 'DidShowCrosshairs', 'handler'])
+        })
     })
 
     it('tells the host the crosshairs are hidden when shift is released', () => {

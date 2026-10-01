@@ -167,6 +167,13 @@ class HICBrowser {
      */
     #crosshairs
 
+    /**
+     * Whether the host has been told of crosshairs it has not yet been told
+     * are hidden. Not the same as being the source: a source showing the
+     * whole-genome view draws and echoes, and tells the host nothing.
+     */
+    #hostHasCrosshairs = false
+
     /** Whether `setCustomCrosshairsHandler` has said it is deprecated. */
     #warnedOfCrosshairsHandler = false
 
@@ -257,6 +264,7 @@ class HICBrowser {
         // handler it takes closes over the view a reconstruction throws away.
         this.customCrosshairsHandler = undefined;
         this.#crosshairs = undefined;
+        this.#hostHasCrosshairs = false;
 
         /**
          * Everything this browser installs *outside* `rootElement`'s subtree.
@@ -631,12 +639,19 @@ class HICBrowser {
      * @param {{chr1, xBP, chr2, yBP, extents}} position - as `onCrosshairsMove` takes it
      */
     #notifyHostOfCrosshairsMove(position) {
+        if (!this.#hostHasCrosshairs) {
+            this.#hostHasCrosshairs = true
+            // Deprecated, for removal in 5.0: the first `onCrosshairsMove` is
+            // the show.
+            this.eventBus.post(HICEvent('DidShowCrosshairs', 'DidShowCrosshairs'))
+        }
+
         this.coordinator.onCrosshairsMove(position)
 
         // The payload Spacewalk has always received, computed as it always
-        // was rather than from the locus: bare bp with no chromosome -- so
-        // along the whole genome in that view, and not clamped to the
-        // chromosome's end -- and the viewport-fraction interpolants.
+        // was rather than from the locus: bare bp with no chromosome, not
+        // clamped to the chromosome's end, and the viewport-fraction
+        // interpolants.
         if (this.customCrosshairsHandler) {
             const { x, y, xNormalized, yNormalized } = this.#crosshairs.pointer
             const { x: stateX, y: stateY, pixelSize } = this.state;
@@ -658,6 +673,20 @@ class HICBrowser {
                 console.error('Error in custom crosshairs handler:', error);
             }
         }
+    }
+
+    /**
+     * Tell the host the crosshairs it was told of are gone: `onCrosshairsHide`
+     * on the coordinator, then the deprecated event beside it. A host that was
+     * told of none hears nothing.
+     */
+    #notifyHostOfCrosshairsHide() {
+        if (!this.#hostHasCrosshairs) return
+        this.#hostHasCrosshairs = false
+
+        this.coordinator.onCrosshairsHide()
+        // Deprecated, for removal in 5.0.
+        this.eventBus.post(HICEvent('DidHideCrosshairs', 'DidHideCrosshairs'))
     }
 
     /**
@@ -710,22 +739,16 @@ class HICBrowser {
      * @param {{x: number, y: number}} pointer - viewport pixels
      */
     moveCrosshairs(pointer) {
-        const wasSource = this.#isCrosshairsSource()
         this.#crosshairs = {pointer}
         this.drawCrosshairs(pointer)
         this.showCrosshairs()
-
-        if (!wasSource) {
-            // Deprecated, for removal in 5.0: the first `onCrosshairsMove` is
-            // the show.
-            this.eventBus.post(HICEvent('DidShowCrosshairs', 'DidShowCrosshairs'))
-        }
         this.#publishCrosshairs()
     }
 
     /**
      * Give up the crosshairs: hide them here and, if this panel was their
-     * source, in every panel echoing them -- and tell the host.
+     * source, in every panel echoing them -- and tell the host, if it was
+     * told of any.
      *
      * Only the source hides the group and tells the host. A key release
      * reaches every panel on the page, and one outside the source's sync group
@@ -738,10 +761,8 @@ class HICBrowser {
 
         if (wasSource) {
             this.#echoToGroup(undefined)
-            this.coordinator.onCrosshairsHide()
-            // Deprecated, for removal in 5.0: a shim over `onCrosshairsHide`.
-            this.eventBus.post(HICEvent('DidHideCrosshairs', 'DidHideCrosshairs'))
         }
+        this.#notifyHostOfCrosshairsHide()
     }
 
     /**
@@ -803,9 +824,14 @@ class HICBrowser {
      */
     #publishCrosshairs({ onlyIfChanged = false } = {}) {
         const locus = this.crosshairsLocus(this.#crosshairs.pointer)
-        const { startBP: startXBP, endBP: endXBP } = this.genomicState('x');
-        const { startBP: startYBP, endBP: endYBP } = this.genomicState('y');
-        const position = { ...locus, extents: { startXBP, endXBP, startYBP, endYBP } }
+
+        // The host is told only while this panel shows a chromosome pair. In
+        // the whole-genome view the visible extents run along the genome and
+        // the locus along a chromosome, and a host cannot place one in the
+        // other -- so the guides and the echo carry on, and the host hears
+        // the crosshairs hide (ADR-0020 decision 5).
+        const wholeGenome = this.dataset.isWholeGenome(this.state.chr1)
+        const position = wholeGenome ? locus : { ...locus, extents: this.#visibleExtents() }
 
         // A repaint that left the view where it was has nothing new to say.
         const published = JSON.stringify(position)
@@ -813,7 +839,18 @@ class HICBrowser {
         this.#crosshairs.published = published
 
         this.#echoToGroup(locus)
-        this.#notifyHostOfCrosshairsMove(position)
+        if (wholeGenome) {
+            this.#notifyHostOfCrosshairsHide()
+        } else {
+            this.#notifyHostOfCrosshairsMove(position)
+        }
+    }
+
+    /** The bp this panel is showing on each axis, as `onCrosshairsMove` carries it. */
+    #visibleExtents() {
+        const { startBP: startXBP, endBP: endXBP } = this.genomicState('x');
+        const { startBP: startYBP, endBP: endYBP } = this.genomicState('y');
+        return { startXBP, endXBP, startYBP, endYBP }
     }
 
     #echoToGroup(locus) {

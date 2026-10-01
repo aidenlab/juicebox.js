@@ -136,6 +136,23 @@ it interprets a gesture without being part of what the view *is*: user-set, per
 browser, absent from canonical state. It decides what crosses a sync group, and
 is why normalization and the colour scale do not. ADR-0014.
 
+**Crosshairs** — the pair of guide lines marking the pointer's genomic position
+while Shift is held over a contact map. Transient: not canonical state, not a
+view preference, not a dataset choice, never serialized. Shown in the
+**source** — the panel the pointer is over *now*, so moving into another panel
+with Shift held hands the role over, and leaving every panel hides them — and
+**echoed** into the rest of its sync group at the same genomic position; a panel
+outside any sync group has no echo. In the whole-genome view the position is a
+real chromosome, never `All`. The host hears once per pointer move, from the
+source, never from an echo.
+_Avoid_: mirrored crosshairs (*mirror* is how a view preference travels),
+cursor.
+
+**Echo** — crosshairs drawn in a panel because the pointer is in another panel
+of its sync group. Placed by genomic position, not screen position, so a peer
+with a different viewport or resolution rung still marks the same locus; an axis
+whose position is out of the peer's view shows no guide.
+
 **Zoom anchor** — the screen point whose genomic position a wheel or pinch zoom
 holds fixed: the map grows or shrinks about the cursor, not about the centre of
 the view. Carried by canonical state after the zoom, so what is drawn next

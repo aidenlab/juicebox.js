@@ -39,7 +39,7 @@ falls into exactly one:
 | Category | Travels the sync group as | Examples |
 | --- | --- | --- |
 | **Canonical state** | the sync payload, on every update | the seven `State` fields |
-| **View preference** | a mirror, on every transition | resolution lock; crosshairs, when they land |
+| **View preference** | a mirror, on every transition | resolution lock (crosshairs are not one — see ADR-0020) |
 | **Dataset choice** | nothing | normalization, colour scale, background colour, display mode, tracks, control map |
 
 A **view preference** is defined by three properties together: the user sets it,

@@ -133,6 +133,27 @@ describe('#716: a synced peer follows a panel from a chromosome back to All', ()
         expect(view(b.state)).toEqual(view(a.state))
     })
 
+    // The second half of #716, and not a sync bug: typing `All` kept the scale
+    // of the view being left whenever it was above the fit. chr1 at 500 kb sits
+    // near the fit, which hid it; chr21 does not, nor does any view zoomed past
+    // its own fit -- the blurred, magnified whole genome #716 was reported with.
+    const leaving = {
+        'chr21': a => a.parseGotoInput('chr21'),
+        'chr21 zoomed to 6 px/bin': a => a.setState(new State(21, 21, 2, 10, 10, 6, 'NONE')),
+    }
+    for (const [from, go] of Object.entries(leaving)) {
+        it(`typing All from ${from} lands on the fit the whole-genome ruler is drawn for`, async () => {
+            const [a, b] = await twoSyncedBrowsers(dom.container)
+            await go(a)
+            // Above the fit, or the old `max(this.pixelSize, fit)` passes too.
+            expect(a.state.pixelSize).toBeGreaterThan(await a.minPixelSize(0, 0, 0))
+            await a.parseGotoInput('All')
+            expect(a.state.pixelSize).toBe(Math.max(1, await a.minPixelSize(0, 0, 0)))
+            await b.syncState(a.getSyncState())
+            expect(view(b.state)).toEqual(view(a.state))
+        })
+    }
+
     it('a receiver leaving All for a chromosome lands where the publisher does', async () => {
         const [a, b] = await twoSyncedBrowsers(dom.container)
         await chr1ThenAll(a, b)

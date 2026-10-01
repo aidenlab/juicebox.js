@@ -375,8 +375,9 @@ class State {
      * - wholeChr=true: zoom = browser.minZoom(...); pixelSize clamped to
      *   [DEFAULT_PIXEL_SIZE, 100] around minPixelSize. Used when both axes are full
      *   chromosomes.
-     * - wholeChr=false: zoom = 0; pixelSize = max(current pixelSize, minPixelSize).
-     *   Used for whole-genome view.
+     * - wholeChr=false: zoom = 0. Used for whole-genome view, where pixelSize =
+     *   max(DEFAULT_PIXEL_SIZE, minPixelSize), the fit a freshly loaded map opens
+     *   at; any other pair keeps pixelSize = max(current pixelSize, minPixelSize).
      *
      * In both cases x and y are reset to 0.
      */
@@ -399,9 +400,19 @@ class State {
             const minPS = await browser.minPixelSize(lookupChr1, lookupChr2, newZoom)
             newPixelSize = Math.min(100, Math.max(DEFAULT_PIXEL_SIZE, minPS))
         } else {
+            // At `All`, the fit -- not the scale of the view being left. The
+            // whole-genome ruler lays every chromosome out across the full axis
+            // whatever the state says, so a whole-genome map at any other
+            // pixelSize is drawn against the wrong ruler. `max(this.pixelSize,
+            // fit)` hid it from chr1 at 500 kb, which sits near the fit; leaving
+            // chr21 or a chromosome pair drew the genome ~1.4x too large and
+            // clipped. #716. Any other pair a host hands `setChromosomes` with
+            // `wholeChr: false` keeps the old rule.
             newZoom = 0
             const minPS = await browser.minPixelSize(lookupChr1, lookupChr2, newZoom)
-            newPixelSize = Math.max(this.pixelSize, minPS)
+            newPixelSize = dataset.isWholeGenome(lookupChr1)
+                ? Math.max(DEFAULT_PIXEL_SIZE, minPS)
+                : Math.max(this.pixelSize, minPS)
         }
 
         return await this.setView(

@@ -118,7 +118,9 @@ export const NAMESPACE_SURFACE = [
  * Nor, new in #708, `moveCrosshairs`, `releaseCrosshairs` and `echoCrosshairs`:
  * the first two are how the viewport carries out a crosshairs intent, and the
  * third is what a source calls on its sync-group peers. A host places nothing;
- * it hears where the source's pointer is (ADR-0020 decision 5).
+ * it hears where the source's pointer is (ADR-0020 decision 5) -- since #709
+ * through `onCrosshairsMove`, which replaced the browser's short-lived
+ * `notifyCrosshairsHost` before that name was ever released.
  */
 export const BROWSER_SURFACE = [
     // Delegating loaders and lookups -- no internal callers, hosts only

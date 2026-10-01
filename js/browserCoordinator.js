@@ -433,6 +433,9 @@ class BrowserCoordinator {
      * with one shared highlight hears one position (ADR-0020 decision 5).
      * There is no separate "show": the first move after a hide is it.
      *
+     * A callback that throws is logged and the rest still run: this is called
+     * from inside `update()` and teardown, which have work left to do.
+     *
      * @param {Object} position
      * @param {string} position.chr1 - chromosome on the x axis; a real one in
      *   the whole-genome view too, never `All`
@@ -445,17 +448,26 @@ class BrowserCoordinator {
      */
     onCrosshairsMove(position) {
         for (const callback of this.externalCallbacks.onCrosshairsMove) {
-            callback(position);
+            try {
+                callback(position);
+            } catch (error) {
+                console.error('Error in onCrosshairsMove callback:', error);
+            }
         }
     }
 
     /**
      * Tell the host the crosshairs are gone: Shift was released, or the pointer
-     * left every viewport. From the source alone, as `onCrosshairsMove` is.
+     * left every viewport -- or the source lost its map or was disposed with
+     * them showing. From the source alone, as `onCrosshairsMove` is.
      */
     onCrosshairsHide() {
         for (const callback of this.externalCallbacks.onCrosshairsHide) {
-            callback();
+            try {
+                callback();
+            } catch (error) {
+                console.error('Error in onCrosshairsHide callback:', error);
+            }
         }
     }
 

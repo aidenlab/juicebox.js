@@ -155,6 +155,16 @@ describe('crosshairs host callbacks', () => {
             }])
         })
 
+        it('says nothing more when a repaint leaves the view where it was', async () => {
+            const a = panel(dom.container)
+            const heard = host(a)
+
+            mouse(a, 'mouseover', {x: 40, y: 60, shiftKey: true})
+            await a.update()
+
+            expect(heard).toHaveLength(1)
+        })
+
         it('tells an echoing panel\'s host nothing when its own view changes', async () => {
             const a = panel(dom.container)
             const b = panel(dom.another())
@@ -178,6 +188,26 @@ describe('crosshairs host callbacks', () => {
 
             expect(heard.map(([name]) => name)).toEqual(['move', 'hide'])
         })
+    })
+
+    it('finishes the move and the hide when a host\'s callback throws', () => {
+        const a = panel(dom.container)
+        const b = panel(dom.another())
+        syncGroup(a, b)
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+        a.coordinator.addCallback('onCrosshairsMove', () => { throw new Error('host') })
+        a.coordinator.addCallback('onCrosshairsHide', () => { throw new Error('host') })
+        const heard = host(a)
+        const legacy = legacyHost(a)
+
+        mouse(a, 'mouseover', {x: 40, y: 60, shiftKey: true})
+        key('keyup', {key: 'Shift'})
+
+        expect(heard.map(([name]) => name)).toEqual(['move', 'hide'])
+        expect(legacy.map(([name]) => name)).toEqual(['DidShowCrosshairs', 'handler', 'DidHideCrosshairs'])
+        expect(b.contactMatrixView.xGuideElement.style.display).toBe('none')
+        expect(error).toHaveBeenCalledTimes(2)
+        error.mockRestore()
     })
 
     it('stops telling a host that has unsubscribed', () => {

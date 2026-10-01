@@ -234,9 +234,11 @@ describe('viewport gestures', () => {
      * crosshairs included. Pinned as it is: #655.
      */
     /**
-     * Both crosshair paths Spacewalk depends on: the `DidShowCrosshairs` /
+     * Both crosshair paths Spacewalk has depended on: the `DidShowCrosshairs` /
      * `DidHideCrosshairs` pair on the bus, and the handler a host registers
      * with `setCustomCrosshairsHandler` (Spacewalk's `juiceboxPanel.js`).
+     * Deprecated since #709, and shims over `onCrosshairsMove` and
+     * `onCrosshairsHide` -- see `testCrosshairsHostCallbacks.js`.
      */
     describe('crosshairs and mouse position, mobile flag off', () => {
 
@@ -253,11 +255,19 @@ describe('viewport gestures', () => {
             expect(reported.mock.calls).toEqual([[{x: 40, y: 60, xNormalized: 0.05, yNormalized: 0.1}]])
         })
 
-        it('posts DidShowCrosshairs when shift goes down over the viewport', () => {
+        /**
+         * Shift alone gives no position, so nothing is shown until the pointer
+         * moves; the first move is the show. #709.
+         */
+        it('posts DidShowCrosshairs on the first mouse-move after shift goes down over the viewport, once', () => {
             const posted = watchPosts(browser, ['DidShowCrosshairs'])
 
             mouse(viewport, 'mouseover')
             key('keydown', {key: 'Shift', shiftKey: true})
+            expect(posted).toEqual([])
+
+            mouse(viewport, 'mousemove', {x: 40, y: 60})
+            mouse(viewport, 'mousemove', {x: 50, y: 60})
 
             expect(posted).toEqual(['DidShowCrosshairs'])
         })
@@ -268,6 +278,7 @@ describe('viewport gestures', () => {
             mouse(viewport, 'mouseover')
             mouse(viewport, 'mouseout')
             key('keydown', {key: 'Shift', shiftKey: true})
+            mouse(viewport, 'mousemove', {x: 40, y: 60})
 
             expect(posted).toEqual([])
         })
@@ -301,11 +312,12 @@ describe('viewport gestures', () => {
 
             mouse(viewport, 'mouseover')
             key('keydown', {key: 'Shift', shiftKey: true})
+            mouse(viewport, 'mousemove', {x: 40, y: 60})
             key('keyup', {key: 'Shift'})
             mouse(viewport, 'mousemove', {x: 40, y: 30})
 
             expect(posted).toEqual(['DidShowCrosshairs', 'DidHideCrosshairs'])
-            expect(handler).not.toHaveBeenCalled()
+            expect(handler).toHaveBeenCalledTimes(1)
         })
 
         /**
@@ -380,16 +392,19 @@ describe('viewport gestures', () => {
         })
 
         /**
-         * Not a bug, and deliberately not filed as one: Spacewalk listens for
-         * `DidHideCrosshairs` and may rely on it arriving for any key release,
-         * shown or not. Change this only with Spacewalk in view.
+         * Source-only since #709 (ADR-0020 decision 6). Until then it was
+         * posted for any key release, shown or not, by every panel on the
+         * page -- which a host with several panels heard once per panel.
          */
-        it('posts DidHideCrosshairs on any document keyup, even when crosshairs were never shown', () => {
+        it('posts no DidHideCrosshairs on a document keyup when this panel was showing no crosshairs', () => {
             const posted = watchPosts(browser, ['DidHideCrosshairs'])
 
             key('keyup', {key: 'a'})
+            mouse(viewport, 'mouseover')
+            key('keydown', {key: 'Shift', shiftKey: true})
+            key('keyup', {key: 'Shift'})
 
-            expect(posted).toEqual(['DidHideCrosshairs'])
+            expect(posted).toEqual([])
         })
     })
 

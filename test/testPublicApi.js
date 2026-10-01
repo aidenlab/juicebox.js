@@ -6,7 +6,7 @@ import EventBus from '../js/eventBus.js'
 import BrowserRegistry from '../js/browserRegistry.js'
 import {initRegistry} from '../js/init.js'
 import {filenameFromUrl} from '../js/utils.js'
-import {NAMESPACE_SURFACE, BROWSER_SURFACE, REGISTRY_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COORDINATOR_CALLBACKS, COORDINATOR_PAYLOAD_SHAPES, EVENTS_POSTED, EVENT_PAYLOAD_SHAPES} from '../js/publicApi.js'
+import {NAMESPACE_SURFACE, BROWSER_SURFACE, REGISTRY_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COORDINATOR_CALLBACKS, COORDINATOR_PAYLOAD_SHAPES, DEPRECATED_SURFACE, EVENTS_POSTED, EVENT_PAYLOAD_SHAPES} from '../js/publicApi.js'
 
 /**
  * Contract tests for the declared public surface.
@@ -232,6 +232,31 @@ describe('event bus', () => {
         const posted = EVENTS_POSTED.map(entry => entry.name)
         for (const {event} of EVENT_PAYLOAD_SHAPES) {
             expect(posted, `"${event}" has a declared payload but is not a declared event`).toContain(event)
+        }
+    })
+})
+
+describe('deprecated surface', () => {
+
+    // Deprecated is not removed. Each entry must still be declared where it
+    // says it is -- and so still be held to that list's own checks above --
+    // until the release it names.
+    const DECLARED = {
+        BROWSER_SURFACE,
+        EVENTS_POSTED: EVENTS_POSTED.map(entry => entry.name),
+    }
+
+    it('still declares every deprecated name in the list it came from', () => {
+        for (const {name, declaredIn} of DEPRECATED_SURFACE) {
+            expect(Object.keys(DECLARED), `"${name}" names an unknown list, "${declaredIn}"`).toContain(declaredIn)
+            expect(DECLARED[declaredIn], `"${name}" is deprecated but no longer declared in ${declaredIn}`).toContain(name)
+        }
+    })
+
+    it('names a declared coordinator callback as each replacement, and a release for each removal', () => {
+        for (const {name, replacedBy, removeIn} of DEPRECATED_SURFACE) {
+            expect(COORDINATOR_CALLBACKS, `"${name}" is replaced by "${replacedBy}", which is not declared`).toContain(replacedBy)
+            expect(removeIn, `"${name}" names no release for its removal`).toMatch(/^\d+\.\d+$/)
         }
     })
 })

@@ -59,7 +59,9 @@ class BrowserCoordinator {
             onGenomeChange: [],
             onBackgroundColorChange: [],
             onForegroundColorChange: [],
-            onSyncRefused: []
+            onSyncRefused: [],
+            onCrosshairsMove: [],
+            onCrosshairsHide: []
         };
     }
 
@@ -418,6 +420,42 @@ class BrowserCoordinator {
         console.warn(`juicebox: panel not synced -- ${detail.message}`);
         for (const callback of this.externalCallbacks.onSyncRefused) {
             callback({ ...detail, browser: this.browser });
+        }
+    }
+
+    /**
+     * Tell the host where the crosshairs are: the locus under the pointer and
+     * the bp this panel is showing on each axis.
+     *
+     * A pure notification, called by the **source** alone (`CONTEXT.md`,
+     * *Crosshairs*) -- once per pointer move, and again when the view changes
+     * under a still pointer. A panel drawing an echo never calls it, so a host
+     * with one shared highlight hears one position (ADR-0020 decision 5).
+     * There is no separate "show": the first move after a hide is it.
+     *
+     * @param {Object} position
+     * @param {string} position.chr1 - chromosome on the x axis; a real one in
+     *   the whole-genome view too, never `All`
+     * @param {number} position.xBP
+     * @param {string} position.chr2 - chromosome on the y axis
+     * @param {number} position.yBP
+     * @param {{startXBP: number, endXBP: number, startYBP: number, endYBP: number}} position.extents -
+     *   the visible bp extent on each axis. In the whole-genome view these run
+     *   along the whole genome, not along `chr1` and `chr2`.
+     */
+    onCrosshairsMove(position) {
+        for (const callback of this.externalCallbacks.onCrosshairsMove) {
+            callback(position);
+        }
+    }
+
+    /**
+     * Tell the host the crosshairs are gone: Shift was released, or the pointer
+     * left every viewport. From the source alone, as `onCrosshairsMove` is.
+     */
+    onCrosshairsHide() {
+        for (const callback of this.externalCallbacks.onCrosshairsHide) {
+            callback();
         }
     }
 

@@ -173,8 +173,9 @@ class GestureRecognizer {
     }
 
     /**
-     * Any key released hides the crosshairs, shown or not. Spacewalk listens
-     * for the resulting `DidHideCrosshairs` and may rely on that.
+     * Any key released hides the crosshairs, shown or not. Whether there was
+     * anything to hide, and so whether the host hears of it, is the browser's
+     * to say (`HICBrowser.releaseCrosshairs`).
      */
     keyUp() {
         this.crosshairsShown = false

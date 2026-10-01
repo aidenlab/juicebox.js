@@ -411,6 +411,21 @@ class ContactMatrixView {
 
         const recognizer = this.gestureRecognizer;
 
+        // The position the crosshairs follow: page-minus-offset.
+        const pointerIn = (e) => {
+            const { top, left } = getOffset(viewportElement)
+            const rect = viewportElement.getBoundingClientRect();
+
+            const pointer =
+                {
+                    x: e.pageX - left,
+                    y: e.pageY - top
+                };
+            pointer.xNormalized = pointer.x / rect.width;
+            pointer.yNormalized = pointer.y / rect.height;
+            return pointer;
+        };
+
         viewportElement.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -433,16 +448,8 @@ class ContactMatrixView {
             e.preventDefault();
             e.stopPropagation();
 
-            const { top, left } = getOffset(viewportElement)
             const rect = viewportElement.getBoundingClientRect();
-
-            const pointer =
-                {
-                    x: e.pageX - left,
-                    y: e.pageY - top
-                };
-            pointer.xNormalized = pointer.x / rect.width;
-            pointer.yNormalized = pointer.y / rect.height;
+            const pointer = pointerIn(e);
 
             this.browser.coordinator.onUpdateContactMapMousePosition(pointer);
 
@@ -469,7 +476,7 @@ class ContactMatrixView {
             this.carryOut(recognizer.wheel({ x: e.offsetX, y: e.offsetY, deltaY: e.deltaY }));
         })
 
-        viewportElement.addEventListener('mouseover', () => this.carryOut(recognizer.mouseOver()))
+        viewportElement.addEventListener('mouseover', (e) => this.carryOut(recognizer.mouseOver({ shiftKey: e.shiftKey, pointer: pointerIn(e) })))
         viewportElement.addEventListener('mouseout', () => this.carryOut(recognizer.mouseOut()))
 
         viewportElement.addEventListener('mouseleave', () => {

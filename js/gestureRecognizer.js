@@ -99,8 +99,20 @@ class GestureRecognizer {
         return this.releaseMouse()
     }
 
+    /**
+     * Leaving the viewport ends a drag, and gives up the crosshairs: their
+     * source is the panel the pointer is over now (ADR-0020 decision 4). #707.
+     */
     mouseLeave() {
-        return this.releaseMouse()
+        const intents = this.releaseMouse()
+
+        this.mouseOverViewport = false
+        if (this.crosshairsShown) {
+            this.crosshairsShown = false
+            intents.push({type: 'hideCrosshairs'})
+        }
+
+        return intents
     }
 
     /**
@@ -126,8 +138,19 @@ class GestureRecognizer {
         return [{type: 'wheelZoom', x, y, scaleFactor}]
     }
 
-    mouseOver() {
+    /**
+     * Entering with shift already held shows the crosshairs at once: a held
+     * modifier does not repeat its keydown on macOS, so none is coming. #707.
+     *
+     * @param {{shiftKey, pointer}} input `pointer` as for `mouseMove`.
+     */
+    mouseOver({shiftKey, pointer} = {}) {
         this.mouseOverViewport = true
+
+        if (!this.crosshairsShown && shiftKey) {
+            this.crosshairsShown = true
+            return [{type: 'showCrosshairs'}, {type: 'moveCrosshairs', pointer}]
+        }
         return []
     }
 

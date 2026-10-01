@@ -76,7 +76,7 @@ function standInMap(browser) {
         writable: true,
     })
     browser.dataset = {
-        chromosomes: [{index: 0, name: 'All'}, {index: 1, name: 'chr1'}, {index: 2, name: 'chr2'}],
+        chromosomes: [{index: 0, name: 'All'}, {index: 1, name: 'chr1', size: 1000000}, {index: 2, name: 'chr2', size: 1000000}],
         binSizeForZoom: () => 1000,
         isWholeGenome: index => 0 === index,
     }

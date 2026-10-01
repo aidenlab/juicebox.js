@@ -8,19 +8,24 @@
  * read off the whole-genome view -- two peers may order their chromosomes
  * differently, and `All` plus a cumulative bp would then mark different loci.
  *
- * Pure. A *panel* here is the four things that say where a locus falls on a
- * screen -- `{state, dataset, genome, viewDimensions}` -- which a browser holds
- * and a test can state.
+ * Pure. A *view* here is the four things that say where a locus falls on a
+ * panel's screen -- `{state, dataset, genome, viewDimensions}` -- which a
+ * browser holds and a test can state.
+ *
+ * Chromosome starts are summed here rather than read from
+ * `Genome.getCumulativeOffset`, which skips `All` by the lowercase name and so
+ * counts its kb size into every offset.
  */
 
 /**
  * The locus under a viewport pixel.
  *
  * @param {{x: number, y: number}} pixel - viewport pixels
- * @param {{state, dataset}} panel
+ * @param {{state, dataset}} view
  * @returns {{chr1: string, xBP: number, chr2: string, yBP: number}}
  */
 function locusAtPixel({x, y}, {state, dataset}) {
+    // A pointer past either end of what is drawn names the nearest end.
     const xAxis = axisLocus(x, state.chr1, state.x, state, dataset)
     const yAxis = axisLocus(y, state.chr2, state.y, state, dataset)
     return {chr1: xAxis.chr, xBP: xAxis.bp, chr2: yAxis.chr, yBP: yAxis.bp}
@@ -32,7 +37,7 @@ function locusAtPixel({x, y}, {state, dataset}) {
  * chromosome the panel does not carry -- is `null`, not a pixel.
  *
  * @param {{chr1: string, xBP: number, chr2: string, yBP: number}} locus
- * @param {{state, dataset, genome, viewDimensions: {width: number, height: number}}} panel
+ * @param {{state, dataset, genome, viewDimensions: {width: number, height: number}}} view
  * @returns {{x: number|null, y: number|null}}
  */
 function placeLocus({chr1, xBP, chr2, yBP}, {state, dataset, genome, viewDimensions}) {
@@ -46,12 +51,12 @@ function axisLocus(pixel, chrIndex, origin, state, dataset) {
     const bin = origin + pixel / state.pixelSize
 
     if (!dataset.isWholeGenome(chrIndex)) {
-        return {chr: dataset.chromosomes[chrIndex].name, bp: bin * dataset.binSizeForZoom(state.zoom)}
+        const {name, size} = dataset.chromosomes[chrIndex]
+        return {chr: name, bp: clamp(bin * dataset.binSizeForZoom(state.zoom), 0, size)}
     }
 
     // The whole-genome view lays the real chromosomes end to end in the
-    // dataset's own order; walk them to find the one this position is in. A
-    // pointer past either end names the nearest chromosome's nearest end.
+    // dataset's own order; walk them to find the one this position is in.
     const genomeBP = Math.max(0, bin * dataset.wholeGenomeResolution)
     const chromosomes = realChromosomes(dataset)
     let offset = 0
@@ -72,6 +77,11 @@ function axisPixel(chrName, bp, chrIndex, origin, extent, state, dataset, genome
     const chromosome = genome.getChromosome(chrName)
     if (undefined === chromosome) return null
 
+    // A peer's chromosome of the same name may be longer. Past this panel's
+    // own end there is nothing to mark -- and in the whole-genome view the
+    // position would otherwise land inside the next chromosome.
+    if (bp < 0 || bp > chromosome.size) return null
+
     let bin
     if (dataset.isWholeGenome(chrIndex)) {
         bin = (cumulativeOffset(chromosome, dataset) + bp) / dataset.wholeGenomeResolution
@@ -83,6 +93,10 @@ function axisPixel(chrName, bp, chrIndex, origin, extent, state, dataset, genome
 
     const pixel = (bin - origin) * state.pixelSize
     return pixel >= 0 && pixel < extent ? pixel : null
+}
+
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max)
 }
 
 /** The bp at which a chromosome starts in this dataset's whole-genome view. */

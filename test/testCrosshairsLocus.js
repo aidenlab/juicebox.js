@@ -86,6 +86,34 @@ describe('crosshairs locus', () => {
                 .toEqual({x: null, y: 60})
         })
 
+        it('reports an axis past the end of the panel\'s own chromosome as off-screen', () => {
+            // A peer's chr1 may be longer than this panel's 100 Mb one. From bin 99,990 the view runs past its end.
+            const view = panel(['chr1', 'chr2', 'chr3'],
+                {chr1: 1, chr2: 2, x: 99990, y: 200, zoom: 0, pixelSize: 2}, {width: 800, height: 600})
+
+            expect(placeLocus({chr1: 'chr1', xBP: 100 * MB + 5000, chr2: 'chr2', yBP: 230000}, view))
+                .toEqual({x: null, y: 60})
+        })
+
+        it('names the end of the chromosome for a pointer past it', () => {
+            // chr1 ends at bin 100,000, 20 px into a view starting at bin 99,990; 40 px is past it.
+            const view = panel(['chr1', 'chr2', 'chr3'],
+                {chr1: 1, chr2: 2, x: 99990, y: 200, zoom: 0, pixelSize: 2}, {width: 800, height: 600})
+
+            expect(locusAtPixel({x: 40, y: 60}, view)).toEqual({chr1: 'chr1', xBP: 100 * MB, chr2: 'chr2', yBP: 230000})
+        })
+
+        it('reads the bin size of the rung the panel is on, the sentinel rung included', () => {
+            // A single-chromosome assembly at the sentinel rung (ADR-0010): 200 kb bins, 2 px each.
+            const view = panel(['chr1'], {chr1: 1, chr2: 1, x: 0, y: 0, zoom: -1, pixelSize: 2},
+                {width: 1000, height: 1000})
+            view.dataset.binSizeForZoom = zoom => -1 === zoom ? 200000 : 1000
+
+            const locus = locusAtPixel({x: 40, y: 60}, view)
+            expect(locus).toEqual({chr1: 'chr1', xBP: 4 * MB, chr2: 'chr1', yBP: 6 * MB})
+            expect(placeLocus(locus, view)).toEqual({x: 40, y: 60})
+        })
+
         it('places a locus named in a peer\'s chromosome spelling', () => {
             expect(placeLocus({chr1: '1', xBP: 120000, chr2: '2', yBP: 230000}, chromosomePanel()))
                 .toEqual({x: 40, y: 60})
@@ -138,6 +166,12 @@ describe('crosshairs locus', () => {
 
             expect(placeLocus({chr1: 'chr1', xBP: 75 * MB, chr2: 'chr2', yBP: 25 * MB}, peer))
                 .toEqual({x: 1500, y: 500})
+        })
+
+        it('reports an axis past the end of the panel\'s own chromosome as off-screen, not inside the next one', () => {
+            // chr1:105 Mb does not exist here; laid end to end it would fall 5 Mb into chr2.
+            expect(placeLocus({chr1: 'chr1', xBP: 105 * MB, chr2: 'chr2', yBP: 25 * MB}, wholeGenomePanel()))
+                .toEqual({x: null, y: 500})
         })
 
         it('reports an axis panned out of a zoomed whole-genome view as off-screen', () => {

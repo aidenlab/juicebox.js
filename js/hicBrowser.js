@@ -642,7 +642,7 @@ class HICBrowser {
      * chromosome on each axis, in the whole-genome view too.
      */
     crosshairsLocus(pixel) {
-        return locusAtPixel(pixel, this.#crosshairsPanel())
+        return locusAtPixel(pixel, this.#crosshairsView())
     }
 
     /**
@@ -650,10 +650,10 @@ class HICBrowser {
      * axis this panel is not showing the position on is `null`.
      */
     placeCrosshairsLocus(locus) {
-        return placeLocus(locus, this.#crosshairsPanel())
+        return placeLocus(locus, this.#crosshairsView())
     }
 
-    #crosshairsPanel() {
+    #crosshairsView() {
         return {
             state: this.state,
             dataset: this.dataset,

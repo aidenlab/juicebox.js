@@ -35,6 +35,14 @@
     <!-- Juicebox CSS-->
     <link rel="stylesheet" type="text/css" href="../css/juicebox.css">
 
+    <style>
+        /* Panels side by side, wrapping when the window runs out. */
+        #app-container {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+    </style>
 
 </head>
 
@@ -59,22 +67,34 @@
 
 
     // Crosshairs echo, #708: hold Shift over a panel. The first two are a sync
-    // group and echo each other; the third has opted out and shows no echo.
-    const map = (name, extra = {}) => ({
+    // group and echo each other. The other two are isolated, one each way a
+    // panel can be, and show no echo: the third has opted out, and the fourth
+    // is a mouse map (mm9) beside three human ones (hg19).
+    const panel = (name, extra = {}) => ({
         "backgroundColor": "255,255,255",
-        "url": "https://hicfiles.s3.amazonaws.com/external/dekker/4dn/h1hesc.hic",
         "name": name,
         "state": "3,3,2,0,0,640,640,1.454380698186564,NONE",
-        "colorScale": "602,255,0,0",
-        "nvi": "23671753603,36479",
+        "width": 400,
+        "height": 400,
         ...extra
     })
 
+    const human = {
+        "url": "https://hicfiles.s3.amazonaws.com/external/dekker/4dn/h1hesc.hic",
+        "colorScale": "602,255,0,0",
+        "nvi": "23671753603,36479"
+    }
+
+    const mouse = {
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/ch12-lx-b-lymphoblasts/in-situ/combined.hic"
+    }
+
     const config = {
         "browsers": [
-            map("synced A"),
-            map("synced B"),
-            map("isolated", {"synchable": false})
+            panel("synced A", human),
+            panel("synced B", human),
+            panel("isolated: opted out", {...human, "synchable": false}),
+            panel("isolated: mouse mm9", mouse)
         ]
     }
 

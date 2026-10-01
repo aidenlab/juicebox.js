@@ -185,6 +185,17 @@ describe('crosshairs echo across the sync group', () => {
         expect(guides(b)).toEqual(HIDDEN)
     })
 
+    it('hides the echoes when the source is disposed with its crosshairs showing', () => {
+        const a = panel(dom.container)
+        const b = panel(dom.another())
+        syncGroup(a, b)
+
+        mouse(a, 'mouseover', {x: 40, y: 60, shiftKey: true})
+        a.dispose()
+
+        expect(guides(b)).toEqual(HIDDEN)
+    })
+
     it('hands the source over to the panel the pointer moves into', () => {
         const a = panel(dom.container)
         const b = panel(dom.another())

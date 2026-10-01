@@ -159,6 +159,11 @@ class HICBrowser {
      */
     #state
 
+    /**
+     * What this panel's crosshairs are following, if anything: `{pointer}`
+     * while it is the source, `{locus}` while it shows an echo. Held so a view
+     * change can re-place them -- see `#refreshCrosshairs`.
+     */
     #crosshairs
 
     constructor(appContainer, config) {
@@ -247,10 +252,6 @@ class HICBrowser {
         // published method that installs a field outside this method, and the
         // handler it takes closes over the view a reconstruction throws away.
         this.customCrosshairsHandler = undefined;
-
-        // What this panel's crosshairs are following, if anything: `{pointer}`
-        // while it is the source, `{locus}` while it shows an echo. Held so a
-        // view change can re-place them -- see `refreshCrosshairs`.
         this.#crosshairs = undefined;
 
         /**
@@ -679,7 +680,7 @@ class HICBrowser {
      * the guides at it, and publish its locus to the sync group.
      *
      * The pointer is kept, so that a view change under a still pointer can
-     * re-derive the locus it is now over -- `refreshCrosshairs`.
+     * re-derive the locus it is now over -- `#refreshCrosshairs`.
      *
      * @param {{x: number, y: number}} pointer - viewport pixels
      */
@@ -704,9 +705,7 @@ class HICBrowser {
         this.hideCrosshairs()
 
         if (wasSource) {
-            for (const browser of [...this.synchedBrowsers]) {
-                browser.echoCrosshairs(undefined)
-            }
+            this.#echoToGroup(undefined)
         }
     }
 
@@ -747,7 +746,7 @@ class HICBrowser {
      * it again and publish it. An echo's locus has not moved, but its pixel
      * has: place it again. A panel showing no crosshairs does nothing.
      */
-    refreshCrosshairs() {
+    #refreshCrosshairs() {
         if (!this.dataset || !this.state) return
 
         if (this.#crosshairs?.pointer) {
@@ -763,9 +762,10 @@ class HICBrowser {
      * view change put it there.
      */
     #publishCrosshairs() {
-        if (0 === this.synchedBrowsers.size) return
+        this.#echoToGroup(this.crosshairsLocus(this.#crosshairs.pointer))
+    }
 
-        const locus = this.crosshairsLocus(this.#crosshairs.pointer)
+    #echoToGroup(locus) {
         for (const browser of [...this.synchedBrowsers]) {
             browser.echoCrosshairs(locus)
         }
@@ -932,6 +932,8 @@ class HICBrowser {
 
         this.#disposed = true;
 
+        // As in `clearDataset`: a source takes its echoes with it.
+        this.releaseCrosshairs();
         this.unsyncSelf();
 
         // The outbound half of the same edge, and only on this path: membership
@@ -1794,7 +1796,7 @@ class HICBrowser {
         try {
             this.startSpinner();
             await this.repaint();
-            this.refreshCrosshairs();
+            this.#refreshCrosshairs();
             if (shouldSync) {
                 this.syncToOtherBrowsers();
             }

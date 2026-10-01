@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>#716 — two synced panels, a chromosome, then All</title>
+    <link rel="stylesheet" href="../css/juicebox.scss">
+</head>
+<body>
+
+<p>
+    #716: type a chromosome into either panel, then <code>All</code>. Both panels
+    should land on the whole-genome view the ruler is drawn for. chr1 hid the bug;
+    try a small chromosome (chr21) or a pair (<code>chr5 chr6</code>).
+</p>
+
+<div id="app-container"></div>
+
+<script type="module">
+
+    import hic from "../js/index.js";
+    import { devMapUrl } from '../dev-proxy/map-url.js'
+
+    // See issue-708-crosshairs-echo.html: encodeproject.org answers localhost
+    // with a bot challenge, so its reads go through the dev server's proxy.
+    hic.setUrlMapper(devMapUrl)
+
+    const panel = (name, url) => ({
+        "backgroundColor": "255,255,255",
+        "name": name,
+        "url": url,
+        "width": 600,
+        "height": 600
+    })
+
+    hic.init(document.getElementById("app-container"), {
+        "browsers": [
+            panel("ENCFF876OWE", "https://www.encodeproject.org/files/ENCFF876OWE/@@download/ENCFF876OWE.hic"),
+            panel("DpnII in situ GM12878 (ENCFF216QQM)", "https://www.encodeproject.org/files/ENCFF216QQM/@@download/ENCFF216QQM.hic")
+        ]
+    })
+
+</script>
+
+</body>
+</html>

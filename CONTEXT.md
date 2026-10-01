@@ -144,7 +144,8 @@ with Shift held hands the role over, and leaving every panel hides them — and
 **echoed** into the rest of its sync group at the same genomic position; a panel
 outside any sync group has no echo. In the whole-genome view the position is a
 real chromosome, never `All`. The host hears once per pointer move, from the
-source, never from an echo.
+source, never from an echo, and not while the source shows the whole-genome
+view.
 _Avoid_: mirrored crosshairs (*mirror* is how a view preference travels),
 cursor.
 

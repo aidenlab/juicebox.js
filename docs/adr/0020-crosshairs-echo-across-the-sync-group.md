@@ -35,6 +35,10 @@ are a pointer position.
    two coordinator callbacks, `onCrosshairsMove({chr1, xBP, chr2, yBP, extents})`
    and `onCrosshairsHide()`; the viewport-fraction interpolants are dropped, since
    they are only correct when the viewport spans exactly the host's locus.
+   The host is told only while the source shows a chromosome pair: in the
+   whole-genome view the visible extents run along the genome and the locus
+   along a chromosome, so the guides and echoes still draw (decision 3) and
+   the host hears nothing -- a view change into it is an `onCrosshairsHide`.
 6. **The old surface is deprecated, not removed**: `setCustomCrosshairsHandler`,
    `DidShowCrosshairs` and `DidHideCrosshairs` remain in 4.x as shims over the new
    callbacks, source-only, and go in 5.0. Spacewalk — the only known consumer —

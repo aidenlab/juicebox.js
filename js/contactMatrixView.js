@@ -534,6 +534,7 @@ class ContactMatrixView {
      * Carry out the intents the gesture recognizer named, in order. Each goes
      * where it went before the recognizer existed: through the browser's
      * forwarding methods, the interaction handler, the sweep zoom, or the bus.
+     * The host hears of the crosshairs from the browser, not from here.
      */
     carryOut(intents) {
         for (const intent of intents) {
@@ -569,15 +570,14 @@ class ContactMatrixView {
                     this.sweepZoom.commit(intent.rect).catch(err => console.error('Error in sweepZoom.commit:', err));
                     break;
                 case 'showCrosshairs':
-                    this.browser.eventBus.post(HICEvent('DidShowCrosshairs', 'DidShowCrosshairs'));
+                    // Nothing to carry out: there is no position until the
+                    // first move, and that move is what shows them.
                     break;
                 case 'moveCrosshairs':
                     this.browser.moveCrosshairs(intent.pointer);
-                    this.browser.notifyCrosshairsHost(intent.pointer);
                     break;
                 case 'hideCrosshairs':
                     this.browser.releaseCrosshairs();
-                    this.browser.eventBus.post(HICEvent('DidHideCrosshairs', 'DidHideCrosshairs'));
                     break;
                 default:
                     throw new Error(`ContactMatrixView: unknown gesture intent '${intent.type}'`);

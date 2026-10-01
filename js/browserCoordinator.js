@@ -59,7 +59,9 @@ class BrowserCoordinator {
             onGenomeChange: [],
             onBackgroundColorChange: [],
             onForegroundColorChange: [],
-            onSyncRefused: []
+            onSyncRefused: [],
+            onCrosshairsMove: [],
+            onCrosshairsHide: []
         };
     }
 
@@ -418,6 +420,56 @@ class BrowserCoordinator {
         console.warn(`juicebox: panel not synced -- ${detail.message}`);
         for (const callback of this.externalCallbacks.onSyncRefused) {
             callback({ ...detail, browser: this.browser });
+        }
+    }
+
+    /**
+     * Tell the host where the crosshairs are: the locus under the pointer and
+     * the bp this panel is showing on each axis.
+     *
+     * A pure notification, called by the **source** alone (`CONTEXT.md`,
+     * *Crosshairs*) -- once per pointer move, and again when the view changes
+     * under a still pointer. A panel drawing an echo never calls it, so a host
+     * with one shared highlight hears one position (ADR-0020 decision 5).
+     * There is no separate "show": the first move after a hide is it.
+     *
+     * Only while the source shows a chromosome pair. In the whole-genome view
+     * the guides and the echo still draw but the host is told nothing, and a
+     * view change into it under a still pointer is an `onCrosshairsHide`.
+     *
+     * A callback that throws is logged and the rest still run: this is called
+     * from inside `update()` and teardown, which have work left to do.
+     *
+     * @param {Object} position
+     * @param {string} position.chr1 - chromosome on the x axis; never `All`
+     * @param {number} position.xBP
+     * @param {string} position.chr2 - chromosome on the y axis
+     * @param {number} position.yBP
+     * @param {{startXBP: number, endXBP: number, startYBP: number, endYBP: number}} position.extents -
+     *   the visible bp extent on each axis, along `chr1` and `chr2`
+     */
+    onCrosshairsMove(position) {
+        for (const callback of this.externalCallbacks.onCrosshairsMove) {
+            try {
+                callback(position);
+            } catch (error) {
+                console.error('Error in onCrosshairsMove callback:', error);
+            }
+        }
+    }
+
+    /**
+     * Tell the host the crosshairs are gone: Shift was released, or the pointer
+     * left every viewport -- or the source went to the whole-genome view, lost
+     * its map or was disposed with them showing. From the source alone, as `onCrosshairsMove` is.
+     */
+    onCrosshairsHide() {
+        for (const callback of this.externalCallbacks.onCrosshairsHide) {
+            try {
+                callback();
+            } catch (error) {
+                console.error('Error in onCrosshairsHide callback:', error);
+            }
         }
     }
 

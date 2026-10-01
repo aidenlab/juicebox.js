@@ -1,5 +1,6 @@
 import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest'
 import {withBrowser} from './utils/browserFixture.js'
+import Genome from '../js/genome.js'
 
 /**
  * Characterization of the viewport's gestures, as they are today -- quirks
@@ -77,7 +78,9 @@ function standInMap(browser) {
     browser.dataset = {
         chromosomes: [{index: 0, name: 'All'}, {index: 1, name: 'chr1'}, {index: 2, name: 'chr2'}],
         binSizeForZoom: () => 1000,
+        isWholeGenome: index => 0 === index,
     }
+    browser.genome = new Genome('stand-in', browser.dataset.chromosomes)
     vi.spyOn(browser.contactMatrixView, 'getViewDimensions').mockReturnValue({width: 800, height: 600})
     // The mouse-move handler measures the rect rather than asking the view.
     vi.spyOn(browser.contactMatrixView.viewportElement, 'getBoundingClientRect')
@@ -303,6 +306,47 @@ describe('viewport gestures', () => {
 
             expect(posted).toEqual(['DidShowCrosshairs', 'DidHideCrosshairs'])
             expect(handler).not.toHaveBeenCalled()
+        })
+
+        /**
+         * ADR-0020 decision 5: drawing the guides and notifying the host are
+         * separate steps, so an echo can be drawn without the host hearing it.
+         */
+        it('draws the guides at a pixel without calling the host\'s handler', () => {
+            const handler = vi.fn()
+            browser.setCustomCrosshairsHandler(handler)
+
+            browser.drawCrosshairs({x: 40, y: 60})
+
+            expect(browser.contactMatrixView.xGuideElement.style.top).toBe('60px')
+            expect(browser.contactMatrixView.yGuideElement.style.left).toBe('40px')
+            expect(browser.layoutController.xTrackGuideElement.style.top).toBe('60px')
+            expect(browser.layoutController.yTrackGuideElement.style.left).toBe('40px')
+            expect(handler).not.toHaveBeenCalled()
+        })
+
+        it('draws the guides at the pointer on a mouse-move once shift is held', () => {
+            mouse(viewport, 'mouseover')
+            key('keydown', {key: 'Shift', shiftKey: true})
+            mouse(viewport, 'mousemove', {x: 40, y: 60})
+
+            expect(browser.contactMatrixView.xGuideElement.style.top).toBe('60px')
+            expect(browser.contactMatrixView.yGuideElement.style.left).toBe('40px')
+            expect(browser.contactMatrixView.xGuideElement.style.display).toBe('block')
+        })
+
+        it('resolves a pixel to its locus, and places that locus back on the pixel', () => {
+            // 500 bp per pixel, axes starting at 100 kb and 200 kb.
+            const locus = browser.crosshairsLocus({x: 40, y: 60})
+
+            expect(locus).toEqual({chr1: 'chr1', xBP: 120000, chr2: 'chr2', yBP: 230000})
+            expect(browser.placeCrosshairsLocus(locus)).toEqual({x: 40, y: 60})
+        })
+
+        it('reports a locus outside the 800 x 600 viewport as off-screen on that axis', () => {
+            // x ends at 500 kb; 600 kb is past it.
+            expect(browser.placeCrosshairsLocus({chr1: 'chr1', xBP: 600000, chr2: 'chr2', yBP: 230000}))
+                .toEqual({x: null, y: 60})
         })
 
         /**

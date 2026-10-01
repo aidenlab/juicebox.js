@@ -507,18 +507,51 @@ class State {
         // raw `bpResolutions` array so a peer sitting at the sentinel rung is a
         // rung this browser can follow it to. Same reason as everywhere else:
         // array position and zoom index are not the same number.
-        const zoomNew = (true === browser.resolutionLocked)
-            ? this.zoom
-            : browser.findMatchingZoomIndex(bpPerPixelTarget, browser.getResolutions())
-        const binSizeNew = dataset.binSizeForZoom(zoomNew)
+        //
+        // The whole-genome view is the exception to all of the above. Its matrix
+        // carries one resolution, and `binSize` does not name it: at `All` the
+        // publisher's `binSizeForZoom(0)` is its coarsest *chromosome* rung, not
+        // `wholeGenomeResolution`. Two maps with different ladders would re-derive
+        // a rung the `All` matrix does not have. Both sides are on the same
+        // whole-genome bins -- same assembly, by the pairing rule -- so the view
+        // carries over unscaled, at zoom 0, locked or not, which is where typing
+        // `All` puts a locked browser too (`setChromosomesView`). #716.
+        const wholeGenome = dataset.isWholeGenome(chr1.index)
 
-        const xBinNew = targetState.binX * (targetState.binSize / binSizeNew)
-        const yBinNew = targetState.binY * (targetState.binSize / binSizeNew)
-        const targetPixelSize = binSizeNew / bpPerPixelTarget
+        let zoomNew, xBinNew, yBinNew, targetPixelSize
+        if (wholeGenome) {
+            zoomNew = 0
+            xBinNew = targetState.binX
+            yBinNew = targetState.binY
+            targetPixelSize = targetState.pixelSize
+        } else {
+            zoomNew = (true === browser.resolutionLocked)
+                ? this.zoom
+                : browser.findMatchingZoomIndex(bpPerPixelTarget, browser.getResolutions())
+            const binSizeNew = dataset.binSizeForZoom(zoomNew)
+            xBinNew = targetState.binX * (targetState.binSize / binSizeNew)
+            yBinNew = targetState.binY * (targetState.binSize / binSizeNew)
+            targetPixelSize = binSizeNew / bpPerPixelTarget
+        }
+
+        // Floored against the pair the view lands on, not the pair it leaves.
+        // `setView`'s own lookup reads the outgoing chromosomes, which for a
+        // receiver crossing to another chromosome is the wrong table: leaving
+        // chr1 for `All`, chr1's floor at 2.5 mb is ~5x `All`'s, and the
+        // whole-genome map was drawn five times too large. #716. Ordered the
+        // way `setView` will order the state, as `setChromosomesView` does.
+        //
+        // Left to `setView` when it will redirect `All` to the sentinel rung:
+        // it sizes that case itself, against the scaffold (ADR-0010).
+        const redirects = dataset.isSingleChromosome() && wholeGenome
+        const minPixelSize = redirects
+            ? undefined
+            : await browser.minPixelSize(Math.min(chr1.index, chr2.index), Math.max(chr1.index, chr2.index), zoomNew)
 
         const { chrChanged, resolutionChanged } = await this.setView(
             chr1.index, chr2.index, xBinNew, yBinNew, zoomNew, targetPixelSize,
             browser, dataset, browser.contactMatrixView.getViewDimensions(),
+            { minPixelSize },
         )
         // sync's contract uses "zoomChanged" rather than "resolutionChanged"; same concept.
         return { zoomChanged: resolutionChanged, chrChanged }

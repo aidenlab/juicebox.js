@@ -565,7 +565,8 @@ class ContactMatrixView {
                     this.browser.eventBus.post(HICEvent('DidShowCrosshairs', 'DidShowCrosshairs'));
                     break;
                 case 'moveCrosshairs':
-                    this.browser.updateCrosshairs(intent.pointer);
+                    this.browser.drawCrosshairs(intent.pointer);
+                    this.browser.notifyCrosshairsHost(intent.pointer);
                     this.browser.showCrosshairs();
                     break;
                 case 'hideCrosshairs':

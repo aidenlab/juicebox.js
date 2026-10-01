@@ -41,6 +41,7 @@ import {unmappedUrl, unmappedIndexUrl} from "./urlMapper.js"
 import {isSynchable, canResolveSyncState} from "./syncGroup.js"
 import {SENTINEL_ZOOM} from "./sentinelZoom.js"
 import {substitutionReason} from "./normalizationWidget.js"
+import {locusAtPixel, placeLocus} from "./crosshairsLocus.js"
 
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
@@ -585,7 +586,12 @@ class HICBrowser {
         this.contactMatrixView.setColorScaleThreshold(threshold)
     }
 
-    updateCrosshairs({ x, y, xNormalized, yNormalized }) {
+    /**
+     * Draw the crosshair guides at a viewport pixel. Drawing only: the host is
+     * told by `notifyCrosshairsHost`, a separate step, so that an echo can be
+     * drawn without the host hearing it (ADR-0020 decision 5).
+     */
+    drawCrosshairs({ x, y }) {
 
         const xGuide = y < 0 ? { left: '0px' } : { top: `${y}px`, left: '0px' };
         this.contactMatrixView.xGuideElement.style.left = xGuide.left;
@@ -600,7 +606,14 @@ class HICBrowser {
 
         this.layoutController.yTrackGuideElement.style.top = yGuide.top;
         if (yGuide.left !== undefined) this.layoutController.yTrackGuideElement.style.left = yGuide.left;
+    }
 
+    /**
+     * Tell the host where the pointer is, through the handler it registered
+     * with `setCustomCrosshairsHandler`. The payload is the one Spacewalk has
+     * always received.
+     */
+    notifyCrosshairsHost({ x, y, xNormalized, yNormalized }) {
         if (this.customCrosshairsHandler) {
             const { x: stateX, y: stateY, pixelSize } = this.state;
             const resolution = this.resolution();
@@ -621,6 +634,31 @@ class HICBrowser {
                 interpolantX: xNormalized,
                 interpolantY: yNormalized
             });
+        }
+    }
+
+    /**
+     * The locus under a viewport pixel, as `{chr1, xBP, chr2, yBP}` -- a real
+     * chromosome on each axis, in the whole-genome view too.
+     */
+    crosshairsLocus(pixel) {
+        return locusAtPixel(pixel, this.#crosshairsView())
+    }
+
+    /**
+     * Where a locus falls in this panel's viewport, as `{x, y}` pixels. An
+     * axis this panel is not showing the position on is `null`.
+     */
+    placeCrosshairsLocus(locus) {
+        return placeLocus(locus, this.#crosshairsView())
+    }
+
+    #crosshairsView() {
+        return {
+            state: this.state,
+            dataset: this.dataset,
+            genome: this.genome,
+            viewDimensions: this.contactMatrixView.getViewDimensions(),
         }
     }
 

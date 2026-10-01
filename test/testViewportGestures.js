@@ -335,6 +335,36 @@ describe('viewport gestures', () => {
             expect(browser.contactMatrixView.xGuideElement.style.display).toBe('block')
         })
 
+        /**
+         * The pointer's current panel owns the crosshairs (ADR-0020 decision
+         * 4): no keydown is needed to take them, and leaving gives them up.
+         * #707.
+         */
+        it('shows the guides at the pointer on entering the viewport with shift already held', () => {
+            const posted = watchPosts(browser, ['DidShowCrosshairs'])
+
+            mouse(viewport, 'mouseover', {x: 40, y: 60, shiftKey: true})
+
+            expect(posted).toEqual(['DidShowCrosshairs'])
+            expect(browser.contactMatrixView.xGuideElement.style.top).toBe('60px')
+            expect(browser.contactMatrixView.yGuideElement.style.left).toBe('40px')
+            expect(browser.contactMatrixView.xGuideElement.style.display).toBe('block')
+        })
+
+        it('hides the guides and posts DidHideCrosshairs when the pointer leaves with shift held', () => {
+            const handler = vi.fn()
+            const posted = watchPosts(browser, ['DidHideCrosshairs'])
+
+            mouse(viewport, 'mouseover', {x: 40, y: 60, shiftKey: true})
+            mouse(viewport, 'mouseleave', {x: 900, y: 60, shiftKey: true})
+            browser.setCustomCrosshairsHandler(handler)
+            mouse(viewport, 'mousemove', {x: 40, y: 30})
+
+            expect(posted).toEqual(['DidHideCrosshairs'])
+            expect(browser.contactMatrixView.xGuideElement.style.display).toBe('none')
+            expect(handler).not.toHaveBeenCalled()
+        })
+
         it('resolves a pixel to its locus, and places that locus back on the pixel', () => {
             // 500 bp per pixel, axes starting at 100 kb and 200 kb.
             const locus = browser.crosshairsLocus({x: 40, y: 60})

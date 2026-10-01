@@ -163,6 +163,84 @@ describe('GestureRecognizer', () => {
             expect(recognizer.mouseMove({x: 40, y: 60, pointer})).toEqual([])
             expect(recognizer.keyDown({shiftKey: true})).toEqual([{type: 'showCrosshairs'}])
         })
+
+        /**
+         * The source of the crosshairs is the panel the pointer is over now
+         * (ADR-0020 decision 4). A held modifier does not repeat its keydown
+         * on macOS, so entering has to be enough. #707.
+         */
+        describe('the pointer\'s current panel owns them (#707)', () => {
+
+            it('shows crosshairs at the pointer on entering the viewport with shift already held, and follows it', () => {
+                expect(recognizer.mouseOver({shiftKey: true, pointer}))
+                    .toEqual([{type: 'showCrosshairs'}, {type: 'moveCrosshairs', pointer}])
+
+                const next = {x: 50, y: 70, xNormalized: 0.0625, yNormalized: 0.12}
+                expect(recognizer.mouseMove({x: 50, y: 70, pointer: next})).toEqual([{type: 'moveCrosshairs', pointer: next}])
+            })
+
+            it('does not show crosshairs on entering the viewport without shift', () => {
+                expect(recognizer.mouseOver({shiftKey: false, pointer})).toEqual([])
+                expect(recognizer.mouseMove({x: 40, y: 60, pointer})).toEqual([])
+            })
+
+            it('shows them once, however many mouse-overs bubble up from inside the viewport', () => {
+                recognizer.mouseOver({shiftKey: true, pointer})
+                recognizer.mouseOut()
+
+                expect(recognizer.mouseOver({shiftKey: true, pointer})).toEqual([])
+            })
+
+            it('hides crosshairs when the pointer leaves the viewport with shift held, and stops moving them', () => {
+                recognizer.mouseOver({shiftKey: true, pointer})
+
+                expect(recognizer.mouseLeave()).toEqual([{type: 'hideCrosshairs'}])
+                expect(recognizer.mouseMove({x: 40, y: 60, pointer})).toEqual([])
+                expect(recognizer.keyDown({shiftKey: true})).toEqual([])
+            })
+
+            it('says nothing about crosshairs on leaving a viewport that was not showing them', () => {
+                recognizer.mouseOver({shiftKey: false, pointer})
+
+                expect(recognizer.mouseLeave()).toEqual([])
+            })
+
+            it('stops a drag and hides the crosshairs on the same leave', () => {
+                recognizer.mouseOver({shiftKey: true, pointer})
+                recognizer.mouseDown({x: 100, y: 100})
+                recognizer.mouseMove({x: 110, y: 100, pointer})
+
+                expect(types(recognizer.mouseLeave())).toEqual(['dragStopped', 'hideCrosshairs'])
+            })
+
+            it('hands the crosshairs from panel A to panel B as the pointer crosses with shift held', () => {
+                const a = recognizer
+                const b = new GestureRecognizer()
+                a.mouseOver({shiftKey: false, pointer})
+                a.keyDown({shiftKey: true})
+                b.keyDown({shiftKey: true})
+
+                expect(a.mouseLeave()).toEqual([{type: 'hideCrosshairs'}])
+                expect(b.mouseOver({shiftKey: true, pointer}))
+                    .toEqual([{type: 'showCrosshairs'}, {type: 'moveCrosshairs', pointer}])
+                expect(a.mouseMove({x: 40, y: 60, pointer})).toEqual([])
+            })
+
+            it('still hides them when shift is released, entered that way or not', () => {
+                recognizer.mouseOver({shiftKey: true, pointer})
+
+                expect(recognizer.keyUp()).toEqual([{type: 'hideCrosshairs'}])
+                expect(recognizer.mouseMove({x: 40, y: 60, pointer})).toEqual([])
+            })
+
+            it('stays hidden when shift is released outside every viewport, and on re-entering without it', () => {
+                recognizer.mouseOver({shiftKey: true, pointer})
+                recognizer.mouseLeave()
+
+                expect(recognizer.keyUp()).toEqual([{type: 'hideCrosshairs'}])
+                expect(recognizer.mouseOver({shiftKey: false, pointer})).toEqual([])
+            })
+        })
     })
 
     describe('touch drag', () => {

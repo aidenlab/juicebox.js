@@ -1,0 +1,111 @@
+<!--
+  ~  The MIT License (MIT)
+  ~
+  ~ Copyright (c) 2016-2017 The Regents of the University of California
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  ~ associated documentation files (the "Software"), to deal in the Software without restriction, including
+  ~ without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the
+  ~ following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in all copies or substantial
+  ~ portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+  ~ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  FITNESS FOR A PARTICULAR PURPOSE AND
+  ~ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  ~ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+  ~ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  ~ THE SOFTWARE.
+  ~
+  -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Juicebox</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- Font Awesome CSS-->
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+
+    <!-- Juicebox CSS-->
+    <link rel="stylesheet" type="text/css" href="../css/juicebox.css">
+
+    <style>
+        /* Panels side by side, wrapping when the window runs out. */
+        #app-container {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+    </style>
+
+</head>
+
+<body>
+
+
+<div id="app-container"></div>
+
+
+<script type="module">
+
+    import hic from "../js/index.js";
+    import { devMapUrl } from '../dev-proxy/map-url.js'
+
+    // Dev-only: routes .hic reads on hosts that answer localhost with a bot challenge
+    // (encodeproject.org today) through the dev server's proxy. In a host app this is
+    // guarded by import.meta.env.DEV; these pages only run under the dev server. See the
+    // README, "Loading maps from hosts that serve a bot challenge".
+    hic.setUrlMapper(devMapUrl)
+
+    const container = document.getElementById("app-container");
+
+
+    // Crosshairs echo, #708: hold Shift over a panel. The first two are a sync
+    // group and echo each other. The other two are isolated, one each way a
+    // panel can be, and show no echo: the third has opted out, and the fourth
+    // is a mouse map (mm9) beside three human ones (hg19).
+    const panel = (name, extra = {}) => ({
+        "backgroundColor": "255,255,255",
+        "name": name,
+        "state": "3,3,2,0,0,640,640,1.454380698186564,NONE",
+        "width": 400,
+        "height": 400,
+        ...extra
+    })
+
+    const human = {
+        "url": "https://hicfiles.s3.amazonaws.com/external/dekker/4dn/h1hesc.hic",
+        "colorScale": "602,255,0,0",
+        "nvi": "23671753603,36479"
+    }
+
+    const mouse = {
+        "url": "https://hicfiles.s3.amazonaws.com/hiseq/ch12-lx-b-lymphoblasts/in-situ/combined.hic"
+    }
+
+    const config = {
+        "browsers": [
+            panel("synced A", human),
+            panel("synced B", human),
+            panel("isolated: opted out", {...human, "synchable": false}),
+            panel("isolated: mouse mm9", mouse)
+        ]
+    }
+
+    hic.init(container, config)
+        .then(function (hicBrowser) {
+
+        })
+
+
+</script>
+
+</body>
+
+</html>

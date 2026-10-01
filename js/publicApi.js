@@ -114,6 +114,11 @@ export const NAMESPACE_SURFACE = [
  * `loadTracks` without its own, and to be reached only from the target-set fan-out.
  * Absence from this file is not permission, and naming them here is what makes
  * that decision visible.
+ *
+ * Nor, new in #708, `moveCrosshairs`, `releaseCrosshairs` and `echoCrosshairs`:
+ * the first two are how the viewport carries out a crosshairs intent, and the
+ * third is what a source calls on its sync-group peers. A host places nothing;
+ * it hears where the source's pointer is (ADR-0020 decision 5).
  */
 export const BROWSER_SURFACE = [
     // Delegating loaders and lookups -- no internal callers, hosts only

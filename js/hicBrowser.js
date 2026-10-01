@@ -159,6 +159,8 @@ class HICBrowser {
      */
     #state
 
+    #crosshairs
+
     constructor(appContainer, config) {
         this.#construct(appContainer, config);
     }
@@ -245,6 +247,11 @@ class HICBrowser {
         // published method that installs a field outside this method, and the
         // handler it takes closes over the view a reconstruction throws away.
         this.customCrosshairsHandler = undefined;
+
+        // What this panel's crosshairs are following, if anything: `{pointer}`
+        // while it is the source, `{locus}` while it shows an echo. Held so a
+        // view change can re-place them -- see `refreshCrosshairs`.
+        this.#crosshairs = undefined;
 
         /**
          * Everything this browser installs *outside* `rootElement`'s subtree.
@@ -667,20 +674,123 @@ class HICBrowser {
         this.customCrosshairsHandler = crosshairsHandler
     }
 
-    hideCrosshairs() {
-        this.contactMatrixView.xGuideElement.style.display = 'none';
-        this.layoutController.xTrackGuideElement.style.display = 'none';
+    /**
+     * Follow the pointer as the **source** (`CONTEXT.md`, *Crosshairs*): draw
+     * the guides at it, and publish its locus to the sync group.
+     *
+     * The pointer is kept, so that a view change under a still pointer can
+     * re-derive the locus it is now over -- `refreshCrosshairs`.
+     *
+     * @param {{x: number, y: number}} pointer - viewport pixels
+     */
+    moveCrosshairs(pointer) {
+        this.#crosshairs = {pointer}
+        this.drawCrosshairs(pointer)
+        this.showCrosshairs()
+        this.#publishCrosshairs()
+    }
 
-        this.contactMatrixView.yGuideElement.style.display = 'none';
-        this.layoutController.yTrackGuideElement.style.display = 'none';
+    /**
+     * Give up the crosshairs: hide them here and, if this panel was their
+     * source, in every panel echoing them.
+     *
+     * Only the source hides the group. A key release reaches every panel on
+     * the page, and one outside the source's sync group must not hide
+     * crosshairs that are not its own.
+     */
+    releaseCrosshairs() {
+        const wasSource = undefined !== this.#crosshairs?.pointer
+        this.#crosshairs = undefined
+        this.hideCrosshairs()
+
+        if (wasSource) {
+            for (const browser of [...this.synchedBrowsers]) {
+                browser.echoCrosshairs(undefined)
+            }
+        }
+    }
+
+    /**
+     * Show an **echo** (`CONTEXT.md`): the crosshairs of a peer in this
+     * panel's sync group, placed at the same locus in this panel's own pixels.
+     * An axis whose position this panel is not showing gets no guide.
+     * `undefined` hides the echo.
+     *
+     * Drawing only -- no handler call and no event, because the host hears
+     * from the source alone (ADR-0020 decision 5).
+     *
+     * The guard is `syncState`'s, for its reason: `synchedBrowsers` is as
+     * `registry.sync()` last left it, and the host may have opted this panel
+     * out since.
+     *
+     * @param {{chr1: string, xBP: number, chr2: string, yBP: number}|undefined} locus
+     */
+    echoCrosshairs(locus) {
+        if (undefined === locus || !isSynchable(this) || !this.state) {
+            this.#crosshairs = undefined
+            this.hideCrosshairs()
+            return
+        }
+
+        this.#crosshairs = {locus}
+
+        const { x, y } = this.placeCrosshairsLocus(locus)
+        this.drawCrosshairs({ x: x ?? 0, y: y ?? 0 })
+        this.#displayGuides({ horizontal: null !== y, vertical: null !== x })
+    }
+
+    /**
+     * Re-place the crosshairs after this panel's view has changed. `update()`
+     * calls it once the new view is painted.
+     *
+     * The source's pointer has not moved, but the locus under it has: derive
+     * it again and publish it. An echo's locus has not moved, but its pixel
+     * has: place it again. A panel showing no crosshairs does nothing.
+     */
+    refreshCrosshairs() {
+        if (!this.dataset || !this.state) return
+
+        if (this.#crosshairs?.pointer) {
+            this.#publishCrosshairs()
+        } else if (this.#crosshairs?.locus) {
+            this.echoCrosshairs(this.#crosshairs.locus)
+        }
+    }
+
+    /**
+     * Tell the sync group the locus under the source's pointer. The one place
+     * a crosshairs position leaves its source, whether a pointer move or a
+     * view change put it there.
+     */
+    #publishCrosshairs() {
+        if (0 === this.synchedBrowsers.size) return
+
+        const locus = this.crosshairsLocus(this.#crosshairs.pointer)
+        for (const browser of [...this.synchedBrowsers]) {
+            browser.echoCrosshairs(locus)
+        }
+    }
+
+    hideCrosshairs() {
+        this.#displayGuides({ horizontal: false, vertical: false })
     }
 
     showCrosshairs() {
-        this.contactMatrixView.xGuideElement.style.display = 'block';
-        this.layoutController.xTrackGuideElement.style.display = 'block';
+        this.#displayGuides({ horizontal: true, vertical: true })
+    }
 
-        this.contactMatrixView.yGuideElement.style.display = 'block';
-        this.layoutController.yTrackGuideElement.style.display = 'block';
+    /**
+     * The x guides are the horizontal line, positioned by `top`, and the y
+     * guides the vertical one -- each named for the axis it runs along.
+     */
+    #displayGuides({ horizontal, vertical }) {
+        const xDisplay = horizontal ? 'block' : 'none'
+        this.contactMatrixView.xGuideElement.style.display = xDisplay;
+        this.layoutController.xTrackGuideElement.style.display = xDisplay;
+
+        const yDisplay = vertical ? 'block' : 'none'
+        this.contactMatrixView.yGuideElement.style.display = yDisplay;
+        this.layoutController.yTrackGuideElement.style.display = yDisplay;
     }
 
     genomicState(axis) {
@@ -964,6 +1074,8 @@ class HICBrowser {
         this.#state = undefined;
         this.controlDataset = undefined;
         this.setDisplayMode('A')
+        // Before the group is left, while its echoes can still be reached.
+        this.releaseCrosshairs()
         this.unsyncSelf()
     }
 
@@ -1682,6 +1794,7 @@ class HICBrowser {
         try {
             this.startSpinner();
             await this.repaint();
+            this.refreshCrosshairs();
             if (shouldSync) {
                 this.syncToOtherBrowsers();
             }

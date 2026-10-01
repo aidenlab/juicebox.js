@@ -623,3 +623,38 @@ neither observes anything beyond the new labels.
 ### Consequence
 
 **Nothing was required of the release.**
+
+## Re-measurement — 2026-10-01, for the v4.9.0 release
+
+Appended, not revised. The tables above stay as the measurement they were.
+
+Measured against `juicebox.js` at `bump-4.9.0`, `juicebox-web` `master`
+(committed pin `^4.8.0`) and `spacewalk` `main` (pinned `#master`, deliberately,
+until a release ships #709 -- this is that release).
+
+**Result: nothing undeclared in use, in either consumer.** Ninth release running.
+
+`js/publicApi.js` grows, and only grows: two coordinator callbacks,
+`onCrosshairsMove` and `onCrosshairsHide`, and the payload shape of the first
+(#709). Nothing is removed. A new list, `DEPRECATED_SURFACE`, names the three
+members of the old crosshairs surface -- `setCustomCrosshairsHandler`,
+`DidShowCrosshairs`, `DidHideCrosshairs` -- which stay declared where they were
+and go in 5.0 (ADR-0020 decision 6).
+
+Spacewalk already registers both new callbacks (spacewalk#98), which is why it
+sits on `#master`. Neither consumer references any of the three deprecated
+names.
+
+### Inside the contract: the deprecated crosshairs surface narrows
+
+The three deprecated names are now shims over the two callbacks, so each fires
+where its replacement does: from the source panel only, never from an echo, and
+not in the whole-genome view. `DidHideCrosshairs` used to be posted by every
+panel on the page for any key release; `DidShowCrosshairs` used to be posted
+when Shift went down, before there was a position. With no consumer caller left
+for any of the three, neither host observes the narrowing.
+
+### Consequence
+
+**Spacewalk's pin moves from `#master` to `#v4.9.0`.** Nothing else was required
+of the release.

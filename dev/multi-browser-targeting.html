@@ -79,36 +79,37 @@
 </p>
 
 <p class="note">
-    Two of the panels are here to exercise the <b>skip</b> paths, which are the parts
-    most likely to be silently wrong: one panel has <b>no map</b> at all, and one is on
-    <b>mm10</b> while the loads below are hg38. Aim at them and the summary must report
-    them as skipped — not as loaded, and not as an error.
+    <b>Every panel starts empty.</b> Aim at some panels and load a map into them; the
+    panels you leave out stay empty. The <b>skip</b> paths are the parts most likely to
+    be silently wrong, so set them up on purpose: leave one panel with <b>no map</b>,
+    put <b>mm10</b> in another, then aim at everything and load the hg38 tracks. The
+    summary must report those two as skipped — not as loaded, and not as an error.
 </p>
 
 <p class="note">
-    The <b>map</b> buttons broadcast one <code>.hic</code> map to every aimed panel
+    The <b>map</b> buttons load one <code>.hic</code> map into every aimed panel
     (#680) — through <code>registry.loadHicFileIntoTargets</code>. The rules are not the
-    track rules: a map carries its own genome, so nothing is skipped, the empty panel
+    track rules: a map carries its own genome, so nothing is skipped, an empty panel
     takes it like any other, and the loads run <b>one after another</b>. A panel whose
     genome the map replaces loses its tracks, pending ones and 2D annotations included,
     exactly as a single-panel load does (#682).
 </p>
 
 <p class="note">
-    The <b>control</b> button broadcasts one hg38 <code>.hic</code> map as the
+    The <b>control</b> button loads one hg38 <code>.hic</code> map as the
     <b>"B"</b> map of every aimed panel (#681) — through
     <code>registry.loadHicControlFileIntoTargets</code>. This one <em>does</em> skip, and
-    both skips are here to be seen: aim at everything and the empty panel is skipped
-    <code>[no-primary]</code> — nothing to be the "B" of — and the mm10 panel is skipped
+    both skips can be seen: an empty panel is skipped <code>[no-primary]</code> —
+    nothing to be the "B" of — and an mm10 panel is skipped
     <code>[control-incompatible]</code>, known only after its read. Neither raises a
     modal. Each panel's A/B/ratio choice is left where the control load leaves it.
 </p>
 
 <div class="controls">
     <button id="add-browser">Add browser (hg38)</button>
-    <button id="map-hg38">Broadcast hg38 map to targets</button>
-    <button id="map-mm10">Broadcast mm10 map to targets</button>
-    <button id="control-hg38">Broadcast hg38 control map to targets</button>
+    <button id="map-hg38">Load hg38 map into targets</button>
+    <button id="map-mm10">Load mm10 map into targets</button>
+    <button id="control-hg38">Load hg38 control map into targets</button>
     <button id="load-1d">Load 1D track into targets</button>
     <button id="load-2d">Load 2D annotation into targets</button>
     <button id="load-both">Load both into targets</button>
@@ -127,7 +128,6 @@
 
     import hic from '../js/index.js'
     import EventBus from '../js/eventBus.js'
-    import {devMapUrl} from '../dev-proxy/map-url.js'
 
     // Page styles that must land after the library's. Importing js/index.js injects
     // juicebox.scss at the end of <head>, so rules in the <style> above lose to it on
@@ -152,12 +152,6 @@
     `
     document.head.appendChild(pageStyles)
 
-    // Dev-only: routes .hic reads on hosts that answer localhost with a bot challenge
-    // (encodeproject.org today) through the dev server's proxy. The mm10 panel below is
-    // the one that needs it. See the README, "Loading maps from hosts that serve a bot
-    // challenge".
-    hic.setUrlMapper(devMapUrl)
-
     // Verified reachable from a browser. Do NOT repoint these at
     // hicfiles.s3.amazonaws.com or dnazoo -- those hosts gate on User-Agent and serve
     // 403 to any browser. See the note in dev/big_viewport.html.
@@ -171,28 +165,14 @@
             url: 'https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/GM12878/diploid/a.hic',
             name: 'GM12878 diploid (a) — hg38',
             nvi: '43835341324,25419'
-        },
-        {
-            url: 'https://s3.us-east-1.wasabisys.com/aiden-suhas/hic_files/FINAL_GRCh38_processing/LCL/LCL_combined/9_12_23/inter_30.hic',
-            name: 'LCL combined inter_30 — hg38',
-            nvi: '2113712247631,126136'
         }
     ]
 
-    // The different-genome panel. mm10, reached through the dev proxy.
-    const mm10Map = {
-        url: 'https://www.encodeproject.org/files/ENCFF602BZP/@@download/ENCFF602BZP.hic',
-        name: 'ENCFF602BZP — mm10'
-    }
-
-    // hg38, and `format` is set deliberately: a format-less URL ending in .txt.gz is
-    // routed to the 2D loader, so an annotation that says nothing about itself would
-    // arrive as a broken 2D track rather than as genes. See js/dataLoader.js.
-    // The two primary-map broadcasts: one per genome, so either one changes the genome
-    // of some panel whichever way the aim is set. Both hosts answer a browser directly
-    // -- the 4DN bucket serves `Access-Control-Allow-Origin: *` and no User-Agent
-    // gate, measured 2026-09-18 -- so neither needs the dev proxy.
-    const broadcastMaps = {
+    // The two primary maps: one per genome, so panels on different genomes can sit
+    // side by side. Both hosts answer a browser directly -- the 4DN bucket serves
+    // `Access-Control-Allow-Origin: *` and no User-Agent gate, measured 2026-09-18 --
+    // so neither needs the dev proxy.
+    const primaryMaps = {
         hg38: hg38Maps[0],
         mm10: {
             url: 'https://4dn-open-data-public.s3.amazonaws.com/fourfront-webprod/wfoutput/3a7bfc55-8582-498a-946a-300000f25f48/4DNFIFDYZOYP.hic',
@@ -200,12 +180,13 @@
         }
     }
 
-    // The control broadcast. hg38, so across the default panels it pairs with the three
-    // hg38 primaries and is refused by the mm10 one. Panel 2's own primary, reused
-    // because it is known to answer a browser: panel 2 ends up with the same map as A
-    // and B, which is legal and harmless here.
+    // The control map. hg38, so it pairs with a panel holding the hg38 primary and is
+    // refused by one holding the mm10 primary.
     const controlMap = {...hg38Maps[1], name: 'GM12878 diploid (a) as control — hg38'}
 
+    // hg38, and `format` is set deliberately: a format-less URL ending in .txt.gz is
+    // routed to the 2D loader, so an annotation that says nothing about itself would
+    // arrive as a broken 2D track rather than as genes. See js/dataLoader.js.
     const track1D = {
         url: 'https://s3.amazonaws.com/igv.org.genomes/hg38/refGene.sorted.txt.gz',
         type: 'annotation',
@@ -232,9 +213,9 @@
     // skip paths into one and leave the genome rule untested while looking fine.
     const built = []
 
-    // The dataset's name rather than `browser.config`'s: a map broadcast replaces the
+    // The dataset's name rather than `browser.config`'s: a map load replaces the
     // dataset but not the config the panel was built from. Numbered, because after a
-    // broadcast several panels carry the same map and the name alone cannot tell them
+    // load several panels carry the same map and the name alone cannot tell them
     // apart.
     const label = browser => {
         const n = built.findIndex(entry => entry.browser === browser) + 1
@@ -248,10 +229,15 @@
     // when a user adds a second map.
     let registry
 
+    // The contact map's size, not the panel's: the panel is this plus its chrome.
+    const mapSize = {width: 400, height: 400}
+
+    const panelCount = 5
+
     async function addPanel(config, expectedGenome) {
         const browser = undefined === registry
-            ? await hic.init(panels, config ?? {})
-            : await hic.createBrowser(panels, config ?? {})
+            ? await hic.init(panels, {...config, ...mapSize})
+            : await hic.createBrowser(panels, {...config, ...mapSize})
         built.push({browser, expectedGenome})
         return browser
     }
@@ -297,11 +283,11 @@
         renderSummary(await registry.loadTracksIntoTargets(configs))
     }
 
-    // A broadcast changes what each loaded panel *is*, so the roster's expectations
+    // A map load changes what each loaded panel *is*, so the roster's expectations
     // move with it -- otherwise every panel the map reached would read as wrong.
-    async function broadcastMap(genomeId) {
+    async function loadMap(genomeId) {
         summaryElement.textContent = 'loading…'
-        const summary = await registry.loadHicFileIntoTargets(broadcastMaps[genomeId])
+        const summary = await registry.loadHicFileIntoTargets(primaryMaps[genomeId])
         for (const entry of built) {
             if (summary.loaded.includes(entry.browser)) {
                 entry.expectedGenome = genomeId
@@ -313,7 +299,7 @@
     }
 
     // A control map never changes a panel's genome, so the roster's expectations stay.
-    async function broadcastControl() {
+    async function loadControl() {
         summaryElement.textContent = 'loading…'
         renderSummary(await registry.loadHicControlFileIntoTargets(controlMap))
     }
@@ -410,29 +396,20 @@
 
     ;(async function () {
 
-        // Panel 1: hg38, and the one everything is aimed from to begin with.
-        const first = await addPanel(hg38Maps[0], 'hg38')
+        // Every panel starts with no map: what each one holds is decided by the
+        // loads, not by this page. Panel 1 is the one everything is aimed from to
+        // begin with.
+        const first = await addPanel(undefined, undefined)
         registry = first.registry
 
         // Sequential rather than Promise.all: panel order is registry order, and this
         // page is about which panel is which.
-
-        // Panels 2 and 3: hg38 peers, the happy path.
-        await addPanel(hg38Maps[1], 'hg38')
-        await addPanel(hg38Maps[2], 'hg38')
-
-        // Panel 4: no map. An empty browser is a normal transient state, and aiming at
-        // one must skip rather than fail.
-        await addPanel(undefined, undefined)
-
-        // Panel 5: mm10. The skip that prevents the nasty failure -- a track drawn at
-        // meaningless coordinates in a panel nobody was watching.
-        await addPanel(mm10Map, 'mm10')
+        for (let i = 1; i < panelCount; i++) {
+            await addPanel(undefined, undefined)
+        }
 
         // Panel 1 is made current before anything else happens. `add()` selects,
-        // so the last panel built -- the mm10 one -- would otherwise be the
-        // browser every default load is issued from and measured against, and
-        // this page would open in the one state it exists to explain.
+        // so the last panel built would otherwise be the one the first load lands in.
         registry.select(first)
 
         renderAim()
@@ -444,9 +421,9 @@
                 renderRoster()
             }))
 
-        document.getElementById('map-hg38').addEventListener('click', () => broadcastMap('hg38'))
-        document.getElementById('map-mm10').addEventListener('click', () => broadcastMap('mm10'))
-        document.getElementById('control-hg38').addEventListener('click', () => broadcastControl())
+        document.getElementById('map-hg38').addEventListener('click', () => loadMap('hg38'))
+        document.getElementById('map-mm10').addEventListener('click', () => loadMap('mm10'))
+        document.getElementById('control-hg38').addEventListener('click', () => loadControl())
         document.getElementById('load-1d').addEventListener('click', () => fanOut([track1D]))
         document.getElementById('load-2d').addEventListener('click', () => fanOut([track2D]))
         document.getElementById('load-both').addEventListener('click', () => fanOut([track1D, track2D]))

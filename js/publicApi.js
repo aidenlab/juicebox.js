@@ -98,7 +98,7 @@ export const NAMESPACE_SURFACE = [
  * internal detail to published name, freezing this decomposition into the
  * contract. See #467.
  *
- * Seven more are assigned in the constructor rather than declared on the
+ * Ten more are assigned in the constructor rather than declared on the
  * prototype, so they are invisible to any check that reflects on the class
  * instead of building an instance.
  *
@@ -157,6 +157,26 @@ export const BROWSER_SURFACE = [
     'activeDataset',
     'state',
     'activeState',
+
+    // Commands and projections a host drives a browser with from outside its
+    // own widgets: the view (`zoomAndCenter`), the display mode, the colour
+    // scale and its threshold, the normalization, and sync state as a peer
+    // reads and applies it (`getSyncState` / `syncState`, ADR-0016). Plus the
+    // two track collections and the control-map dataset, which a host reads to
+    // mirror what a panel holds. All existed and were reachable before they
+    // were named here; declaring them is what makes "no callers in this repo"
+    // a complete finding rather than half of one (ADR-0003).
+    'controlDataset',
+    'trackPairs',
+    'tracks2D',
+    'zoomAndCenter',
+    'setColorScaleThreshold',
+    'setNormalization',
+    'setDisplayMode',
+    'getDisplayMode',
+    'getColorScale',
+    'getSyncState',
+    'syncState',
 
     // Constructor-assigned fields
     'id',

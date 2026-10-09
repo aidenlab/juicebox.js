@@ -360,6 +360,18 @@ export const SUB_SURFACES = [
  * The coordinator got here on its own -- it validates against its own declared
  * list and throws. That is the only self-describing, self-enforcing piece of
  * the browser contract, and it is the pattern this whole module generalises.
+ *
+ * The last four -- the colour scale, canonical `normalization`, a substitution
+ * of it, and the display mode -- are what a host mirroring one panel onto
+ * another has to follow, and none of them crosses a sync group (ADR-0014), so
+ * the host is the only route. They used to reach only the widgets: a host had
+ * to patch the coordinator's own methods to hear them. Each fires from the
+ * same coordinator method the widget is told through, so the two cannot
+ * disagree; two of those methods predate the `on*Change` naming
+ * (`onColorScale`, `onDisplayMode`) and keep their names, per ADR-0002.
+ * `onNormalizationSubstituted` carries the request as well as the answer,
+ * because a peer must mirror what is *drawn* (ADR-0012, whose explicit no on
+ * publishing it is reversed by this addition), not what was asked.
  */
 export const COORDINATOR_CALLBACKS = [
     'onMapLoaded',
@@ -369,6 +381,10 @@ export const COORDINATOR_CALLBACKS = [
     'onBackgroundColorChange',
     'onForegroundColorChange',
     'onSyncRefused',
+    'onColorScaleChange',
+    'onNormalizationChange',
+    'onNormalizationSubstituted',
+    'onDisplayModeChange',
     // The crosshairs, new in #709: where the source's pointer is, and that it
     // has gone. Once per pointer move, from the source only, never from an
     // echo -- and again when the view changes under a still pointer. There is
@@ -407,6 +423,47 @@ export const COORDINATOR_PAYLOAD_SHAPES = [
     {
         callback: 'onControlMapLoaded',
         payload: ['controlDataset', 'browser']
+    },
+    // `dragging` is true for each step of a drag that pans the view and false
+    // for every other move -- a jump, a zoom, a restore, a sync. No locus change
+    // marks the drag's end. `DragStopped` on the browser's bus is posted when
+    // the gesture ends, which can be before its last pan has settled, so the
+    // last `dragging: true` may arrive after it.
+    {
+        callback: 'onLocusChange',
+        payload: ['state', 'changes', 'dragging', 'browser'],
+        readsInto: ['changes.resolutionChanged', 'changes.chrChanged']
+    },
+    // `type` is which component the edit touched, in the spelling
+    // `SignedColorScale.setColorComponents` already takes: `'+'` for the
+    // positive scale -- the only one a single-sided scale has -- and `'-'` for
+    // the negative. Additive: `rgb` and `browser` are what they always were.
+    {
+        callback: 'onForegroundColorChange',
+        payload: ['rgb', 'type', 'browser'],
+        values: {type: ['+', '-']}
+    },
+    // Fires from the auto-threshold path and from `setColorScaleThreshold`,
+    // so a user's threshold edit is heard the same way a computed one is.
+    {
+        callback: 'onColorScaleChange',
+        payload: ['colorScale', 'browser']
+    },
+    {
+        callback: 'onNormalizationChange',
+        payload: ['normalization', 'browser']
+    },
+    // Both substitution moments of ADR-0012, restore-time and mid-render.
+    // `effective` is what canonical state now names; `reason` is the sentence
+    // the widget shows.
+    {
+        callback: 'onNormalizationSubstituted',
+        payload: ['requested', 'effective', 'reason', 'browser']
+    },
+    {
+        callback: 'onDisplayModeChange',
+        payload: ['mode', 'browser'],
+        values: {mode: ['A', 'B', 'AOB', 'BOA', 'AMB']}
     },
     // `chr1` and `chr2` are chromosome *names*, and never `All`: the host is not
     // told in the whole-genome view. `extents` is the visible bp on each axis,

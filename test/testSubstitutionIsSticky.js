@@ -51,7 +51,7 @@ describe('a substitution is sticky (#600, ADR-0012 decision 3)', () => {
         const browser = await restore(savedWith('KR'))
         const announced = []
         vi.spyOn(browser.coordinator, 'onNormalizationSubstituted')
-            .mockImplementation((normalization, reason) => announced.push({normalization, reason}))
+            .mockImplementation(detail => announced.push(detail))
         return {browser, announced}
     }
 
@@ -71,7 +71,8 @@ describe('a substitution is sticky (#600, ADR-0012 decision 3)', () => {
         browser.substituteNormalization('KR', 'NONE')
 
         expect(announced).toHaveLength(1)
-        expect(announced[0].normalization).toBe('NONE')
+        expect(announced[0].requested).toBe('KR')
+        expect(announced[0].effective).toBe('NONE')
         // The remedy for this reason, and the one that separates it from the
         // other two: the vector exists, just not here.
         expect(announced[0].reason).toContain('KR')

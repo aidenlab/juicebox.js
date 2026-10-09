@@ -251,6 +251,25 @@ describe('normalization is validated against the loaded dataset at restore (#561
         expect(announcement(browser)).toBeDefined()
     })
 
+    test('a coerced restore reaches a subscriber with the request and the answer', async () => {
+
+        // The host-facing half of the announcement. A host mirroring this
+        // panel has to follow what is drawn, and this is the restore-time
+        // moment; the mid-render one is watched in testSubstitutionIsSticky.
+        offered = ['NONE', 'VC']
+        const browser = embed()
+        const received = []
+        browser.coordinator.addCallback('onNormalizationSubstituted', payload => received.push(payload))
+
+        await browser.loadHicFile({url: HIC_URL, state: savedWith('KR')}, true)
+
+        expect(received).toHaveLength(1)
+        expect(received[0].requested).toBe('KR')
+        expect(received[0].effective).toBe('NONE')
+        expect(received[0].reason).toContain('KR')
+        expect(received[0].browser).toBe(browser)
+    })
+
     test('a restore with nothing to report stays quiet', async () => {
 
         offered = ['NONE', 'VC', 'KR']

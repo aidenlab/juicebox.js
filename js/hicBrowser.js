@@ -1134,6 +1134,14 @@ class HICBrowser {
             registry.select(undefined)
         }
 
+        // A host's `coordinator.addCallback` subscriptions ride across the
+        // reconstruction: the coordinator is rebuilt below with empty lists,
+        // and a host that mirrors this panel would otherwise go silent on the
+        // first map loaded through juicebox-web's menus, which reset before
+        // they load. The arrays themselves move, so
+        // the unsubscribers `addCallback` handed out keep working.
+        const externalCallbacks = this.coordinator.externalCallbacks
+
         this.dispose()
 
         // The one place this flag is cleared. A reset browser is alive again,
@@ -1141,6 +1149,7 @@ class HICBrowser {
         this.#disposed = false
 
         this.#construct(appContainer, config, id)
+        this.coordinator.externalCallbacks = externalCallbacks
 
         // Reconstruction appends, so the panels of a two-panel embed would
         // visibly swap without this. Decision 3.

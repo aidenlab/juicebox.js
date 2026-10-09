@@ -73,6 +73,24 @@ describe('HICBrowser.reset', () => {
         expect(registry.currentBrowser).toBe(browser)
     })
 
+    it('keeps a host\'s coordinator callbacks, and their unsubscribers', () => {
+        // juicebox-web resets before every map it loads through its menus, so a
+        // host mirroring the panel would lose its subscriptions on the first
+        // load and never hear of that map.
+        const {browser} = registered(dom.container)
+        const received = []
+        const off = browser.coordinator.addCallback('onBackgroundColorChange', payload => received.push(payload))
+
+        browser.reset()
+
+        browser.coordinator.onBackgroundColorChange({r: 1, g: 2, b: 3})
+        expect(received).toHaveLength(1)
+
+        off()
+        browser.coordinator.onBackgroundColorChange({r: 4, g: 5, b: 6})
+        expect(received).toHaveLength(1)
+    })
+
     it('rebuilds rather than reuses -- the widgets are new', () => {
         const {browser} = registered(dom.container)
         const contactMatrixView = browser.contactMatrixView

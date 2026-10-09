@@ -153,7 +153,7 @@ function createColorPicker(browser, parent, type) {
             const [r, g, b] = parseRgbString(rgbString)
             browser.getColorScale().setColorComponents({ r, g, b }, type);
             browser.repaintMatrix();
-            browser.coordinator.onForegroundColorChange({ r, g, b });
+            browser.coordinator.onForegroundColorChange({ r, g, b }, type);
         };
     }
     return new ColorPicker({ parent, top: 64, left: 64, width: 432, defaultColors, colorHandler });

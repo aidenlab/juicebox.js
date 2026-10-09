@@ -71,6 +71,10 @@ export const NAMESPACE_SURFACE = [
     'restoreSession',
     'compressedSession',
     'createBrowser',
+    // Removes a browser from its registry -- what the built-in navbar minus
+    // button does. A host that made its panels through createBrowser has no
+    // other way to take one down.
+    'deleteBrowser',
     'getCurrentBrowser',
     'setCurrentBrowser',
     'getAllBrowsers',
@@ -98,7 +102,7 @@ export const NAMESPACE_SURFACE = [
  * internal detail to published name, freezing this decomposition into the
  * contract. See #467.
  *
- * Seven more are assigned in the constructor rather than declared on the
+ * Ten more are assigned in the constructor rather than declared on the
  * prototype, so they are invisible to any check that reflects on the class
  * instead of building an instance.
  *
@@ -157,6 +161,35 @@ export const BROWSER_SURFACE = [
     'activeDataset',
     'state',
     'activeState',
+
+    // Commands and projections a host drives a browser with from outside its
+    // own widgets: the view (`zoomAndCenter`), the display mode, the colour
+    // scale and its threshold, the normalization, and sync state as a peer
+    // reads and applies it (`getSyncState` / `syncState`, ADR-0016). Plus the
+    // two track collections and the control-map dataset, which a host reads to
+    // mirror what a panel holds. All existed and were reachable before they
+    // were named here; declaring them is what makes "no callers in this repo"
+    // a complete finding rather than half of one (ADR-0003).
+    'controlDataset',
+    'trackPairs',
+    'tracks2D',
+    'zoomAndCenter',
+    'setColorScaleThreshold',
+    'setNormalization',
+    'setDisplayMode',
+    'getDisplayMode',
+    'getColorScale',
+    'getSyncState',
+    'syncState',
+
+    // What a track pair's setters and `layoutController.removeTrackXYPair` do
+    // for a 1D track, done here for a 2D one: take it off the panel, recolour
+    // it, rename it. Each posts a global event -- `Track2DRemoval` or
+    // `Track2DChange` -- and the annotation panel goes through the same
+    // members, so a host hears a user's edit the way it hears its own.
+    'removeTrack2D',
+    'setTrack2DColor',
+    'setTrack2DName',
 
     // Constructor-assigned fields
     'id',
@@ -340,6 +373,18 @@ export const SUB_SURFACES = [
  * The coordinator got here on its own -- it validates against its own declared
  * list and throws. That is the only self-describing, self-enforcing piece of
  * the browser contract, and it is the pattern this whole module generalises.
+ *
+ * The last four -- the colour scale, canonical `normalization`, a substitution
+ * of it, and the display mode -- are what a host mirroring one panel onto
+ * another has to follow, and none of them crosses a sync group (ADR-0014), so
+ * the host is the only route. They used to reach only the widgets: a host had
+ * to patch the coordinator's own methods to hear them. Each fires from the
+ * same coordinator method the widget is told through, so the two cannot
+ * disagree; two of those methods predate the `on*Change` naming
+ * (`onColorScale`, `onDisplayMode`) and keep their names, per ADR-0002.
+ * `onNormalizationSubstituted` carries the request as well as the answer,
+ * because a peer must mirror what is *drawn* (ADR-0012, whose explicit no on
+ * publishing it is reversed by this addition), not what was asked.
  */
 export const COORDINATOR_CALLBACKS = [
     'onMapLoaded',
@@ -349,6 +394,10 @@ export const COORDINATOR_CALLBACKS = [
     'onBackgroundColorChange',
     'onForegroundColorChange',
     'onSyncRefused',
+    'onColorScaleChange',
+    'onNormalizationChange',
+    'onNormalizationSubstituted',
+    'onDisplayModeChange',
     // The crosshairs, new in #709: where the source's pointer is, and that it
     // has gone. Once per pointer move, from the source only, never from an
     // echo -- and again when the view changes under a still pointer. There is
@@ -387,6 +436,47 @@ export const COORDINATOR_PAYLOAD_SHAPES = [
     {
         callback: 'onControlMapLoaded',
         payload: ['controlDataset', 'browser']
+    },
+    // `dragging` is true for each step of a drag that pans the view and false
+    // for every other move -- a jump, a zoom, a restore, a sync. No locus change
+    // marks the drag's end. `DragStopped` on the browser's bus is posted when
+    // the gesture ends, which can be before its last pan has settled, so the
+    // last `dragging: true` may arrive after it.
+    {
+        callback: 'onLocusChange',
+        payload: ['state', 'changes', 'dragging', 'browser'],
+        readsInto: ['changes.resolutionChanged', 'changes.chrChanged']
+    },
+    // `type` is which component the edit touched, in the spelling
+    // `SignedColorScale.setColorComponents` already takes: `'+'` for the
+    // positive scale -- the only one a single-sided scale has -- and `'-'` for
+    // the negative. Additive: `rgb` and `browser` are what they always were.
+    {
+        callback: 'onForegroundColorChange',
+        payload: ['rgb', 'type', 'browser'],
+        values: {type: ['+', '-']}
+    },
+    // Fires from the auto-threshold path and from `setColorScaleThreshold`,
+    // so a user's threshold edit is heard the same way a computed one is.
+    {
+        callback: 'onColorScaleChange',
+        payload: ['colorScale', 'browser']
+    },
+    {
+        callback: 'onNormalizationChange',
+        payload: ['normalization', 'browser']
+    },
+    // Both substitution moments of ADR-0012, restore-time and mid-render.
+    // `effective` is what canonical state now names; `reason` is the sentence
+    // the widget shows.
+    {
+        callback: 'onNormalizationSubstituted',
+        payload: ['requested', 'effective', 'reason', 'browser']
+    },
+    {
+        callback: 'onDisplayModeChange',
+        payload: ['mode', 'browser'],
+        values: {mode: ['A', 'B', 'AOB', 'BOA', 'AMB']}
     },
     // `chr1` and `chr2` are chromosome *names*, and never `All`: the host is not
     // told in the whole-genome view. `extents` is the visible bp on each axis,
@@ -446,9 +536,15 @@ export const DEPRECATED_SURFACE = [
 export const EVENTS_POSTED = [
     {name: 'GenomeChange', bus: 'global'},
     {name: 'BrowserSelect', bus: 'global'},
+    {name: 'BrowserAdd', bus: 'global'},
+    {name: 'BrowserDelete', bus: 'global'},
     {name: 'BrowserTargetChange', bus: 'global'},
     {name: 'TrackXYPairLoad', bus: 'global'},
     {name: 'TrackXYPairRemoval', bus: 'global'},
+    {name: 'TrackXYPairChange', bus: 'global'},
+    {name: 'Track2DLoad', bus: 'global'},
+    {name: 'Track2DRemoval', bus: 'global'},
+    {name: 'Track2DChange', bus: 'global'},
     // Both deprecated in #709 -- see DEPRECATED_SURFACE.
     {name: 'DidHideCrosshairs', bus: 'browser'},
     {name: 'DidShowCrosshairs', bus: 'browser'},
@@ -468,11 +564,46 @@ export const EVENTS_POSTED = [
  * Declaration only; verifying it means posting a real track load.
  */
 export const EVENT_PAYLOAD_SHAPES = [
+    // The one browser, as `BrowserSelect` carries it. `BrowserAdd` is posted
+    // once the browser is in `registry.browsers` and `BrowserDelete` while it
+    // still is, so `registry.browsers.indexOf(browser)` is its position in
+    // both. Neither is posted by a restore or a reset. Checked by
+    // `test/testBrowserAddDeleteEvents.js`.
+    {event: 'BrowserAdd', payload: 'the HICBrowser itself', readsInto: ['registry', 'id']},
+    {event: 'BrowserDelete', payload: 'the HICBrowser itself', readsInto: ['registry', 'id']},
     // Plural name because the subject is a set, unlike `BrowserSelect`, whose
     // payload is the one browser. It carries the *resolved* array so a host
     // need not re-derive the implicit-current rule, and the registry because
     // the bus is page-wide while a target set is per embed. #615.
     {event: 'BrowserTargetChange', payload: '{registry, targetedBrowsers}', readsInto: ['registry', 'targetedBrowsers']},
     {event: 'TrackXYPairLoad', payload: 'the TrackPair itself', readsInto: ['track', 'track.name', 'track.config.format']},
-    {event: 'TrackXYPairRemoval', payload: 'the TrackPair itself', readsInto: ['track', 'track.name', 'track.config.format']}
+    {event: 'TrackXYPairRemoval', payload: 'the TrackPair itself', readsInto: ['track', 'track.name', 'track.config.format']},
+    // One event for every mutation of a track pair's appearance, so a host
+    // mirroring one need not patch the setters. `property` names which
+    // setter ran and `value` is its new value: a colour string or undefined,
+    // a `{min, max}` range, a name, or a boolean. Posted by the setters on
+    // `TrackPair`, which the gear menu, colour picker and data-range dialog
+    // all go through. Checked by `test/testTrackXYPairChange.js`.
+    {
+        event: 'TrackXYPairChange',
+        payload: '{trackPair, property, value}',
+        readsInto: ['trackPair', 'property', 'value'],
+        values: {property: ['color', 'dataRange', 'name', 'autoscale', 'logScale']}
+    },
+    // The 2D-track counterparts of the three above. Load and removal carry the
+    // `Track2D` itself, as the track-pair ones carry the pair; a genome change
+    // posts one `Track2DRemoval` per 2D track, as it does `TrackXYPairRemoval`
+    // per pair. `Track2DChange` is posted by `setTrack2DColor` (`value` a
+    // colour string, or undefined for the features' own) and `setTrack2DName`.
+    // Its subject is keyed `track2D` as `TrackXYPairChange`'s is keyed
+    // `trackPair`: the key names the kind of track.
+    // Checked by `test/testTrack2DSurface.js`.
+    {event: 'Track2DLoad', payload: 'the Track2D itself', readsInto: ['name', 'color', 'config.url']},
+    {event: 'Track2DRemoval', payload: 'the Track2D itself', readsInto: ['name', 'color', 'config.url']},
+    {
+        event: 'Track2DChange',
+        payload: '{track2D, property, value}',
+        readsInto: ['track2D', 'property', 'value'],
+        values: {property: ['color', 'name']}
+    }
 ]

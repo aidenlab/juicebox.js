@@ -803,6 +803,7 @@ class DataLoader {
 
         this.browser.tracks2D = [...tracks2D.slice(0, at), track2D, ...tracks2D.slice(at)];
         this.browser.coordinator.onTrackLoad2D(this.browser.tracks2D);
+        EventBus.globalBus.post(HICEvent("Track2DLoad", track2D));
     }
 
     /**

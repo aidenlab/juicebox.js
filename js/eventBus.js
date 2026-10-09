@@ -102,15 +102,31 @@ class EventBus {
             // sits behind it.
             const subscriberList = this.subscribers[eventType];
 
+            // Every subscriber hears the event even if one before it throws:
+            // they are separate hosts, and a `BrowserDelete` that stops halfway
+            // leaves a mirrored panel open. The failure still reaches the
+            // poster, once everyone has been told.
+            const errors = [];
+
             if (subscriberList) {
                 for (let subscriber of [...subscriberList]) {
 
-                    if ("function" === typeof subscriber.receiveEvent) {
-                        subscriber.receiveEvent(event);
-                    } else if ("function" === typeof subscriber) {
-                        subscriber(event);
+                    try {
+                        if ("function" === typeof subscriber.receiveEvent) {
+                            subscriber.receiveEvent(event);
+                        } else if ("function" === typeof subscriber) {
+                            subscriber(event);
+                        }
+                    } catch (error) {
+                        errors.push(error);
                     }
                 }
+            }
+
+            if (1 === errors.length) {
+                throw errors[0];
+            } else if (errors.length > 1) {
+                throw new AggregateError(errors, `${errors.length} subscribers to ${eventType} threw`);
             }
         }
     }

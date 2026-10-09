@@ -8,6 +8,8 @@ import MenuUtils from "./trackMenuUtils.js"
 import TrackGearPopup from "./trackGearPopup.js"
 import {createIcon} from "./igv-icons.js"
 import Tile from "./tile.js";
+import EventBus from "./eventBus.js"
+import HICEvent from "./hicEvent.js"
 
 class TrackPair {
 
@@ -84,9 +86,28 @@ class TrackPair {
         this.colorPicker.containerElement.style.display = 'block';
     }
 
+    /**
+     * Every setter below announces itself with one global `TrackXYPairChange`
+     * so a host can mirror a track pair's appearance without patching the
+     * setters. The gear menu, the colour picker, the data-range dialog and a
+     * host calling a setter directly all pass through here. `value` is the new
+     * value of `property`, not the argument: `setDataRange` takes either bound
+     * alone and posts the range that results.
+     */
+    postChange(property, value) {
+        EventBus.globalBus.post(HICEvent('TrackXYPairChange', {trackPair: this, property, value}));
+    }
+
+    /**
+     * Reached through igv's `name` setter, which calls back into the track's
+     * `trackView` -- this pair -- once the track holds the name. Renaming is
+     * done by assigning `track.name`; this only paints the label, so a host
+     * calling it directly leaves `track.name` behind.
+     */
     setTrackLabelName(name) {
         this.x.setLabelText(name);
         this.y.setLabelText(name);
+        this.postChange('name', name);
     }
 
     /**
@@ -103,6 +124,7 @@ class TrackPair {
         this.y.tile = undefined;
         this.x.tile = undefined;
         this.track.color = color;
+        this.postChange('color', color);
         this.repaintViews();
     }
 
@@ -123,6 +145,19 @@ class TrackPair {
         this.track.config.autoScale = false
         this.y.tile = undefined;
         this.x.tile = undefined;
+        this.postChange('dataRange', {...this.track.dataRange});
+        this.repaintViews();
+    }
+
+    setAutoscale(autoscale) {
+        this.track.autoscale = autoscale;
+        this.postChange('autoscale', autoscale);
+        this.repaintViews();
+    }
+
+    setLogScale(logScale) {
+        this.track.logScale = logScale;
+        this.postChange('logScale', logScale);
         this.repaintViews();
     }
 

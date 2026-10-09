@@ -5,6 +5,8 @@
 **Amended:** 2026-09-03 — decision 4 answers the question it deferred; see
 *Restated, and answered* below and the last of the explicit no-s. No decision is
 reversed: the amendment closes #600 in the direction decision 3 already required.
+**Amended:** 2026-09-27 — the first explicit no is reversed: a host has asked,
+so `onNormalizationSubstituted` is published. See the note under that no.
 **Related:** #372 (the 2022 report this settles), ADR-0009 decision 5 (which
 deferred the error UX to here), ADR-0003 (public API contract), #425 (the missing
 `Alert` import that made the original failure silent), #561, #600 (case 3's
@@ -95,6 +97,17 @@ that cannot work, which is worse than the silence this ADR is replacing.
   precisely because it is not published — stays internal and absent from
   `js/publicApi.js`. Publishing it is a contract and no host has asked;
   ADR-0003's "absence is not permission" applies in both directions.
+
+  > **Amended 2026-09-27.** A host has asked: one mirroring a panel onto
+  > another has to follow the *effective* normalization, which decision 3
+  > makes the only truthful one to mirror, and it cannot learn it from
+  > `onNormalizationChange` because a substitution deliberately does not go
+  > through `setNormalization`. So `onNormalizationSubstituted` is now in
+  > `COORDINATOR_CALLBACKS`, with the payload `{requested, effective, reason,
+  > browser}` declared in `COORDINATOR_PAYLOAD_SHAPES`, and it fires from
+  > both moments of decision 1 through the one coordinator method the widget
+  > is told through. The rename freedom this no relied on is spent: the name
+  > and the payload are contract now.
 - **Case 2's detection was dead code.** `imageTileSource.#effectiveNormalization`
   called the async `Dataset.hasNormalizationVector` without awaiting it, so the
   check tested a Promise — always truthy — and the substitution branch was

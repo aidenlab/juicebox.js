@@ -5,7 +5,7 @@
  * whose genome id differs from its previous map's. Everything that belongs to
  * the old genome goes: track pairs, pending tracks (whose late result is then
  * discarded) and 2D annotations. Each loaded track pair posts
- * `TrackXYPairRemoval`, and all of it happens before `onGenomeChange` and the
+ * `TrackXYPairRemoval` and each 2D annotation `Track2DRemoval`, and all of it happens before `onGenomeChange` and the
  * `GenomeChange` event, so a host reacting to the change sees an empty panel.
  * A same-genome reload and a failed load clear nothing.
  *
@@ -70,7 +70,7 @@ const live = genomeId => {
 /** Record the global events a host would hear, in order, for the length of `body`. */
 async function heard(body) {
     const events = []
-    const listeners = ['TrackXYPairRemoval', 'GenomeChange'].map(type => {
+    const listeners = ['TrackXYPairRemoval', 'Track2DRemoval', 'GenomeChange'].map(type => {
         const listener = event => events.push({type, data: event.data})
         EventBus.globalBus.subscribe(type, listener)
         return [type, listener]
@@ -133,14 +133,17 @@ describe('a genome change clears the panel\'s tracks (#682)', () => {
         expect(browser.trackPairs).toEqual([])
     })
 
-    test('each loaded track pair posts TrackXYPairRemoval, before GenomeChange', async () => {
+    test('each loaded track pair posts TrackXYPairRemoval and each annotation Track2DRemoval, before GenomeChange', async () => {
         const {browser, pending, tracks} = await populated()
         const loaded = browser.trackPairs.filter(pair => !pair.isPendingTrack)
+
+        const [annotation] = browser.tracks2D
 
         const events = await heard(() => browser.loadHicFile(map('mm10'), true))
 
         expect(events).toEqual([
             ...loaded.map(pair => ({type: 'TrackXYPairRemoval', data: pair})),
+            {type: 'Track2DRemoval', data: annotation},
             {type: 'GenomeChange', data: 'mm10'}
         ])
 
@@ -237,10 +240,13 @@ describe('a genome change clears the panel\'s tracks (#682)', () => {
         const {browser, pending, tracks} = await populated(browser => browser.loadLiveContactMap(live('hg38'), true))
         const loaded = browser.trackPairs.filter(pair => !pair.isPendingTrack)
 
+        const [annotation] = browser.tracks2D
+
         const events = await heard(() => browser.loadLiveContactMap(live('mm10'), true))
 
         expect(events).toEqual([
             ...loaded.map(pair => ({type: 'TrackXYPairRemoval', data: pair})),
+            {type: 'Track2DRemoval', data: annotation},
             {type: 'GenomeChange', data: 'mm10'}
         ])
         expect(browser.trackPairs).toEqual([])

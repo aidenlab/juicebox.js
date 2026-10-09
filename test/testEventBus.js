@@ -140,3 +140,29 @@ describe('internal subscribers', () => {
         expect(offenders, `these subscribe internally instead of using the coordinator: ${offenders.join(', ')}`).toEqual([])
     })
 })
+
+describe('post', () => {
+
+    it('a throwing subscriber does not stop the rest, and its error still reaches the poster', () => {
+        // One host's bug must not cost another host its notification: a
+        // `BrowserDelete` that stops halfway leaves a mirrored panel open.
+        const bus = new EventBus()
+        const seen = []
+        const failure = new Error('host bug')
+
+        bus.subscribe('DragStopped', () => seen.push('before'))
+        bus.subscribe('DragStopped', () => { throw failure })
+        bus.subscribe('DragStopped', () => seen.push('after'))
+
+        expect(() => bus.post(HICEvent('DragStopped'))).toThrow(failure)
+        expect(seen).toEqual(['before', 'after'])
+    })
+
+    it('reports every failure when more than one subscriber throws', () => {
+        const bus = new EventBus()
+        bus.subscribe('DragStopped', () => { throw new Error('first') })
+        bus.subscribe('DragStopped', () => { throw new Error('second') })
+
+        expect(() => bus.post(HICEvent('DragStopped'))).toThrow(AggregateError)
+    })
+})

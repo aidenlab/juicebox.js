@@ -60,6 +60,14 @@ class BrowserCoordinator {
             onBackgroundColorChange: [],
             onForegroundColorChange: [],
             onSyncRefused: [],
+            // The four notifications that used to stop at the widgets. A host
+            // mirroring a panel needs to hear what the widgets hear, and the
+            // alternative was patching the methods below. Declared in
+            // `COORDINATOR_CALLBACKS` with their payloads.
+            onColorScaleChange: [],
+            onNormalizationChange: [],
+            onNormalizationSubstituted: [],
+            onDisplayModeChange: [],
             onCrosshairsMove: [],
             onCrosshairsHide: []
         };
@@ -194,10 +202,10 @@ class BrowserCoordinator {
      * @param {State} eventData.state - The new state
      * @param {boolean} eventData.resolutionChanged - Whether resolution changed
      * @param {boolean} eventData.chrChanged - Whether chromosome changed
-     * @param {boolean} eventData.dragging - Whether currently dragging
+     * @param {boolean} [eventData.dragging] - Whether a drag is panning the view; absent means false
      */
     onLocusChange(eventData) {
-        const { state, resolutionChanged, chrChanged } = eventData;
+        const { state, resolutionChanged, chrChanged, dragging } = eventData;
 
         // 0. Retire a normalization substitution announcement that this view has
         //    moved off. Asked of the view rather than of the change flags: the
@@ -242,7 +250,7 @@ class BrowserCoordinator {
 
         // 5. Notify external callbacks
         for (const callback of this.externalCallbacks.onLocusChange) {
-            callback({ state, changes: { resolutionChanged, chrChanged }, browser: this.browser });
+            callback({ state, changes: { resolutionChanged, chrChanged }, dragging: true === dragging, browser: this.browser });
         }
     }
 
@@ -260,7 +268,16 @@ class BrowserCoordinator {
             this.widgets.normalizationWidget.clearSubstitution();
         }
         this.contactMatrixView.receiveEvent({ type: "NormalizationChange", data: normalization });
-        // NormalizationWidget updates via selector change, no direct notification needed
+        // A host's `setNormalization` never touched the dropdown, so it is
+        // re-selected here; programmatic selection fires no `change`, so this
+        // does not come back around to `setNormalization`.
+        if (this.widgets.normalizationWidget) {
+            this.widgets.normalizationWidget.setNormalizationProgrammatically(normalization);
+        }
+
+        for (const callback of this.externalCallbacks.onNormalizationChange) {
+            callback({ normalization, browser: this.browser });
+        }
     }
 
     /**
@@ -278,16 +295,29 @@ class BrowserCoordinator {
         if (this.widgets.controlMapWidget) {
             this.widgets.controlMapWidget.updateDisplayMode(mode);
         }
+
+        for (const callback of this.externalCallbacks.onDisplayModeChange) {
+            callback({ mode, browser: this.browser });
+        }
     }
 
     /**
      * Orchestrate component updates when color scale changes.
-     * 
+     *
+     * Reached from the auto-threshold path, from a host's `config.colorScale`
+     * at init, and from `HICBrowser.setColorScaleThreshold` -- the user's own
+     * threshold edit, which used to reach the widget through the input it was
+     * typed into and nothing else, so a subscriber never heard it.
+     *
      * @param {ColorScale|RatioColorScale} colorScale - The color scale instance
      */
     onColorScale(colorScale) {
         if (this.widgets.colorScaleWidget) {
             this.widgets.colorScaleWidget.updateForColorScale(colorScale);
+        }
+
+        for (const callback of this.externalCallbacks.onColorScaleChange) {
+            callback({ colorScale, browser: this.browser });
         }
     }
 
@@ -373,16 +403,28 @@ class BrowserCoordinator {
      * Uses a programmatic update method that prevents feedback loops by ensuring
      * the change event listener doesn't trigger when we programmatically set the value.
      *
-     * @param {string} normalization - The normalization actually being drawn
-     * @param {string} reason - What the user is told, from `substitutionReason`
+     * A subscriber hears both moments through `onNormalizationSubstituted`, with
+     * the request as well as the answer: a host mirroring this panel has to
+     * follow the *effective* normalization, and one that asked for the request
+     * has to know it was refused.
+     *
+     * @param {Object} detail
+     * @param {string} detail.requested - What was asked for
+     * @param {string} detail.effective - The normalization actually being drawn
+     * @param {string} detail.reason - What the user is told, from `substitutionReason`
      */
-    onNormalizationSubstituted(normalization, reason) {
+    onNormalizationSubstituted(detail) {
+        const { effective, reason } = detail;
         if (this.widgets.normalizationWidget) {
             // Use programmatic update method to prevent feedback loop
-            this.widgets.normalizationWidget.setNormalizationProgrammatically(normalization);
+            this.widgets.normalizationWidget.setNormalizationProgrammatically(effective);
             if (this.browser.state) {
                 this.widgets.normalizationWidget.announceSubstitution(reason, this.browser.state);
             }
+        }
+
+        for (const callback of this.externalCallbacks.onNormalizationSubstituted) {
+            callback({ ...detail, browser: this.browser });
         }
     }
 
@@ -495,10 +537,15 @@ class BrowserCoordinator {
      * Notify external callbacks when foreground color changes.
      *
      * @param {{r: number, g: number, b: number}} rgb - The new foreground color
+     * @param {('+'|'-')} type - Which component the edit touched, in the
+     *   vocabulary `SignedColorScale.setColorComponents` speaks: `'+'` is the
+     *   positive scale, which is also the only one a single-sided scale has,
+     *   and `'-'` the negative. Additive -- a subscriber that reads `rgb`
+     *   alone sees what it always did.
      */
-    onForegroundColorChange(rgb) {
+    onForegroundColorChange(rgb, type) {
         for (const callback of this.externalCallbacks.onForegroundColorChange) {
-            callback({ rgb, browser: this.browser });
+            callback({ rgb, type, browser: this.browser });
         }
     }
 

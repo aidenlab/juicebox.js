@@ -28,6 +28,7 @@
 import {InputDialog, DOMUtils} from 'igv-ui'
 import * as hicUtils from './hicUtils.js'
 import EventBus from "./eventBus.js"
+import HICEvent from "./hicEvent.js"
 import LayoutController, {setViewportSize} from './layoutController.js'
 import { geneSearch } from './geneSearch.js'
 import {registryForContainer} from "./browserRegistry.js"
@@ -42,7 +43,6 @@ import {isSynchable, canResolveSyncState} from "./syncGroup.js"
 import {SENTINEL_ZOOM} from "./sentinelZoom.js"
 import {substitutionReason} from "./normalizationWidget.js"
 import {locusAtPixel, placeLocus} from "./crosshairsLocus.js"
-import HICEvent from "./hicEvent.js"
 
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
@@ -128,6 +128,20 @@ function pendingTrackLook({config, track}) {
         name: track.name,
         dataRange: config.min === undefined && config.max === undefined ? undefined : {min: config.min, max: config.max},
         color: config.color
+    }
+}
+
+/**
+ * Refuse a published call on a disposed browser. Decision 6 of ADR-0005.
+ *
+ * A function over the `isDisposed` getter rather than a private method, so a
+ * prototype method borrowed onto a stub -- `test/testSyncOptOut.js` takes
+ * `syncState` that way -- is not brand-checked on a receiver that has no flag
+ * and nothing to have disposed.
+ */
+function assertNotDisposed(browser, methodName) {
+    if (browser.isDisposed) {
+        throw new DisposedBrowserError(browser.id, methodName);
     }
 }
 
@@ -521,11 +535,13 @@ class HICBrowser {
     }
 
     async setDisplayMode(mode) {
+        assertNotDisposed(this, 'setDisplayMode');
         await this.contactMatrixView.setDisplayMode(mode)
         this.coordinator.onDisplayMode(mode)
     }
 
     getDisplayMode() {
+        assertNotDisposed(this, 'getDisplayMode');
         return this.contactMatrixView ? this.contactMatrixView.displayMode : undefined
     }
 
@@ -599,11 +615,18 @@ class HICBrowser {
     }
 
     getColorScale() {
+        assertNotDisposed(this, 'getColorScale');
         return this.contactMatrixView?.getColorScale()
     }
 
     setColorScaleThreshold(threshold) {
+        assertNotDisposed(this, 'setColorScaleThreshold');
         this.contactMatrixView.setColorScaleThreshold(threshold)
+        // The threshold is on the scale before the view's repaint is awaited,
+        // so what is announced is what will be drawn. The auto-threshold path
+        // announces itself from the tile source; this one is the user's edit,
+        // and used to say nothing.
+        this.coordinator.onColorScale(this.contactMatrixView.getColorScale())
     }
 
     /**
@@ -721,7 +744,7 @@ class HICBrowser {
      * the handler is called wherever that callback is (ADR-0020 decision 6).
      */
     setCustomCrosshairsHandler(crosshairsHandler) {
-        this.#assertNotDisposed('setCustomCrosshairsHandler')
+        assertNotDisposed(this, 'setCustomCrosshairsHandler')
         if (!this.#warnedOfCrosshairsHandler) {
             this.#warnedOfCrosshairsHandler = true
             console.warn("juicebox: setCustomCrosshairsHandler is deprecated and will be removed in 5.0 -- use coordinator.addCallback('onCrosshairsMove', fn)")
@@ -922,7 +945,7 @@ class HICBrowser {
      * @param configs
      */
     async loadTracks(configs) {
-        this.#assertNotDisposed('loadTracks');
+        assertNotDisposed(this, 'loadTracks');
         return this.dataLoader.loadTracks(normalizeTrackConfigs(configs));
     }
 
@@ -936,7 +959,7 @@ class HICBrowser {
      * normalization, same loader body; only the reporting differs. #615.
      */
     async loadTracksOrThrow(configs) {
-        this.#assertNotDisposed('loadTracksOrThrow');
+        assertNotDisposed(this, 'loadTracksOrThrow');
         return this.dataLoader.loadTracksOrThrow(normalizeTrackConfigs(configs));
     }
 
@@ -1061,15 +1084,6 @@ class HICBrowser {
     }
 
     /**
-     * Refuse a published call on a disposed browser. Decision 6 of ADR-0005.
-     */
-    #assertNotDisposed(methodName) {
-        if (this.#disposed) {
-            throw new DisposedBrowserError(this.id, methodName);
-        }
-    }
-
-    /**
      * Put this browser back to how it was constructed, without becoming a
      * different browser.
      *
@@ -1099,7 +1113,7 @@ class HICBrowser {
      */
     reset() {
 
-        this.#assertNotDisposed('reset')
+        assertNotDisposed(this, 'reset')
 
         const {config, id, registry} = this
         const appContainer = this.rootElement.parentElement
@@ -1134,6 +1148,14 @@ class HICBrowser {
             registry.select(undefined)
         }
 
+        // A host's `coordinator.addCallback` subscriptions ride across the
+        // reconstruction: the coordinator is rebuilt below with empty lists,
+        // and a host that mirrors this panel would otherwise go silent on the
+        // first map loaded through juicebox-web's menus, which reset before
+        // they load. The arrays themselves move, so
+        // the unsubscribers `addCallback` handed out keep working.
+        const externalCallbacks = this.coordinator.externalCallbacks
+
         this.dispose()
 
         // The one place this flag is cleared. A reset browser is alive again,
@@ -1141,6 +1163,7 @@ class HICBrowser {
         this.#disposed = false
 
         this.#construct(appContainer, config, id)
+        this.coordinator.externalCallbacks = externalCallbacks
 
         // Reconstruction appends, so the panels of a two-panel embed would
         // visibly swap without this. Decision 3.
@@ -1173,7 +1196,8 @@ class HICBrowser {
      * Clear everything that belongs to the genome: track pairs, pending tracks
      * and 2D annotations. A track has no genome of its own -- the panel's is its
      * genome declaration -- so once the panel's genome changes its tracks are
-     * wrong data, not the user's work.
+     * wrong data, not the user's work. Each loaded track pair posts
+     * `TrackXYPairRemoval` and each 2D track `Track2DRemoval`.
      *
      * Internal only -- not on the public API manifest. Called from the
      * genome-change branch of both map-load paths, before the change is
@@ -1182,7 +1206,52 @@ class HICBrowser {
      */
     clearTracks() {
         this.layoutController.removeAllTrackXYPairs()
+        const removed = this.tracks2D
         this.tracks2D = []
+        for (const track2D of removed) {
+            EventBus.globalBus.post(HICEvent('Track2DRemoval', track2D))
+        }
+    }
+
+    /**
+     * Take a 2D track off the panel and post `Track2DRemoval`, as
+     * `layoutController.removeTrackXYPair` does for a track pair. A track the
+     * panel does not hold is left alone and announces nothing. The annotation
+     * panel's delete goes through here.
+     */
+    removeTrack2D(track2D) {
+        assertNotDisposed(this, 'removeTrack2D')
+        const index = this.tracks2D.indexOf(track2D)
+        if (-1 === index) {
+            return
+        }
+        this.tracks2D.splice(index, 1)
+        this.coordinator.onTrackState2D(this.tracks2D)
+        EventBus.globalBus.post(HICEvent('Track2DRemoval', track2D))
+    }
+
+    /**
+     * Recolour a 2D track, overriding its features' own colours; `undefined`
+     * gives them back. Posts `Track2DChange`, as a track pair's setters post
+     * `TrackXYPairChange`. The annotation panel's colour swatches go through
+     * here.
+     */
+    setTrack2DColor(track2D, color) {
+        assertNotDisposed(this, 'setTrack2DColor')
+        track2D.color = color
+        EventBus.globalBus.post(HICEvent('Track2DChange', {track2D, property: 'color', value: color}))
+        this.coordinator.onTrackState2D(track2D)
+    }
+
+    /**
+     * Rename a 2D track: the name the annotation panel shows and a session
+     * saves. Nothing on the map draws it, so nothing repaints. Posts
+     * `Track2DChange`.
+     */
+    setTrack2DName(track2D, name) {
+        assertNotDisposed(this, 'setTrack2DName')
+        track2D.name = name
+        EventBus.globalBus.post(HICEvent('Track2DChange', {track2D, property: 'name', value: name}))
     }
 
     /**
@@ -1218,7 +1287,7 @@ class HICBrowser {
      * @param noUpdates
      */
     async loadHicFile(config, noUpdates) {
-        this.#assertNotDisposed('loadHicFile');
+        assertNotDisposed(this, 'loadHicFile');
         return this.dataLoader.loadHicFile(config, noUpdates);
     }
 
@@ -1231,7 +1300,7 @@ class HICBrowser {
      * loader body; only the reporting differs. #679.
      */
     async loadHicFileOrThrow(config, noUpdates) {
-        this.#assertNotDisposed('loadHicFileOrThrow');
+        assertNotDisposed(this, 'loadHicFileOrThrow');
         return this.dataLoader.loadHicFileOrThrow(config, noUpdates);
     }
 
@@ -1245,7 +1314,7 @@ class HICBrowser {
      * @returns {Promise<HiCDataset>}
      */
     async loadLiveContactMap(config, noUpdates) {
-        this.#assertNotDisposed('loadLiveContactMap');
+        assertNotDisposed(this, 'loadLiveContactMap');
         return this.dataLoader.loadLiveContactMap(config, noUpdates);
     }
 
@@ -1258,7 +1327,7 @@ class HICBrowser {
      * @param config
      */
     async loadHicControlFile(config, noUpdates) {
-        this.#assertNotDisposed('loadHicControlFile');
+        assertNotDisposed(this, 'loadHicControlFile');
         return this.dataLoader.loadHicControlFile(config, noUpdates);
     }
 
@@ -1272,12 +1341,12 @@ class HICBrowser {
      * unreported. #679.
      */
     async loadHicControlFileOrThrow(config, noUpdates) {
-        this.#assertNotDisposed('loadHicControlFileOrThrow');
+        assertNotDisposed(this, 'loadHicControlFileOrThrow');
         return this.dataLoader.loadHicControlFileOrThrow(config, noUpdates);
     }
 
     async parseGotoInput(input) {
-        this.#assertNotDisposed('parseGotoInput');
+        assertNotDisposed(this, 'parseGotoInput');
         return this.interactions.parseGotoInput(input);
     }
 
@@ -1352,6 +1421,7 @@ class HICBrowser {
      * @returns {Promise<void>}
      */
     async zoomAndCenter(direction, centerPX, centerPY) {
+        assertNotDisposed(this, 'zoomAndCenter');
         return this.interactions.zoomAndCenter(direction, centerPX, centerPY);
     }
 
@@ -1626,7 +1696,7 @@ class HICBrowser {
             ? substitutionReason.notInBothMaps(requested, resolved)
             : substitutionReason.notInFile(requested, resolved);
 
-        this.coordinator.onNormalizationSubstituted(resolved, reason);
+        this.coordinator.onNormalizationSubstituted({requested, effective: resolved, reason});
     }
 
     /**
@@ -1638,6 +1708,7 @@ class HICBrowser {
      * browser rather than about the view.
      */
     getSyncState() {
+        assertNotDisposed(this, 'getSyncState');
         if (!this.dataset || !this.state) {
             return undefined;
         }
@@ -1662,6 +1733,7 @@ class HICBrowser {
      * on it (#605). An assert since #632 -- see the comment there.
      */
     async syncState(targetState) {
+        assertNotDisposed(this, 'syncState');
         if (!targetState || !isSynchable(this) || !this.state) {
             return;
         }
@@ -1711,6 +1783,7 @@ class HICBrowser {
     }
 
     setNormalization(normalization) {
+        assertNotDisposed(this, 'setNormalization');
         if (this.#state) {
             this.#state.normalization = normalization;
         }
@@ -1750,10 +1823,11 @@ class HICBrowser {
         }
 
         this.#state.normalization = effective;
-        this.coordinator.onNormalizationSubstituted(
+        this.coordinator.onNormalizationSubstituted({
+            requested,
             effective,
-            substitutionReason.notAtThisView(requested, effective)
-        );
+            reason: substitutionReason.notAtThisView(requested, effective)
+        });
     }
 
     async shiftPixels(dx, dy) {

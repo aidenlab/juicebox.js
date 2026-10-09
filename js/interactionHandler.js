@@ -442,13 +442,20 @@ class InteractionHandler {
     }
 
     /**
-     * Parse goto input string and navigate to the specified locus.
-     * 
-     * @param {string} input - Input string in format "chr:start-end" or "chr:start-end chr:start-end"
+     * Parse goto input and navigate to the specified locus.
+     *
+     * Accepts the strict `chr:start-end` form, a bare chromosome name, two of
+     * either separated by a space, `All`, or a gene symbol -- and the looser
+     * spellings `locusStrings` folds into those: a space for the colon
+     * (`chr1 10mb-20mb`), a `kb`/`mb` suffix on a number, the word
+     * `chromosome` before a name, and a `{chr, start, end}` object whose
+     * `start` is 1-based like the string's.
+     *
+     * @param {string|{chr: string, start?: number, end?: number}} input
      * @returns {Promise<void>}
      */
     async parseGotoInput(input) {
-        const loci = input.trim().split(' ');
+        const loci = locusStrings(input, name => undefined !== this.browser.genome.getChromosome(name));
 
         let xLocus = this.parseLocusString(loci[0]) || await this.browser.lookupFeatureOrGene(loci[0]);
 
@@ -494,15 +501,67 @@ class InteractionHandler {
             locusObject.start = 0;
             locusObject.end = chromosome.size;
         } else {
-            const [startStr, endStr] = range.split('-').map(part => part.replace(/,/g, ''));
+            const [start, end] = range.split('-').map(parseBasePairs);
 
             // Internally, loci are 0-based.
-            locusObject.start = isNaN(startStr) ? undefined : parseInt(startStr, 10) - 1;
-            locusObject.end = isNaN(endStr) ? undefined : parseInt(endStr, 10);
+            locusObject.start = isNaN(start) ? undefined : start - 1;
+            locusObject.end = isNaN(end) ? undefined : end;
         }
 
         return locusObject;
     }
+}
+
+const UNITS = {kb: 1e3, mb: 1e6};
+
+/**
+ * The locus strings in a goto input, each in the `chr[:start-end]` form
+ * `parseLocusString` reads.
+ *
+ * A `{chr, start, end}` object is spelled out -- `start` and `end` together,
+ * or neither for the whole chromosome. A string is split on whitespace, the
+ * word `chromosome` is dropped, and a range token is joined to the chromosome
+ * name before it. Only a chromosome name: a gene symbol followed by a range
+ * keeps meaning what it meant, the gene.
+ *
+ * @param {string|{chr: string, start?: number, end?: number}} input
+ * @param {(name: string) => boolean} isChromosome
+ * @returns {string[]}
+ */
+function locusStrings(input, isChromosome) {
+    if ('object' === typeof input) {
+        const {chr, start, end} = input;
+        return [undefined === start || undefined === end ? String(chr) : `${chr}:${start}-${end}`];
+    }
+    const loci = [];
+    for (const token of input.trim().split(/\s+/)) {
+        if ('chromosome' === token.toLowerCase()) continue;
+        const last = loci.length - 1;
+        if (isRange(token) && last >= 0 && isChromosome(loci[last])) {
+            loci[last] += `:${token}`;
+        } else {
+            loci.push(token);
+        }
+    }
+    return loci;
+}
+
+/** A `start-end` token: two base-pair counts `parseBasePairs` accepts. */
+function isRange(token) {
+    const parts = token.toLowerCase().split('-');
+    return 2 === parts.length && parts.every(part => !isNaN(parseBasePairs(part)));
+}
+
+/**
+ * A base-pair count spelled as a number with optional commas and an optional
+ * `kb`/`mb` suffix: `1,000`, `500kb`, `1.5mb`. `NaN` for anything else.
+ *
+ * @param {string} text - already lowercased by `parseLocusString`
+ * @returns {number}
+ */
+function parseBasePairs(text) {
+    const match = /^(\d+(?:\.\d+)?)(kb|mb)?$/.exec(text.replace(/,/g, ''));
+    return match ? Math.round(Number(match[1]) * (UNITS[match[2]] || 1)) : NaN;
 }
 
 export default InteractionHandler;

@@ -41,19 +41,13 @@ const MenuUtils = {
         if (trackPair.track.logScale !== undefined) {
             menuItems.push({
                 element: createCheckbox("Log scale", trackPair.track.logScale),
-                click: () => {
-                    trackPair.track.logScale = !trackPair.track.logScale;
-                    trackPair.repaintViews();
-                }
+                click: () => trackPair.setLogScale(!trackPair.track.logScale)
             });
         }
 
         menuItems.push({
             element: createCheckbox("Autoscale", trackPair.track.autoscale),
-            click: () => {
-                trackPair.track.autoscale = !trackPair.track.autoscale;
-                trackPair.repaintViews();
-            }
+            click: () => trackPair.setAutoscale(!trackPair.track.autoscale)
         });
 
         return menuItems;
@@ -106,10 +100,7 @@ function unsetColorMenuItem({ trackPair, label }) {
     const element = document.createElement('div');
     element.textContent = label;
 
-    const click = () => {
-        trackPair.track.color = undefined;
-        trackPair.repaintViews();
-    };
+    const click = () => trackPair.setColor(undefined);
 
     return { element, click };
 }

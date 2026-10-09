@@ -28,6 +28,7 @@
 import {InputDialog, DOMUtils} from 'igv-ui'
 import * as hicUtils from './hicUtils.js'
 import EventBus from "./eventBus.js"
+import HICEvent from "./hicEvent.js"
 import LayoutController, {setViewportSize} from './layoutController.js'
 import { geneSearch } from './geneSearch.js'
 import {registryForContainer} from "./browserRegistry.js"
@@ -42,7 +43,6 @@ import {isSynchable, canResolveSyncState} from "./syncGroup.js"
 import {SENTINEL_ZOOM} from "./sentinelZoom.js"
 import {substitutionReason} from "./normalizationWidget.js"
 import {locusAtPixel, placeLocus} from "./crosshairsLocus.js"
-import HICEvent from "./hicEvent.js"
 
 const DEFAULT_PIXEL_SIZE = 1
 const MAX_PIXEL_SIZE = 128
@@ -1196,7 +1196,8 @@ class HICBrowser {
      * Clear everything that belongs to the genome: track pairs, pending tracks
      * and 2D annotations. A track has no genome of its own -- the panel's is its
      * genome declaration -- so once the panel's genome changes its tracks are
-     * wrong data, not the user's work.
+     * wrong data, not the user's work. Each loaded track pair posts
+     * `TrackXYPairRemoval` and each 2D track `Track2DRemoval`.
      *
      * Internal only -- not on the public API manifest. Called from the
      * genome-change branch of both map-load paths, before the change is
@@ -1205,7 +1206,52 @@ class HICBrowser {
      */
     clearTracks() {
         this.layoutController.removeAllTrackXYPairs()
+        const removed = this.tracks2D
         this.tracks2D = []
+        for (const track2D of removed) {
+            EventBus.globalBus.post(HICEvent('Track2DRemoval', track2D))
+        }
+    }
+
+    /**
+     * Take a 2D track off the panel and post `Track2DRemoval`, as
+     * `layoutController.removeTrackXYPair` does for a track pair. A track the
+     * panel does not hold is left alone and announces nothing. The annotation
+     * panel's delete goes through here.
+     */
+    removeTrack2D(track2D) {
+        assertNotDisposed(this, 'removeTrack2D')
+        const index = this.tracks2D.indexOf(track2D)
+        if (-1 === index) {
+            return
+        }
+        this.tracks2D.splice(index, 1)
+        this.coordinator.onTrackState2D(this.tracks2D)
+        EventBus.globalBus.post(HICEvent('Track2DRemoval', track2D))
+    }
+
+    /**
+     * Recolour a 2D track, overriding its features' own colours; `undefined`
+     * gives them back. Posts `Track2DChange`, as a track pair's setters post
+     * `TrackXYPairChange`. The annotation panel's colour swatches go through
+     * here.
+     */
+    setTrack2DColor(track2D, color) {
+        assertNotDisposed(this, 'setTrack2DColor')
+        track2D.color = color
+        EventBus.globalBus.post(HICEvent('Track2DChange', {track2D, property: 'color', value: color}))
+        this.coordinator.onTrackState2D(track2D)
+    }
+
+    /**
+     * Rename a 2D track: the name the annotation panel shows and a session
+     * saves. Nothing on the map draws it, so nothing repaints. Posts
+     * `Track2DChange`.
+     */
+    setTrack2DName(track2D, name) {
+        assertNotDisposed(this, 'setTrack2DName')
+        track2D.name = name
+        EventBus.globalBus.post(HICEvent('Track2DChange', {track2D, property: 'name', value: name}))
     }
 
     /**

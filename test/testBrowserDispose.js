@@ -144,7 +144,7 @@ describe('a disposed browser', () => {
      * where a silent no-op surfaces as a blank panel in production.
      */
 
-    const SYNCHRONOUS = ['reset', 'setCustomCrosshairsHandler', 'setColorScaleThreshold', 'setNormalization', 'getDisplayMode', 'getColorScale', 'getSyncState']
+    const SYNCHRONOUS = ['reset', 'setCustomCrosshairsHandler', 'setColorScaleThreshold', 'setNormalization', 'getDisplayMode', 'getColorScale', 'getSyncState', 'removeTrack2D', 'setTrack2DColor', 'setTrack2DName']
     const ASYNCHRONOUS = ['loadHicFile', 'loadTracks', 'loadHicControlFile', 'loadLiveContactMap', 'parseGotoInput', 'zoomAndCenter', 'setDisplayMode', 'syncState']
 
     function disposedBrowser() {

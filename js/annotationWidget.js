@@ -116,7 +116,7 @@ class AnnotationWidget {
         rowContainer.appendChild(row);
 
         const trackName = document.createElement('div');
-        trackName.textContent = isTrack2D ? track.config.name : track.x.track.config.name;
+        trackName.textContent = isTrack2D ? track.name : track.x.track.config.name;
         row.appendChild(trackName);
 
         if (isTrack2D) {
@@ -183,8 +183,7 @@ class AnnotationWidget {
             }
 
             if (isTrack2D) {
-                track.color = color;
-                this.browser.coordinator.onTrackState2D(track);
+                this.browser.setTrack2DColor(track, color);
             } else {
                 trackRenderer.setColor(color);
             }
@@ -258,17 +257,15 @@ class AnnotationWidget {
         row.appendChild(deleteIcon);
 
         deleteIcon.addEventListener('click', () => {
-            const index = trackList.indexOf(track);
             if (isTrack2D) {
-                trackList.splice(index, 1);
-                this.browser.contactMatrixView.clearImageCaches();
-                this.browser.contactMatrixView.update();
-                this.browser.coordinator.onTrackLoad2D(trackList);
+                this.browser.removeTrack2D(track);
             } else {
                 this.browser.layoutController.removeTrackXYPair(track.x.track.trackRenderPair);
             }
 
-            this.updateBody(trackList);
+            // Re-read: a 2D load replaces the browser's list, so `trackList`
+            // can be one it no longer holds.
+            this.updateBody(this.trackListRetrievalCallback());
         });
     }
 

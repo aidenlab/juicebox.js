@@ -63,6 +63,12 @@ class BrowserRegistry {
     #announceBefore = []
 
     /**
+     * Browsers whose `BrowserDelete` is being posted, so a listener that
+     * deletes the browser it is told about does not announce it twice.
+     */
+    #deleting = new Set()
+
+    /**
      * @param {Element} [container] - the host element this registry owns.
      *   Absent only in tests that exercise the registry without a document.
      */
@@ -121,6 +127,12 @@ class BrowserRegistry {
         // loads before it hands over -- changes the open maps, and the load's
         // own recompute ran while this one was not yet in the list. #635.
         this.sync()
+        // Posted once the browser is in the list, so a host can read its
+        // position; not posted by the session path, which registers without
+        // adding -- a restore is not the user opening a panel. A host that
+        // mirrors this embed on another page opens a panel there on this
+        // event and closes one on `BrowserDelete`.
+        EventBus.globalBus.post(HICEvent("BrowserAdd", browser))
         this.select(browser)
         this.refreshDeleteButtonVisibility()
     }
@@ -483,7 +495,26 @@ class BrowserRegistry {
      * `rootElement` now cannot.
      */
     delete(browser) {
-        browser.dispose()
+
+        // Already gone (a second close) or being announced right now (a
+        // listener closing what it was told about): either way, once is enough.
+        if (!this.browsers.includes(browser) || this.#deleting.has(browser)) {
+            return
+        }
+
+        // Posted while the browser is still in the list, so a host can read
+        // the position it is leaving. `deleteAll` (a restore) and `reset()`
+        // release their slots without passing here, so neither looks like the
+        // user closing a panel. The teardown is in `finally` because a host's
+        // listener can throw, and its bug must not keep a browser alive that
+        // other listeners have already been told is gone.
+        this.#deleting.add(browser)
+        try {
+            EventBus.globalBus.post(HICEvent("BrowserDelete", browser))
+        } finally {
+            this.#deleting.delete(browser)
+            browser.dispose()
+        }
     }
 
     deleteAll() {

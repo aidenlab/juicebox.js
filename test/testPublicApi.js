@@ -6,6 +6,8 @@ import EventBus from '../js/eventBus.js'
 import BrowserRegistry from '../js/browserRegistry.js'
 import {initRegistry} from '../js/init.js'
 import {filenameFromUrl} from '../js/utils.js'
+import {getAllBrowsers, deleteBrowser} from '../js/createBrowser.js'
+import HICBrowser from '../js/hicBrowser.js'
 import {NAMESPACE_SURFACE, BROWSER_SURFACE, REGISTRY_SURFACE, POST_LOAD_SURFACE, SUB_SURFACES, COORDINATOR_CALLBACKS, COORDINATOR_PAYLOAD_SHAPES, DEPRECATED_SURFACE, EVENTS_POSTED, EVENT_PAYLOAD_SHAPES} from '../js/publicApi.js'
 
 /**
@@ -40,6 +42,33 @@ describe('namespace surface', () => {
         // Identity, not type: a host that pairs files by this name must get the
         // same answer juicebox routes and names tracks by. #698.
         expect(juicebox.filenameFromUrl).toBe(filenameFromUrl)
+    })
+
+    it('exports the deletion the navbar minus button uses', () => {
+        // Identity, and behaviour: a host that created panels through
+        // createBrowser takes them down through this.
+        expect(NAMESPACE_SURFACE).toContain('deleteBrowser')
+        expect(juicebox.deleteBrowser).toBe(deleteBrowser)
+    })
+})
+
+describe('deleteBrowser', () => {
+
+    const context = withBrowser()
+
+    it('removes a browser from getAllBrowsers()', () => {
+        const registry = context.browser.registry
+        const container = context.browser.rootElement.parentElement
+        const first = new HICBrowser(container, {})
+        const second = new HICBrowser(container, {})
+        registry.add(first)
+        registry.add(second)
+        expect(getAllBrowsers()).toEqual(expect.arrayContaining([first, second]))
+
+        juicebox.deleteBrowser(second)
+
+        expect(getAllBrowsers()).not.toContain(second)
+        expect(getAllBrowsers()).toContain(first)
     })
 })
 

@@ -8,9 +8,15 @@ Until this file existed the sequence lived only in habit, which is how v4.1.1
 happened.
 
 juicebox.js is an **embeddable component**. A release is not done when the tag is
-pushed — it is done when both consumers are pinned to it. Steps 1–5 are this repo;
-step 6 is the other two. Since v4.6.0 a release also publishes to npm, and step 5
-gates on that.
+pushed — it is done when the consumers it was cut for can take it. Steps 1–5 are
+this repo; step 6 is the host apps. Since v4.6.0 a release also publishes to npm,
+and step 5 gates on that.
+
+**Which consumers gate depends on who the release is for.** A release driven by
+juicebox-view or juicebox-mcp (juicebox-remote) is done once npm serves it:
+those consumers take it from there, and repointing juicebox-web and Spacewalk
+is follow-up, not a blocker. v4.12.1 was the first release cut this way. A
+release cut for juicebox-web or Spacewalk is done when they are pinned to it.
 
 ## 1. Bump the version — three files
 
@@ -121,12 +127,21 @@ Confirm before step 6:
 
 ```
 gh run list --workflow publish.yml --limit 1
-npm view juicebox.js version
+npm view juicebox.js version --prefer-online
 ```
+
+**`npm view` lags the publish.** Right after the run reports success, the
+registry can still serve the previous version and 404 the new one for a minute
+or so. Check the run log for `+ juicebox.js@<version>` and retry `npm view`
+before suspecting the publish (v4.12.1).
 
 A consumer on an npm range cannot take the release until `npm view` shows it.
 
 ## 6. Repoint both consumers
+
+Gating only for a release cut for these two; see the top of this file. For a
+juicebox-view or juicebox-mcp release, open the bump PRs as follow-up, or skip
+them when the release changes nothing either host uses.
 
 Two repos, each its own PR off a feature branch. **They do not pin the same way.**
 juicebox-web moved to an npm range on 2026-09-29; Spacewalk still pins a `github:`

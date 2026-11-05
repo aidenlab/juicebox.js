@@ -1,0 +1,894 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<title>Pixel size, bin size and the size of the screen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* Layout: one 38rem reading column on the left, a margin for notes on the right, figures across both. */
+:root {
+  --bg: #f5f6f4;
+  --box: #ffffff;
+  --fg: #1b1d1c;
+  --muted: #636966;
+  --rule: #cdd2ce;
+  --accent: #b8231a;            /* the red of a contact map */
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151716; --box: #1e2120; --fg: #e5e7e4; --muted: #9aa19c; --rule: #3b403d; --accent: #ff7566;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151716; --box: #1e2120; --fg: #e5e7e4; --muted: #9aa19c; --rule: #3b403d; --accent: #ff7566;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--serif);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  margin: 0;
+}
+.page {
+  max-width: 64rem;
+  margin-inline: auto;
+  padding-inline: 20px;
+  padding-block: 3.5rem 5rem;
+}
+.page :is(h1, h2, h3, p, ol, ul, pre, .tablewrap) { max-width: 38rem; }
+
+h1 {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 2.1rem;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.75rem;
+  text-wrap: balance;
+}
+.lede {
+  font-size: 1.25rem;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0 0 2.5rem;
+}
+h2 {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  margin: 3.5rem 0 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--fg);
+  text-wrap: balance;
+}
+h2 .num { color: var(--muted); font-weight: 500; margin-right: 0.6em; }
+p { margin: 0 0 1rem; }
+ol, ul { margin: 0 0 1rem; padding-left: 1.4rem; }
+li { margin-bottom: 0.4rem; }
+li::marker { font-family: var(--sans); font-size: 0.85em; color: var(--muted); }
+code { font-family: var(--mono); font-size: 0.84em; }
+.key { color: var(--accent); }
+
+/* The one-sentence answers, set apart */
+.answer {
+  font-family: var(--sans);
+  font-size: 1.05rem;
+  line-height: 1.5;
+  border-left: 2px solid var(--accent);
+  padding: 0.2rem 0 0.2rem 1rem;
+  margin: 1.5rem 0 1.75rem;
+  max-width: 38rem;
+}
+
+/* Margin notes */
+.note {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 38rem;
+  margin: 0 0 1rem;
+}
+@media (min-width: 64rem) {
+  .note {
+    float: right;
+    clear: right;
+    width: 17rem;
+    margin: 0.35rem 0 1rem 2rem;
+  }
+}
+
+/* Figures */
+figure { clear: both; margin: 2.25rem 0 2.5rem; }
+.figwrap { overflow-x: auto; }
+svg.fig {
+  display: block;
+  width: 100%;
+  min-width: 46rem;
+  height: auto;
+  color: var(--fg);
+  font-family: var(--sans);
+}
+figcaption {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 38rem;
+  margin-top: 0.75rem;
+}
+figcaption b { color: var(--fg); font-weight: 600; }
+.fig text { fill: currentColor; font-size: 13px; }
+.fig .t-h { font-weight: 600; font-size: 14px; }
+.fig .t-big { font-weight: 600; font-size: 17px; }
+.fig .t-s { font-size: 11.5px; fill: var(--muted); }
+.fig .t-m { font-family: var(--mono); font-size: 12px; }
+.fig .t-n { font-size: 12px; font-weight: 600; fill: var(--muted); }
+.fig .t-x { fill: var(--accent); }
+.fig .bx { fill: var(--box); stroke: currentColor; stroke-width: 1; }
+.fig .bxx { fill: var(--box); stroke: var(--accent); stroke-width: 1.5; }
+.fig .scr { fill: none; stroke: currentColor; stroke-width: 1.5; }
+.fig .old { fill: none; stroke: currentColor; stroke-width: 1.25; stroke-dasharray: 5 4; }
+.fig .cell { fill: var(--box); stroke: currentColor; stroke-width: 1; }
+.fig .cellx { fill: var(--accent); fill-opacity: 0.14; stroke: var(--accent); stroke-width: 1; }
+.fig .pane { fill: var(--box); stroke: var(--rule); stroke-width: 1; }
+.fig .ln { stroke: currentColor; stroke-width: 1; fill: none; }
+.fig .lr { stroke: var(--rule); stroke-width: 1; fill: none; }
+.fig .lx { stroke: var(--accent); stroke-width: 1.5; fill: none; }
+.fig .ld { stroke-dasharray: 4 3; }
+.fig .ah { fill: currentColor; }
+.fig .ahx { fill: var(--accent); }
+.fig .dot { fill: currentColor; }
+.fig .dotx { fill: var(--accent); }
+.fig .ring { fill: var(--box); stroke: var(--accent); stroke-width: 1.75; }
+.fig .band { stroke: var(--accent); stroke-opacity: 0.28; stroke-width: 7; stroke-linecap: butt; }
+.fig .bg { fill: var(--box); }
+.fig .halo { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+
+/* Tables */
+.tablewrap { overflow-x: auto; margin: 1.25rem 0 1.5rem; }
+.tablewrap.wide { max-width: 56rem; }
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5rem 1.1rem 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+thead th { font-weight: 600; border-bottom: 1px solid var(--fg); }
+tbody th { font-weight: 600; white-space: nowrap; }
+tbody tr:last-child :is(th, td) { border-bottom: 0; }
+td code, th code { font-size: 0.92em; }
+td.c, th.c { text-align: center; padding-right: 0.6rem; padding-left: 0.6rem; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+td.hi { color: var(--accent); font-weight: 600; }
+.yes { color: var(--accent); font-size: 1.05em; }
+.no { color: var(--rule); font-size: 1.05em; }
+.end {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 3rem;
+  max-width: 38rem;
+}
+</style>
+</head>
+<body>
+
+<!-- A schematic contact map, drawn once in genome units and reused by every figure that shows a view of it.
+     The diagonal runs top-left to bottom-right; squares on it are domains; dots at their corners are loops. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="hic">
+      <line x1="-500" y1="-500" x2="1500" y2="1500" style="stroke: var(--accent); stroke-opacity: .05; stroke-width: 300"/>
+      <line x1="-500" y1="-500" x2="1500" y2="1500" style="stroke: var(--accent); stroke-opacity: .08; stroke-width: 170"/>
+      <line x1="-500" y1="-500" x2="1500" y2="1500" style="stroke: var(--accent); stroke-opacity: .16; stroke-width: 80"/>
+      <line x1="-500" y1="-500" x2="1500" y2="1500" style="stroke: var(--accent); stroke-opacity: .45; stroke-width: 24"/>
+      <line x1="-500" y1="-500" x2="1500" y2="1500" style="stroke: var(--accent); stroke-opacity: .9; stroke-width: 7"/>
+
+      <!-- compartment blocks, off the diagonal -->
+      <rect x="390" y="130" width="170" height="170" style="fill: var(--accent); fill-opacity: .07"/>
+      <rect x="130" y="390" width="170" height="170" style="fill: var(--accent); fill-opacity: .07"/>
+      <rect x="690" y="390" width="130" height="170" style="fill: var(--accent); fill-opacity: .06"/>
+      <rect x="390" y="690" width="170" height="130" style="fill: var(--accent); fill-opacity: .06"/>
+      <rect x="960" y="690" width="140" height="130" style="fill: var(--accent); fill-opacity: .06"/>
+      <rect x="690" y="960" width="130" height="140" style="fill: var(--accent); fill-opacity: .06"/>
+      <rect x="-140" y="-300" width="170" height="160" style="fill: var(--accent); fill-opacity: .06"/>
+      <rect x="-300" y="-140" width="160" height="170" style="fill: var(--accent); fill-opacity: .06"/>
+
+      <!-- domains -->
+      <g style="fill: var(--accent); fill-opacity: .17">
+        <rect x="-300" y="-300" width="160" height="160"/>
+        <rect x="-140" y="-140" width="170" height="170"/>
+        <rect x="30"   y="30"   width="100" height="100"/>
+        <rect x="130"  y="130"  width="170" height="170"/>
+        <rect x="300"  y="300"  width="90"  height="90"/>
+        <rect x="390"  y="390"  width="170" height="170"/>
+        <rect x="560"  y="560"  width="130" height="130"/>
+        <rect x="690"  y="690"  width="130" height="130"/>
+        <rect x="820"  y="820"  width="140" height="140"/>
+        <rect x="960"  y="960"  width="140" height="140"/>
+        <rect x="1100" y="1100" width="200" height="200"/>
+      </g>
+      <!-- sub-domains -->
+      <g style="fill: var(--accent); fill-opacity: .16">
+        <rect x="130" y="130" width="80" height="80"/>
+        <rect x="390" y="390" width="95" height="95"/>
+        <rect x="560" y="560" width="60" height="60"/>
+        <rect x="820" y="820" width="65" height="65"/>
+      </g>
+      <!-- loops at domain corners -->
+      <g style="fill: var(--accent)">
+        <circle cx="30"  cy="-140" r="6"/><circle cx="-140" cy="30"  r="6"/>
+        <circle cx="300" cy="130"  r="6"/><circle cx="130"  cy="300" r="6"/>
+        <circle cx="560" cy="390"  r="6"/><circle cx="390"  cy="560" r="6"/>
+        <circle cx="690" cy="560"  r="5"/><circle cx="560"  cy="690" r="5"/>
+        <circle cx="960" cy="820"  r="6"/><circle cx="820"  cy="960" r="6"/>
+        <circle cx="1100" cy="960" r="6"/><circle cx="960" cy="1100" r="6"/>
+        <circle cx="210" cy="130"  r="4"/><circle cx="130"  cy="210" r="4"/>
+      </g>
+    </g>
+  </defs>
+</svg>
+
+<main class="page">
+
+<h1>Pixel size, bin size and the size of the screen</h1>
+<p class="lede">A Juicebox view is six numbers. The size of the screen is not one of them. That is why resizing a map is a design decision, and why, today, a resize fires no event at all.</p>
+
+<p>This document works through one question: a view is showing a locus at 640&nbsp;&times;&nbsp;640 pixels, and the viewport grows to 1024&nbsp;&times;&nbsp;1024. What changes in the state, and what is announced?</p>
+
+<p>The answer depends on three ideas, which the first sections cover in order: the two numbers that set the scale, what the state holds and what it leaves out, and how a resolution is chosen. The resize itself is in <a href="#resize">section&nbsp;6</a>, and the events in <a href="#events">section&nbsp;7</a>.</p>
+
+<!-- ============================================================ -->
+<h2><span class="num">1</span>Two numbers set the scale</h2>
+
+<p>A <code>.hic</code> file stores each contact matrix several times, at a ladder of <em>bin sizes</em>: 2.5&nbsp;Mb, 1&nbsp;Mb, 500&nbsp;kb, down to 5&nbsp;kb or 1&nbsp;kb. One bin is one cell of the matrix. Choosing a rung of that ladder is choosing a <code>zoom</code>, and the zoom fixes the bin size.</p>
+
+<p>The <em>pixel size</em> is how many screen pixels one bin is drawn across. It is the second, independent dial. Together they give the only scale that matters to the eye: base pairs per screen pixel.</p>
+
+<figure>
+  <div class="figwrap">
+  <svg class="fig" viewBox="0 0 960 360" role="img" aria-label="Three aligned rulers. Base pairs from 40.000 to 40.100 Mb. Four bins of 25,000 bp each. Eight screen pixels, two per bin. bpPerPixel equals binSize divided by pixelSize, 12,500.">
+    <defs>
+      <marker id="f1a" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5 L8 4 L0 7.5z" class="ah"/></marker>
+    </defs>
+
+    <!-- row labels -->
+    <text class="t-h" x="20" y="64">Genome</text>
+    <text class="t-s" x="20" y="82">base pairs</text>
+    <text class="t-h" x="20" y="146">Bins</text>
+    <text class="t-s" x="20" y="164">binSize, set by <tspan class="t-m">zoom</tspan></text>
+    <text class="t-h" x="20" y="236">Screen pixels</text>
+    <text class="t-s" x="20" y="254"><tspan class="t-m">pixelSize</tspan>, px per bin</text>
+
+    <!-- genome ruler -->
+    <line class="ln" x1="200" y1="72" x2="920" y2="72"/>
+    <g class="ln">
+      <line x1="200" y1="64" x2="200" y2="80"/><line x1="380" y1="64" x2="380" y2="80"/>
+      <line x1="560" y1="64" x2="560" y2="80"/><line x1="740" y1="64" x2="740" y2="80"/>
+      <line x1="920" y1="64" x2="920" y2="80"/>
+    </g>
+    <text class="t-m" x="200" y="54" text-anchor="middle">40.000 Mb</text>
+    <text class="t-m" x="380" y="54" text-anchor="middle">40.025</text>
+    <text class="t-m" x="560" y="54" text-anchor="middle">40.050</text>
+    <text class="t-m" x="740" y="54" text-anchor="middle">40.075</text>
+    <text class="t-m" x="920" y="54" text-anchor="middle">40.100</text>
+
+    <!-- bins -->
+    <rect class="cellx" x="200" y="124" width="180" height="50"/>
+    <rect class="cell"  x="380" y="124" width="180" height="50"/>
+    <rect class="cell"  x="560" y="124" width="180" height="50"/>
+    <rect class="cell"  x="740" y="124" width="180" height="50"/>
+    <text class="t-m" x="290" y="154" text-anchor="middle">bin 1600</text>
+    <text class="t-m" x="470" y="154" text-anchor="middle">bin 1601</text>
+    <text class="t-m" x="650" y="154" text-anchor="middle">bin 1602</text>
+    <text class="t-m" x="830" y="154" text-anchor="middle">bin 1603</text>
+
+    <!-- bin → pixel guides -->
+    <g class="lr ld">
+      <line x1="200" y1="174" x2="200" y2="214"/><line x1="380" y1="174" x2="380" y2="214"/>
+      <line x1="560" y1="174" x2="560" y2="214"/><line x1="740" y1="174" x2="740" y2="214"/>
+      <line x1="920" y1="174" x2="920" y2="214"/>
+      <line x1="200" y1="80" x2="200" y2="124"/><line x1="380" y1="80" x2="380" y2="124"/>
+      <line x1="560" y1="80" x2="560" y2="124"/><line x1="740" y1="80" x2="740" y2="124"/>
+      <line x1="920" y1="80" x2="920" y2="124"/>
+    </g>
+
+    <!-- pixels -->
+    <rect class="cellx" x="200" y="214" width="90" height="44"/>
+    <rect class="cellx" x="290" y="214" width="90" height="44"/>
+    <rect class="cell" x="380" y="214" width="90" height="44"/><rect class="cell" x="470" y="214" width="90" height="44"/>
+    <rect class="cell" x="560" y="214" width="90" height="44"/><rect class="cell" x="650" y="214" width="90" height="44"/>
+    <rect class="cell" x="740" y="214" width="90" height="44"/><rect class="cell" x="830" y="214" width="90" height="44"/>
+    <text class="t-s" x="245" y="240" text-anchor="middle">px</text><text class="t-s" x="335" y="240" text-anchor="middle">px</text>
+    <text class="t-s" x="425" y="240" text-anchor="middle">px</text><text class="t-s" x="515" y="240" text-anchor="middle">px</text>
+    <text class="t-s" x="605" y="240" text-anchor="middle">px</text><text class="t-s" x="695" y="240" text-anchor="middle">px</text>
+    <text class="t-s" x="785" y="240" text-anchor="middle">px</text><text class="t-s" x="875" y="240" text-anchor="middle">px</text>
+
+    <!-- brackets -->
+    <path class="lx" d="M200 112 v-6 h180 v6"/>
+    <text class="t-x" x="290" y="100" text-anchor="middle">binSize = 25,000 bp</text>
+    <path class="lx" d="M200 270 v6 h180 v-6"/>
+    <text class="t-x" x="290" y="294" text-anchor="middle">pixelSize = 2 px</text>
+
+    <!-- the equation -->
+    <text x="560" y="338" text-anchor="middle" style="font-size:17px"><tspan class="t-m" style="font-size:16px">bpPerPixel</tspan> = binSize &#247; pixelSize = 25,000 &#247; 2 = <tspan class="t-x" style="font-weight:600">12,500 bp per pixel</tspan></text>
+  </svg>
+  </div>
+  <figcaption><b>Figure 1.</b> One bin, three rulers. The bin size comes from the file and is chosen by <code>zoom</code>; the pixel size is a free choice between 1 and 128. Their ratio is the scale the eye sees. Two very different pairs can give the same ratio: 25&nbsp;kb at 2&nbsp;px and 50&nbsp;kb at 4&nbsp;px both put 12,500&nbsp;bp on every pixel.</figcaption>
+</figure>
+
+<aside class="note"><code>pixelSize</code> is fractional. 1.28 is a legal value. Image tiles are laid out on the integer part, and the fraction is applied when they are painted.</aside>
+
+<p>Because the scale is a ratio, the same view on screen can be reached by changing either dial. That freedom is what makes resizing ambiguous: when the screen grows, either dial, or neither, can absorb the change.</p>
+
+<!-- ============================================================ -->
+<h2><span class="num">2</span>The state holds six numbers, and not the screen</h2>
+
+<p>Everything Juicebox shows is derived from the <em>canonical state</em> on <code>State</code> in <code>js/hicState.js</code>. The view is fixed by six of its fields; the seventh, normalization, chooses how counts are coloured.</p>
+
+<figure>
+  <div class="figwrap">
+  <svg class="fig" viewBox="0 0 960 380" role="img" aria-label="The canonical state and the viewport size both flow into getLocus, which produces the locus. The viewport is not part of the state. The locus is never stored.">
+    <defs>
+      <marker id="f2a" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5 L8 4 L0 7.5z" class="ah"/></marker>
+      <marker id="f2x" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5 L8 4 L0 7.5z" class="ahx"/></marker>
+    </defs>
+
+    <!-- state -->
+    <rect class="bx" x="30" y="24" width="320" height="226"/>
+    <text class="t-big" x="54" y="58">Canonical state</text>
+    <text class="t-s" x="54" y="77">saved in sessions, sent to synced peers</text>
+    <line class="lr" x1="54" y1="90" x2="326" y2="90"/>
+    <text class="t-m" x="54"  y="116">chr1, chr2</text>   <text class="t-m" x="200" y="116">chr1, chr1</text>
+    <text class="t-m" x="54"  y="142">zoom</text>         <text class="t-m" x="200" y="142">&#8594; binSize 25 kb</text>
+    <text class="t-m" x="54"  y="168">x, y</text>         <text class="t-m" x="200" y="168">1600, 1600 bins</text>
+    <text class="t-m" x="54"  y="194">pixelSize</text>    <text class="t-m" x="200" y="194">2 px per bin</text>
+    <text class="t-m t-s" x="54"  y="226">normalization</text><text class="t-m t-s" x="200" y="226">KR</text>
+
+    <!-- viewport -->
+    <rect class="bxx" x="30" y="282" width="320" height="76"/>
+    <text class="t-big" x="54" y="314">Viewport</text>
+    <text class="t-m" x="200" y="314">640 &#215; 640 px</text>
+    <text class="t-s t-x" x="54" y="338">a property of the page, not of the state</text>
+
+    <!-- projection -->
+    <rect class="bx" x="440" y="146" width="190" height="96"/>
+    <text class="t-m" x="535" y="186" text-anchor="middle" style="font-size:15px">getLocus()</text>
+    <text class="t-s" x="535" y="208" text-anchor="middle">a projection,</text>
+    <text class="t-s" x="535" y="224" text-anchor="middle">computed on every read</text>
+
+    <!-- locus -->
+    <rect class="bx" x="710" y="126" width="230" height="136"/>
+    <text class="t-big" x="734" y="160">Locus</text>
+    <text class="t-m" x="734" y="190">x: chr1:40,000,000</text>
+    <text class="t-m" x="770" y="207">&#8211;48,000,000</text>
+    <text class="t-m" x="734" y="229">y: the same</text>
+    <text class="t-s" x="734" y="250">never stored</text>
+
+    <!-- arrows -->
+    <path class="ln" d="M350 137 C 400 137, 400 180, 439 180" marker-end="url(#f2a)"/>
+    <path class="lx" d="M350 320 C 410 320, 400 214, 439 214" marker-end="url(#f2x)"/>
+    <line class="ln" x1="630" y1="194" x2="709" y2="194" marker-end="url(#f2a)"/>
+  </svg>
+  </div>
+  <figcaption><b>Figure 2.</b> The locus is computed, not kept. It is the state seen through the viewport, so the same state read through a different viewport gives a different locus. <span class="key">The red arrow is the whole subject of this document.</span></figcaption>
+</figure>
+
+<aside class="note">The state string once carried the viewport too. Version&nbsp;1 of the URL format had seven tokens before normalization, the fifth and sixth being view width and height. <code>State.parse</code> still reads v1 strings and drops those two.</aside>
+
+<p>The viewport size is held by the page, as the CSS custom properties <code>--hic-viewport-width</code> and <code>--hic-viewport-height</code> on the browser&rsquo;s root element. They are written once, at construction, from the config&rsquo;s <code>width</code> and <code>height</code>, and default to 640. Juicebox reads the size back from the DOM, as <code>viewportElement.offsetWidth</code>, whenever it needs it.</p>
+
+<p>A saved session does not record it either. <code>HICBrowser.toJSON()</code> writes the state, the map&rsquo;s URL and its colours, and no width or height.</p>
+
+<!-- ============================================================ -->
+<h2><span class="num">3</span>From state to locus</h2>
+
+<p><code>x</code> and <code>y</code> are the bin at the <em>top-left corner</em> of the viewport, not its centre. Everything to the right of it is measured in bins, which the pixel size turns into pixels.</p>
+
+<figure>
+  <div class="figwrap">
+  <svg class="fig" viewBox="0 0 960 540" role="img" aria-label="A 640 pixel viewport showing a contact map. The top-left corner is bin 1600. Across the width, 640 pixels at 2 pixels per bin is 320 bins, which is 8 Mb. The locus runs from 40 to 48 Mb.">
+    <defs>
+      <marker id="f3a" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5 L8 4 L0 7.5z" class="ah"/></marker>
+      <clipPath id="c3"><rect x="70" y="90" width="400" height="400"/></clipPath>
+    </defs>
+
+    <rect class="bg" x="70" y="90" width="400" height="400"/>
+    <g clip-path="url(#c3)"><use href="#hic" transform="translate(-180 -160)"/></g>
+    <rect class="scr" x="70" y="90" width="400" height="400"/>
+
+    <!-- origin -->
+    <circle class="dotx" cx="70" cy="90" r="6"/>
+    <text class="t-x" x="40" y="34" style="font-weight:600">(x, y) = (1600, 1600)</text>
+    <text class="t-s" x="40" y="52">the bin at the top-left corner</text>
+    <path class="lx" d="M66 58 L70 82"/>
+
+    <!-- width dimension -->
+    <line class="ln" x1="70" y1="72" x2="470" y2="72" marker-start="url(#f3a)" marker-end="url(#f3a)"/>
+    <rect class="bg" x="200" y="62" width="140" height="20" style="fill: var(--bg)"/>
+    <text x="270" y="77" text-anchor="middle">width = 640 px</text>
+
+    <!-- below: conversions -->
+    <text class="t-m" x="270" y="516" text-anchor="middle">640 px &#247; 2 px/bin = 320 bins &#215; 25 kb = 8 Mb</text>
+
+    <!-- formula block -->
+    <text class="t-h" x="540" y="130">Where the view starts</text>
+    <text class="t-m" x="540" y="160" style="font-size:14px">start = x &#215; binSize</text>
+    <text class="t-m t-s" x="580" y="184">= 1600 &#215; 25,000 = 40,000,000</text>
+
+    <text class="t-h" x="540" y="238">Where it ends</text>
+    <text class="t-m" x="540" y="268" style="font-size:14px">end = start + (<tspan class="t-x">width</tspan> &#247; pixelSize) &#215; binSize</text>
+    <text class="t-m t-s" x="580" y="292">= 40,000,000 + (640 &#247; 2) &#215; 25,000</text>
+    <text class="t-m t-s" x="580" y="310">= 48,000,000</text>
+
+    <line class="lr" x1="540" y1="350" x2="930" y2="350"/>
+    <text class="t-h t-x" x="540" y="382">The end depends on the width.</text>
+    <text x="540" y="406">Grow the viewport and the end moves out,</text>
+    <text x="540" y="426">though no field of the state has changed.</text>
+    <text class="t-s" x="540" y="458">The start does not depend on the width, because</text>
+    <text class="t-s" x="540" y="475">the state is anchored at the top-left corner.</text>
+  </svg>
+  </div>
+  <figcaption><b>Figure 3.</b> <code>State.getLocus</code>, in full. The view is square, so the y axis is the same calculation with <code>height</code>. This is the example carried through the rest of the document: chr1 at 40&ndash;48&nbsp;Mb, 25&nbsp;kb bins, 2&nbsp;px per bin, in a 640&nbsp;px viewport.</figcaption>
+</figure>
+
+<!-- ============================================================ -->
+<h2><span class="num">4</span>How a resolution is chosen</h2>
+
+<p>When a host or a user asks for a locus, Juicebox has a target scale and must choose both dials. It does it in three steps, in <code>State.updateWithLoci</code>:</p>
+
+<ol>
+  <li>Compute the target scale: <code>bpPerPixel = max(rangeX &#247; width, rangeY &#247; height)</code>. The width is read from the viewport at that moment.</li>
+  <li>Choose the <em>finest</em> rung whose bin is at least that large (<code>findMatchingZoomIndex</code>). A bin is never smaller than a pixel.</li>
+  <li>Set <code>pixelSize = binSize &#247; bpPerPixel</code>, which is therefore always 1 or more.</li>
+</ol>
+
+<p>The plot below is the whole space of views. Each rung of the ladder is a vertical line; moving up a line magnifies its bins. A diagonal is a constant scale, so every point on one diagonal shows the same stretch of genome.</p>
+
+<figure>
+  <div class="figwrap">
+  <svg class="fig" viewBox="0 0 960 640" role="img" aria-label="Log-log plot of pixel size against bin size. Vertical lines are resolution rungs. Diagonals are constant base pairs per pixel. At 640 pixels the view sits on the 25 kb rung at pixel size 2. At 1024 pixels, holding the locus, it moves to the 10 kb rung at pixel size 1.28, or, with the resolution locked, to pixel size 3.2 on the 25 kb rung.">
+    <defs>
+      <marker id="f4x" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5 L8 4 L0 7.5z" class="ahx"/></marker>
+      <clipPath id="c4"><rect x="110" y="66" width="760" height="464"/></clipPath>
+    </defs>
+
+    <!-- y axis -->
+    <g class="t-s" text-anchor="end">
+      <text x="98" y="534">floor 1</text><text x="98" y="468">2</text><text x="98" y="401">4</text>
+      <text x="98" y="335">8</text><text x="98" y="269">16</text><text x="98" y="203">32</text>
+      <text x="98" y="137">64</text><text x="98" y="70">cap 128</text>
+    </g>
+    <text class="t-h" transform="translate(40 300) rotate(-90)" text-anchor="middle">pixelSize, px per bin</text>
+
+    <!-- cap and floor -->
+    <line class="ln" x1="110" y1="530" x2="880" y2="530"/>
+    <line class="ln ld" x1="110" y1="66.4" x2="880" y2="66.4"/>
+    <text class="t-s" x="880" y="58" text-anchor="end"><tspan class="t-m">MAX_PIXEL_SIZE</tspan></text>
+    
+    <!-- rungs -->
+    <g class="lr">
+      <line x1="110"   y1="66.4" x2="110"   y2="530"/>
+      <line x1="263.8" y1="66.4" x2="263.8" y2="530"/>
+      <line x1="330"   y1="66.4" x2="330"   y2="530"/>
+      <line x1="417.5" y1="66.4" x2="417.5" y2="530"/>
+      <line x1="483.8" y1="66.4" x2="483.8" y2="530"/>
+      <line x1="550"   y1="66.4" x2="550"   y2="530"/>
+      <line x1="637.5" y1="66.4" x2="637.5" y2="530"/>
+      <line x1="703.8" y1="66.4" x2="703.8" y2="530"/>
+      <line x1="770"   y1="66.4" x2="770"   y2="530"/>
+      <line x1="857.5" y1="66.4" x2="857.5" y2="530"/>
+    </g>
+    <!-- where an unlocked view can sit on each rung: from the floor up to the next finer rung's ratio -->
+    <g class="band">
+      <line x1="110"   y1="530" x2="110"   y2="66.4"/>
+      <line x1="263.8" y1="530" x2="263.8" y2="376.2"/>
+      <line x1="330"   y1="530" x2="330"   y2="463.8"/>
+      <line x1="417.5" y1="530" x2="417.5" y2="442.5"/>
+      <line x1="483.8" y1="530" x2="483.8" y2="463.8"/>
+      <line x1="550"   y1="530" x2="550"   y2="463.8"/>
+      <line x1="637.5" y1="530" x2="637.5" y2="442.5"/>
+      <line x1="703.8" y1="530" x2="703.8" y2="463.8"/>
+      <line x1="770"   y1="530" x2="770"   y2="463.8"/>
+      <line x1="857.5" y1="530" x2="857.5" y2="442.5"/>
+    </g>
+    <g class="t-s" text-anchor="middle">
+      <text x="110" y="554">1 kb</text><text x="263.8" y="554">5 kb</text><text x="330" y="554">10 kb</text>
+      <text x="417.5" y="554">25 kb</text><text x="483.8" y="554">50 kb</text><text x="550" y="554">100 kb</text>
+      <text x="637.5" y="554">250 kb</text><text x="703.8" y="554">500 kb</text><text x="770" y="554">1 Mb</text>
+      <text x="857.5" y="554">2.5 Mb</text>
+    </g>
+    <text class="t-h" x="484" y="590" text-anchor="middle">binSize, one rung per <tspan class="t-m">zoom</tspan> (log scale)</text>
+
+    <!-- iso-scale diagonals -->
+    <g clip-path="url(#c4)">
+      <line class="lx" x1="351.3" y1="530" x2="815" y2="66.4"/>
+      <line class="lx ld" x1="306.4" y1="530" x2="770" y2="66.4"/>
+    </g>
+    <text class="t-s t-x halo" transform="translate(600 274) rotate(-45)">12,500 bp/px &#183; 8 Mb across 640 px</text>
+    <text class="t-s t-x halo" transform="translate(520 309) rotate(-45)">7,812.5 bp/px &#183; 8 Mb across 1024 px</text>
+
+    <!-- the moves -->
+    <path class="lx ld" d="M412 468 L336 502" marker-end="url(#f4x)"/>
+    <path class="lx ld" d="M417.5 456 L417.5 428" marker-end="url(#f4x)"/>
+
+    <!-- points -->
+    <circle class="dot" cx="417.5" cy="463.8" r="7"/>
+    <circle class="dotx" cx="330" cy="506.4" r="7"/>
+    <circle class="ring" cx="417.5" cy="418.9" r="7"/>
+
+    <!-- point labels -->
+    <text class="t-h" x="432" y="484">640 px</text>
+    <text class="t-s" x="432" y="500">25 kb &#183; pixelSize 2</text>
+
+    <text class="t-h t-x" x="252" y="440" text-anchor="end">1024 px, unlocked</text>
+    <text class="t-s" x="252" y="456" text-anchor="end">a finer rung: 10 kb &#183; 1.28</text>
+    <line class="ln" x1="256" y1="456" x2="324" y2="500" style="stroke-opacity:.5"/>
+
+    <text class="t-h t-x" x="448" y="404">1024 px, resolution locked</text>
+    <text class="t-s" x="448" y="420">same rung, bigger bins: 25 kb &#183; 3.2</text>
+  </svg>
+  </div>
+  <figcaption><b>Figure 4.</b> The space of views for one map, both axes logarithmic. <b>Grey verticals</b> are the rungs of a typical ladder. <b>Red diagonals</b> are constant scale. The <b>red tint</b> on each rung is where an unlocked view can sit: Juicebox always takes the finest rung that keeps pixels no larger than bins, so an unlocked view lives just above the floor. With the resolution lock closed it may climb the rung all the way to the cap. Showing the same 8&nbsp;Mb in a larger viewport means moving to the dashed diagonal.</figcaption>
+</figure>
+
+<aside class="note">The floor is not always 1. <code>browser.minPixelSize</code> raises it so that a whole chromosome at the current rung still fills the viewport, and that calculation reads the viewport&rsquo;s width.</aside>
+
+<p>Two consequences follow. A larger screen showing the same locus needs a finer scale, and if the lock is open the finer scale usually means a finer rung: new data, new tiles. And the rung is chosen against the width at the moment of the request, so the same request at two widths can load two different resolutions.</p>
+
+<!-- ============================================================ -->
+<h2><span class="num">5</span>Where the screen size leaks into the state</h2>
+
+<p>The viewport is not stored, but it is <em>read</em> whenever the state is written. These are the places, all in the write path, that consult it. Each uses the width at the moment of the write and none is re-run when the width changes later.</p>
+
+<div class="tablewrap wide">
+<table>
+  <thead><tr><th>Where</th><th>What it uses the width for</th><th>Stale after a resize</th></tr></thead>
+  <tbody>
+    <tr><td><code>State.getLocus</code></td><td>The end of the locus</td><td>No. It is a read, and always current.</td></tr>
+    <tr><td><code>State.updateWithLoci</code></td><td>The target scale, and so the rung and the pixel size, for a requested locus</td><td>Yes. The view keeps the scale chosen for the old width.</td></tr>
+    <tr><td><code>State.clampXY</code></td><td>The furthest <code>x</code> can go before the view runs off the end of the chromosome</td><td>Yes. A larger view may now show empty space past the end.</td></tr>
+    <tr><td><code>browser.minPixelSize</code></td><td>The smallest pixel size that still fills the viewport with a whole chromosome</td><td>Yes. A whole-chromosome view no longer fills the larger viewport.</td></tr>
+    <tr><td><code>browser.minZoom</code></td><td>The rung that fits a whole chromosome across the viewport</td><td>Yes. A larger viewport could use a finer rung.</td></tr>
+    <tr><td><code>State.setWithZoom</code></td><td>Keeping the centre fixed when the resolution selector changes rung</td><td>No. It reads the width only to find the centre at the moment of the change.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>None of this is a bug while the viewport stays one size, and today it does. It becomes the agenda of a resize feature.</p>
+
+<!-- ============================================================ -->
+<h2 id="resize"><span class="num">6</span>Resizing from 640 to 1024</h2>
+
+<p>The viewport grows from 640 to 1024 pixels square, 1.6 times wider. The ratio <code>bpPerPixel</code> can stay or change, and the origin can stay or move. That gives three reasonable policies, and each one is what some application does.</p>
+
+<figure>
+  <div class="figwrap">
+  <svg class="fig" viewBox="0 0 960 800" role="img" aria-label="Before: a 640 pixel view of 40 to 48 Mb. After, three policies at 1024 pixels. A, hold the state: same scale, the top-left corner stays, the view grows to the right and down to 52.8 Mb. B, hold the scale around the centre: same scale, the view grows equally on all sides, 37.6 to 50.4 Mb. C, hold the locus: the same 40 to 48 Mb drawn 1.6 times larger.">
+    <defs>
+      <marker id="f5a" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5 L8 4 L0 7.5z" class="ah"/></marker>
+      <clipPath id="c5b"><rect x="60"  y="70"  width="175" height="175"/></clipPath>
+      <clipPath id="c5A"><rect x="40"  y="380" width="280" height="280"/></clipPath>
+      <clipPath id="c5B"><rect x="340" y="380" width="280" height="280"/></clipPath>
+      <clipPath id="c5C"><rect x="640" y="380" width="280" height="280"/></clipPath>
+    </defs>
+
+    <!-- BEFORE -->
+    <text class="t-big" x="60" y="40">Before</text>
+    <text class="t-s" x="60" y="58">640 &#215; 640</text>
+    <rect class="bg" x="60" y="70" width="175" height="175"/>
+    <g clip-path="url(#c5b)"><use href="#hic" transform="translate(-49.375 -39.375) scale(0.4375)"/></g>
+    <rect class="scr" x="60" y="70" width="175" height="175"/>
+    <text class="t-m t-s" x="60" y="262">40.0</text>
+    <text class="t-m t-s" x="235" y="262" text-anchor="end">48.0 Mb</text>
+
+    <text class="t-h" x="290" y="100">chr1:40,000,000&#8211;48,000,000</text>
+    <text class="t-m" x="290" y="128">zoom 25 kb &#183; pixelSize 2 &#183; x 1600</text>
+    <text class="t-s" x="290" y="150">12,500 bp per pixel, 320 bins across</text>
+
+    <text x="290" y="206">The viewport grows to 1024 &#215; 1024.</text>
+    <text class="t-h t-x" x="290" y="228">Which of these should the user see?</text>
+    <path class="ln" d="M180 284 L 180 330" marker-end="url(#f5a)"/>
+    <path class="ln" d="M200 284 C 200 310, 480 300, 480 330" marker-end="url(#f5a)"/>
+    <path class="ln" d="M220 284 C 220 304, 780 296, 780 330" marker-end="url(#f5a)"/>
+
+    <!-- A -->
+    <text class="t-big" x="40" y="362"><tspan class="t-x">A</tspan>  Hold the state</text>
+    <rect class="bg" x="40" y="380" width="280" height="280"/>
+    <g clip-path="url(#c5A)"><use href="#hic" transform="translate(-69.375 270.625) scale(0.4375)"/></g>
+    <rect class="old" x="40" y="380" width="175" height="175"/>
+    <rect class="scr" x="40" y="380" width="280" height="280"/>
+    <text class="t-m t-s" x="40" y="676">40.0</text>
+    <text class="t-m t-s" x="320" y="676" text-anchor="end">52.8 Mb</text>
+
+    <!-- B -->
+    <text class="t-big" x="340" y="362"><tspan class="t-x">B</tspan>  Hold the scale, keep the centre</text>
+    <rect class="bg" x="340" y="380" width="280" height="280"/>
+    <g clip-path="url(#c5B)"><use href="#hic" transform="translate(283.125 323.125) scale(0.4375)"/></g>
+    <rect class="old" x="392.5" y="432.5" width="175" height="175"/>
+    <rect class="scr" x="340" y="380" width="280" height="280"/>
+    <text class="t-m t-s" x="340" y="676">37.6</text>
+    <text class="t-m t-s" x="620" y="676" text-anchor="end">50.4 Mb</text>
+
+    <!-- C -->
+    <text class="t-big" x="640" y="362"><tspan class="t-x">C</tspan>  Hold the locus</text>
+    <rect class="bg" x="640" y="380" width="280" height="280"/>
+    <g clip-path="url(#c5C)"><use href="#hic" transform="translate(465 205) scale(0.7)"/></g>
+    <rect class="scr" x="640" y="380" width="280" height="280"/>
+    <text class="t-m t-s" x="640" y="676">40.0</text>
+    <text class="t-m t-s" x="920" y="676" text-anchor="end">48.0 Mb</text>
+
+    <!-- consequences -->
+    <g>
+      <text class="t-h" x="40" y="712">Nothing in the state moves.</text>
+      <text class="t-m t-s" x="40" y="734">x 1600 &#183; 25 kb &#183; pixelSize 2</text>
+      <text class="t-s" x="40" y="754">New genome appears right and below.</text>
+      <text class="t-s" x="40" y="771">The locus end moves out to 52.8 Mb.</text>
+
+      <text class="t-h" x="340" y="712">The origin moves back 96 bins.</text>
+      <text class="t-m t-s" x="340" y="734">x 1504 &#183; 25 kb &#183; pixelSize 2</text>
+      <text class="t-s" x="340" y="754">New genome appears on every side.</text>
+      <text class="t-s" x="340" y="771">The centre stays at 44.0 Mb.</text>
+
+      <text class="t-h" x="640" y="712">The scale changes.</text>
+      <text class="t-m t-s" x="640" y="734">x 4000 &#183; 10 kb &#183; pixelSize 1.28</text>
+      <text class="t-m t-s" x="640" y="752">or, locked: x 1600 &#183; 25 kb &#183; 3.2</text>
+      <text class="t-s" x="640" y="771">Nothing new is seen; it is all larger.</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption><b>Figure 5.</b> Three answers to one resize. The dashed square marks the 640&nbsp;px view inside each 1024&nbsp;px result. A and B keep the scale and show more genome; they differ only in which corner of the old view stays put. C keeps the genome and changes the scale. A map application usually behaves like B; a figure that must show a named region behaves like C.</figcaption>
+</figure>
+
+<p>The same three, as numbers. The bin size, pixel size and origin are what a session would save; the locus is what the locus box would show.</p>
+
+<div class="tablewrap wide">
+<table>
+  <thead>
+    <tr><th></th><th class="r">Bin size</th><th class="r">pixelSize</th><th class="r">bp per px</th><th class="r"><code>x</code> (bins)</th><th>Locus, chr1</th><th>Rung changed</th></tr>
+  </thead>
+  <tbody>
+    <tr><th>Before, 640</th><td class="r">25 kb</td><td class="r">2</td><td class="r">12,500</td><td class="r">1600</td><td>40.0&ndash;48.0 Mb</td><td></td></tr>
+    <tr><th>A &nbsp;Hold the state</th><td class="r">25 kb</td><td class="r">2</td><td class="r">12,500</td><td class="r">1600</td><td class="hi">40.0&ndash;52.8 Mb</td><td>no</td></tr>
+    <tr><th>B &nbsp;Hold the scale</th><td class="r">25 kb</td><td class="r">2</td><td class="r">12,500</td><td class="r hi">1504</td><td class="hi">37.6&ndash;50.4 Mb</td><td>no</td></tr>
+    <tr><th>C &nbsp;Hold the locus</th><td class="r hi">10 kb</td><td class="r hi">1.28</td><td class="r hi">7,812.5</td><td class="r hi">4000</td><td>40.0&ndash;48.0 Mb</td><td class="hi">yes</td></tr>
+    <tr><th>C, locked</th><td class="r">25 kb</td><td class="r hi">3.2</td><td class="r hi">7,812.5</td><td class="r">1600</td><td>40.0&ndash;48.0 Mb</td><td>no</td></tr>
+  </tbody>
+</table>
+</div>
+
+<aside class="note">B&rsquo;s shift: the view gains 384&nbsp;px, half of it on the left, and 192&nbsp;px at 2&nbsp;px per bin is 96 bins. Near the start of a chromosome the clamp stops the origin at 0 and the centre drifts.</aside>
+
+<p>Red marks what changed. In A the locus changes although the state does not, which is the behaviour Figure&nbsp;2 predicts. In C the locus is held at the price of every other number, and without the lock it moves to a new rung of data.</p>
+
+<!-- ============================================================ -->
+<h2 id="events"><span class="num">7</span>What fires</h2>
+
+<div class="answer">Resizing the viewport fires nothing. No code in juicebox.js observes the viewport&rsquo;s size: there is no <code>ResizeObserver</code> and no window <code>resize</code> listener. Events fire only when something writes the state.</div>
+
+<p>Here is the machinery, and the three ways into it.</p>
+
+<figure>
+  <div class="figwrap">
+  <svg class="fig" viewBox="0 0 960 600" role="img" aria-label="Three entry points. A resize of the viewport reaches nothing. A host calling update reaches browser.update, which repaints and syncs peers but does not call onLocusChange. A host calling a translator such as goto passes through state.setView, then browser.update, then coordinator.onLocusChange, which updates the widgets and calls the host's onLocusChange callbacks.">
+    <defs>
+      <marker id="f6a" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5 L8 4 L0 7.5z" class="ah"/></marker>
+      <marker id="f6x" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0.5 L8 4 L0 7.5z" class="ahx"/></marker>
+    </defs>
+
+    <text class="t-n" x="20" y="28">WHAT HAPPENS</text>
+    <text class="t-n" x="300" y="28">WHAT IT REACHES</text>
+
+    <!-- entry 1 -->
+    <rect class="bx" x="20" y="48" width="220" height="84"/>
+    <text class="t-h" x="36" y="78">The viewport is resized</text>
+    <text class="t-s" x="36" y="98">CSS property, window, panel drag</text>
+    <text class="t-s" x="36" y="114">or a host&rsquo;s layout</text>
+    <line class="ln ld" x1="240" y1="90" x2="330" y2="90"/>
+    <path class="ln" d="M338 80 l20 20 M358 80 l-20 20" style="stroke-width:1.75"/>
+    <text class="t-h" x="374" y="86">Nothing listens.</text>
+    <text class="t-s" x="374" y="104">The canvas catches up at the next repaint, whenever that is.</text>
+
+    <!-- entry 2 -->
+    <rect class="bx" x="20" y="170" width="220" height="84"/>
+    <text class="t-h" x="36" y="200">Host calls <tspan class="t-m">update()</tspan></text>
+    <text class="t-s" x="36" y="220">or <tspan class="t-m">updateLayout()</tspan>, which</text>
+    <text class="t-s" x="36" y="236">resizes track canvases first</text>
+    <path class="ln" d="M240 212 H 600 V 299" marker-end="url(#f6a)"/>
+
+    <!-- entry 3 -->
+    <rect class="bxx" x="20" y="300" width="220" height="100"/>
+    <text class="t-h" x="36" y="330">Host calls a translator</text>
+    <text class="t-m t-s" x="36" y="352">goto &#183; setState &#183; panShift</text>
+    <text class="t-m t-s" x="36" y="368">setZoom &#183; zoomAndCenter &#8230;</text>
+    <text class="t-s" x="36" y="386">or a gesture does</text>
+    <line class="lx" x1="240" y1="350" x2="289" y2="350" marker-end="url(#f6x)"/>
+
+    <!-- pipeline -->
+    <rect class="bx" x="290" y="310" width="190" height="80"/>
+    <text class="t-m" x="385" y="344" text-anchor="middle" style="font-size:13.5px">state.setView()</text>
+    <text class="t-s" x="385" y="364" text-anchor="middle">the chokepoint: writes, floors,</text>
+    <text class="t-s" x="385" y="379" text-anchor="middle">caps and clamps the six</text>
+    <line class="lx" x1="480" y1="350" x2="519" y2="350" marker-end="url(#f6x)"/>
+
+    <rect class="bx" x="520" y="300" width="170" height="100"/>
+    <text class="t-m" x="605" y="334" text-anchor="middle" style="font-size:13.5px">browser.update()</text>
+    <text class="t-s" x="605" y="354" text-anchor="middle">repaint, coalesced</text>
+    <text class="t-s" x="605" y="369" text-anchor="middle">if one is in flight</text>
+    <line class="lx" x1="690" y1="350" x2="729" y2="350" marker-end="url(#f6x)"/>
+    <text class="t-s t-x" x="710" y="290" text-anchor="middle">translators</text>
+    <text class="t-s t-x" x="710" y="304" text-anchor="middle">only</text>
+
+    <rect class="bx" x="730" y="300" width="210" height="100"/>
+    <text class="t-m" x="835" y="334" text-anchor="middle" style="font-size:13.5px">onLocusChange()</text>
+    <text class="t-s" x="835" y="354" text-anchor="middle">on the coordinator: tells the</text>
+    <text class="t-s" x="835" y="369" text-anchor="middle">widgets, then the host</text>
+
+    <!-- what update does -->
+    <line class="lr" x1="530" y1="424" x2="680" y2="424"/>
+    <text class="t-s" x="530" y="446">Rulers, from the state</text>
+    <text class="t-s" x="530" y="464">Tracks</text>
+    <text class="t-s" x="530" y="482">Contact map, tile by tile</text>
+    <text class="t-s" x="530" y="500">Crosshairs</text>
+    <text class="t-s" x="530" y="518">Synced peers get</text>
+    <text class="t-m t-s" x="530" y="534">getSyncState()</text>
+
+    <!-- what onLocusChange does -->
+    <line class="lr" x1="740" y1="424" x2="940" y2="424"/>
+    <text class="t-s" x="740" y="446">Normalization notice, if stale</text>
+    <text class="t-s" x="740" y="464">Chromosome selector</text>
+    <text class="t-s" x="740" y="482">Scrollbars</text>
+    <text class="t-s" x="740" y="500">Resolution selector; lock released</text>
+    <text class="t-s" x="740" y="516">if <tspan class="t-m">resolutionChanged</tspan></text>
+    <text class="t-s" x="740" y="534">Locus box</text>
+    <text class="t-h t-x" x="740" y="560">Host <tspan class="t-m">onLocusChange</tspan></text>
+    <text class="t-s" x="740" y="578">callbacks: juicebox-remote, MCP</text>
+  </svg>
+  </div>
+  <figcaption><b>Figure 6.</b> The update path. A translator always ends in <code>_applyStateChange</code>, which runs <code>update()</code> and then <code>onLocusChange()</code>. Calling <code>update()</code> directly repaints and syncs the peers but tells neither the widgets nor the host. <code>setState</code> takes the same two steps itself.</figcaption>
+</figure>
+
+<aside class="note">Peers are resynced on every <code>update()</code>, whatever caused it. That is safe after a resize: <code>getSyncState</code> sends the origin, bin size and pixel size, not the locus, and A changes none of them.</aside>
+
+<p>The middle entry of Figure&nbsp;6 is the subtle one. If a host enlarges the viewport and calls <code>update()</code>, the map repaints correctly under policy&nbsp;A, but the locus box still shows the old end, 48,000,000, and the host&rsquo;s <code>onLocusChange</code> callback never hears that the visible locus is now 40.0&ndash;52.8&nbsp;Mb. The locus changed without a locus change.</p>
+
+<p>For each policy, then, what a correct implementation sets in motion:</p>
+
+<div class="tablewrap wide">
+<table>
+  <thead>
+    <tr><th>Consequence</th><th class="c">A</th><th class="c">B</th><th class="c">C</th><th class="c">C, locked</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>A state field is written</td><td class="c no">&#9675;</td><td class="c yes">&#9679;</td><td class="c yes">&#9679;</td><td class="c yes">&#9679;</td></tr>
+    <tr><td>Repaint</td><td class="c yes">&#9679;</td><td class="c yes">&#9679;</td><td class="c yes">&#9679;</td><td class="c yes">&#9679;</td></tr>
+    <tr><td>Tiles for newly revealed genome, same resolution</td><td class="c yes">&#9679;</td><td class="c yes">&#9679;</td><td class="c no">&#9675;</td><td class="c no">&#9675;</td></tr>
+    <tr><td>Data loaded at a new resolution</td><td class="c no">&#9675;</td><td class="c no">&#9675;</td><td class="c yes">&#9679;</td><td class="c no">&#9675;</td></tr>
+    <tr><td>Image cache cleared, every tile redrawn</td><td class="c no">&#9675;</td><td class="c no">&#9675;</td><td class="c yes">&#9679;</td><td class="c yes">&#9679;</td></tr>
+    <tr><td>Peers resynced</td><td class="c yes">&#9679;</td><td class="c yes">&#9679;</td><td class="c yes">&#9679;</td><td class="c yes">&#9679;</td></tr>
+    <tr><td><code>onLocusChange</code> to widgets and host</td><td class="c">if called</td><td class="c yes">&#9679;</td><td class="c yes">&#9679;</td><td class="c yes">&#9679;</td></tr>
+    <tr><td><code>resolutionChanged</code> is true</td><td class="c no">&#9675;</td><td class="c no">&#9675;</td><td class="c yes">&#9679;</td><td class="c no">&#9675;</td></tr>
+    <tr><td>Resolution lock released</td><td class="c no">&#9675;</td><td class="c no">&#9675;</td><td class="c yes">&#9679;</td><td class="c no">&#9675;</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>A is cheapest for the renderer and dearest for honesty: no translator runs, so nothing would call <code>onLocusChange</code> unless the resize code called it itself. B is a pan, <code>panShift</code>, and gets the whole path for free. C is a <code>goto</code>, which also clears the image cache; done on every frame of a drag it would refetch the map continuously.</p>
+
+<aside class="note">Image tiles are cached by what they contain: chromosome pair, bin size, grid position, normalization. Not by pan position or pixel size. A and B reuse every tile they already have.</aside>
+
+<!-- ============================================================ -->
+<h2><span class="num">8</span>Juicebox already answers the question, twice</h2>
+
+<p>Two existing features meet a view of one size at another size. Both behave like policy&nbsp;A.</p>
+
+<figure>
+  <div class="figwrap">
+  <svg class="fig" viewBox="0 0 960 430" role="img" aria-label="Two views of the same state. A 640 pixel view shows 40 to 48 Mb; a 1024 pixel view shows 40 to 52.8 Mb. Same origin, same scale, different extent.">
+    <defs>
+      <clipPath id="c8a"><rect x="40"  y="70" width="200" height="200"/></clipPath>
+      <clipPath id="c8b"><rect x="300" y="70" width="320" height="320"/></clipPath>
+    </defs>
+
+    <text class="t-h" x="40" y="44">640 px</text>
+    <text class="t-s" x="40" y="60">saved here, or publishing</text>
+    <rect class="bg" x="40" y="70" width="200" height="200"/>
+    <g clip-path="url(#c8a)"><use href="#hic" transform="translate(-85 -55) scale(0.5)"/></g>
+    <rect class="scr" x="40" y="70" width="200" height="200"/>
+    <text class="t-m t-s" x="40" y="288">40.0</text>
+    <text class="t-m t-s" x="240" y="288" text-anchor="end">48.0 Mb</text>
+
+    <text class="t-h" x="300" y="44">1024 px</text>
+    <text class="t-s" x="300" y="60">reopened here, or receiving</text>
+    <rect class="bg" x="300" y="70" width="320" height="320"/>
+    <g clip-path="url(#c8b)"><use href="#hic" transform="translate(175 -55) scale(0.5)"/></g>
+    <rect class="old" x="300" y="70" width="200" height="200"/>
+    <rect class="scr" x="300" y="70" width="320" height="320"/>
+    <text class="t-m t-s" x="300" y="408">40.0</text>
+    <text class="t-m t-s" x="620" y="408" text-anchor="end">52.8 Mb</text>
+
+    <text class="t-big" x="670" y="110">Same origin.</text>
+    <text class="t-big" x="670" y="136">Same bp per pixel.</text>
+    <text class="t-big t-x" x="670" y="162">Different locus.</text>
+    <line class="lr" x1="670" y1="190" x2="930" y2="190"/>
+    <text class="t-s" x="670" y="214">A session stores the state, not the</text>
+    <text class="t-s" x="670" y="231">locus, so it reopens with the same</text>
+    <text class="t-s" x="670" y="248">corner and scale and whatever extent</text>
+    <text class="t-s" x="670" y="265">the new viewport allows.</text>
+    <text class="t-s" x="670" y="295">A synced peer receives an origin and</text>
+    <text class="t-s" x="670" y="312">a scale. A larger peer shows more.</text>
+  </svg>
+  </div>
+  <figcaption><b>Figure 7.</b> Sessions and sync groups both carry scale, not extent. This is policy A, chosen long ago and implicitly. It is the precedent a resize feature has to agree with or deliberately break.</figcaption>
+</figure>
+
+<p><b>Sessions.</b> <code>toJSON()</code> saves the state and no size. A session saved at 640 and opened in a 1024 viewport opens at the same corner and scale, and shows more. Spacewalk works around the other half of this in <code>src/juicebox/panelDimensions.js</code>, by writing its panel&rsquo;s width and height into every browser config before a session reaches Juicebox.</p>
+
+<p><b>Sync groups.</b> <code>State.sync</code> receives the publisher&rsquo;s origin in base pairs and its <code>binSize &#247; pixelSize</code>. The receiver keeps the scale, not the extent. Two synced browsers of different sizes agree on their top-left corner and scale, and the larger one shows more.</p>
+
+<p>Policy A therefore costs nothing new to explain, and it leaves synced peers where they are. B and C do not stay local: both write the state, and <code>update()</code> publishes it. Under B every peer pans by the same distance in base pairs, though only one browser was resized. Under C every unlocked peer zooms to the new scale, though its own viewport did not change.</p>
+
+<!-- ============================================================ -->
+<h2><span class="num">9</span>If resizing is built</h2>
+
+<p>A resize is a change of the viewport followed by a state write through a translator. Without the write there is no announcement. A sketch:</p>
+
+<ol>
+  <li><b>Change the size.</b> Write <code>--hic-viewport-width</code> and <code>--hic-viewport-height</code> on the browser&rsquo;s root, as <code>setViewportSize</code> in <code>js/layoutController.js</code> does at construction. Keep the viewport square: a non-square viewport is not supported (<code>CONTEXT.md</code>).</li>
+  <li><b>Re-lay out.</b> Resize the track canvases and rulers to match. <code>updateLayout()</code> does this, and repaints.</li>
+  <li><b>Write the state through a translator</b>, chosen by policy: none for A; <code>panShift(&minus;&Delta;w/2, &minus;&Delta;h/2)</code> for B; <code>goto</code> with the old locus for C. The translator reads the new width, so it must run after step&nbsp;1.</li>
+  <li><b>Announce.</b> For B and C the translator announces itself. For A, call <code>onLocusChange</code> with both change flags false, so the locus box and the host see the new extent.</li>
+</ol>
+
+<p>A recommendation, given what already exists. Use A while a drag is in progress: it writes nothing, reuses every cached tile, moves no peer, and is already what a saved session does. Announce once when the drag ends. If the host&rsquo;s contract is a locus, as an MCP tool&rsquo;s or a figure&rsquo;s is, apply C at that moment instead, once and not on every frame, and accept that synced peers will follow the new scale.</p>
+
+<aside class="note">A drag fires many resizes. <code>update()</code> already coalesces calls that arrive while a repaint is in flight, so the repaint keeps up. The tile fetches of a C-on-every-frame would not.</aside>
+
+<!-- ============================================================ -->
+<h2><span class="num">10</span>Where it lives</h2>
+
+<div class="tablewrap wide">
+<table>
+  <thead><tr><th>What</th><th>Where</th></tr></thead>
+  <tbody>
+    <tr><td>Canonical state, the chokepoint</td><td><code>js/hicState.js:177</code> <code>setView</code></td></tr>
+    <tr><td>Locus as a projection</td><td><code>js/hicState.js:325</code> <code>getLocus</code></td></tr>
+    <tr><td>Locus to rung and pixel size</td><td><code>js/hicState.js:340</code> <code>updateWithLoci</code></td></tr>
+    <tr><td>Clamp against the viewport</td><td><code>js/hicState.js:244</code> <code>clampXY</code></td></tr>
+    <tr><td>Floor and cap on pixel size</td><td><code>js/hicState.js:119</code> <code>_adjustPixelSize</code>; constants at <code>js/hicBrowser.js:47</code></td></tr>
+    <tr><td>Rung matching</td><td><code>js/interactionHandler.js:429</code> <code>findMatchingZoomIndex</code></td></tr>
+    <tr><td>Viewport-dependent floors</td><td><code>js/hicBrowser.js:2084</code> <code>minZoom</code>; <code>js/hicBrowser.js:2126</code> <code>minPixelSize</code></td></tr>
+    <tr><td>Viewport size, written</td><td><code>js/layoutController.js:384</code> <code>setViewportSize</code></td></tr>
+    <tr><td>Viewport size, read</td><td><code>js/contactMatrixView.js:180</code> <code>getViewDimensions</code></td></tr>
+    <tr><td>Canvas resized lazily</td><td><code>js/contactMatrixView.js:216</code> <code>repaint</code></td></tr>
+    <tr><td>Translator to announcement</td><td><code>js/interactionHandler.js:85</code> <code>_applyStateChange</code></td></tr>
+    <tr><td>Repaint and peer sync</td><td><code>js/hicBrowser.js:1975</code> <code>update</code></td></tr>
+    <tr><td>Widgets and host callbacks</td><td><code>js/browserCoordinator.js:207</code> <code>onLocusChange</code></td></tr>
+    <tr><td>Sync carries scale, not extent</td><td><code>js/hicState.js:488</code> <code>getSyncState</code>; <code>:499</code> <code>sync</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>See also <code>docs/state-manipulation.md</code> for the chokepoint and its translators, and <code>CONTEXT.md</code> for <em>canonical state</em>, <em>projection</em>, <em>viewport</em> and <em>resolution lock</em>.</p>
+
+<p class="end">Written November 2026 against juicebox.js 4.12.1. The worked example uses a typical ladder of ten rungs from 2.5&nbsp;Mb to 1&nbsp;kb; a map with a different ladder lands on different rungs by the same rule.</p>
+
+</main>
+</body>
+</html>

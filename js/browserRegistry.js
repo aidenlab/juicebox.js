@@ -702,6 +702,12 @@ class BrowserRegistry {
         this.refreshDeleteButtonVisibility()
     }
 
+    /**
+     * Update every browser in turn. Resolves once each one's contact matrix has
+     * painted, its crosshairs are refreshed and its peers are synced; track
+     * pairs may still be painting (ADR-0022), so a stuck track in one panel
+     * holds up none of the panels after it.
+     */
     async updateAll() {
         for (const browser of this.browsers) {
             await browser.update()

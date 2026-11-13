@@ -202,6 +202,12 @@ class TrackPair {
     }
 
     /**
+     * Paint this pair at the browser's current view. Never rejects: a failure
+     * is logged as a warning and the pair keeps its last good tile. A call that
+     * arrives while a pass is in flight coalesces into that pass's single retry
+     * and resolves at once. The browser's repaint does not await this (ADR-0022),
+     * so a slow track paints late and a hung one only stops itself.
+     *
      * A pass can outlive the state it started from: `reset()` tears the browser
      * down while this pair's tiles are still resolving, and a subsequent load
      * installs a different `State`. Every read of canonical state here --
@@ -244,6 +250,12 @@ class TrackPair {
                 if (imageTileY) {
                     this.y.drawTile(imageTileY, genomicStateY);
                 }
+            } catch (error) {
+                // Nobody awaits a pair's paint (ADR-0022), so a failure stops
+                // here: the pair keeps its last good tile. A warning, not the
+                // alert dialog -- a paint can fail on every pan, and the dialog
+                // is for load failures.
+                console.warn(`Track "${this.track.name}" did not paint`, error);
             } finally {
                 this.updating = false;
                 if (this.pending) {

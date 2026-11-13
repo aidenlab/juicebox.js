@@ -1866,6 +1866,12 @@ class HICBrowser {
      * Reads state directly from browser state, no parameters needed.
      * This is the core rendering logic, separate from the update coordination
      * (spinner, re-entrancy, sync) in update().
+     *
+     * Resolves once the contact matrix has painted. Each track pair is set
+     * painting and not awaited (ADR-0022): a pair whose feature fetch never
+     * settles would otherwise hold every later update, and with it the map and
+     * the sync group, forever. A pair coalesces calls that arrive mid-pass into
+     * one retry, and catches its own failures.
      */
     async repaint() {
 
@@ -1880,10 +1886,10 @@ class HICBrowser {
         this.layoutController.xAxisRuler.locusChange(pseudoEvent);
         this.layoutController.yAxisRuler.locusChange(pseudoEvent);
 
-        // Render all tracks and contact matrix in parallel
-        const promises = this.trackPairs.map(xy => xy.updateViews());
-        promises.push(this.contactMatrixView.update());
-        await Promise.all(promises);
+        for (const trackPair of this.trackPairs) {
+            trackPair.updateViews();
+        }
+        await this.contactMatrixView.update();
     }
 
     /**
@@ -1970,6 +1976,10 @@ class HICBrowser {
 
     /**
      * Public API for updating/repainting the browser.
+     *
+     * Resolves once the contact matrix has painted, the crosshairs are
+     * refreshed and the peers are synced. Track pairs may still be painting:
+     * a repaint does not await them (ADR-0022).
      *
      * Handles queuing for rapid calls (e.g. during a mouse drag). A call arriving
      * while an update is in flight is remembered rather than run, and only the most

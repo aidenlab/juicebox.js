@@ -3,7 +3,7 @@
  */
 
 import HICBrowser from './hicBrowser.js';
-import {registryForContainer, getMostRecentlySelectedBrowser, currentRegistry, showNavbar} from './browserRegistry.js';
+import {registryForContainer, getMostRecentlySelectedBrowser, currentRegistry, navbarRegistry, showNavbar} from './browserRegistry.js';
 import {normalizeSession} from './normalizeSession.js';
 
 const defaultSize = { width: 640, height: 640 };
@@ -183,23 +183,26 @@ function getAllBrowsers() {
 }
 
 /**
- * Show or hide the navbar on every browser of the registry owning the current
- * browser, and on every browser built in it afterwards. #745.
+ * Show or hide the navbar on every browser of the registry most recently
+ * selected in or restored, and on every browser built in it afterwards. #745.
  *
  * The same single-embed convenience as `getAllBrowsers`: a multi-embed caller
- * wants `registry.setNavbarVisible`. Before anything has been selected there is
- * no registry to act on, and this does nothing.
+ * wants `registry.setNavbarVisible`. Unlike it, this does not follow the
+ * current browser, because a restore leaves none current until every map has
+ * loaded and the navbar has to answer throughout (#758). Before any registry
+ * has been selected in or restored there is none to act on, and this does
+ * nothing.
  */
 function setNavbarVisible(visible) {
-    currentRegistry()?.setNavbarVisible(visible);
+    navbarRegistry()?.setNavbarVisible(visible);
 }
 
 /**
- * Whether the current browser's registry shows its navbar; `true`, the
- * default, before anything has been selected.
+ * Whether that same registry shows its navbar; `true`, the default, before
+ * there is one.
  */
 function isNavbarVisible() {
-    return currentRegistry()?.isNavbarVisible() ?? true;
+    return navbarRegistry()?.isNavbarVisible() ?? true;
 }
 
 export {

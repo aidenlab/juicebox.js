@@ -278,6 +278,72 @@ describe('navbar visibility', () => {
             }
         })
 
+        /**
+         * The restore deletes every browser and selects one only after all of
+         * them have loaded, so for the whole load no browser is current. The
+         * navbar is the registry's, and the page-wide entries still reach it.
+         * A Page joining a Room is restoring when its Header button is
+         * clicked. #758.
+         */
+        describe('while restoring', () => {
+
+            function restoringSlowly(registry, session) {
+                const finishes = []
+                vi.spyOn(HICBrowser.prototype, 'init').mockImplementation(() => new Promise(resolve => finishes.push(resolve)))
+                const restoring = registry.restoreSession(session)
+                return async () => {
+                    finishes.forEach(finish => finish())
+                    await restoring
+                }
+            }
+
+            it('reports what the restore set', async () => {
+                const registry = registryForContainer(dom.container)
+                await registry.restoreSession(structuredClone(saved))
+                registry.select(registry.browsers[0])
+
+                const finish = restoringSlowly(registry, {...structuredClone(saved), navbarVisible: false})
+
+                expect(juicebox.getCurrentBrowser()).toBeUndefined()
+                expect(juicebox.isNavbarVisible()).toBe(false)
+                await finish()
+            })
+
+            it('hides and posts NavbarVisibilityChange', async () => {
+                const registry = registryForContainer(dom.container)
+                await registry.restoreSession(structuredClone(saved))
+                registry.select(registry.browsers[0])
+
+                const heard = []
+                const listener = ({data}) => heard.push(data)
+                EventBus.globalBus.subscribe('NavbarVisibilityChange', listener)
+                try {
+                    const finish = restoringSlowly(registry, structuredClone(saved))
+
+                    juicebox.setNavbarVisible(false)
+
+                    expect(juicebox.isNavbarVisible()).toBe(false)
+                    expect(heard).toEqual([{registry, visible: false}])
+
+                    await finish()
+                    expect(registry.browsers.map(navbarShown)).toEqual([false, false])
+                } finally {
+                    EventBus.globalBus.unsubscribe('NavbarVisibilityChange', listener)
+                }
+            })
+
+            it('reaches the registry of a first restore, with nothing ever selected', async () => {
+                const registry = registryForContainer(dom.container)
+
+                const finish = restoringSlowly(registry, structuredClone(saved))
+                juicebox.setNavbarVisible(false)
+                await finish()
+
+                expect(registry.isNavbarVisible()).toBe(false)
+                expect(registry.browsers.map(navbarShown)).toEqual([false, false])
+            })
+        })
+
         it('survives the compressed ?session= form', async () => {
             const first = registryForContainer(dom.container)
             await first.restoreSession(structuredClone(saved))

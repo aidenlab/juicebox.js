@@ -221,6 +221,7 @@ class BrowserRegistry {
         // Outside the transition check below: a browser already current in its
         // own registry is not necessarily the last one selected page-wide.
         mostRecentlySelectedBrowser = browser
+        mostRecentRegistry = this
 
         if (browser !== this.currentBrowser) {
             this.currentBrowser?.rootElement.classList.remove('hic-root-selected')
@@ -694,6 +695,7 @@ class BrowserRegistry {
                 this.currentBrowser = browser
                 browser.rootElement.classList.add('hic-root-selected')
                 mostRecentlySelectedBrowser = browser
+                mostRecentRegistry = this
             }
         })
 
@@ -803,6 +805,11 @@ class BrowserRegistry {
      */
     async restoreSession(session) {
 
+        // Before the delete leaves nothing selected, and held until the
+        // restore selects again: the page-wide navbar switch must reach this
+        // registry for the whole load, which can take seconds. #758.
+        mostRecentRegistry = this
+
         this.deleteAll()
 
         // The session-shaped entry, and since #535 the only place a restored
@@ -894,6 +901,15 @@ const registriesByContainer = new WeakMap()
 let mostRecentlySelectedBrowser
 
 /**
+ * The registry most recently selected in or restored, page-wide -- and, unlike
+ * `currentRegistry()`, still there when no browser is current. A restore
+ * deletes every browser and selects one only once all of them have loaded, so
+ * for that whole window there is no current browser, yet the embed is plainly
+ * there. #758.
+ */
+let mostRecentRegistry
+
+/**
  * The registry owning `container`, created on first ask.
  *
  * Every entry point into juicebox resolves its registry through here, so
@@ -933,6 +949,9 @@ function evict(registry) {
     if (registriesByContainer.get(registry.container) === registry) {
         registriesByContainer.delete(registry.container)
     }
+    if (mostRecentRegistry === registry) {
+        mostRecentRegistry = undefined
+    }
 }
 
 function getMostRecentlySelectedBrowser() {
@@ -953,5 +972,19 @@ function currentRegistry() {
     return mostRecentlySelectedBrowser?.registry
 }
 
+/**
+ * The registry the page-wide navbar switch acts on: the one most recently
+ * selected in or restored, and `undefined` before either has happened or once
+ * it is disposed.
+ *
+ * Not `currentRegistry()`, because the navbar is a registry-wide setting that
+ * has to work whether or not a browser is current -- above all while a
+ * restore is loading, when none is. A host's Header button clicked during a
+ * Room join is the case. #758.
+ */
+function navbarRegistry() {
+    return mostRecentRegistry
+}
+
 export default BrowserRegistry
-export {registryForContainer, getMostRecentlySelectedBrowser, currentRegistry, showNavbar}
+export {registryForContainer, getMostRecentlySelectedBrowser, currentRegistry, navbarRegistry, showNavbar}

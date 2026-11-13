@@ -180,3 +180,17 @@ last, so the old last-writer-wins behaviour would show as an inherited size rath
 than the stylesheet default — and asserted that nothing writes `--hic-viewport-*` to
 the page root. Also worth saying plainly, because the issue text did not: nothing
 in the app resizes a browser. The properties are written once, at construction.
+
+## Addendum — the navbar's page-wide policy, 13 November 2026
+
+The zero-argument `setNavbarVisible` and `isNavbarVisible` (#745) do not use
+"most recently selected page-wide". They act on the registry **most recently
+selected in or restored** (`navbarRegistry()` in `js/browserRegistry.js`). A
+restore deletes every browser and selects one only once all maps have loaded,
+so under the first policy the navbar switch did nothing for that whole window,
+and a host's Header button clicked during a Room join was lost. #758.
+
+The two policies agree in the single-embed case outside a restore. With two
+embeds, during embed B's restore the navbar switch reaches B while
+`getCurrentBrowser()` still names A's browser. A multi-embed caller should use
+`registry.setNavbarVisible` either way.

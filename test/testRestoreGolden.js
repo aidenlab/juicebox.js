@@ -13,8 +13,8 @@
  *
  * `dataLoader.loadHicFile` walks a three-rung ladder -- a config-level `locus`, a
  * `state` token, and the `State.default()` fallback -- and
- * `dataLoader.loadLiveContactMap` is a fourth door walking its own copy of the
- * middle of it. Only two rungs reach `browser.setState`.
+ * `dataLoader.loadLiveContactMap` is a fourth door. It walked its own copy of
+ * the `state` rung until #650 deleted it; it now walks the `locus` rung only.
  *
  * There were five until #566, whose `config.synchState` column is described in
  * finding 3 below.
@@ -86,7 +86,15 @@
  *    outside the chromosome.** `loadLiveContactMap` decodes `config.state`,
  *    calls `setState`, and then unconditionally calls `parseGotoInput` on the
  *    live extent -- so the state a live session carries never survives its own
- *    load (#650). And because `parseLocusString` converts to 0-based by
+ *    load. #650 deleted the rung: the live door now installs `State.default()`
+ *    and ignores `config.state`. No record moved, because the parts of the state
+ *    that had survived were already gone here: `parseGotoInput` replaced the
+ *    position, and this file's dataset offers only `NONE`, so the normalization
+ *    was coerced (#561). The column still presents the fixture's `state`, so it
+ *    now shows a state being ignored. `testLiveDoorIgnoresState.js` covers the
+ *    normalization this file can't see.
+ *
+ *    And because `parseLocusString` converts to 0-based by
  *    subtracting one, an extent starting at 0 became `-1` bp, which nothing
  *    clamps, so every live record in this file had a **negative** origin. That
  *    half is fixed: #567 made the formatter add the one back, and the live
@@ -516,8 +524,8 @@ const RESTORE_DOORS = [
  *
  * Counted on the prototype, so a call from anywhere reaches it -- including the
  * `syncState` the file door makes on its own behalf after the ladder, and the
- * `parseGotoInput` the live door makes unconditionally after its `setState`.
- * That second one is the whole reason this is a count and not a name.
+ * `parseGotoInput` the live door makes after installing the default. Counting
+ * both is why this is a count and not a name.
  */
 function rungCounter() {
 

@@ -398,7 +398,9 @@ export function encodeSession(session) {
  * `dataLoader.loadLiveContactMap` — and the two copies had drifted: only the
  * first had the unknown-type rung, so a `state` that was neither string nor
  * object reached `State.parse` on the live path and crashed there instead of
- * falling back. The rung is restored here for both.
+ * falling back. The rung was restored here for both (#504). The live path has
+ * since stopped reading `config.state` at all (#650), so `loadHicFile` is the
+ * one caller.
  *
  * Reporting the unknown type is the caller's job, not this module's — the
  * original copy raised an `alert`, which is exactly the kind of thing that
@@ -409,7 +411,7 @@ export function encodeSession(session) {
  * ignored there, and is gone from both (#510).
  *
  * @param {string|object|undefined} value - `config.state`. Absent or empty
- *   yields the default view, which is the truthiness guard both call sites
+ *   yields the default view, which is the truthiness guard `loadHicFile`
  *   wrote around the ladder; delegating it here keeps `''` and `0` out of
  *   `State.parse`, where they decode to a view of `NaN`.
  * @param {function(*): void} [onUnknownType] - called with `value` when it is

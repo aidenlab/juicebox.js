@@ -407,8 +407,6 @@ class ContactMatrixView {
      */
     addMouseHandlers(viewportElement) {
 
-        if (this.browser.isMobile) return;
-
         const recognizer = this.gestureRecognizer;
 
         // The position the crosshairs follow: page-minus-offset.

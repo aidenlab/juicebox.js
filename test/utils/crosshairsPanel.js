@@ -48,7 +48,6 @@ export function panel(container, {
     vi.spyOn(browser, 'repaint').mockResolvedValue(undefined)
     vi.spyOn(browser, 'syncToOtherBrowsers').mockImplementation(() => {})
 
-    browser.isMobile = false
     browser.contactMatrixView.receiveEvent({type: 'MapLoad'})
     return browser
 }

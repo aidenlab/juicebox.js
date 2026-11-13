@@ -1236,10 +1236,14 @@ class HICBrowser {
      * Recolour a 2D track, overriding its features' own colours; `undefined`
      * gives them back. Posts `Track2DChange`, as a track pair's setters post
      * `TrackXYPairChange`. The annotation panel's colour swatches go through
-     * here.
+     * here. A track this panel doesn't hold is left alone, as `removeTrack2D`
+     * leaves it.
      */
     setTrack2DColor(track2D, color) {
         this.#assertNotDisposed('setTrack2DColor')
+        if (!this.tracks2D.includes(track2D)) {
+            return
+        }
         track2D.color = color
         EventBus.globalBus.post(HICEvent('Track2DChange', {track2D, property: 'color', value: color}))
         this.coordinator.onTrackState2D(track2D)
@@ -1248,10 +1252,13 @@ class HICBrowser {
     /**
      * Rename a 2D track: the name the annotation panel shows and a session
      * saves. Nothing on the map draws it, so nothing repaints. Posts
-     * `Track2DChange`.
+     * `Track2DChange`. A track this panel doesn't hold is left alone.
      */
     setTrack2DName(track2D, name) {
         this.#assertNotDisposed('setTrack2DName')
+        if (!this.tracks2D.includes(track2D)) {
+            return
+        }
         track2D.name = name
         EventBus.globalBus.post(HICEvent('Track2DChange', {track2D, property: 'name', value: name}))
     }

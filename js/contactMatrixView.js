@@ -569,6 +569,9 @@ class ContactMatrixView {
                 case 'sweepCommit':
                     this.sweepZoom.commit(intent.rect).catch(err => console.error('Error in sweepZoom.commit:', err));
                     break;
+                case 'sweepCancel':
+                    this.sweepZoom.cancel();
+                    break;
                 case 'showCrosshairs':
                     // Nothing to carry out: there is no position until the
                     // first move, and that move is what shows them.

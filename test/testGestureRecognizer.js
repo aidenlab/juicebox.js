@@ -106,15 +106,32 @@ describe('GestureRecognizer', () => {
             expect(recognizer.documentMouseUp()).toEqual([])
         })
 
-        it('commits an alt-click that never moves against the previous sweep\'s end point (#653)', () => {
+        it('cancels an alt-click that never moves, rather than committing it (#653)', () => {
+            recognizer.mouseDown({sweepX: 200, sweepY: 300, altKey: true})
+
+            expect(recognizer.documentMouseUp()).toEqual([{type: 'sweepCancel'}])
+        })
+
+        it('does not let a sweep\'s end point outlive it (#653)', () => {
             recognizer.mouseDown({sweepX: 50, sweepY: 80, altKey: true})
             recognizer.mouseMove({sweepX: 10, sweepY: 20})
             recognizer.documentMouseUp()
 
             recognizer.mouseDown({sweepX: 200, sweepY: 300, altKey: true})
 
+            expect(recognizer.documentMouseUp()).toEqual([{type: 'sweepCancel'}])
+        })
+
+        it('commits the second sweep from its own start and end (#653)', () => {
+            recognizer.mouseDown({sweepX: 50, sweepY: 80, altKey: true})
+            recognizer.mouseMove({sweepX: 10, sweepY: 20})
+            recognizer.documentMouseUp()
+
+            recognizer.mouseDown({sweepX: 200, sweepY: 300, altKey: true})
+            recognizer.mouseMove({sweepX: 220, sweepY: 330})
+
             expect(recognizer.documentMouseUp())
-                .toEqual([{type: 'sweepCommit', rect: {xPixel: 10, yPixel: 20, width: 190, height: 280}}])
+                .toEqual([{type: 'sweepCommit', rect: {xPixel: 200, yPixel: 300, width: 20, height: 30}}])
         })
     })
 

@@ -48,6 +48,11 @@ class SweepZoom {
         this.rulerSweeperElement.style.top = top
     }
 
+    /** Hide the box without going anywhere: the sweep swept nothing. #653. */
+    cancel() {
+        this.rulerSweeperElement.style.display = 'none';
+    }
+
     async commit({ xPixel, yPixel, width, height }) {
 
         this.rulerSweeperElement.style.display = 'none';

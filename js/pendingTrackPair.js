@@ -46,9 +46,8 @@ class PendingTrackPair {
 
         this.showLabelAndGutter(true)
 
-        for (const renderer of [this.x, this.y]) {
-            renderer.spinnerElement.innerHTML = '<i class="fa fa-spinner fa-spin"></i>'
-        }
+        this.x.showSpinner(true)
+        this.y.showSpinner(true)
 
         const dismissElement = document.createElement('div')
         dismissElement.className = 'x-track-dismiss'

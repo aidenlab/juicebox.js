@@ -37,6 +37,7 @@ function renderer(axis, drawn) {
         viewportElement: row(),
         syncCanvas: () => {},
         drawTile: tile => drawn.push({ axis, tile }),
+        showSpinner: () => {},
         dispose: () => {}
     }
 }

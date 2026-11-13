@@ -30,6 +30,7 @@ function renderer(axis, drawn) {
         axis,
         canvasElement: { width: VIEWPORT, height: TRACK_HEIGHT },
         drawTile: (tile, genomicState) => drawn.push({ axis, tile, genomicState }),
+        showSpinner: () => {},
         dispose: () => {}
     }
 }

@@ -240,7 +240,8 @@ once. An *update* wraps a repaint with coalescing of rapid calls and peer sync
 afterwards. Callers ask for an update; only the update path repaints. A repaint
 waits for the contact matrix; track pairs paint on their own, each coalescing
 its own calls, so a slow or stuck track never holds up the map or its peers.
-ADR-0022.
+The map spinner covers the contact matrix only; a track pair whose paint is
+fetching shows its own track spinner. ADR-0022.
 
 ## Rendering
 
@@ -311,7 +312,7 @@ annotation panel lists a panel's 2D tracks alongside its track pairs.
 _Avoid_: 2D annotation, 2D feature track.
 
 **Pending track** — a 1D track a load has named but not yet finished loading,
-shown as a placeholder row in its place with its name and a spinner. A restore
+shown as a placeholder row in its place with its name and the track spinner. A restore
 does not wait for it: the map is usable while it is pending. It is still part
 of the session, so a save made meanwhile keeps it. It becomes a track pair when
 it loads and is gone if it fails. There is no timeout: slow and hung look the

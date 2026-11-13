@@ -332,7 +332,7 @@ class DataLoader {
      *   - liveContactMap: A LiveContactMap instance (already init'd or will be init'd via HiCDataset)
      *   - name: Display name
      *   - locus: Optional locus string to navigate to (defaults to data extent)
-     *   - state: Optional initial state
+     *   A `state` is not read: the map always opens at the locus. #650.
      * @param {boolean} noUpdates - If true, don't trigger UI updates
      * @returns {Promise<HiCDataset>}
      */
@@ -363,12 +363,15 @@ class DataLoader {
 
             this.#installGenome(dataset);
 
-            // The same ladder the file path walks. It used to be spelled
-            // differently here and had lost the unknown-type rung, so a numeric
-            // `state` crashed in `State.parse` on this path and opened the
-            // default view on the other. #504.
+            // The file path's `locus` rung, and only that rung: a live map is
+            // always opened at a locus. There is no `state` rung here. One used
+            // to decode `config.state` and install it, and `parseGotoInput`
+            // replaced its position and zoom a line later, so only its
+            // normalization survived its own load -- and no host passes one,
+            // since a live map config is a runtime argument and never part of
+            // a session (#536). It was deleted rather than repaired. #650.
             this.browser.setActiveDataset(dataset);
-            await this.browser.setState(decodeState(config.state, reportUnknownStateType));
+            await this.browser.setState(State.default());
 
             // Navigate to the data region so it fills the viewport. A locus
             // string is 1-based -- `parseLocusString` subtracts one -- and the
@@ -387,7 +390,7 @@ class DataLoader {
             //
             // And the same state expression, for the same reason the file path
             // gives: `parseGotoInput` above has just moved the browser off the
-            // decoded state, which was a clone ago in any case.
+            // default it was handed, which was a clone ago in any case.
             this.browser.coordinator.onMapLoaded(dataset, this.browser.state, dataset.datasetType);
 
             return dataset;

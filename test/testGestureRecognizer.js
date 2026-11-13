@@ -34,16 +34,17 @@ describe('GestureRecognizer', () => {
             expect(recognizer.mouseMove({x: 110, y: 104})).toEqual([])
         })
 
-        it('does not start a drag on vertical movement alone (#654)', () => {
+        it('starts a drag on vertical movement alone (#654)', () => {
             recognizer.mouseDown({x: 100, y: 100})
 
-            expect(recognizer.mouseMove({x: 100, y: 150})).toEqual([])
+            expect(recognizer.mouseMove({x: 100, y: 102})).toEqual([])
+            expect(recognizer.mouseMove({x: 100, y: 150})).toEqual([{type: 'pan', dx: 0, dy: -48}])
         })
 
-        it('does not start a drag from a mouse-down at x = 0 (#654)', () => {
+        it('starts a drag from a mouse-down at x = 0 (#654)', () => {
             recognizer.mouseDown({x: 0, y: 100})
 
-            expect(recognizer.mouseMove({x: 50, y: 100})).toEqual([])
+            expect(recognizer.mouseMove({x: 50, y: 100})).toEqual([{type: 'pan', dx: -50, dy: 0}])
         })
 
         it('stops a drag on mouse-up, and says so only if one was under way', () => {

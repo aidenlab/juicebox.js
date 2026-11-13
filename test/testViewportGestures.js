@@ -211,21 +211,18 @@ describe('viewport gestures', () => {
             expect(box.style.display).toBe('none')
         })
 
-        describe('quirks, pinned as they are', () => {
+        it('pans on vertical movement alone (#654)', () => {
+            mouse(viewport, 'mousedown', {x: 100, y: 100})
+            mouse(viewport, 'mousemove', {x: 100, y: 150})
 
-            it('does not start a drag on vertical movement alone (#654)', () => {
-                mouse(viewport, 'mousedown', {x: 100, y: 100})
-                mouse(viewport, 'mousemove', {x: 100, y: 150})
+            expect(interactions.shiftPixels.mock.calls).toEqual([[0, -50]])
+        })
 
-                expect(interactions.shiftPixels).not.toHaveBeenCalled()
-            })
+        it('pans from a mouse-down at x = 0 (#654)', () => {
+            mouse(viewport, 'mousedown', {x: 0, y: 100})
+            mouse(viewport, 'mousemove', {x: 50, y: 100})
 
-            it('does not start a drag from a mouse-down at x = 0 (#654)', () => {
-                mouse(viewport, 'mousedown', {x: 0, y: 100})
-                mouse(viewport, 'mousemove', {x: 50, y: 100})
-
-                expect(interactions.shiftPixels).not.toHaveBeenCalled()
-            })
+            expect(interactions.shiftPixels.mock.calls).toEqual([[-50, 0]])
         })
     })
 

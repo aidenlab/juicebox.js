@@ -237,7 +237,10 @@ _Avoid_: `clearSession`.
 
 **Update** vs **repaint** — a *repaint* redraws everything from current state,
 once. An *update* wraps a repaint with coalescing of rapid calls and peer sync
-afterwards. Callers ask for an update; only the update path repaints.
+afterwards. Callers ask for an update; only the update path repaints. A repaint
+waits for the contact matrix; track pairs paint on their own, each coalescing
+its own calls, so a slow or stuck track never holds up the map or its peers.
+ADR-0022.
 
 ## Rendering
 

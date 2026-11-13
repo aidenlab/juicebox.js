@@ -55,8 +55,9 @@ class BrowserRegistry {
     /**
      * Depth of the `#announce` wrapper below, so that a mutation which runs
      * another one inside it -- `releaseSlot` falling the selection through to a
-     * survivor -- posts one `BrowserTargetChange` for the whole gesture rather
-     * than one per nested step.
+     * survivor, or a whole reset run through `duringReset` -- posts one
+     * `BrowserTargetChange` for the whole gesture rather than one per nested
+     * step, and applies the aim-of-one rule once, at the end.
      */
     #announceDepth = 0
 
@@ -423,9 +424,14 @@ class BrowserRegistry {
      * and `reclaimSlot` a two-browser registry holds one browser, and the
      * aim-of-one rule in `#announce` (#621) would clear the *other* browser's
      * membership along with it. Run inside one announcement, that rule is
-     * applied once, to the registry the reset leaves behind. That is the
-     * registry it began with, so a reset posts no `BrowserTargetChange` and
-     * leaves the badges as they were. #718.
+     * applied once, to the registry the reset leaves behind. When the reset
+     * completes, that is the registry it began with, so it posts no
+     * `BrowserTargetChange` and leaves the badges as they were. If it throws
+     * midway, the rule judges the registry it left, as it should. #718.
+     *
+     * Not a general batching scope: anything else run through it would skip
+     * the aim-of-one rule for its intermediate steps, which is only right when
+     * those steps are a teardown its own rebuild undoes.
      */
     duringReset(work) {
         this.#announce(work)
@@ -508,7 +514,7 @@ class BrowserRegistry {
      *
      * @param {Array} departed - browsers that were in the set before the
      *   mutation. Painted too, so one that has since left the registry -- a
-     *   delete, a reset's teardown -- has its badge taken off rather than
+     *   delete -- has its badge taken off rather than
      *   keeping it on a detached element that may yet be reused.
      */
     #paintTargetBadges(departed = []) {

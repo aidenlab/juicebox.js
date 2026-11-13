@@ -270,7 +270,7 @@ class TrackPair {
                     // top, so a call coalesced into a pass that was abandoned
                     // stands itself down rather than moving the throw. A removed
                     // pair gets no retry at all: it has no row to paint (#775).
-                    if (this.#isInPlace()) {
+                    if (this.#hasRow()) {
                         this.updateViews();
                     }
                 }
@@ -283,11 +283,11 @@ class TrackPair {
      * `State` was replaced (#473), or this pair was removed (#775).
      */
     #isStale(state) {
-        return this.browser.state !== state || !this.#isInPlace();
+        return this.browser.state !== state || !this.#hasRow();
     }
 
     /** Whether this pair still holds a row: not removed, not cleared with the rest. */
-    #isInPlace() {
+    #hasRow() {
         return this.browser.trackPairs.includes(this);
     }
 

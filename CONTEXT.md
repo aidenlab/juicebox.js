@@ -312,7 +312,7 @@ annotation panel lists a panel's 2D tracks alongside its track pairs.
 _Avoid_: 2D annotation, 2D feature track.
 
 **Pending track** — a 1D track a load has named but not yet finished loading,
-shown as a placeholder row in its place with its name and a spinner. A restore
+shown as a placeholder row in its place with its name and the track spinner. A restore
 does not wait for it: the map is usable while it is pending. It is still part
 of the session, so a save made meanwhile keeps it. It becomes a track pair when
 it loads and is gone if it fails. There is no timeout: slow and hung look the

@@ -246,8 +246,9 @@ class TrackPair {
                 }
 
                 const genomicStateX = this.browser.genomicState(this.x.axis);
-                if (!this.#holds(this.tileX, genomicStateX)) {
-                    spinning = this.#showSpinner(true);
+                if (!this.#covers(this.tileX, genomicStateX)) {
+                    this.#showSpinner(true);
+                    spinning = true;
                 }
                 let imageTileX = await this.getTileX(genomicStateX);
                 if (this.#isStale(state)) {
@@ -258,8 +259,9 @@ class TrackPair {
                 }
 
                 const genomicStateY = this.browser.genomicState(this.y.axis);
-                if (!this.#holds(this.tileY, genomicStateY)) {
-                    spinning = this.#showSpinner(true);
+                if (!this.#covers(this.tileY, genomicStateY)) {
+                    this.#showSpinner(true);
+                    spinning = true;
                 }
                 let imageTileY = await this.getTileY(genomicStateY);
                 if (this.#isStale(state)) {
@@ -301,18 +303,14 @@ class TrackPair {
         return this.browser.state !== state || !this.#hasRow();
     }
 
-    /**
-     * The track spinner, on the x and y track together. Returns `show`, so a
-     * pass can remember that it raised it.
-     */
+    /** The track spinner, on the x and y track together. */
     #showSpinner(show) {
         this.x.showSpinner(show);
         this.y.showSpinner(show);
-        return show;
     }
 
     /** Whether `tile` already covers `genomicState`, so painting it fetches nothing. */
-    #holds(tile, genomicState) {
+    #covers(tile, genomicState) {
         const { chromosome, startBP, endBP, bpp } = genomicState;
         return Boolean(tile && tile.containsRange(chromosome.name, startBP, endBP, bpp));
     }
@@ -362,7 +360,7 @@ class TrackPair {
 
     async getTileX(genomicState) {
 
-        if (!this.#holds(this.tileX, genomicState)) {
+        if (!this.#covers(this.tileX, genomicState)) {
             this.tileX = await this.createImageTile({ axis: 'x', ...genomicState })
         }
 
@@ -371,7 +369,7 @@ class TrackPair {
 
     async getTileY(genomicState) {
 
-        if (!this.#holds(this.tileY, genomicState)) {
+        if (!this.#covers(this.tileY, genomicState)) {
             this.tileY = await this.createImageTile({ axis: 'y', ...genomicState })
         }
 

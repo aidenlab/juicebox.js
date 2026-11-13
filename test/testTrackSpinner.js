@@ -159,4 +159,18 @@ describe('a track pair shows its own spinner while it fetches', () => {
 
         expect(spinning(pair)).toEqual([false, false])
     })
+
+    test('comes down when the pass is abandoned because the browser was reset', async () => {
+        const browser = await loaded(dom.container)
+        const { getFeatures, answer } = heldFetch()
+        const pair = pairOn(browser, getFeatures)
+
+        await browser.update()
+        browser.reset()
+
+        answer()
+        await settle()
+
+        expect(spinning(pair)).toEqual([false, false])
+    })
 })

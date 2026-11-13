@@ -25,7 +25,6 @@ describe('a mouse-down on the contact map', () => {
         browser = context.browser
         viewport = browser.contactMatrixView.viewportElement
         shiftPixels = vi.spyOn(browser.interactions, 'shiftPixels').mockResolvedValue(undefined)
-        browser.isMobile = false
         browser.contactMatrixView.receiveEvent({type: 'MapLoad'})
     })
 

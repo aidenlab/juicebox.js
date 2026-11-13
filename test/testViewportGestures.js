@@ -51,12 +51,21 @@ function watchPosts(browser, types) {
 
 /**
  * Install the handlers the way a map load does: the view holds off until it
- * has a dataset, and reads the mobile flag at that moment.
+ * has a dataset.
  */
-function loadMap(browser, {mobile}) {
-    browser.isMobile = mobile
+function loadMap(browser) {
     browser.contactMatrixView.receiveEvent({type: 'MapLoad'})
 }
+
+/**
+ * Every gesture is run under both. The mobile one is a device that may have a
+ * mouse as well as a touchscreen -- an iPad with a trackpad -- so its mouse
+ * gestures must work like any other's (#655).
+ */
+const USER_AGENTS = [
+    ['desktop', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'],
+    ['mobile', 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'],
+]
 
 /**
  * A map to gesture over, for the paths that read one: the sweep converts its
@@ -113,9 +122,9 @@ function key(type, init = {}) {
     document.dispatchEvent(new window.KeyboardEvent(type, {bubbles: true, ...init}))
 }
 
-describe('viewport gestures', () => {
+describe.each(USER_AGENTS)('viewport gestures, %s user agent', (_name, userAgent) => {
 
-    const context = withBrowser()
+    const context = withBrowser({userAgent})
 
     let browser
     let viewport
@@ -127,9 +136,9 @@ describe('viewport gestures', () => {
         interactions = watchInteractions(browser)
     })
 
-    describe('mouse, mobile flag off', () => {
+    describe('mouse', () => {
 
-        beforeEach(() => loadMap(browser, {mobile: false}))
+        beforeEach(() => loadMap(browser))
 
         it('pans by the pixels moved since the last mouse-move once a drag passes the threshold', () => {
             mouse(viewport, 'mousedown', {x: 100, y: 100})
@@ -227,21 +236,16 @@ describe('viewport gestures', () => {
     })
 
     /**
-     * A browser flagged mobile installs no mouse handlers at all, so a
-     * touchscreen laptop that trips the flag loses every mouse gesture --
-     * crosshairs included. Pinned as it is: #655.
-     */
-    /**
      * Both crosshair paths Spacewalk has depended on: the `DidShowCrosshairs` /
      * `DidHideCrosshairs` pair on the bus, and the handler a host registers
      * with `setCustomCrosshairsHandler` (Spacewalk's `juiceboxPanel.js`).
      * Deprecated since #709, and shims over `onCrosshairsMove` and
      * `onCrosshairsHide` -- see `testCrosshairsHostCallbacks.js`.
      */
-    describe('crosshairs and mouse position, mobile flag off', () => {
+    describe('crosshairs and mouse position', () => {
 
         beforeEach(() => {
-            loadMap(browser, {mobile: false})
+            loadMap(browser)
             standInMap(browser)
         })
 
@@ -406,90 +410,15 @@ describe('viewport gestures', () => {
         })
     })
 
-    describe('mouse, mobile flag on', () => {
-
-        beforeEach(() => {
-            loadMap(browser, {mobile: true})
-            standInMap(browser)
-        })
-
-        it('does not pan on a drag', () => {
-            mouse(viewport, 'mousedown', {x: 100, y: 100})
-            mouse(viewport, 'mousemove', {x: 110, y: 104})
-
-            expect(interactions.shiftPixels).not.toHaveBeenCalled()
-        })
-
-        it('does not post DragStopped on mouse-up or mouse-leave', () => {
-            const posted = watchPosts(browser, ['DragStopped'])
-
-            mouse(viewport, 'mousedown', {x: 100, y: 100})
-            mouse(viewport, 'mousemove', {x: 110, y: 100})
-            mouse(viewport, 'mouseup', {x: 110, y: 100})
-            mouse(viewport, 'mousedown', {x: 100, y: 100})
-            mouse(viewport, 'mousemove', {x: 110, y: 100})
-            mouse(viewport, 'mouseleave', {x: 110, y: 100})
-
-            expect(posted).toEqual([])
-        })
-
-        it('does not zoom on a double-click', () => {
-            mouse(viewport, 'dblclick', {x: 120, y: 80})
-
-            expect(interactions.zoomAndCenter).not.toHaveBeenCalled()
-        })
-
-        it('does not zoom on a wheel', () => {
-            viewport.dispatchEvent(new window.WheelEvent('wheel', {bubbles: true, cancelable: true, clientX: 30, clientY: 40, deltaY: -5}))
-
-            expect(interactions.handleWheelZoom).not.toHaveBeenCalled()
-        })
-
-        it('does not commit an alt-drag sweep', () => {
-            const goto = vi.spyOn(browser, 'goto').mockResolvedValue(undefined)
-
-            mouse(viewport, 'mousedown', {x: 50, y: 80, altKey: true})
-            mouse(viewport, 'mousemove', {x: 10, y: 20, altKey: true})
-            mouse(document, 'mouseup', {x: 10, y: 20})
-
-            expect(goto).not.toHaveBeenCalled()
-        })
-
-        it('does not report the mouse position to the coordinator', () => {
-            const reported = vi.spyOn(browser.coordinator, 'onUpdateContactMapMousePosition').mockImplementation(() => {})
-
-            mouse(viewport, 'mousemove', {x: 40, y: 30})
-
-            expect(reported).not.toHaveBeenCalled()
-        })
-
-        it('posts neither crosshairs event, and never calls the host\'s crosshairs handler', () => {
-            const handler = vi.fn()
-            browser.setCustomCrosshairsHandler(handler)
-            const posted = watchPosts(browser, ['DidShowCrosshairs', 'DidHideCrosshairs'])
-
-            mouse(viewport, 'mouseover')
-            key('keydown', {key: 'Shift', shiftKey: true})
-            mouse(viewport, 'mousemove', {x: 40, y: 30})
-            key('keyup', {key: 'Shift'})
-
-            expect(posted).toEqual([])
-            expect(handler).not.toHaveBeenCalled()
-        })
-    })
-
     /**
-     * Touch handlers are installed whatever the mobile flag says, so every
-     * touch gesture is run both ways.
-     *
      * Touch-move is throttled to one call per 50 ms. A test that needs two
      * moves to land fakes the clock and steps past the throttle between them;
      * a double tap needs no clock because the view reads `timeStamp` off the
      * event.
      */
-    describe.each([false, true])('touch, mobile flag %s', mobile => {
+    describe('touch', () => {
 
-        beforeEach(() => loadMap(browser, {mobile}))
+        beforeEach(() => loadMap(browser))
 
         afterEach(() => vi.useRealTimers())
 

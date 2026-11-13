@@ -26,7 +26,6 @@
  */
 
 import {InputDialog, DOMUtils} from 'igv-ui'
-import * as hicUtils from './hicUtils.js'
 import EventBus from "./eventBus.js"
 import HICEvent from "./hicEvent.js"
 import LayoutController, {setViewportSize} from './layoutController.js'
@@ -256,8 +255,6 @@ class HICBrowser {
         this.dataset = undefined;
         this.controlDataset = undefined;
         this.#state = undefined;
-
-        this.isMobile = hicUtils.isMobile();
 
         // Declared, not merely absent: `setCustomCrosshairsHandler` is the one
         // published method that installs a field outside this method, and the

@@ -54,11 +54,18 @@ const SWAPPED_GLOBALS = ['window', 'document', 'navigator', 'HTMLElement', 'HTML
 /**
  * Install a JSDOM window over the current globals and return a restore function
  * plus a container element ready to hand to the HICBrowser constructor.
+ *
+ * `userAgent`, when given, replaces the navigator's, for a claim about what a
+ * particular device sees. It is in place before anything is constructed.
  */
-export function withDOM() {
+export function withDOM({userAgent} = {}) {
 
     const dom = new JSDOM('<!doctype html><html><body></body></html>', {pretendToBeVisual: true})
     const {window} = dom
+
+    if (undefined !== userAgent) {
+        Object.defineProperty(window.navigator, 'userAgent', {value: userAgent, configurable: true})
+    }
 
     window.HTMLCanvasElement.prototype.getContext = function () {
         const ctx = stubContext2D()
@@ -97,15 +104,16 @@ export function withDOM() {
 /**
  * Stand up a fresh browser around each test in the calling describe, and tear
  * the DOM back down afterwards. Returns a holder rather than the browser itself
- * because the instance does not exist until beforeEach runs.
+ * because the instance does not exist until beforeEach runs. `options` go to
+ * `withDOM`.
  */
-export function withBrowser() {
+export function withBrowser(options) {
 
     const context = {browser: undefined}
     let fixture
 
     beforeEach(() => {
-        fixture = withDOM()
+        fixture = withDOM(options)
         context.browser = new HICBrowser(fixture.container, {})
     })
 

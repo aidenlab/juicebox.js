@@ -23,10 +23,6 @@
 
 import {FileUtils} from 'igv-utils'
 
-function isMobile() {
-    return (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-}
-
 function throttle(fn, threshhold, scope) {
     var last,
         deferTimer;
@@ -84,4 +80,4 @@ function getExtension(url) {
 }
 
 
-export { isMobile, throttle, getExtension }
+export { throttle, getExtension }

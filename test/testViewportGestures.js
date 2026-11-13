@@ -58,9 +58,9 @@ function loadMap(browser) {
 }
 
 /**
- * Every gesture is run under both. The mobile one is a device that may have a
- * mouse as well as a touchscreen -- an iPad with a trackpad -- so its mouse
- * gestures must work like any other's (#655).
+ * Every gesture is run under both user agents below. The mobile one is a
+ * device that may have a mouse as well as a touchscreen -- an iPad with a
+ * trackpad -- so its mouse gestures must work like any other's (#655).
  */
 const USER_AGENTS = [
     ['desktop', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'],

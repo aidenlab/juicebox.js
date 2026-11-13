@@ -8,13 +8,17 @@ import {JSDOM} from 'jsdom'
 // mocked away.
 const nodeWindow = globalThis.window
 globalThis.window = new JSDOM('').window
-const {default: igv} = await import('igv')
-const {default: EventBus} = await import('../js/eventBus.js')
-const {default: TrackPair} = await import('../js/trackPair.js')
-const {default: MenuUtils} = await import('../js/trackMenuUtils.js')
-const {EVENT_PAYLOAD_SHAPES} = await import('../js/publicApi.js')
-const {withContainers} = await import('./utils/browserFixture.js')
-globalThis.window = nodeWindow
+let igv, EventBus, TrackPair, MenuUtils, EVENT_PAYLOAD_SHAPES, withContainers
+try {
+    ({default: igv} = await import('igv'));
+    ({default: EventBus} = await import('../js/eventBus.js'));
+    ({default: TrackPair} = await import('../js/trackPair.js'));
+    ({default: MenuUtils} = await import('../js/trackMenuUtils.js'));
+    ({EVENT_PAYLOAD_SHAPES} = await import('../js/publicApi.js'));
+    ({withContainers} = await import('./utils/browserFixture.js'));
+} finally {
+    globalThis.window = nodeWindow
+}
 
 /**
  * A track pair's colour, data range, label name, autoscale and log scale are
@@ -193,9 +197,10 @@ describe('TrackXYPairChange', () => {
             // style reads it back as rgb(), so the swatch is found by that.
             const swatch = [...trackPair.colorPicker.container.querySelectorAll('.igv-ui-color-swatch')]
                 .find(element => 'rgb(137, 17, 0)' === element.style.backgroundColor)
+            expect(swatch, 'igv-ui\'s palette no longer offers #891100').toBeDefined()
             swatch.dispatchEvent(new window.MouseEvent('click', {bubbles: true}))
-            expect(trackPair.track.color).toBe('#891100')
             expectOneChange(trackPair, 'color', '#891100')
+            expect(trackPair.track.color).toBe('#891100')
         })
 
         it('submitting the data-range dialog posts the resulting range', () => {

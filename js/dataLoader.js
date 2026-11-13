@@ -27,6 +27,7 @@ import State from './hicState.js'
 import Genome from './genome.js'
 import {filenameFromUrl, extractName, derivedTrackName, presentError, errorMessage, isBotChallenge} from "./utils.js"
 import {isFile} from "./fileUtils.js"
+import {inferSequenceIndex} from "./sequenceIndex.js"
 import HICEvent from './hicEvent.js'
 import EventBus from './eventBus.js'
 import nvi from './nvi.js'
@@ -672,6 +673,9 @@ class DataLoader {
 
         if (['fasta', 'fa'].includes(extension)) {
             config.type = config.format = 'sequence';
+            // Unindexed, igv reads the whole FASTA at paint time and the map
+            // stops repainting. #587.
+            inferSequenceIndex(config);
         }
 
         // What the *load* discovers, and only that: a missing `max` means

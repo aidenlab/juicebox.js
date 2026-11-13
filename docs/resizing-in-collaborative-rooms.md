@@ -44,7 +44,7 @@ The remote relays `browser.getSyncState()` and applies it on the far side with
 - receiver: `observe.js` line 168, `browser.syncState(syncState)`.
 
 `getSyncState` carries the chromosome names, `binSize`, `binX`, `binY` and
-`pixelSize` (`js/hicState.js:488`). `State.sync` (`js/hicState.js:499`) keeps the
+`pixelSize` (`js/hicState.js:486`). `State.sync` (`js/hicState.js:497`) keeps the
 publisher's **top-left corner and base pairs per pixel**, not its extent. That is
 policy A in the HTML document: a larger receiver sees more genome.
 

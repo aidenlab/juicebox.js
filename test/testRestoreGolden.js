@@ -74,14 +74,16 @@
  * happens *today*, so that the next ticket's diff has something to be read
  * against. Three are known, and all three were found by reading the baseline:
  *
- * 1. **No door clamps.** The `state` door does not, because
+ * 1. **No door clamped.** The `state` door did not, because
  *    `StateManager.setState` applied a `minPixelSize` floor directly and never
- *    calls `_adjustPixelSize` or `clampXY`. The `locus` door does not either, on
- *    the branch a real link takes: `State.updateWithLoci` passes
+ *    called `_adjustPixelSize` or `clampXY`. The `locus` door did not either, on
+ *    the branch a real link takes: `State.updateWithLoci` passed
  *    `{clampXY: false}`, so only the whole-chromosome branch through
- *    `setChromosomesView` clamps at all. That is ADR-0009's premise recorded as
- *    data rather than argued: the invariant has no enforcer on restore, and the
- *    live door's record below is what it costs.
+ *    `setChromosomesView` clamped at all. That was ADR-0009's premise recorded as
+ *    data rather than argued: the invariant had no enforcer on restore, and the
+ *    live door's record below is what it cost. Both are fixed: #558 routed the
+ *    `state` door through `setView`, and #767 deleted the `clampXY` option, so
+ *    `setView` always clamps and every door now does.
  * 2. **The live-map door's `state` rung is overwritten one line later, and lands
  *    outside the chromosome.** `loadLiveContactMap` decodes `config.state`,
  *    calls `setState`, and then unconditionally calls `parseGotoInput` on the
@@ -104,10 +106,9 @@
  *    reaches the file path's `locus` door whenever the projected locus starts at
  *    bp 0, and roughly a sixth of the `config.locus` records here carry a small
  *    negative `x` for that reason. #567 did not touch that door -- its input is
- *    the fixture's locus, not a formatter of juicebox's -- and #649 is where
- *    `updateWithLoci` would clamp it. A negative origin outside the live column is
- *    therefore **baseline**, not a regression -- it is finding 1 showing through,
- *    since no door clamps.
+ *    the fixture's locus, not a formatter of juicebox's. #767 fixed it by making
+ *    `updateWithLoci` clamp: those records now open at `0`. A negative origin
+ *    anywhere in this file is now a regression.
  * 3. **The `config.synchState` rung was unreachable, and is now gone.** Its
  *    guard needed an `activeDataset` that `loadHicFile` had just cleared four
  *    lines earlier, so a config carrying a `synchState` silently took the
@@ -167,6 +168,7 @@
  * | 2026-08-22 | 10 fixtures — the `normalization` field only, on the `config.state` and live doors, both columns | #561. A restored normalization is coerced against the loaded dataset. Tally below. |
  * | 2026-08-24 | `session-gzip-data-uri` — one entry **added**, none moved | **#518**, ADR-0011 decision 2. The corpus fixture that used to reject now decodes, so this suite — which runs the decoding fixtures — sees it for the first time. An addition rather than a movement: a fixture with no prior entry has nothing to disagree with. The decoded session is one browser naming `https://example.org/a.hic`, which is what the fixture's note has always said its payload holds. Logged so that "one new entry and nothing else changed" is a claim a reader of the diff can check; the movement itself is logged in `testDecoderGolden.js`. |
  * | 2026-09-14 | all — the live door only, both columns | #567. The live extent's locus string gains the one `parseLocusString` takes away, so the live door opens at `0, 0`. Tally below. |
+ * | 2026-11-13 | 11 fixtures — the `config.locus` door, `x`/`y`/`locus` only | #767. `updateWithLoci` clamps: a goto now goes through `setView`'s clamp like every other path. Tally below. |
  *
  * ### The #558 tally
  *
@@ -204,7 +206,7 @@
  *   which is the row below this tally.
  * - **The live door's negative origins are unchanged** — all still negative.
  *   Finding 2 above is `parseGotoInput` running *after* `setState`, and
- *   `updateWithLoci` passes `{clampXY: false}`, so routing restore through the
+ *   `updateWithLoci` passed `{clampXY: false}` (until #767), so routing restore through the
  *   chokepoint cannot reach it. #567 is still the ticket for that, and the same
  *   is true of the `config.locus` door's small negative `x` values, and of the
  *   two `config.locus` records that resolve to `NaN` throughout: a clamp cannot
@@ -324,9 +326,41 @@
  * handed rather than to the clamp -- here a door's own input corrected, the
  * movement class listed above. `rungs`, `normalization`, `chr1`, `chr2` and
  * `outcome` did not move anywhere. The live door's `state` rung is still
- * overwritten by `parseGotoInput` (#650), and `updateWithLoci` still does not
- * clamp (#649). `test/testLiveDoorOrigin.js` asserts the non-negative origin by
+ * overwritten by `parseGotoInput` (#650), and `updateWithLoci` still did not
+ * clamp (until #767). `test/testLiveDoorOrigin.js` asserts the non-negative origin by
  * name.
+ *
+ * ### The #767 tally
+ *
+ * **18 records of 368 moved -- all on the `config.locus` door -- and only `x`,
+ * `y` and the `locus` projected from them.** One cause: the clamp reached the
+ * goto rung, because `setView` no longer accepts `{clampXY: false}` and
+ * `updateWithLoci` was its only caller to pass it. It shows up as two shapes,
+ * one per bound:
+ *
+ * - **The lower bound -- 14 records, 7 fixtures x both columns.** The origins of
+ *   finding 2's second half, `-0.000001` to `-0.000004`, go to `0`. Each `locus`
+ *   goes from `chr1:-1-...` to `chr1:0-...`, and an end that was not already the
+ *   chromosome's end gains the one base the start gave back (`80000000` to
+ *   `80000001`): the end projects from the origin. A movement in *both* columns
+ *   is not a sign of a non-clamp here. A negative origin is below the lower bound
+ *   at every viewport, and only the upper bound depends on the viewport.
+ * - **The upper bound -- 4 records, the `1600x400` column only.** These are
+ *   regions near a chromosome's far end that a 1600px-wide view would have run
+ *   past. `wapl-wt` and `wapl-ko`: chr3 at zoom 4 is `1980.224` bins, so
+ *   `maxX = 1980.224 - 1600/2 = 1180.224` and `1384.497` comes back to it.
+ *   `degron`: chr3 at zoom 6 is `7920.897` bins, so
+ *   `maxX = 7920.897 - 1600/1.9375 = 7095.091` and `7685.99996` comes back to it.
+ *   `gm12878`: chr1 at zoom 3 is `997.002` bins, fewer than the `1280` a 1600px
+ *   view shows at `pixelSize` 1.25, so `maxX` floors at `0` and `446.101` goes
+ *   there. None moved at `800x800`, which is the asymmetry the update convention
+ *   reads as a clamp. The requested region no longer sits at the top-left, by
+ *   design: the view shows no empty space past the chromosome's end.
+ *
+ * `chr1`, `chr2`, `zoom`, `pixelSize`, `normalization`, `rungs` and `outcome` did
+ * not move anywhere, and no other door moved. The live door's origin was already
+ * `0` (#567), and the `state` door was already clamped (#558). The `NaN`
+ * records are unchanged, since a clamp cannot repair a `NaN`.
  *
  * @see docs/adr/0009-restore-is-a-translator.md — the decisions this gate guards
  * @see test/data/wireFormatCorpus.js — the inputs

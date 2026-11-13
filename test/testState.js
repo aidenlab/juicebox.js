@@ -61,6 +61,8 @@ export function createMockBrowser(overrides = {}) {
         contactMatrixView: overrides.contactMatrixView ?? {
             getViewDimensions: () => overrides.viewDimensions ?? { width: 800, height: 800 }
         },
+        // updateWithLoci is handed no dataset of its own and clamps against this one.
+        dataset: overrides.dataset ?? createMockDataset({ chromosomes, bpResolutions: binSizes }),
     }
 }
 
@@ -231,7 +233,7 @@ describe('State.setView — canonical chokepoint', () => {
         expect(state.pixelSize).toBe(4)
     })
 
-    test('clampXY=true (default) clamps x/y to chromosome bounds', async () => {
+    test('clamps x/y to chromosome bounds', async () => {
         const browser = createMockBrowser()
         const dataset = createMockDataset()
         const state = createState({ chr1: 1, chr2: 2 })
@@ -243,19 +245,6 @@ describe('State.setView — canonical chokepoint', () => {
         expect(state.x).toBe(200)
         // chr2=240M -> 960; maxY = 960 - 800 = 160
         expect(state.y).toBe(160)
-    })
-
-    test('clampXY=false skips the clamp', async () => {
-        const browser = createMockBrowser()
-        const dataset = createMockDataset()
-        const state = createState({ chr1: 1, chr2: 2 })
-
-        await state.setView(1, 2, 999_999, 999_999, 3, 1, browser, dataset, DEFAULT_VIEW_DIMENSIONS, {
-            clampXY: false,
-        })
-
-        expect(state.x).toBe(999_999)
-        expect(state.y).toBe(999_999)
     })
 
     test('change flags reflect pre-mutation state, not post', async () => {
@@ -375,6 +364,37 @@ describe('State.updateWithLoci', () => {
         await state.updateWithLoci('chr1', 0, 80_000_000, 'chr2', 0, 80_000_000, browser, 800, 800)
 
         expect(state.pixelSize).toBe(1)
+    })
+
+    test('a start below the origin opens at the origin', async () => {
+        // `chr1:0-249250621` is 0-based -1: the locus box hands the translator a start
+        // one base before the chromosome begins.
+        const browser = createMockBrowser({ findMatchingZoomIndex: () => 4 })
+        const dataset = createMockDataset()
+        const state = createState()
+
+        await state.updateWithLoci('chr1', -1, 249_250_621, 'chr2', -1, 239_999_999, browser, 800, 800)
+
+        expect(state.x).toBe(0)
+        expect(state.y).toBe(0)
+        const locus = state.getLocus(dataset, DEFAULT_VIEW_DIMENSIONS)
+        expect(locus.x.start).toBe(0)
+        expect(locus.y.start).toBe(0)
+    })
+
+    test('a region near the far end on a non-square viewport is pulled back to the upper bound', async () => {
+        // zoom 4 -> binSize 100kb. Fit: max(10M/800, 10M/400) = 25kb/px -> pixelSize 4.
+        // chr1 = 2500 bins, 800px / 4 = 200 bins visible -> maxX = 2300. The requested
+        // start, 240Mb = bin 2400, would leave 100 bins of empty space past the end.
+        const browser = createMockBrowser({ findMatchingZoomIndex: () => 4 })
+        const state = createState()
+
+        await state.updateWithLoci('chr1', 240_000_000, 250_000_000, 'chr2', 230_000_000, 240_000_000, browser, 800, 400)
+
+        expect(state.pixelSize).toBe(4)
+        expect(state.x).toBe(2300)
+        // chr2 = 2400 bins, 400px / 4 = 100 bins visible -> maxY = 2300: already in bounds.
+        expect(state.y).toBe(2300)
     })
 })
 
@@ -1005,9 +1025,8 @@ describe('Axis ordering — chr1 <= chr2 is enforced in setView', () => {
         const state = createState({ chr1: 1, chr2: 1, zoom: 3, x: 0, y: 0, pixelSize: 1 })
 
         // x-axis chr3, y-axis chr1 — the unordered spelling.
-        await state.setView(3, 1, 50, 75, 4, 6, browser, dataset, DEFAULT_VIEW_DIMENSIONS, {
-            clampXY: false,
-        })
+        // In bounds at zoom 4: chr1 = 2500 bins, chr3 = 2000, 800px / 6 = 133 visible.
+        await state.setView(3, 1, 50, 75, 4, 6, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
 
         expect(state.chr1).toBe(1)
         expect(state.chr2).toBe(3)
@@ -1021,9 +1040,8 @@ describe('Axis ordering — chr1 <= chr2 is enforced in setView', () => {
         const dataset = createMockDataset()
         const state = createState({ chr1: 0, chr2: 0, zoom: 0, x: 0, y: 0, pixelSize: 1 })
 
-        await state.setView(1, 3, 50, 75, 4, 6, browser, dataset, DEFAULT_VIEW_DIMENSIONS, {
-            clampXY: false,
-        })
+        // In bounds at zoom 4: chr1 = 2500 bins, chr3 = 2000, 800px / 6 = 133 visible.
+        await state.setView(1, 3, 50, 75, 4, 6, browser, dataset, DEFAULT_VIEW_DIMENSIONS)
 
         expect(state.chr1).toBe(1)
         expect(state.chr2).toBe(3)

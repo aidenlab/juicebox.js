@@ -640,8 +640,8 @@ export const EVENT_PAYLOAD_SHAPES = [
     // `Track2D` itself, as the track-pair ones carry the pair; a genome change
     // posts one `Track2DRemoval` per 2D track, as it does `TrackXYPairRemoval`
     // per pair. `Track2DChange` is posted by `setTrack2DColor` (`value` a
-    // colour string, or undefined for the features' own) and `setTrack2DName`.
-    // Its subject is keyed `track2D` as `TrackXYPairChange`'s is keyed
+    // colour string, or undefined for the features' own) and `setTrack2DName`;
+    // neither posts for a 2D track the panel doesn't hold. Its subject is keyed `track2D` as `TrackXYPairChange`'s is keyed
     // `trackPair`: the key names the kind of track.
     // Checked by `test/testTrack2DSurface.js`.
     {event: 'Track2DLoad', payload: 'the Track2D itself', readsInto: ['name', 'color', 'config.url']},

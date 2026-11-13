@@ -98,8 +98,22 @@ describe('2D track surface', () => {
             expect(repaint).toHaveBeenCalledOnce()
         })
 
+        it('leaves a track the panel does not hold alone, posts nothing and does not repaint', () => {
+            context.browser.tracks2D = [track2D('loops')]
+            const domains = track2D('domains')
+            domains.color = 'red'
+            const repaint = vi.spyOn(context.browser.coordinator, 'onTrackState2D')
+
+            context.browser.setTrack2DColor(domains, 'rgb(1,2,3)')
+
+            expect(domains.color).toBe('red')
+            expect(seen).toEqual([])
+            expect(repaint).not.toHaveBeenCalled()
+        })
+
         it('gives the features their own colours back when unset', () => {
             const loops = track2D('loops')
+            context.browser.tracks2D = [loops]
             loops.color = 'red'
 
             context.browser.setTrack2DColor(loops, undefined)
@@ -114,12 +128,23 @@ describe('2D track surface', () => {
 
         it('renames the track, in the session too, and posts the new name', () => {
             const loops = track2D('loops')
+            context.browser.tracks2D = [loops]
 
             context.browser.setTrack2DName(loops, 'CTCF loops')
 
             expect(loops.name).toBe('CTCF loops')
             expect(loops.toJSON().name).toBe('CTCF loops')
             expectOneChange(loops, 'name', 'CTCF loops')
+        })
+
+        it('leaves a track the panel does not hold alone, and posts nothing', () => {
+            context.browser.tracks2D = [track2D('loops')]
+            const domains = track2D('domains')
+
+            context.browser.setTrack2DName(domains, 'TADs')
+
+            expect(domains.name).toBe('domains')
+            expect(seen).toEqual([])
         })
     })
 

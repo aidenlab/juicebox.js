@@ -167,7 +167,6 @@ class State {
      *                                                   (resolution-selector path only).
      * @param {number}  [options.minPixelSize] - Override browser.minPixelSize lookup
      *                                            (caller has already computed it).
-     * @param {boolean} [options.clampXY=true] - Whether to clamp x/y to chromosome bounds.
      * @param {boolean} [options.adjustPixelSize=true] - Run pixelSize through
      *                                                    _adjustPixelSize. Pan paths set
      *                                                    this false: panning never alters
@@ -175,7 +174,7 @@ class State {
      * @returns {Promise<{chrChanged: boolean, resolutionChanged: boolean}>}
      */
     async setView(chr1, chr2, x, y, zoom, pixelSize, browser, dataset, viewDimensions, options = {}) {
-        const { useDefaultMin = false, minPixelSize, clampXY = true, adjustPixelSize = true } = options;
+        const { useDefaultMin = false, minPixelSize, adjustPixelSize = true } = options;
 
         // Axis ordering (ADR-0006 decision 3). A .hic file stores one triangle of a
         // symmetric matrix, so an unordered pair names a view that already has a
@@ -234,9 +233,9 @@ class State {
         this.y = y;
         this.pixelSize = adjustedPixelSize;
 
-        if (clampXY) {
-            this.clampXY(dataset, viewDimensions);
-        }
+        // Every view is clamped to both chromosome bounds -- pan, zoom, restore and
+        // goto alike. Not optional: an opt-out is how a goto once opened at -1 (#767).
+        this.clampXY(dataset, viewDimensions);
 
         return { chrChanged, resolutionChanged };
     }
@@ -272,7 +271,7 @@ class State {
         return await this.setView(
             this.chr1, this.chr2, newX, newY, zoom, adjustedPixelSize,
             browser, dataset, viewDimensions,
-            { adjustPixelSize: false, clampXY: true },
+            { adjustPixelSize: false },
         )
     }
 
@@ -282,7 +281,7 @@ class State {
             this.x + dx / this.pixelSize, this.y + dy / this.pixelSize,
             this.zoom, this.pixelSize,
             browser, dataset, viewDimensions,
-            { adjustPixelSize: false, clampXY: true },
+            { adjustPixelSize: false },
         )
     }
 
@@ -310,7 +309,7 @@ class State {
         const { resolutionChanged } = await this.setView(
             this.chr1, this.chr2, newX, newY, zoom, newPixelSize,
             browser, dataset, viewDimensions,
-            { adjustPixelSize: false, clampXY: true },
+            { adjustPixelSize: false },
         )
         return resolutionChanged
     }
@@ -364,7 +363,6 @@ class State {
             bpX / binSizeNew, bpY / binSizeNew,
             zoomNew, binSizeNew / bpPerPixelTarget,
             browser, browser.dataset, { width, height },
-            { clampXY: false },
         )
     }
 
@@ -418,7 +416,7 @@ class State {
         return await this.setView(
             chr1Index, chr2Index, 0, 0, newZoom, newPixelSize,
             browser, dataset, viewDimensions,
-            { adjustPixelSize: false, clampXY: true },
+            { adjustPixelSize: false },
         )
     }
 
@@ -437,7 +435,7 @@ class State {
             this.x + dx / this.pixelSize, this.y + dy / this.pixelSize,
             this.zoom, this.pixelSize,
             browser, dataset, viewDimensions,
-            { adjustPixelSize: false, clampXY: true },
+            { adjustPixelSize: false },
         )
     }
 
@@ -470,7 +468,7 @@ class State {
         return await this.setView(
             this.chr1, this.chr2, newX, newY, this.zoom, newPixelSize,
             browser, dataset, viewDimensions,
-            { adjustPixelSize: false, clampXY: true },
+            { adjustPixelSize: false },
         )
     }
 

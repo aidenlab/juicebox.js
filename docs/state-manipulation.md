@@ -38,7 +38,8 @@ async state.setView(chr1, chr2, x, y, zoom, pixelSize,
   against the *ordered* pair — a transposed re-set reports no change).
 - Adjusts `pixelSize` through the standard floor-and-cap pipeline (`Math.max(1, x)` → floor by `minPixelSize` → `Math.min(MAX_PIXEL_SIZE, x)`).
 - Mutates the canonical fields in a fixed order.
-- Optionally clamps `x`/`y` to chromosome bounds.
+- Clamps `x`/`y` to both chromosome bounds — always. There is no opt-out, so every
+  translator, a goto included, opens inside the chromosome (#767).
 - Redirects `All` to the sole scaffold on a **single-chromosome assembly**, landing
   the view on the sentinel zoom rung. See below.
 
@@ -70,7 +71,6 @@ design at this rung.
 |---|---|---|
 | `useDefaultMin` | `false` | Apply `DEFAULT_PIXEL_SIZE` (= 1) as the floor instead of comparing against the incoming `pixelSize`. **Only `setWithZoom` sets this true** — it's what produces the visible "snap" when the resolution selector changes zoom, and is preserved as resolution-selector-only behavior. |
 | `minPixelSize` | `undefined` | Caller-provided override; bypasses `browser.minPixelSize` lookup. Used by translators that have already computed it. |
-| `clampXY` | `true` | Whether to clamp `x`/`y` to chromosome bounds after mutation. `updateWithLoci` sets this `false` (it has historically not clamped). |
 | `adjustPixelSize` | `true` | Whether to run `pixelSize` through `_adjustPixelSize`. Pan paths set this `false`: panning never alters pixelSize, including by implicit floor. Translators that have already computed the final `pixelSize` themselves also set this `false`. |
 
 ### Invariants

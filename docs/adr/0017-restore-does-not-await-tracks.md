@@ -6,7 +6,8 @@ decisions 1 and 7 in #667. Decision 2 is an absence: no load has a timeout.
 
 **Date:** 2026-09-15
 **Related:** #588 (the work), #584 (where the hang was found), #587 (the unindexed
-FASTA, the one known never-settling track), #615 (`loadTracksOrThrow`, the
+FASTA: its load settles, but its paint never does, so it was not fixed here), #763
+(a paint that never settles, in general), #615 (`loadTracksOrThrow`, the
 target-set fan-out), ADR-0003 (public API contract), ADR-0004 (the alert dialog),
 ADR-0005 (dispose / reset), `CONTEXT.md` (*Pending track*, *Restore*),
 `js/hicBrowser.js`, `js/dataLoader.js`

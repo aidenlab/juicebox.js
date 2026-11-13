@@ -101,6 +101,26 @@ describe('a repaint does not await track pairs', () => {
         expect(drawn.map(d => d.axis)).toEqual(['x', 'y'])
     })
 
+    test('a slow track paints late, at the view current when its fetch settles', async () => {
+        const browser = await loaded(dom.container)
+        let answer
+        const features = [ { chr: 'chr1', start: 0, end: 100, value: 1 } ]
+        const { drawn } = pairOn(browser, () => new Promise(resolve => { answer = resolve }))
+
+        await browser.update()
+        await browser.update()
+        expect(drawn).toEqual([])
+
+        // The first pass is answered, then the retry the second update
+        // coalesced into, which finds the x tile cached and fetches only y.
+        answer(features)
+        await settle()
+        answer(features)
+        await settle()
+
+        expect(drawn.map(d => d.axis)).toEqual(['x', 'y', 'x', 'y'])
+    })
+
     test('a rejected track paint logs a warning, and the update still resolves', async () => {
         const browser = await loaded(dom.container)
         const failure = new Error('fetch failed')

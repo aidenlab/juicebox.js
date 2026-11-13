@@ -1887,7 +1887,7 @@ class HICBrowser {
         this.layoutController.yAxisRuler.locusChange(pseudoEvent);
 
         for (const trackPair of this.trackPairs) {
-            trackPair.updateViews();
+            void trackPair.updateViews();
         }
         await this.contactMatrixView.update();
     }

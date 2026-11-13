@@ -55,7 +55,7 @@ class SweepZoom {
 
     async commit({ xPixel, yPixel, width, height }) {
 
-        this.rulerSweeperElement.style.display = 'none';
+        this.cancel();
 
         const state = this.browser.state;
         const { chromosomes } = this.browser.dataset;

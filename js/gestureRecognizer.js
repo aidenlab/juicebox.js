@@ -26,10 +26,6 @@
  *   {type: 'showCrosshairs'}
  *   {type: 'moveCrosshairs', pointer}
  *   {type: 'hideCrosshairs'}
- *
- * Quirks are kept as they were in the view this came out of, and are pinned by
- * `test/testViewportGestures.js`: #654 (the drag threshold is horizontal
- * only, and never passed from x = 0).
  */
 
 const DRAG_THRESHOLD = 2
@@ -87,7 +83,7 @@ class GestureRecognizer {
             if (this.sweeping) {
                 this.sweepEndAt = {x: sweepX, y: sweepY}
                 intents.push({type: 'sweepUpdate', ...this.sweepRectangle()})
-            } else if (this.mouseDownAt.x && Math.abs(x - this.mouseDownAt.x) > DRAG_THRESHOLD) {
+            } else if (this.dragging || this.pastDragThreshold(x, y)) {
                 this.dragging = true
                 intents.push({type: 'pan', dx: this.mouseLast.x - x, dy: this.mouseLast.y - y})
             }
@@ -270,6 +266,16 @@ class GestureRecognizer {
 
         this.dragging = false
         return [{type: 'dragStopped'}]
+    }
+
+    /**
+     * A drag starts once the pointer is more than the threshold from the
+     * mouse-down in either axis. Once started it pans on every move, even back
+     * near where it began. #654.
+     */
+    pastDragThreshold(x, y) {
+        const {x: x0, y: y0} = this.mouseDownAt
+        return Math.abs(x - x0) > DRAG_THRESHOLD || Math.abs(y - y0) > DRAG_THRESHOLD
     }
 
     sweepRectangle() {

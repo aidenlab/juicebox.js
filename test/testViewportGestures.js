@@ -4,7 +4,7 @@ import Genome from '../js/genome.js'
 
 /**
  * Characterization of the viewport's gestures, as they are today -- quirks
- * included. #651.
+ * included, where any are pinned. #651.
  *
  * The gesture state machines are about to move out of `ContactMatrixView`
  * (#580, #652). These tests are the gate for that move: synthetic DOM events go
@@ -17,7 +17,7 @@ import Genome from '../js/genome.js'
  * Nothing here is a fix. Where today's behaviour is wrong it is pinned as it
  * is and the test names the bug filed against it, because a test that bakes in
  * a fix cannot prove the move changed nothing. Now the move has landed, a
- * quirk that gets fixed leaves the quirks block and is asserted as fixed.
+ * quirk that gets fixed is asserted as fixed, naming its issue (#654).
  *
  * JSDOM does no layout, so every bounding rect is at the origin and a mouse
  * event's `offsetX`, `pageX` and `clientX` all read the same number. The
@@ -211,21 +211,18 @@ describe('viewport gestures', () => {
             expect(box.style.display).toBe('none')
         })
 
-        describe('quirks, pinned as they are', () => {
+        it('pans on vertical movement alone (#654)', () => {
+            mouse(viewport, 'mousedown', {x: 100, y: 100})
+            mouse(viewport, 'mousemove', {x: 100, y: 150})
 
-            it('does not start a drag on vertical movement alone (#654)', () => {
-                mouse(viewport, 'mousedown', {x: 100, y: 100})
-                mouse(viewport, 'mousemove', {x: 100, y: 150})
+            expect(interactions.shiftPixels.mock.calls).toEqual([[0, -50]])
+        })
 
-                expect(interactions.shiftPixels).not.toHaveBeenCalled()
-            })
+        it('pans from a mouse-down at x = 0 (#654)', () => {
+            mouse(viewport, 'mousedown', {x: 0, y: 100})
+            mouse(viewport, 'mousemove', {x: 50, y: 100})
 
-            it('does not start a drag from a mouse-down at x = 0 (#654)', () => {
-                mouse(viewport, 'mousedown', {x: 0, y: 100})
-                mouse(viewport, 'mousemove', {x: 50, y: 100})
-
-                expect(interactions.shiftPixels).not.toHaveBeenCalled()
-            })
+            expect(interactions.shiftPixels.mock.calls).toEqual([[-50, 0]])
         })
     })
 

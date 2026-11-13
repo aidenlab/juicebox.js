@@ -206,9 +206,10 @@
  *   which is the row below this tally.
  * - **The live door's negative origins are unchanged** — all still negative.
  *   Finding 2 above is `parseGotoInput` running *after* `setState`, and
- *   `updateWithLoci` passed `{clampXY: false}` (until #767), so routing restore through the
- *   chokepoint cannot reach it. #567 is still the ticket for that, and the same
- *   is true of the `config.locus` door's small negative `x` values, and of the
+ *   `updateWithLoci` passed `{clampXY: false}` (until #767), so routing restore
+ *   through the chokepoint cannot reach it. #567 is still the ticket for that,
+ *   and the same is true of the `config.locus` door's small negative `x` values
+ *   (#767 clamped those), and of the
  *   two `config.locus` records that resolve to `NaN` throughout: a clamp cannot
  *   repair a `NaN` — `Math.min(Math.max(0, NaN), maxX)` is `NaN` — and that door
  *   does not reach `setState` in any case.

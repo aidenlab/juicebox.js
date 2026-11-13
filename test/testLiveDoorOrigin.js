@@ -5,8 +5,9 @@
  * string, and `parseLocusString` reads a locus string as 1-based -- it is what a
  * user types -- and subtracts one. The extent is already 0-based, so the
  * formatter adds the one back, as the locus box and the gene lookup do. Without
- * it an extent starting at 0 opened at `-1` bp, and `updateWithLoci` does not
- * clamp (#649), so nothing pulled it back.
+ * it an extent starting at 0 opened at `-1` bp, and `updateWithLoci` did not
+ * clamp then, so nothing pulled it back. It clamps now (#767), so this file
+ * pins the formatter, not the only thing standing between the door and `-1`.
  *
  * `testRestoreGolden.js` records the same fact in its live column; this states
  * it by name, so a regression fails here rather than as a snapshot diff.

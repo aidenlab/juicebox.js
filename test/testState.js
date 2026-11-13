@@ -367,8 +367,9 @@ describe('State.updateWithLoci', () => {
     })
 
     test('a start below the origin opens at the origin', async () => {
-        // `chr1:0-249250621` is 0-based -1: the locus box hands the translator a start
-        // one base before the chromosome begins.
+        // Typed into the locus box, `chr1:0-249250621` becomes 0-based start -1:
+        // `parseLocusString` subtracts one, so the translator receives a start one
+        // base before the chromosome begins.
         const browser = createMockBrowser({ findMatchingZoomIndex: () => 4 })
         const dataset = createMockDataset()
         const state = createState()

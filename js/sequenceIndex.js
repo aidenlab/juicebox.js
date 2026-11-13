@@ -20,14 +20,13 @@
  * for the whole-file read on purpose.
  *
  * @param {Object} config - a sequence track config; given an `indexURL` in place.
- * @returns {Object} the same config.
  */
 function inferSequenceIndex(config) {
 
     const url = config.url
 
     if (config.indexURL || false === config.indexed || typeof url !== 'string' || url.startsWith('data:')) {
-        return config
+        return
     }
 
     // Before any query string, as igv's own `inferIndexPath` does, so a signed
@@ -36,8 +35,6 @@ function inferSequenceIndex(config) {
     config.indexURL = query < 0 ? `${url}.fai` : `${url.slice(0, query)}.fai${url.slice(query)}`
 
     console.warn(`Sequence track ${url} has no indexURL; assuming ${config.indexURL}`)
-
-    return config
 }
 
 export {inferSequenceIndex}

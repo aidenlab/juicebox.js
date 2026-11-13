@@ -1,10 +1,6 @@
 /**
- * An unindexed FASTA is given the conventional sibling `.fai`. #587.
- *
- * igv reads a sequence track without an index by fetching the whole file, and
- * does so at paint time once `bpPerPixel <= 10` -- a three-gigabyte `hg38.fa`
- * never finishes, and the map stops repainting. Every session saved before #584
- * carries such a track.
+ * An unindexed FASTA is given the conventional sibling `.fai`. #587; the why is
+ * in js/sequenceIndex.js.
  */
 import {describe, it, expect, vi, afterEach} from 'vitest'
 import {inferSequenceIndex} from '../js/sequenceIndex.js'

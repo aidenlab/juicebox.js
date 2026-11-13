@@ -219,6 +219,12 @@ class TrackPair {
      * chokepoint mutates in place, so a pan keeps the object and the pass runs
      * to completion, while a clear or a bulk replacement swaps it and this pass
      * has nothing left to draw against (#473).
+     *
+     * A pass also outlives its pair. **Remove track** is the escape hatch from a
+     * pair whose paint is stuck, and a fetch cannot be cancelled, so a pass that
+     * settles after its pair has left `browser.trackPairs` is dropped: it draws
+     * nothing and does not start the retry coalesced into it (#775, ADR-0022
+     * decision 5 -- ADR-0017 decision 8 is the same rule for loads).
      */
     async updateViews() {
 
@@ -235,7 +241,7 @@ class TrackPair {
 
                 const genomicStateX = this.browser.genomicState(this.x.axis);
                 let imageTileX = await this.getTileX(genomicStateX);
-                if (this.browser.state !== state) {
+                if (this.#isStale(state)) {
                     return;
                 }
                 if (imageTileX) {
@@ -244,7 +250,7 @@ class TrackPair {
 
                 const genomicStateY = this.browser.genomicState(this.y.axis);
                 let imageTileY = await this.getTileY(genomicStateY);
-                if (this.browser.state !== state) {
+                if (this.#isStale(state)) {
                     return;
                 }
                 if (imageTileY) {
@@ -262,11 +268,27 @@ class TrackPair {
                     this.pending = false;
                     // The retry is a fresh pass and meets the same guard at the
                     // top, so a call coalesced into a pass that was abandoned
-                    // stands itself down rather than moving the throw.
-                    this.updateViews();
+                    // stands itself down rather than moving the throw. A removed
+                    // pair gets no retry at all: it has no row to paint (#775).
+                    if (this.#isInPlace()) {
+                        this.updateViews();
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * Whether a pass that began against `state` has nothing left to draw: the
+     * `State` was replaced (#473), or this pair was removed (#775).
+     */
+    #isStale(state) {
+        return this.browser.state !== state || !this.#isInPlace();
+    }
+
+    /** Whether this pair still holds a row: not removed, not cleared with the rest. */
+    #isInPlace() {
+        return this.browser.trackPairs.includes(this);
     }
 
     /**

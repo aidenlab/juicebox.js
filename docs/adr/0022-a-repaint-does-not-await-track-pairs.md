@@ -1,6 +1,6 @@
 # ADR-0022 — A repaint does not await track pairs
 
-**Status:** Accepted — implemented in #774.
+**Status:** Accepted — implemented in #774; decision 5 in #775.
 
 **Date:** 2026-11-13
 **Related:** #763 (a paint that never settles freezes the map), #774 (the work),
@@ -49,6 +49,12 @@ logs it with `console.warn`, and keeps its last good tile; the update still
 resolves. Not the alert dialog: a paint can fail on every pan, and the dialog is
 for load failures (ADR-0017 decision 6).
 
+**5. A paint that settles after its pair is removed is dropped silently** — it
+draws nothing and does not start the retry coalesced into it. **Remove track** in
+the gear menu is the escape hatch from a stuck pair; there is no new control. A
+fetch cannot be cancelled, so discarding its late result stands in for
+cancelling it, as ADR-0017 decision 8 does for loads. Implemented in #775.
+
 ## Considered options
 
 - **Keep awaiting, add a per-paint timeout.** Freezes the map for the timeout's
@@ -65,6 +71,7 @@ for load failures (ADR-0017 decision 6).
   `update()`. No host relies on the old meaning: Spacewalk calls the contact
   matrix view's `update()` directly, and juicebox-web calls neither.
 - A stuck pair stays stuck until its fetch settles; its retry then paints the
-  view current at that time. Dismissing the track is the user's escape hatch.
+  view current at that time. Removing the track is the user's escape hatch
+  (decision 5): the fetch runs on, but its result is dropped.
 - The resolved meaning of `update()` is public contract (ADR-0003): reverting to
   "resolved means tracks too" would be a breaking change in the other direction.

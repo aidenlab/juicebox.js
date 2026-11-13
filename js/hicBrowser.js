@@ -1138,41 +1138,48 @@ class HICBrowser {
             anchor = anchor.nextSibling
         }
 
-        // Deselected first, and for the same reason `deleteAll` does it:
-        // `releaseSlot` falls the selection through to a survivor, so disposing
-        // the current browser posts a `BrowserSelect` naming a sibling -- and
-        // juicebox-web subscribes to that event. A reset does not change which
-        // browser is selected, so it should post nothing at all.
-        if (wasCurrent) {
-            registry.select(undefined)
-        }
+        // One change to the target set, not a teardown and a rebuild: in a
+        // two-browser registry the teardown leaves one browser for a moment,
+        // and an aim of one is cleared -- the sibling's membership with it.
+        // #718.
+        registry.duringReset(() => {
 
-        // A host's `coordinator.addCallback` subscriptions ride across the
-        // reconstruction: the coordinator is rebuilt below with empty lists,
-        // and a host that mirrors this panel would otherwise go silent on the
-        // first map loaded through juicebox-web's menus, which reset before
-        // they load. The arrays themselves move, so
-        // the unsubscribers `addCallback` handed out keep working.
-        const externalCallbacks = this.coordinator.externalCallbacks
+            // Deselected first, and for the same reason `deleteAll` does it:
+            // `releaseSlot` falls the selection through to a survivor, so disposing
+            // the current browser posts a `BrowserSelect` naming a sibling -- and
+            // juicebox-web subscribes to that event. A reset does not change which
+            // browser is selected, so it should post nothing at all.
+            if (wasCurrent) {
+                registry.select(undefined)
+            }
 
-        this.dispose()
+            // A host's `coordinator.addCallback` subscriptions ride across the
+            // reconstruction: the coordinator is rebuilt below with empty lists,
+            // and a host that mirrors this panel would otherwise go silent on the
+            // first map loaded through juicebox-web's menus, which reset before
+            // they load. The arrays themselves move, so
+            // the unsubscribers `addCallback` handed out keep working.
+            const externalCallbacks = this.coordinator.externalCallbacks
 
-        // The one place this flag is cleared. A reset browser is alive again,
-        // and the guard on every published method has to see that.
-        this.#disposed = false
+            this.dispose()
 
-        this.#construct(appContainer, config, id)
-        this.coordinator.externalCallbacks = externalCallbacks
+            // The one place this flag is cleared. A reset browser is alive again,
+            // and the guard on every published method has to see that.
+            this.#disposed = false
 
-        // Reconstruction appends, so the panels of a two-panel embed would
-        // visibly swap without this. Decision 3.
-        appContainer.insertBefore(this.rootElement, anchor)
+            this.#construct(appContainer, config, id)
+            this.coordinator.externalCallbacks = externalCallbacks
 
-        // Not registered before the reset -- during `init()`, or in a test --
-        // so there is no slot to take back and nothing to select.
-        if (-1 !== slot) {
-            registry.reclaimSlot(this, slot, wasCurrent, wasTargeted)
-        }
+            // Reconstruction appends, so the panels of a two-panel embed would
+            // visibly swap without this. Decision 3.
+            appContainer.insertBefore(this.rootElement, anchor)
+
+            // Not registered before the reset -- during `init()`, or in a test --
+            // so there is no slot to take back and nothing to select.
+            if (-1 !== slot) {
+                registry.reclaimSlot(this, slot, wasCurrent, wasTargeted)
+            }
+        })
     }
 
     /**

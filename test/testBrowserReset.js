@@ -229,6 +229,34 @@ describe('HICBrowser.reset', () => {
         removed.mockRestore()
     })
 
+    it('keeps a two-panel aim, whichever panel is reset -- #718', () => {
+        // Two panels is the case that broke: the teardown leaves one browser
+        // for a moment, and an aim of one is refused (#621). A transient one
+        // must not take the other panel's membership with it.
+        const {registry, browser: first} = registered(dom.container)
+        const {browser: second} = registered(dom.container)
+        registry.toggleTarget(first)
+        registry.toggleTarget(second)
+
+        const changes = []
+        const handler = event => changes.push(event.data)
+        EventBus.globalBus.subscribe('BrowserTargetChange', handler)
+
+        try {
+            for (const browser of [first, second]) {
+                browser.reset()
+
+                expect(registry.currentBrowser).toBe(first)
+                expect(registry.targetedBrowsers).toEqual([first, second])
+                expect(first.rootElement.classList.contains('hic-root-target-anchor')).toBe(true)
+                expect(second.rootElement.classList.contains('hic-root-targeted')).toBe(true)
+            }
+            expect(changes).toEqual([])
+        } finally {
+            EventBus.globalBus.unsubscribe('BrowserTargetChange', handler)
+        }
+    })
+
     it('keeps its peers unsynced', () => {
         // reset() unsyncs, as it always has: the browser stays on the page, so
         // the registry re-pairs it on the next sync().

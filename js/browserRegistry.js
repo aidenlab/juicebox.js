@@ -416,6 +416,22 @@ class BrowserRegistry {
     }
 
     /**
+     * Run a browser's `reset()` -- its teardown and its rebuild -- as one change
+     * to the target set rather than two.
+     *
+     * Internal, and called only by `HICBrowser.reset`. Between `releaseSlot`
+     * and `reclaimSlot` a two-browser registry holds one browser, and the
+     * aim-of-one rule in `#announce` (#621) would clear the *other* browser's
+     * membership along with it. Run inside one announcement, that rule is
+     * applied once, to the registry the reset leaves behind. That is the
+     * registry it began with, so a reset posts no `BrowserTargetChange` and
+     * leaves the badges as they were. #718.
+     */
+    duringReset(work) {
+        this.#announce(work)
+    }
+
+    /**
      * Run `mutate`, and post `BrowserTargetChange` if the resolved target set
      * came out different.
      *

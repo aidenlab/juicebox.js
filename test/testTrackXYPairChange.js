@@ -1,10 +1,20 @@
 import {describe, it, expect, beforeEach, afterEach} from 'vitest'
-import igv from 'igv'
-import EventBus from '../js/eventBus.js'
-import TrackPair from '../js/trackPair.js'
-import MenuUtils from '../js/trackMenuUtils.js'
-import {EVENT_PAYLOAD_SHAPES} from '../js/publicApi.js'
-import {withContainers} from './utils/browserFixture.js'
+import {JSDOM} from 'jsdom'
+
+// igv-ui builds its DOMPurify at import against the global window, and the
+// data-range dialog sanitizes its initial values with it. The node mock window
+// leaves DOMPurify without `sanitize`, so igv-ui is imported against a real one.
+// Unlike testTrackLabels, the dialog is what is under test here, so it is not
+// mocked away.
+const nodeWindow = globalThis.window
+globalThis.window = new JSDOM('').window
+const {default: igv} = await import('igv')
+const {default: EventBus} = await import('../js/eventBus.js')
+const {default: TrackPair} = await import('../js/trackPair.js')
+const {default: MenuUtils} = await import('../js/trackMenuUtils.js')
+const {EVENT_PAYLOAD_SHAPES} = await import('../js/publicApi.js')
+const {withContainers} = await import('./utils/browserFixture.js')
+globalThis.window = nodeWindow
 
 /**
  * A track pair's colour, data range, label name, autoscale and log scale are
@@ -161,6 +171,43 @@ describe('TrackXYPairChange', () => {
             expect(track.name).toBe('CTCF')
             expect(trackPair.x.labelElement.textContent).toBe('CTCF')
             expectOneChange(trackPair, 'name', 'CTCF')
+        })
+
+        /**
+         * A pair built by `init()`, so its colour picker and data-range dialog
+         * are igv-ui's own, wired as the browser wires them. The x renderer
+         * gains the two elements `init()` hangs them from.
+         */
+        function initialisedPair(track) {
+            const trackPair = pair(track)
+            trackPair.x.viewportElement = document.createElement('div')
+            trackPair.x.trackReorderHandleElement = document.createElement('div')
+            trackPair.init()
+            return trackPair
+        }
+
+        it('choosing a colour in the colour picker posts the chosen colour', () => {
+            const trackPair = initialisedPair({type: 'wig'})
+            item(MenuUtils.trackMenuItemList(trackPair), 'Set color').click()
+            // igv-ui's palette hands the handler its hex string; the swatch's
+            // style reads it back as rgb(), so the swatch is found by that.
+            const swatch = [...trackPair.colorPicker.container.querySelectorAll('.igv-ui-color-swatch')]
+                .find(element => 'rgb(137, 17, 0)' === element.style.backgroundColor)
+            swatch.dispatchEvent(new window.MouseEvent('click', {bubbles: true}))
+            expect(trackPair.track.color).toBe('#891100')
+            expectOneChange(trackPair, 'color', '#891100')
+        })
+
+        it('submitting the data-range dialog posts the resulting range', () => {
+            const trackPair = initialisedPair({type: 'wig', autoscale: true, config: {}})
+            item(MenuUtils.numericDataMenuItems(trackPair), 'Set data range').click()
+            const {minbox, maxbox, dialog} = trackPair.dataRangeDialog
+            minbox.value = '-5'
+            maxbox.value = '50'
+            dialog.ok.dispatchEvent(new window.MouseEvent('click', {bubbles: true}))
+            expectOneChange(trackPair, 'dataRange', {min: -5, max: 50})
+            expect(trackPair.track.dataRange).toEqual({min: -5, max: 50})
+            expect(trackPair.track.autoscale).toBe(false)
         })
 
         it('unset colour posts an undefined colour', () => {

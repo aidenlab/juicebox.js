@@ -52,6 +52,15 @@ class TrackRenderer {
         this.viewportElement.appendChild(this.spinnerElement);
     }
 
+    /**
+     * The track spinner: a pending track's (ADR-0017), and a track pair's while
+     * its paint fetches (#776). Not the map spinner, which covers only the
+     * contact matrix (ADR-0022).
+     */
+    showSpinner(show) {
+        this.spinnerElement.innerHTML = show ? '<i class="fa fa-spinner fa-spin"></i>' : '';
+    }
+
     setLabelText(text) {
         this.labelElement.textContent = text;
         this.labelElement.title = text;

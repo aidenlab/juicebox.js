@@ -26,6 +26,7 @@ function renderer(axis, drawn) {
         axis,
         canvasElement: { width: VIEWPORT, height: TRACK_HEIGHT },
         drawTile: tile => drawn.push({ axis, tile }),
+        showSpinner: () => {},
         dispose: () => {}
     }
 }

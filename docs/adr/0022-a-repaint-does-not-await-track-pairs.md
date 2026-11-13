@@ -1,6 +1,6 @@
 # ADR-0022 — A repaint does not await track pairs
 
-**Status:** Accepted — implemented in #774; decision 5 in #775.
+**Status:** Accepted — implemented in #774; decision 5 in #775; decision 6 in #776.
 
 **Date:** 2026-11-13
 **Related:** #763 (a paint that never settles freezes the map), #774 (the work),
@@ -54,6 +54,16 @@ draws nothing and does not start the retry coalesced into it. **Remove track** i
 the gear menu is the escape hatch from a stuck pair; there is no new control. A
 fetch cannot be cancelled, so discarding its late result stands in for
 cancelling it, as ADR-0017 decision 8 does for loads. Implemented in #775.
+
+**6. A track pair shows its own spinner while a paint fetches.** With the map
+spinner now covering only the contact matrix, a slow track would otherwise sit
+blank or stale with nothing to say it is working. The pair raises the track
+spinner — the one a pending track shows (ADR-0017 decision 3) — on its x and y
+track together, and only when a pass misses its tile cache and fetches, so a
+pan within a cached tile does not flicker it. It comes down when the pass ends,
+whether it paints, fails or is abandoned. As with a pending track, the user can
+see *which* track is stuck. Implemented in #776; the DOM is checked by hand
+(ADR-0013).
 
 ## Considered options
 

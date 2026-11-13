@@ -208,6 +208,11 @@ class TrackPair {
      * and resolves at once. The browser's repaint does not await this (ADR-0022),
      * so a slow track paints late and a hung one only stops itself.
      *
+     * The map spinner therefore no longer covers this pair, so a pass that
+     * misses the tile cache and fetches shows the track spinner on both halves
+     * until it ends, however it ends. A pan within a cached tile fetches
+     * nothing and shows nothing (#776, ADR-0022 decision 6).
+     *
      * A pass can outlive the state it started from: `reset()` tears the browser
      * down while this pair's tiles are still resolving, and a subsequent load
      * installs a different `State`. Every read of canonical state here --
@@ -231,6 +236,7 @@ class TrackPair {
         if (this.updating) {
             this.pending = true;
         } else {
+            let spinning = false;
             try {
                 this.updating = true;
 
@@ -240,6 +246,9 @@ class TrackPair {
                 }
 
                 const genomicStateX = this.browser.genomicState(this.x.axis);
+                if (!this.#holds(this.tileX, genomicStateX)) {
+                    spinning = this.#showSpinner(true);
+                }
                 let imageTileX = await this.getTileX(genomicStateX);
                 if (this.#isStale(state)) {
                     return;
@@ -249,6 +258,9 @@ class TrackPair {
                 }
 
                 const genomicStateY = this.browser.genomicState(this.y.axis);
+                if (!this.#holds(this.tileY, genomicStateY)) {
+                    spinning = this.#showSpinner(true);
+                }
                 let imageTileY = await this.getTileY(genomicStateY);
                 if (this.#isStale(state)) {
                     return;
@@ -263,6 +275,9 @@ class TrackPair {
                 // is for load failures.
                 console.warn(`Track "${this.track.name}" did not paint`, error);
             } finally {
+                if (spinning) {
+                    this.#showSpinner(false);
+                }
                 this.updating = false;
                 if (this.pending) {
                     this.pending = false;
@@ -284,6 +299,22 @@ class TrackPair {
      */
     #isStale(state) {
         return this.browser.state !== state || !this.#hasRow();
+    }
+
+    /**
+     * The track spinner, on the x and y track together. Returns `show`, so a
+     * pass can remember that it raised it.
+     */
+    #showSpinner(show) {
+        this.x.showSpinner(show);
+        this.y.showSpinner(show);
+        return show;
+    }
+
+    /** Whether `tile` already covers `genomicState`, so painting it fetches nothing. */
+    #holds(tile, genomicState) {
+        const { chromosome, startBP, endBP, bpp } = genomicState;
+        return Boolean(tile && tile.containsRange(chromosome.name, startBP, endBP, bpp));
     }
 
     /** Whether this pair still holds a row: not removed, not cleared with the rest. */
@@ -331,9 +362,7 @@ class TrackPair {
 
     async getTileX(genomicState) {
 
-        const { chromosome, bpp } = genomicState
-
-        if (!(this.tileX && this.tileX.containsRange(chromosome.name, genomicState.startBP, genomicState.endBP, bpp))) {
+        if (!this.#holds(this.tileX, genomicState)) {
             this.tileX = await this.createImageTile({ axis: 'x', ...genomicState })
         }
 
@@ -342,9 +371,7 @@ class TrackPair {
 
     async getTileY(genomicState) {
 
-        const { chromosome, bpp } = genomicState
-
-        if (!(this.tileY && this.tileY.containsRange(chromosome.name, genomicState.startBP, genomicState.endBP, bpp))) {
+        if (!this.#holds(this.tileY, genomicState)) {
             this.tileY = await this.createImageTile({ axis: 'y', ...genomicState })
         }
 

@@ -240,7 +240,8 @@ once. An *update* wraps a repaint with coalescing of rapid calls and peer sync
 afterwards. Callers ask for an update; only the update path repaints. A repaint
 waits for the contact matrix; track pairs paint on their own, each coalescing
 its own calls, so a slow or stuck track never holds up the map or its peers.
-ADR-0022.
+The map spinner covers the contact matrix only; a track pair whose paint is
+fetching shows its own track spinner. ADR-0022.
 
 ## Rendering
 

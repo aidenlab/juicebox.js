@@ -16,7 +16,8 @@ import Genome from '../js/genome.js'
  *
  * Nothing here is a fix. Where today's behaviour is wrong it is pinned as it
  * is and the test names the bug filed against it, because a test that bakes in
- * a fix cannot prove the move changed nothing.
+ * a fix cannot prove the move changed nothing. Now the move has landed, a
+ * quirk that gets fixed leaves the quirks block and is asserted as fixed.
  *
  * JSDOM does no layout, so every bounding rect is at the origin and a mouse
  * event's `offsetX`, `pageX` and `clientX` all read the same number. The
@@ -193,24 +194,24 @@ describe('viewport gestures', () => {
             expect(interactions.shiftPixels).not.toHaveBeenCalled()
         })
 
+        it('does nothing on an alt-click that never moves, even after an earlier sweep (#653)', () => {
+            standInMap(browser)
+            const goto = vi.spyOn(browser, 'goto').mockResolvedValue(undefined)
+            const box = browser.contactMatrixView.sweepZoom.rulerSweeperElement
+
+            mouse(viewport, 'mousedown', {x: 50, y: 80, altKey: true})
+            mouse(viewport, 'mousemove', {x: 10, y: 20, altKey: true})
+            mouse(document, 'mouseup', {x: 10, y: 20})
+            goto.mockClear()
+
+            mouse(viewport, 'mousedown', {x: 200, y: 300, altKey: true})
+            mouse(document, 'mouseup', {x: 200, y: 300})
+
+            expect(goto).not.toHaveBeenCalled()
+            expect(box.style.display).toBe('none')
+        })
+
         describe('quirks, pinned as they are', () => {
-
-            it('commits an alt-click that never moves against the previous sweep\'s end point (#653)', () => {
-                standInMap(browser)
-                const goto = vi.spyOn(browser, 'goto').mockResolvedValue(undefined)
-
-                mouse(viewport, 'mousedown', {x: 50, y: 80, altKey: true})
-                mouse(viewport, 'mousemove', {x: 10, y: 20, altKey: true})
-                mouse(document, 'mouseup', {x: 10, y: 20})
-                goto.mockClear()
-
-                // Clicked at (200, 300) and released there, yet the rectangle
-                // runs back to (10, 20), where the last sweep ended.
-                mouse(viewport, 'mousedown', {x: 200, y: 300, altKey: true})
-                mouse(document, 'mouseup', {x: 200, y: 300})
-
-                expect(goto.mock.calls).toEqual([['chr1', 105000, 200000, 'chr2', 210000, 350000]])
-            })
 
             it('does not start a drag on vertical movement alone (#654)', () => {
                 mouse(viewport, 'mousedown', {x: 100, y: 100})

@@ -22,13 +22,14 @@
  *   {type: 'sweepStart', x, y}
  *   {type: 'sweepUpdate', left, top, width, height}
  *   {type: 'sweepCommit', rect: {xPixel, yPixel, width, height}}
+ *   {type: 'sweepCancel'}
  *   {type: 'showCrosshairs'}
  *   {type: 'moveCrosshairs', pointer}
  *   {type: 'hideCrosshairs'}
  *
  * Quirks are kept as they were in the view this came out of, and are pinned by
- * `test/testViewportGestures.js`: #653 (a sweep's end point outlives it) and
- * #654 (the drag threshold is horizontal only, and never passed from x = 0).
+ * `test/testViewportGestures.js`: #654 (the drag threshold is horizontal
+ * only, and never passed from x = 0).
  */
 
 const DRAG_THRESHOLD = 2
@@ -46,8 +47,9 @@ class GestureRecognizer {
         this.mouseDownAt = undefined
         this.mouseLast = undefined
         this.sweeping = false
-        this.sweepStartAt = {x: 0, y: 0}
-        this.sweepEndAt = {x: 0, y: 0}
+        this.sweepStartAt = undefined
+        // Written only by a mouse-move: undefined means the sweep never moved.
+        this.sweepEndAt = undefined
 
         this.mouseOverViewport = false
         this.crosshairsShown = false
@@ -64,6 +66,7 @@ class GestureRecognizer {
         if (altKey) {
             this.sweeping = true
             this.sweepStartAt = {x: sweepX, y: sweepY}
+            this.sweepEndAt = undefined
             return [{type: 'sweepStart', x: sweepX, y: sweepY}]
         }
         return []
@@ -117,12 +120,15 @@ class GestureRecognizer {
 
     /**
      * A mouse-up anywhere in the document, which is where a sweep ends: it may
-     * have been dragged out of the viewport.
+     * have been dragged out of the viewport. A sweep that never moved -- an
+     * alt-click -- is cancelled, not committed: it swept no rectangle. #653.
      */
     documentMouseUp() {
         if (!this.sweeping) return []
 
         this.sweeping = false
+        if (!this.sweepEndAt) return [{type: 'sweepCancel'}]
+
         const {left, top, width, height} = this.sweepRectangle()
         return [{type: 'sweepCommit', rect: {xPixel: left, yPixel: top, width, height}}]
     }

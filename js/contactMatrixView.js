@@ -430,7 +430,7 @@ class ContactMatrixView {
             e.preventDefault();
             e.stopPropagation();
 
-            if (this.browser.menuElement?.style.display === 'block') {
+            if (this.browser.menuElement && this.browser.menuElement.style.display !== 'none') {
                 this.browser.hideMenu();
             }
 

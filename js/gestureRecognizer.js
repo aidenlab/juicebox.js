@@ -83,7 +83,7 @@ class GestureRecognizer {
             if (this.sweeping) {
                 this.sweepEndAt = {x: sweepX, y: sweepY}
                 intents.push({type: 'sweepUpdate', ...this.sweepRectangle()})
-            } else if (Math.abs(x - this.mouseDownAt.x) > DRAG_THRESHOLD || Math.abs(y - this.mouseDownAt.y) > DRAG_THRESHOLD) {
+            } else if (this.dragging || this.pastDragThreshold(x, y)) {
                 this.dragging = true
                 intents.push({type: 'pan', dx: this.mouseLast.x - x, dy: this.mouseLast.y - y})
             }
@@ -266,6 +266,16 @@ class GestureRecognizer {
 
         this.dragging = false
         return [{type: 'dragStopped'}]
+    }
+
+    /**
+     * A drag starts once the pointer is more than the threshold from the
+     * mouse-down in either axis. Once started it pans on every move, even back
+     * near where it began. #654.
+     */
+    pastDragThreshold(x, y) {
+        const {x: x0, y: y0} = this.mouseDownAt
+        return Math.abs(x - x0) > DRAG_THRESHOLD || Math.abs(y - y0) > DRAG_THRESHOLD
     }
 
     sweepRectangle() {

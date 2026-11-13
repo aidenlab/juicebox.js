@@ -30,6 +30,13 @@ describe('GestureRecognizer', () => {
             expect(recognizer.mouseMove({x: 115, y: 110})).toEqual([{type: 'pan', dx: -5, dy: -6}])
         })
 
+        it('keeps panning once a drag has started, even back within the threshold of the mouse-down (#654)', () => {
+            recognizer.mouseDown({x: 100, y: 100})
+            recognizer.mouseMove({x: 150, y: 100})
+
+            expect(recognizer.mouseMove({x: 101, y: 100})).toEqual([{type: 'pan', dx: 49, dy: 0}])
+        })
+
         it('does not pan on a mouse-move with no button down', () => {
             expect(recognizer.mouseMove({x: 110, y: 104})).toEqual([])
         })

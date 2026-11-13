@@ -153,7 +153,12 @@ The reset row is the one that diverges from the sync group, and on purpose: sync
 membership is a *rule* that gets recomputed, so losing it costs nothing; targeting
 is a user's act, and a reset should not silently undo it. `HICBrowser.reset`
 therefore captures explicit membership before the teardown and hands it back to
-`reclaimSlot`, next to the slot and the selection it already restores.
+`reclaimSlot`, next to the slot and the selection it already restores. The
+whole teardown and rebuild runs as one `#announce`, through the registry's
+`duringReset`: in a two-panel aim the teardown leaves one browser for a moment,
+and the lapse rule above would otherwise take the sibling's membership with it.
+The rule judges the registry a reset leaves behind, not the one it passes
+through. #718.
 
 A target set is per registry and never spans two embeds. That falls out of
 ADR-0004's isolation, and there is no caller for the alternative: a fan-out is

@@ -490,17 +490,28 @@ describe('the target set through a lifecycle', () => {
     it('survives a reset, which the sync group does not', () => {
         // The teardown-and-rebuild `HICBrowser.reset` performs, as the registry
         // sees it: the slot released, then reclaimed with what the browser
-        // captured before it disposed itself.
+        // captured before it disposed itself, all inside `duringReset`. Two
+        // browsers, because the teardown leaves one for a moment (#718).
         const a = add('a', {genomeId: 'hg38'})
         const b = add('b', {genomeId: 'hg38'})
         aim(a, b)
 
-        const wasTargeted = registry.isTargetedExplicitly(b)
-        const slot = registry.browsers.indexOf(b)
-        b.dispose()
-        registry.reclaimSlot(b, slot, false, wasTargeted)
+        for (const browser of [a, b]) {
+            const wasTargeted = registry.isTargetedExplicitly(browser)
+            const wasCurrent = registry.currentBrowser === browser
+            const slot = registry.browsers.indexOf(browser)
+            registry.duringReset(() => {
+                if (wasCurrent) {
+                    registry.select(undefined)
+                }
+                browser.dispose()
+                registry.reclaimSlot(browser, slot, wasCurrent, wasTargeted)
+            })
 
-        expect(registry.targetedBrowsers).toEqual([a, b])
+            expect(registry.targetedBrowsers).toEqual([a, b])
+            expect(isAnchor(a)).toBe(true)
+            expect(isTargeted(b)).toBe(true)
+        }
     })
 
     it('lets go of the aim when the registry gives up its browsers', () => {

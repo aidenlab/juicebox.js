@@ -39,11 +39,13 @@ describe('a mouse-down on the contact map', () => {
         expect(shiftPixels.mock.calls).toEqual([[-10, 0]])
     })
 
-    it('leaves a closed menu closed, and still starts a pan', () => {
+    it('leaves a closed menu alone, and still starts a pan', () => {
+        const hideMenu = vi.spyOn(browser, 'hideMenu')
+
         mouse(viewport, 'mousedown', {x: 100, y: 100})
         mouse(viewport, 'mousemove', {x: 110, y: 100})
 
-        expect(browser.menuElement.style.display).toBe('none')
+        expect(hideMenu).not.toHaveBeenCalled()
         expect(shiftPixels.mock.calls).toEqual([[-10, 0]])
     })
 })
